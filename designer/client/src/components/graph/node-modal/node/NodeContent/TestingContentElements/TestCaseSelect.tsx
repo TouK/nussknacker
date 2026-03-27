@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { setTestCaseName } from "../../../../../../actions/nk/testCasesActions";
 import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
 import { getBorderColor } from "../../../../../../containers/theme/helpers";
+import { getSettings } from "../../../../../../reducers/selectors/settings";
 import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
@@ -16,6 +17,7 @@ import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 
 export const TestCaseSelect = () => {
     const { t } = useTranslation();
+    const settings = useAppSelector(getSettings);
     const dispatch = useAppDispatch();
 
     const testCaseOptions = useAppSelector(getTestCaseOptions);
@@ -58,6 +60,18 @@ export const TestCaseSelect = () => {
         open({ kind: WindowKind.enterpriseFeatureInfo, layoutData: { width: 500 } });
     }, [open]);
 
+    const openSaveAsDialog = useCallback(() => {
+        open({ kind: WindowKind.saveAsTestCase, title: "Save as", layoutData: { width: 500 } });
+    }, [open]);
+
+    const handleSaveAsClick = useCallback(() => {
+        if (settings.featuresSettings.testCases.multipleEnabled) {
+            openSaveAsDialog();
+        } else {
+            onDisplayEnterpriseInfo();
+        }
+    }, [onDisplayEnterpriseInfo, openSaveAsDialog, settings.featuresSettings.testCases.multipleEnabled]);
+
     return (
         <Box ml={4} pt={1.25} display={"flex"} gap={1} alignItems={"center"}>
             <TestCaseField
@@ -70,12 +84,17 @@ export const TestCaseSelect = () => {
                 onEditKeyDown={handleKeyDown}
             />
             <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
-                <StyledActionButton onClick={startEditing} disabled={isEditing} size="small">
+                <StyledButton
+                    data-testid="edit-test-case-name"
+                    onClick={startEditing}
+                    disabled={isEditing}
+                    sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                >
                     <EditOutlined fontSize="small" />
-                </StyledActionButton>
+                </StyledButton>
             </InfoTooltip>
             <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
-                <StyledButton title={t("node.row.add.title", "Add field")} onClick={onDisplayEnterpriseInfo}>
+                <StyledButton data-testid="save-as-test-case" title={t("node.row.add.title", "Add test case")} onClick={handleSaveAsClick}>
                     {t("node.row.add.text", "+")}
                 </StyledButton>
             </InfoTooltip>

@@ -146,6 +146,28 @@ describe("Test cases", () => {
         cy.get('[data-testid="window"]').contains(newTestCaseName).should("be.visible");
     });
 
+    it("should rename test case", () => {
+        cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
+        cy.layoutScenario();
+
+        cy.openNodeWindow("Log");
+        cy.openNodeDetailsTestingTab();
+
+        cy.get('[data-testid="window"]').contains("Test case 1").should("be.visible");
+
+        openEditNameInput();
+        cy.get('[aria-label="edit test case name"]').should("have.value", "Test case 1");
+
+        cy.get('[data-testid="edit-test-case-name"]').should("be.disabled");
+
+        cy.get('[aria-label="edit test case name"]').clear().type("My Renamed Test Case{enter}");
+
+        cy.get('[data-testid="window"]').contains("My Renamed Test Case").should("be.visible");
+        cy.get('[data-testid="window"]').should("not.contain.text", "Test case 1");
+    });
+
     it("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
@@ -236,6 +258,10 @@ const verifyMockData = (mockValue: string) => {
 
 const openSaveAsDialog = () => {
     cy.get('[data-testid="save-as-test-case"]').click();
+};
+
+const openEditNameInput = () => {
+    cy.get('[data-testid="edit-test-case-name"]').click();
 };
 
 const expandAssertionItem = (nodeId: string) => {
