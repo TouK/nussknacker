@@ -232,15 +232,16 @@ class AssertionsCompiler(
       actual: String
   ): String = {
     operator match {
-      case AssertionOperator.Equals             => s"($expected) == ($actual)"
-      case AssertionOperator.NotEquals          => s"($expected) != ($actual)"
-      case AssertionOperator.GreaterThan        => s"($expected) > ($actual)"
-      case AssertionOperator.LessThan           => s"($expected) < ($actual)"
-      case AssertionOperator.GreaterThanOrEqual => s"($expected) >= ($actual)"
-      case AssertionOperator.LessThanOrEqual    => s"($expected) <= ($actual)"
-      case AssertionOperator.HasSize            => s"($actual).size() == ($expected)"
-      case AssertionOperator.Contains           => s"($actual).contains(($expected))"
-      case AssertionOperator.Matches            => s"($actual) matches ($expected)"
+      case AssertionOperator.Equals      => s"($expected) == ($actual)"
+      case AssertionOperator.NotEquals   => s"($expected) != ($actual)"
+      case AssertionOperator.GreaterThan => s"($expected) != null && ($actual) != null && ($expected) > ($actual)"
+      case AssertionOperator.LessThan    => s"($expected) != null && ($actual) != null && ($expected) < ($actual)"
+      case AssertionOperator.GreaterThanOrEqual =>
+        s"($expected) != null && ($actual) != null && ($expected) >= ($actual)"
+      case AssertionOperator.LessThanOrEqual => s"($expected) != null && ($actual) != null && ($expected) <= ($actual)"
+      case AssertionOperator.HasSize  => s"($actual) != null && ($expected) != null && ($actual).size() == ($expected)"
+      case AssertionOperator.Contains => s"($actual) != null && ($expected) != null && ($actual).contains(($expected))"
+      case AssertionOperator.Matches  => s"($actual) != null && ($expected) != null && ($actual) matches ($expected)"
     }
   }
 
