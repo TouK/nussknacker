@@ -21,6 +21,11 @@ const appendTestCasesPanel = produce((draft: WithId<ToolbarsConfig>) => {
     draft.bottomRight.unshift({ id: "test-cases-panel" });
 });
 
+const appendNodeDetailsPanel = produce((draft: WithId<ToolbarsConfig>) => {
+    draft.topRight ||= [];
+    draft.topRight.unshift({ id: "node-details-panel" });
+});
+
 const appendAlignToolbar = produce((draft: WithId<ToolbarsConfig>) => {
     draft.topRight ||= [];
     draft.topRight.push({
@@ -39,7 +44,9 @@ const appendAlignToolbar = produce((draft: WithId<ToolbarsConfig>) => {
 });
 
 export const getToolbarsConfig = createSelector([getSettings, getUserSettings], (settings, userSettings) => {
-    const withDynamicToolbars = appendTestCasesPanel(appendSurveyToolbar(settings?.processToolbarsConfiguration));
+    const withSurvey = appendSurveyToolbar(settings?.processToolbarsConfiguration);
+    const withNodeDetails = userSettings["scenario.showNodeDetailsPanel"] ? appendNodeDetailsPanel(withSurvey) : withSurvey;
+    const withDynamicToolbars = appendTestCasesPanel(withNodeDetails);
     if (userSettings["debug.scenario.showNodeAlignToolbar"]) {
         return appendAlignToolbar(withDynamicToolbars);
     }
