@@ -20,14 +20,14 @@ object AssertionResult {
   }
 
   def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion =
-    nullGuard(actual, expected).getOrElse {
+    ensureNotNullValues(actual, expected).getOrElse {
       val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
       val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
       FailedAssertion(s"Expected: [$expectedStr] $operator [$actualStr]")
     }
 
   def produceFailedHasSizeAssertion(expectedSize: Any, actualValue: Any): FailedAssertion =
-    nullGuard(actualValue, expectedSize).getOrElse {
+    ensureNotNullValues(actualValue, expectedSize).getOrElse {
       val actualSize = actualValue match {
         case c: java.util.Collection[_] => c.size()
         case m: java.util.Map[_, _]     => m.size()
@@ -39,20 +39,20 @@ object AssertionResult {
     }
 
   def produceFailedContainsAssertion(expected: Any, actual: Any): FailedAssertion =
-    nullGuard(actual, expected).getOrElse {
+    ensureNotNullValues(actual, expected).getOrElse {
       val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
       val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
       FailedAssertion(s"Expected [$actualStr] to contain [$expectedStr]")
     }
 
   def produceFailedMatchesAssertion(pattern: Any, actual: Any): FailedAssertion =
-    nullGuard(actual, pattern).getOrElse {
+    ensureNotNullValues(actual, pattern).getOrElse {
       val patternStr = SpelValuePrettyPrinter.prettyPrintValue(pattern)
       val actualStr  = SpelValuePrettyPrinter.prettyPrintValue(actual)
       FailedAssertion(s"Expected [$actualStr] to match [$patternStr]")
     }
 
-  private def nullGuard(actualValue: Any, expectedValue: Any): Option[FailedAssertion] = {
+  private def ensureNotNullValues(actualValue: Any, expectedValue: Any): Option[FailedAssertion] = {
     if (actualValue == null) Some(FailedAssertion("Actual value is null"))
     else if (expectedValue == null) Some(FailedAssertion("Expected value is null"))
     else None
