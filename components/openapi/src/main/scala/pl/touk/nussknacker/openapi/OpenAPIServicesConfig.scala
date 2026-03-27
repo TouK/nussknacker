@@ -35,6 +35,11 @@ final case class OpenAPIServicesConfig(
     "Only one `basicAuth` common secret (with unspecified scheme name) is allowed"
   )
 
+  require(
+    secrets.collect { case s: OAuth2ClientCredentialsSecret => s }.size <= 1,
+    "Only one `oauth2ClientCredentials` common secret (with unspecified scheme name) is allowed"
+  )
+
   def securityConfig: SecurityConfig =
     new SecurityConfig(secretBySchemeName = security, commonSecretsForAnyName = secrets)
 }
@@ -52,14 +57,19 @@ final class SecurityConfig(
     secretBySchemeName.get(schemeName).collectFirst { case a: HttpBasicAuthSecret => a } orElse
       commonSecretsForAnyName.collectFirst { case a: HttpBasicAuthSecret => a }
 
+  def oauth2ClientCredentialsSecret(schemeName: SecuritySchemeName): Option[OAuth2ClientCredentialsSecret] =
+    secretBySchemeName.get(schemeName).collectFirst { case a: OAuth2ClientCredentialsSecret => a } orElse
+      commonSecretsForAnyName.collectFirst { case a: OAuth2ClientCredentialsSecret => a }
+
 }
 
 final case class SecuritySchemeName(value: String)
 
 sealed trait Secret
 
-final case class ApiKeySecret(apiKeyValue: String)                       extends Secret
-final case class HttpBasicAuthSecret(username: String, password: String) extends Secret
+final case class ApiKeySecret(apiKeyValue: String)                                     extends Secret
+final case class HttpBasicAuthSecret(username: String, password: String)               extends Secret
+final case class OAuth2ClientCredentialsSecret(clientId: String, clientSecret: String) extends Secret
 
 object OpenAPIServicesConfig {
 
@@ -76,9 +86,11 @@ object OpenAPIServicesConfig {
 
   implicit val secretVR: ValueReader[Secret] = ValueReader.relative { conf =>
     conf.as[String]("type") match {
-      case "apiKey"    => conf.as[ApiKeySecret]
-      case "basicAuth" => conf.as[HttpBasicAuthSecret]
-      case typ         => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
+      case "apiKey"                  => conf.as[ApiKeySecret]
+      case "basicAuth"               => conf.as[HttpBasicAuthSecret]
+      case "oauth2ClientCredentials" => conf.as[OAuth2ClientCredentialsSecret]
+      case "oauth2"                  => conf.as[OAuth2ClientCredentialsSecret]
+      case typ => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
     }
   }
 
