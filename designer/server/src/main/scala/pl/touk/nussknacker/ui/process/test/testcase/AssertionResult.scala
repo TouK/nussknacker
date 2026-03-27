@@ -28,14 +28,21 @@ object AssertionResult {
 
   def produceFailedHasSizeAssertion(expectedSize: Any, actualValue: Any): FailedAssertion =
     ensureNotNullValues(actualValue, expectedSize).getOrElse {
-      val actualSize = actualValue match {
-        case c: java.util.Collection[_] => c.size()
-        case m: java.util.Map[_, _]     => m.size()
-        case a: Array[_]                => a.length
-        case _                          => -1
+      val actualSizeOpt = actualValue match {
+        case c: java.util.Collection[_] => Some(c.size())
+        case m: java.util.Map[_, _]     => Some(m.size())
+        case a: Array[_]                => Some(a.length)
+        case _                          => None
       }
-      val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expectedSize)
-      FailedAssertion(s"Expected size: [$expectedStr] but found: [$actualSize]")
+      actualSizeOpt match {
+        case Some(actualSize) =>
+          val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expectedSize)
+          FailedAssertion(s"Expected size: [$expectedStr] but found: [$actualSize]")
+        case None =>
+          val actualStr  = SpelValuePrettyPrinter.prettyPrintValue(actualValue)
+          val actualType = actualValue.getClass.getSimpleName
+          FailedAssertion(s"Cannot check size of [$actualStr] (type: $actualType)")
+      }
     }
 
   def produceFailedContainsAssertion(expected: Any, actual: Any): FailedAssertion =
