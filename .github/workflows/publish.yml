@@ -2,10 +2,6 @@ name: Publish
 on:
   workflow_call:
     inputs:
-      should_run:
-        description: "Indicates if the job should be run"
-        required: true
-        type: boolean
       nussknacker_version:
         description: "Version that will be published"
         required: true
@@ -19,8 +15,6 @@ on:
         required: true
       sonatype_password:
         required: true
-      github__token:
-        required: true
       dockerhub_user:
         required: true
       dockerhub_token:
@@ -29,7 +23,6 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: ${{ inputs.should_run }}
     env:
       addDevArtifacts: true
       NUSSKNACKER_VERSION: ${{ inputs.nussknacker_version }}

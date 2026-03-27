@@ -20,6 +20,9 @@ on:
     #TODO: currently release is done manually, we don't want to run this pipeline on released version, to avoid accidental pushes
     tags-ignore:
       - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 env:
   #we use this variable in ciRunSbt.sh
   #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
@@ -73,11 +76,6 @@ jobs:
       # We can't just use conditional jobs mechanism ('if' directive) because 'cypressTests' job depends on this one
       shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-      - name: Cancel previous runs
-        if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
-        uses: styfle/cancel-workflow-action@0.13.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v6
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
       - uses: coursier/setup-action@v1
@@ -117,11 +115,6 @@ jobs:
     env:
       NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
     steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.13.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v6
       - name: Cache npm
         id: cache-npm
@@ -287,11 +280,6 @@ jobs:
       # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
       shouldPerformFrontendTests: ${{ needs.setup.outputs.fe_changes_count > 0 }}
     steps:
-      - name: Cancel previous runs
-        if: ${{ env.shouldPerformFrontendTests == 'true' && github.event_name != 'push' }}
-        uses: styfle/cancel-workflow-action@0.13.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v6
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
       - name: Cache npm
@@ -335,16 +323,11 @@ jobs:
       # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
       # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
       # have this conditional logic in this step. We force building images on our "special" branches because run between merges
-      # could cause that cypress tests will be run at stale image (because of cancel-workflow-action).
+      # could cause that cypress tests will be run at stale image.
       shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
       BE_PORT: 7251
     steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.13.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
       # On self-hosted runners, docker can have some obsolete containers. Because of that, we clean them all
       - name: Clean all docker containers
         shell: bash
@@ -496,14 +479,13 @@ jobs:
     name: Publish With Tests
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     uses: ./.github/workflows/publish.yml
+    if: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release') }}
     with:
-      should_run: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release') }}
       nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -511,14 +493,13 @@ jobs:
     name: Publish Without Tests
     needs: ['build', 'build-fe', 'setup']
     uses: ./.github/workflows/publish.yml
+    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.head_ref, 'preview') }}
     with:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
-      should_run: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.head_ref, 'preview') }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
