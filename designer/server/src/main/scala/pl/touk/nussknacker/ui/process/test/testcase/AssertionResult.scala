@@ -19,6 +19,12 @@ object AssertionResult {
     FailedAssertion(s"Expected value different from: [$expectedStr]")
   }
 
+  def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion = {
+    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
+    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
+    FailedAssertion(s"Expected: [$expectedStr] $operator [$actualStr]")
+  }
+
   def produceFailedHasSizeAssertion(expectedSize: Any, actualSize: Int): FailedAssertion = {
     val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expectedSize)
     FailedAssertion(s"Expected size: [$expectedStr] but found: [$actualSize]")
@@ -30,10 +36,10 @@ object AssertionResult {
     FailedAssertion(s"Expected [$actualStr] to contain [$expectedStr]")
   }
 
-  def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion = {
-    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
-    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
-    FailedAssertion(s"Expected: [$expectedStr] $operator [$actualStr]")
+  def produceFailedMatchesAssertion(pattern: Any, actual: Any): FailedAssertion = {
+    val patternStr = SpelValuePrettyPrinter.prettyPrintValue(pattern)
+    val actualStr  = SpelValuePrettyPrinter.prettyPrintValue(actual)
+    FailedAssertion(s"Expected [$actualStr] to match [$patternStr]")
   }
 
 }

@@ -24,6 +24,7 @@ export const ASSERTION_SYMBOLS: Record<AssertionOperator, string> = {
     lessThanOrEqual: "<=",
     hasSize: "has size",
     contains: "contains",
+    matches: "matches",
 };
 
 const gridContainerStyle = css({
