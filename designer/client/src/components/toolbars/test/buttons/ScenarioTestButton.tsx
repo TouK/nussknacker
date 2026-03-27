@@ -39,9 +39,10 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const side = useContext(ToolbarSideContext);
 
     const { presets, testCasePresets, activeTestCasePreset } = useScenarioTestPresets();
-    const isSingleTestCase = testCasePresets.length <= 1;
 
     const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
+    const isSingleTestCase = testCasePresets.length <= 1;
+
     const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testCaseAssertionResult);
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
 

@@ -5,6 +5,7 @@ import type { TestCase } from "../../reducers/graph/testCase";
 import { getTestCaseAssertions, getTestCaseAssertionsForNode, getTestData, getTestCaseMocks } from "../../reducers/selectors/testCases";
 import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
+import { changeActiveTestCase } from "./testingActions";
 
 export type AssertionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "greaterThanOrEqual" | "lessThanOrEqual";
 export type Assertion = { description?: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj };
@@ -13,7 +14,9 @@ export type Assertions = Record<string, Assertion[]>;
 export type Mock = { expression: ExpressionObj };
 export type Mocks = Record<string, Mock>;
 
-export type TestCasesActions = { type: "UPDATE_TEST_CASE"; testCaseId: string; updates: Omit<Partial<TestCase>, "id"> };
+export type TestCasesActions =
+    | { type: "UPDATE_TEST_CASE"; testCaseId: string; updates: Omit<Partial<TestCase>, "id"> }
+    | { type: "ADD_TEST_CASE"; testCase: TestCase };
 
 export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<Assertion>[]) => WithUuid<Assertion>[]): ThunkAction {
     return (dispatch, getState) => {
@@ -66,5 +69,15 @@ export function setTestCaseMock(nodeId: string, expression: ExpressionObj | unde
         } else {
             dispatch({ type: "UPDATE_TEST_CASE", testCaseId: activeTestCaseId, updates: { mocks: remainingMocks } });
         }
+    };
+}
+
+export function addTestCase(testCase: TestCase): ThunkAction {
+    return (dispatch) => {
+        dispatch({
+            type: "ADD_TEST_CASE",
+            testCase,
+        });
+        dispatch(changeActiveTestCase(testCase.id));
     };
 }
