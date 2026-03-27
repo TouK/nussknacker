@@ -21,14 +21,14 @@ export const getTestCaseAssertions = createSelector(getTestCase, ({ assertions }
 export const getTestCaseAssertionsForNode = createSelector(
     getTestCaseAssertions,
     getNodeId,
-    (assertions, nodeId) => assertions[nodeId]?.map(withUuid) || [],
+    (assertions, nodeId) => (assertions ?? {})[nodeId]?.map(withUuid) || [],
 );
 
 export const getTestCaseMocks = createSelector(getTestCase, ({ mocks }) => mocks);
 export const getTestCaseMockForNode = createSelector(
     getTestCaseMocks,
     getNodeId,
-    (mocks, nodeId) => mocks[nodeId] || { expression: MockExpressionParameter.defaultValue },
+    (mocks, nodeId) => (mocks ?? {})[nodeId] || { expression: MockExpressionParameter.defaultValue },
 );
 export const getTestData = createSelector(getTestCase, ({ inputs }) => safeParseExpression<TestingDataRecords[]>(inputs) || []);
 
@@ -44,8 +44,8 @@ export const getTestCaseNodeValidationData = createSelector(getScenarioGraph, ge
     return {
         [testCase.name]: {
             ...testCase,
-            assertions: testCase.assertions[nodeId] ?? [],
-            enricherMock: testCase.mocks[nodeId],
+            assertions: (testCase.assertions ?? {})[nodeId] ?? [],
+            enricherMock: (testCase.mocks ?? {})[nodeId],
         },
     };
 });
