@@ -16,6 +16,7 @@ import sttp.tapir.Schema
 
 import java.time.Instant
 import scala.collection.compat._
+import scala.collection.mutable
 
 final case class ResultsWithCountsDto(
     timestamp: Instant,
@@ -31,7 +32,8 @@ object ResultsWithCountsDto {
       skipResultsPerNode: SkipResultsPerNode,
       skipResultsPerTransition: SkipResultsPerTransition
   ): ResultsWithCountsDto = {
-    lazy val nodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
+    lazy val externalServiceInvocationResults = resultsWithCounts.results.externalServiceInvocationResults
+    lazy val rawNodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
       case (nodeTransition, results) =>
         NodeTransitionResult(
           sourceNodeId = nodeTransition.sourceNodeId,
@@ -42,6 +44,8 @@ object ResultsWithCountsDto {
           currentThroughput = None,
         )
     }.toList
+    lazy val nodeTransitionResults =
+      withSinkOutputTransitions(rawNodeTransitionResults, externalServiceInvocationResults)
     lazy val exceptionsByNodeId = resultsWithCounts.results.exceptions.groupBy(_.nodeId).collect {
       case (Some(nodeId), exceptions) => (nodeId, exceptions)
     }
@@ -51,7 +55,7 @@ object ResultsWithCountsDto {
         nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
         nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
         expressionEvaluationResults = resultsWithCounts.results.expressionEvaluationResults,
-        externalServiceInvocationResults = resultsWithCounts.results.externalServiceInvocationResults,
+        externalServiceInvocationResults = externalServiceInvocationResults,
         exceptions = resultsWithCounts.results.exceptions,
         exceptionsByNodeId = exceptionsByNodeId,
       ),
@@ -61,6 +65,21 @@ object ResultsWithCountsDto {
   }
 
   def from(liveData: CollectedLiveData, counts: Map[NodeId, NodeCount]): ResultsWithCountsDto = {
+    lazy val externalServiceInvocationResults = liveData.externalServiceInvocationResults.map {
+      case (nodeId, results) =>
+        nodeId -> results.map(r => ExternalServiceInvocationResult(r.contextId, r.timestamp, r.name, r.value))
+    }
+    lazy val rawNodeTransitionResults = liveData.nodeTransitions.map { case (nodeTransition, liveData) =>
+      NodeTransitionResult(
+        sourceNodeId = nodeTransition.sourceNodeId,
+        destinationNodeId = nodeTransition.destinationNodeId,
+        results = liveData.samples.map(s => ResultContext(s.contextId, s.timestamp, s.variables)),
+        totalCount = Some(liveData.totalCount),
+        currentThroughput = Some(liveData.currentThroughput),
+      )
+    }.toList
+    lazy val nodeTransitionResults =
+      withSinkOutputTransitions(rawNodeTransitionResults, externalServiceInvocationResults)
     lazy val exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
       nodeId -> results.map(e =>
         ExceptionResult(ResultContext(e.contextId, e.timestamp, e.variables), Some(nodeId), e.throwable)
@@ -70,28 +89,77 @@ object ResultsWithCountsDto {
       timestamp = liveData.timestamp,
       results = TestResultsDto(
         nodeResults = None,
-        nodeTransitionResults = Some(
-          liveData.nodeTransitions.map { case (nodeTransition, liveData) =>
-            NodeTransitionResult(
-              sourceNodeId = nodeTransition.sourceNodeId,
-              destinationNodeId = nodeTransition.destinationNodeId,
-              results = liveData.samples.map(s => ResultContext(s.contextId, s.timestamp, s.variables)),
-              totalCount = Some(liveData.totalCount),
-              currentThroughput = Some(liveData.currentThroughput),
-            )
-          }.toList
-        ),
+        nodeTransitionResults = Some(nodeTransitionResults),
         expressionEvaluationResults = liveData.expressionEvaluationResults.map { case (nodeId, results) =>
           nodeId -> results.map(r => ExpressionEvaluationResult(r.contextId, r.timestamp, r.name, r.value))
         },
-        externalServiceInvocationResults = liveData.externalServiceInvocationResults.map { case (nodeId, results) =>
-          nodeId -> results.map(r => ExternalServiceInvocationResult(r.contextId, r.timestamp, r.name, r.value))
-        },
+        externalServiceInvocationResults = externalServiceInvocationResults,
         exceptions = exceptionsByNodeId.values.toList.flatten,
         exceptionsByNodeId = exceptionsByNodeId,
       ),
       counts = counts,
       assertionsResults = Map.empty
+    )
+  }
+
+  private def withSinkOutputTransitions(
+      nodeTransitionResults: List[NodeTransitionResult],
+      externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Json]]],
+  ): List[NodeTransitionResult] = {
+    val sourceNodesWithTransitions = nodeTransitionResults.iterator.map(_.sourceNodeId).toSet
+    val inputResultsByDestinationAndContextId = nodeTransitionResults.iterator.flatMap { transition =>
+      transition.destinationNodeId.iterator.flatMap { destinationNodeId =>
+        transition.results.iterator.map(result => (destinationNodeId, result.id) -> result)
+      }
+    }.toMap
+
+    val sinkOutputTransitions = externalServiceInvocationResults.iterator
+      .filter { case (nodeId, results) =>
+        results.nonEmpty && !sourceNodesWithTransitions.contains(nodeId)
+      }
+      .toList
+      .sortBy { case (nodeId, _) => nodeId.value }
+      .map { case (nodeId, invocations) =>
+        createSinkOutputTransition(nodeId, invocations, inputResultsByDestinationAndContextId)
+      }
+
+    nodeTransitionResults ++ sinkOutputTransitions
+  }
+
+  private def createSinkOutputTransition(
+      nodeId: NodeId,
+      invocations: List[ExternalServiceInvocationResult[Json]],
+      inputResultsByDestinationAndContextId: Map[(NodeId, ContextId), ResultContext[Json]],
+  ): NodeTransitionResult = {
+    val invocationsByContextId = mutable.LinkedHashMap.empty[ContextId, List[ExternalServiceInvocationResult[Json]]]
+    invocations.sortBy(_.timestamp).foreach { invocation =>
+      invocationsByContextId.updateWith(invocation.contextId) {
+        case Some(existing) => Some(existing :+ invocation)
+        case None           => Some(List(invocation))
+      }
+    }
+
+    val outputResults = invocationsByContextId.map { case (contextId, invocationsForContext) =>
+      val firstInvocation = invocationsForContext.headOption
+      val inputResult     = inputResultsByDestinationAndContextId.get((nodeId, contextId))
+      ResultContext(
+        id = contextId,
+        timestamp = firstInvocation.map(_.timestamp).orElse(inputResult.map(_.timestamp)).getOrElse(Instant.EPOCH),
+        variables =
+          invocationsForContext.zipWithIndex.foldLeft(Map.empty[String, Json]) { case (acc, (invocation, index)) =>
+            val fallbackName = s"Service invocation ${index + 1}"
+            val name         = Option(invocation.name).filter(_.nonEmpty).getOrElse(fallbackName)
+            acc.updated(name, invocation.value)
+          },
+      )
+    }.toList
+
+    NodeTransitionResult(
+      sourceNodeId = nodeId,
+      destinationNodeId = None,
+      results = outputResults,
+      totalCount = Some(outputResults.size.toLong),
+      currentThroughput = None,
     )
   }
 

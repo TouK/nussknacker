@@ -108,6 +108,7 @@ object ProcessingTypeServices {
     val deploymentManager = processingTypeData.deploymentData.validDeploymentManagerOrStub
     val scenarioTestService = new ScenarioTestService(
       designerConfig.testDataSettings,
+      designerConfig.testCasesSettings,
       processingTypeData.designerModelData.modelData,
       scenarioCompilationDependenciesResource,
       processResolver,

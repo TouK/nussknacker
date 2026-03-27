@@ -5051,6 +5051,127 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/performMultipleTestCases:
+    post:
+      tags:
+      - Testing
+      summary: Perform multiple test cases with streaming results
+      operationId: postApiScenariotestingScenarionamePerformmultipletestcases
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: skipResultsPerNode
+        in: query
+        required: false
+        schema:
+          default: false
+          type: boolean
+      - name: skipResultsPerTransition
+        in: query
+        required: false
+        schema:
+          default: false
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformMultipleTestCasesRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/TestCaseResultEvent'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
+                Example1:
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Bad expression
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with live data fetching support available
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/scenarioTesting/{scenarioName}/capabilities:
     post:
       tags:
@@ -5758,6 +5879,10 @@ components:
       type: string
       enum:
       - equals
+      - greaterThan
+      - greaterThanOrEqual
+      - lessThan
+      - lessThanOrEqual
       - notEquals
     AssertionResult:
       title: AssertionResult
@@ -5982,6 +6107,25 @@ components:
         createDate:
           type: string
           format: date-time
+    Completed:
+      title: Completed
+      type: object
+      required:
+      - testCaseId
+      - testCaseName
+      - result
+      - type
+      properties:
+        testCaseId:
+          type: string
+          format: uuid
+        testCaseName:
+          type: string
+        result:
+          $ref: '#/components/schemas/ResultsWithCountsDto'
+        type:
+          type: string
+          const: Completed
     ComponentLink:
       title: ComponentLink
       type: object
@@ -6293,6 +6437,25 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ErrorDetails'
           - type: 'null'
+    Error:
+      title: Error
+      type: object
+      required:
+      - testCaseId
+      - testCaseName
+      - error
+      - type
+      properties:
+        testCaseId:
+          type: string
+          format: uuid
+        testCaseName:
+          type: string
+        error:
+          type: string
+        type:
+          type: string
+          const: Error
     ErrorDetails:
       title: ErrorDetails
       oneOf:
@@ -6712,20 +6875,6 @@ components:
         y:
           type: integer
           format: int64
-    List_AssertionValidationError:
-      title: List_AssertionValidationError
-      oneOf:
-      - $ref: '#/components/schemas/Nil'
-      - type: array
-        items:
-          $ref: '#/components/schemas/AssertionValidationError'
-    List_EnricherMockValidationError:
-      title: List_EnricherMockValidationError
-      oneOf:
-      - $ref: '#/components/schemas/Nil'
-      - type: array
-        items:
-          $ref: '#/components/schemas/EnricherMockValidationError'
     List_Field:
       title: List_Field
       oneOf:
@@ -6751,7 +6900,10 @@ components:
       title: Map_Int_NonEmptyList_AssertionValidationError
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/List_AssertionValidationError'
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/components/schemas/AssertionValidationError'
     Map_Json:
       title: Map_Json
       type: object
@@ -7351,9 +7503,12 @@ components:
       type: object
       properties:
         enricherMockErrors:
-          anyOf:
-          - $ref: '#/components/schemas/List_EnricherMockValidationError'
-          - type: 'null'
+          type:
+          - array
+          - 'null'
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/EnricherMockValidationError'
         assertionsErrors:
           anyOf:
           - $ref: '#/components/schemas/Map_Int_NonEmptyList_AssertionValidationError'
@@ -7710,6 +7865,20 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+    PerformMultipleTestCasesRequest:
+      title: PerformMultipleTestCasesRequest
+      type: object
+      required:
+      - scenarioGraph
+      - testCases
+      properties:
+        scenarioGraph:
+          type: object
+        testCases:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/TestCase'
     PerformTestCaseRequest:
       title: PerformTestCaseRequest
       type: object
@@ -8448,6 +8617,16 @@ components:
       properties:
         assertionsAdditionalVariables:
           $ref: '#/components/schemas/Map_TypingResult'
+    TestCaseResultEvent:
+      title: TestCaseResultEvent
+      oneOf:
+      - $ref: '#/components/schemas/Completed'
+      - $ref: '#/components/schemas/Error'
+      discriminator:
+        propertyName: type
+        mapping:
+          Completed: '#/components/schemas/Completed'
+          Error: '#/components/schemas/Error'
     TestResultsDto:
       title: TestResultsDto
       type: object

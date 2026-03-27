@@ -70,8 +70,12 @@ object Assertion {
   sealed trait AssertionOperator extends EnumEntry with LowerCamelcase
 
   object AssertionOperator extends Enum[AssertionOperator] with CirceEnum[AssertionOperator] {
-    case object Equals    extends AssertionOperator
-    case object NotEquals extends AssertionOperator
+    case object Equals             extends AssertionOperator
+    case object NotEquals          extends AssertionOperator
+    case object GreaterThan        extends AssertionOperator
+    case object LessThan           extends AssertionOperator
+    case object GreaterThanOrEqual extends AssertionOperator
+    case object LessThanOrEqual    extends AssertionOperator
 
     override def values: IndexedSeq[AssertionOperator] = findValues
   }

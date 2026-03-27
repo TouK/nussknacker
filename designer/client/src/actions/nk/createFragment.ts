@@ -69,7 +69,7 @@ export function createFragment(): ThunkAction<Promise<NodeType | null>> {
             processingMode: processingMode,
             engineSetupName: engineSetupName,
         });
-        const { data } = await HttpService.importProcess(uniqueName, jsonToFileInFormData(FRAGMENT_TEMPLATE));
+        const { data } = await HttpService.importScenario(uniqueName, jsonToFileInFormData(FRAGMENT_TEMPLATE));
         await HttpService.saveProcess(uniqueName, data.scenarioGraph, "import placeholder data", []);
         const { componentGroups } = await dispatch(fetchProcessDefinition(processingType, false));
         const component = componentGroups

@@ -8,17 +8,18 @@ import enumeratum.EnumEntry.UpperSnakecase
 import io.circe
 import io.circe._
 import io.circe.derivation.deriveCodec
-import io.circe.syntax.EncoderOps
+import io.circe.generic.extras.{Configuration => CirceConfiguration}
+import io.circe.generic.extras.semiauto._
+import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId, TestCaseName}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
-import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionIndex, AssertionValidationError}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
@@ -27,8 +28,11 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
+import sttp.model.sse.ServerSentEvent
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 import sttp.tapir.derevo.schema
+import sttp.tapir.generic.{Configuration => TapirConfiguration}
+import sttp.tapir.integ.cats.codec._
 
 import scala.collection.compat._
 import scala.collection.immutable
@@ -155,6 +159,48 @@ object Dtos {
         scenarioGraph: ScenarioGraph,
         testCase: TestCase,
     )
+
+    @derive(schema, encoder, decoder)
+    final case class PerformMultipleTestCasesRequest(
+        scenarioGraph: ScenarioGraph,
+        testCases: NonEmptyList[TestCase],
+    )
+
+    object PerformMultipleTestCasesResponse {
+
+      sealed trait TestCaseResultEvent {
+        def testCaseId: TestCaseId
+
+        def toServerSentEvent: ServerSentEvent =
+          ServerSentEvent(data = Some((this: TestCaseResultEvent).asJson.noSpaces))
+
+      }
+
+      object TestCaseResultEvent {
+        import ResultsWithCountsDtoCodecs._
+
+        implicit val configuration: CirceConfiguration = CirceConfiguration.default.withDiscriminator("type")
+
+        implicit val tapirConfiguration: TapirConfiguration = TapirConfiguration.default.withDiscriminator("type")
+
+        @derive(encoder, decoder, schema)
+        // TODO NU-2470: Maybe drop results from result(ResultsWithCountsDto) to not send excessive data.
+        final case class Completed(testCaseId: TestCaseId, testCaseName: TestCaseName, result: ResultsWithCountsDto)
+            extends TestCaseResultEvent
+
+        @derive(encoder, decoder, schema)
+        final case class Error(testCaseId: TestCaseId, testCaseName: TestCaseName, error: String)
+            extends TestCaseResultEvent
+
+        implicit val testCaseResultEventDecoder: Decoder[TestCaseResultEvent] = deriveConfiguredDecoder
+
+        implicit val testCaseResultEventEncoder: Encoder[TestCaseResultEvent] = deriveConfiguredEncoder
+
+        implicit val testCaseResultEventSchema: Schema[TestCaseResultEvent] = Schema.derived
+
+      }
+
+    }
 
     final case class SkipResultsPerNode(value: Boolean)
 

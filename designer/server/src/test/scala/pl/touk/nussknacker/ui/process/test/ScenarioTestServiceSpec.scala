@@ -31,6 +31,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
+import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
@@ -752,6 +753,7 @@ class ScenarioTestServiceSpec
         resultsMaxBytes = None,
         TestDataFormat.CommonFormat,
       ),
+      TestCasesSettings(),
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
       new UIProcessResolver(
@@ -837,6 +839,7 @@ class ScenarioTestServiceSpec
         resultsMaxBytes = None,
         testDataFormat,
       ),
+      TestCasesSettings(),
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
       TestFactory.processResolver(),

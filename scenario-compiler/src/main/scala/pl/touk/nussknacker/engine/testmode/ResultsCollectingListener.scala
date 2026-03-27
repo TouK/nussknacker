@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.ProcessListener.Transition.{
   TransitionFromFragmentStartToNodeAfterFragment
 }
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.json.encoders.ResultsVariableEncoder
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.util.UUID
@@ -135,7 +136,7 @@ object ResultsCollectingListenerHolder {
   }
 
   private[nussknacker] def registerTestEngineListener: Resource[IO, ResultsCollectingListener[Json]] = {
-    Resource.make(IO(registerListener(TestInterpreterRunner.testResultsVariableEncoder)))(listener =>
+    Resource.make(IO(registerListener(ResultsVariableEncoder.createEncoderForCurrentClassLoader)))(listener =>
       IO(listener.clean())
     )
   }

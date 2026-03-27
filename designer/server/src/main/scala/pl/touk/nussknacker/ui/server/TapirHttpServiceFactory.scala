@@ -119,6 +119,7 @@ object TapirHttpServiceFactory {
       processingTypeToParametersValidator = processingTypeServicesProvider.mapValues(_.parametersValidator),
       processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
       scenarioService = processService,
+      multipleTestCasesEnabled = designerConfig.testCasesSettings.multipleEnabled,
     )
 
     val liveDataApiHttpService = new ScenarioLiveDataApiHttpService(

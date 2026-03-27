@@ -8,10 +8,10 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.ProcessListener.Transition
 import pl.touk.nussknacker.engine.api.ProcessListener.Transition._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.json.encoders.ResultsVariableEncoder
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.engine.testmode.TestInterpreterRunner
 
 import java.time.Instant
 import scala.concurrent.duration.Duration
@@ -29,7 +29,7 @@ class LiveDataCollectingListener private[livedata] (
 ) extends ProcessListener
     with Serializable {
 
-  private val variableEncoder: Any => io.circe.Json = TestInterpreterRunner.testResultsVariableEncoder
+  private val variableEncoder: Any => io.circe.Json = ResultsVariableEncoder.createEncoderForCurrentClassLoader
 
   override def nodeEntered(
       nodeId: NodeId,
