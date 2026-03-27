@@ -108,6 +108,8 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
           AssertionResult.produceFailedComparisonAssertion("<=", expectedValue, actualValue)
         case AssertionOperator.Contains =>
           AssertionResult.produceFailedContainsAssertion(expectedValue, actualValue)
+        case AssertionOperator.Matches =>
+          AssertionResult.produceFailedMatchesAssertion(expectedValue, actualValue)
         case AssertionOperator.HasSize =>
           val actualSize = actualValue match {
             case c: java.util.Collection[_] => c.size()
