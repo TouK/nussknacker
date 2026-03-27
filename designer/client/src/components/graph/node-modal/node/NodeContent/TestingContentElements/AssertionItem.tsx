@@ -31,7 +31,7 @@ const gridContainerStyle = css({
     "&&&&": {
         width: "100%",
         display: "grid",
-        gridTemplateColumns: "3fr 3fr 2fr 3fr",
+        gridTemplateColumns: "5fr 5fr 3fr 5fr",
         gridTemplateRows: "auto auto",
         gridTemplateAreas: `"field field field field remove" "expr expr expr expr remove"`,
     },
