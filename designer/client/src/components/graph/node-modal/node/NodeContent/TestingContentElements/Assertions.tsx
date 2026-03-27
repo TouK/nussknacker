@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { omit } from "lodash";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,7 @@ import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import { Expandable } from "../../../../../common/Expandable";
 import { withUuid } from "../../../appendUuid";
+import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
 import { useGetNodeTestCasesErrors, useValidation, useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
@@ -86,7 +87,26 @@ export const Assertions = ({ node, edges }: Props) => {
 
     return (
         <StyledStack>
-            <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
+            <Expandable
+                componentId={"Assertions"}
+                expandableTitle={
+                    <Box display={"flex"} gap={2} alignItems={"center"}>
+                        <Typography variant={"body2"} color={"text.secondary"}>
+                            {t("testingDialog.label.assertions", "Assertions")}
+                        </Typography>
+                        <InfoTooltip
+                            variant={"hover"}
+                            customComponentsProps={{ tooltip: { sx: { maxWidth: 400 } } }}
+                            title={t(
+                                "testingDialog.assertions.hint",
+                                "Use **#records** to access all events that passed through this node.\n\ncount `#records.size()`  \nfield access `#records[0].status`  \nfilter `#records.?[#this.amount > 100].size()`",
+                            )}
+                        />
+                    </Box>
+                }
+                expanded={isExpanded}
+                onChange={setIsExpanded}
+            >
                 {testCaseAssertions.length === 0 && (
                     <Typography variant={"body2"}>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>
                 )}
