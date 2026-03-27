@@ -479,14 +479,13 @@ jobs:
     name: Publish With Tests
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     uses: ./.github/workflows/publish.yml
+    if: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release') }}
     with:
-      should_run: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release') }}
       nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -494,14 +493,13 @@ jobs:
     name: Publish Without Tests
     needs: ['build', 'build-fe', 'setup']
     uses: ./.github/workflows/publish.yml
+    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.head_ref, 'preview') }}
     with:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
-      should_run: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.head_ref, 'preview') }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
