@@ -289,6 +289,30 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("should handle null values gracefully") {
+    forAll(
+      Table(
+        ("operator", "expectedExpr", "actualExpr", "expectedResult"),
+        (AssertionOperator.GreaterThan, "10", "#records[0].someNumber", FailedAssertion("Actual value is null")),
+        (AssertionOperator.LessThan, "10", "#records[0].someNumber", FailedAssertion("Actual value is null")),
+        (AssertionOperator.GreaterThanOrEqual, "10", "#records[0].someNumber", FailedAssertion("Actual value is null")),
+        (AssertionOperator.LessThanOrEqual, "10", "#records[0].someNumber", FailedAssertion("Actual value is null")),
+        (AssertionOperator.Contains, "'x'", "#records[0].someVariable", FailedAssertion("Actual value is null")),
+        (AssertionOperator.Matches, "'.*'", "#records[0].someVariable", FailedAssertion("Actual value is null")),
+        (AssertionOperator.HasSize, "3", "#records[0].someCollection", FailedAssertion("Actual value is null")),
+        (AssertionOperator.HasSize, "#records[0].someNumber", "{'a', 'b'}", FailedAssertion("Expected value is null")),
+      )
+    ) { (operator, expectedExpr, actualExpr, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(PredicateAssertion(operator, expectedExpr.spel, actualExpr.spel))
+      )
+      val nodesResultsAfterTestRun =
+        prepareNodeResults(List(Map("someNumber" -> null, "someVariable" -> null, "someCollection" -> null)))
+      val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+      results shouldBe List(expectedResult)
+    }
+  }
+
   test("should not evaluate empty assertions") {
     forAll(
       Table(

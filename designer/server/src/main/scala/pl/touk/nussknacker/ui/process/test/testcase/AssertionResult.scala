@@ -19,27 +19,43 @@ object AssertionResult {
     FailedAssertion(s"Expected value different from: [$expectedStr]")
   }
 
-  def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion = {
-    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
-    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
-    FailedAssertion(s"Expected: [$expectedStr] $operator [$actualStr]")
-  }
+  def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion =
+    nullGuard(actual, expected).getOrElse {
+      val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
+      val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
+      FailedAssertion(s"Expected: [$expectedStr] $operator [$actualStr]")
+    }
 
-  def produceFailedHasSizeAssertion(expectedSize: Any, actualSize: Int): FailedAssertion = {
-    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expectedSize)
-    FailedAssertion(s"Expected size: [$expectedStr] but found: [$actualSize]")
-  }
+  def produceFailedHasSizeAssertion(expectedSize: Any, actualValue: Any): FailedAssertion =
+    nullGuard(actualValue, expectedSize).getOrElse {
+      val actualSize = actualValue match {
+        case c: java.util.Collection[_] => c.size()
+        case m: java.util.Map[_, _]     => m.size()
+        case a: Array[_]                => a.length
+        case _                          => -1
+      }
+      val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expectedSize)
+      FailedAssertion(s"Expected size: [$expectedStr] but found: [$actualSize]")
+    }
 
-  def produceFailedContainsAssertion(expected: Any, actual: Any): FailedAssertion = {
-    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
-    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
-    FailedAssertion(s"Expected [$actualStr] to contain [$expectedStr]")
-  }
+  def produceFailedContainsAssertion(expected: Any, actual: Any): FailedAssertion =
+    nullGuard(actual, expected).getOrElse {
+      val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
+      val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
+      FailedAssertion(s"Expected [$actualStr] to contain [$expectedStr]")
+    }
 
-  def produceFailedMatchesAssertion(pattern: Any, actual: Any): FailedAssertion = {
-    val patternStr = SpelValuePrettyPrinter.prettyPrintValue(pattern)
-    val actualStr  = SpelValuePrettyPrinter.prettyPrintValue(actual)
-    FailedAssertion(s"Expected [$actualStr] to match [$patternStr]")
+  def produceFailedMatchesAssertion(pattern: Any, actual: Any): FailedAssertion =
+    nullGuard(actual, pattern).getOrElse {
+      val patternStr = SpelValuePrettyPrinter.prettyPrintValue(pattern)
+      val actualStr  = SpelValuePrettyPrinter.prettyPrintValue(actual)
+      FailedAssertion(s"Expected [$actualStr] to match [$patternStr]")
+    }
+
+  private def nullGuard(actualValue: Any, expectedValue: Any): Option[FailedAssertion] = {
+    if (actualValue == null) Some(FailedAssertion("Actual value is null"))
+    else if (expectedValue == null) Some(FailedAssertion("Expected value is null"))
+    else None
   }
 
 }
