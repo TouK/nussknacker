@@ -106,18 +106,9 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
           AssertionResult.produceFailedComparisonAssertion(">=", expectedValue, actualValue)
         case AssertionOperator.LessThanOrEqual =>
           AssertionResult.produceFailedComparisonAssertion("<=", expectedValue, actualValue)
-        case AssertionOperator.Contains =>
-          AssertionResult.produceFailedContainsAssertion(expectedValue, actualValue)
-        case AssertionOperator.Matches =>
-          AssertionResult.produceFailedMatchesAssertion(expectedValue, actualValue)
-        case AssertionOperator.HasSize =>
-          val actualSize = actualValue match {
-            case c: java.util.Collection[_] => c.size()
-            case m: java.util.Map[_, _]     => m.size()
-            case a: Array[_]                => a.length
-            case _                          => -1
-          }
-          AssertionResult.produceFailedHasSizeAssertion(expectedValue, actualSize)
+        case AssertionOperator.Contains => AssertionResult.produceFailedContainsAssertion(expectedValue, actualValue)
+        case AssertionOperator.Matches  => AssertionResult.produceFailedMatchesAssertion(expectedValue, actualValue)
+        case AssertionOperator.HasSize  => AssertionResult.produceFailedHasSizeAssertion(expectedValue, actualValue)
       }
     }
   }
