@@ -2,6 +2,7 @@ import { css } from "@emotion/css";
 import { Box } from "@mui/material";
 import React, { useCallback, useMemo, memo } from "react";
 
+import type { AssertionOperator } from "../../../../../../actions/nk/testCasesActions";
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
 import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
@@ -14,9 +15,13 @@ import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 import type { Option } from "../../../fragment-input-definition/TypeSelect";
 import { AssertionStatus } from "./AssertionStatus";
 
-export const ASSERTION_SYMBOLS: Record<string, string> = {
+export const ASSERTION_SYMBOLS: Record<AssertionOperator, string> = {
     equals: "==",
     notEquals: "!=",
+    greaterThan: ">",
+    lessThan: "<",
+    greaterThanOrEqual: ">=",
+    lessThanOrEqual: "<=",
 };
 
 const gridContainerStyle = css({
@@ -33,12 +38,12 @@ interface Props {
     uuid: string;
     description?: string;
     expected: ExpressionObj;
-    operator: "equals" | "notEquals";
+    operator: AssertionOperator;
     actual: ExpressionObj;
     variableTypes: VariableTypes;
     onChange: (
         uuid: string,
-        updated: Partial<{ description: string; expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj }>,
+        updated: Partial<{ description: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj }>,
     ) => void;
     testAssertionResult: TestAssertionResult | undefined;
     index: number;
@@ -84,7 +89,7 @@ const AssertionItemComponent = ({
 
     const handleOperatorChange = useCallback(
         (value: string) => {
-            onChange(uuid, { operator: value as "equals" | "notEquals" });
+            onChange(uuid, { operator: value as AssertionOperator });
         },
         [onChange, uuid],
     );

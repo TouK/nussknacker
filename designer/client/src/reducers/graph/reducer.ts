@@ -180,7 +180,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(currentNodes.map((n) => n.id));
-            const adjustedScenario = adjustScenarioData(action.scenario);
+            const scenario: Scenario = { ...state.scenario, ...action.importedScenarioData };
+            const adjustedScenario = adjustScenarioData(scenario);
             const newNodeids = sortBy(adjustedScenario.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 

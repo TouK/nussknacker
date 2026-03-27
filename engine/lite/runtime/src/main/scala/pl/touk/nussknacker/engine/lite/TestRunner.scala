@@ -161,7 +161,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     successfulResults.foreach { result =>
       testServiceInvocationCollector
         .createSinkInvocationCollector(result.nodeId, result.nodeId.value)
-        .collect(result.context, result.result)
+        .foreach(_.collect(result.context, result.result))
     }
   }
 

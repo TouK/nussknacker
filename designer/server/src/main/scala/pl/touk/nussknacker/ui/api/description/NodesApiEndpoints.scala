@@ -106,6 +106,7 @@ import sttp.tapir.EndpointIO.Example
 import sttp.tapir.Schema.{SName, Typeclass}
 import sttp.tapir.SchemaType.{SchemaWithValue, SProduct, SProductField, SString}
 import sttp.tapir.derevo.schema
+import sttp.tapir.integ.cats.codec._
 import sttp.tapir.json.circe.jsonBody
 
 import java.time.Duration
@@ -1776,13 +1777,9 @@ object NodesApiEndpoints {
 
     implicit val enricherMockValidationErrorSchema: Schema[EnricherMockValidationError] =
       Schema.derived[EnricherMockValidationError]
-    implicit val enricherMockErrorsSchema: Schema[NonEmptyList[EnricherMockValidationError]] =
-      Schema.derived[List[EnricherMockValidationError]].as[NonEmptyList[EnricherMockValidationError]]
 
     implicit val assertionValidationErrorSchema: Schema[AssertionValidationError] =
       Schema.derived[AssertionValidationError]
-    implicit val assertionValidationErrorsSchema: Schema[NonEmptyList[AssertionValidationError]] =
-      Schema.derived[List[AssertionValidationError]].as[NonEmptyList[AssertionValidationError]]
     implicit val assertionsErrorSchema: Schema[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] =
       Schema.schemaForMap[AssertionIndex, NonEmptyList[AssertionValidationError]](_.toString)
 

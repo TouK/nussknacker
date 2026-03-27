@@ -40,3 +40,9 @@ export function determineParameterKey(node: NodeType, param: Parameter | UIParam
     const paramName = param?.name;
     return componentId && paramName ? `${componentId}/${paramName}` : null;
 }
+
+/** Returns true if the node's component id matches the component part of the given override key. */
+export function nodeMatchesOverrideKey(node: NodeType, key: string): boolean {
+    const componentId = key.split("/")[0];
+    return determineComponentId(node) === componentId;
+}

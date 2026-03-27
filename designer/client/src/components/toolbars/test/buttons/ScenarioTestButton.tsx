@@ -43,7 +43,6 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
     const isSingleTestCase = testCasePresets.length <= 1;
 
-    const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
     const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testCaseAssertionResult);
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
 

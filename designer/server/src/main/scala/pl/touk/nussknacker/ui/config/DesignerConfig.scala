@@ -163,7 +163,7 @@ object DesignerConfig {
     val assistantSettings =
       resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
     val testCasesSettings =
-      resolvedConfig.getAs[TestCasesSettings]("testCasesSettings").getOrElse(TestCasesSettings.default)
+      resolvedConfig.as[TestCasesSettings]("testCasesSettings")
 
     val limitsConfig = if (resolvedConfig.hasPath("globalLimits")) {
       Try(resolvedConfig.getConfig("globalLimits").getInt("maxActiveScenariosCount")) match {

@@ -6,13 +6,9 @@ import type { NodeOrPropertiesType } from "../../../types/node";
 import { MarkdownStyled } from "./MarkdownStyled";
 import { getProcessName } from "./NodeDetailsContent/selectors";
 
-interface Props {
-    node: NodeOrPropertiesType;
-    handleGetAdditionalInfo: (
-        processName: string,
-        node: NodeOrPropertiesType,
-        controller: AbortController,
-    ) => Promise<AdditionalInfo | null>;
+interface Props<T extends NodeOrPropertiesType> {
+    node: T;
+    handleGetAdditionalInfo: (processName: string, node: NoInfer<T>, controller: AbortController) => Promise<AdditionalInfo | null>;
 }
 
 //Types should match implementations of AdditionalInfo on Backend!
@@ -23,7 +19,7 @@ interface MarkdownAdditionalInfo {
     content: string;
 }
 
-export default function AdditionalInfoBox(props: Props): React.JSX.Element {
+export default function AdditionalInfoBox<T extends NodeOrPropertiesType>(props: Props<T>): React.JSX.Element {
     const { node, handleGetAdditionalInfo } = props;
     const processName = useAppSelector(getProcessName);
 
@@ -34,7 +30,7 @@ export default function AdditionalInfoBox(props: Props): React.JSX.Element {
     const [debouncedNode] = useDebouncedValue(node, 1000);
 
     const getAdditionalInfo = useCallback(
-        (processName: string, debouncedNode: NodeOrPropertiesType) => {
+        (processName: string, debouncedNode: T) => {
             const controller = new AbortController();
             handleGetAdditionalInfo(processName, debouncedNode, controller).then((data) => {
                 // signal should cancel request, but for some reason it doesn't in dev
