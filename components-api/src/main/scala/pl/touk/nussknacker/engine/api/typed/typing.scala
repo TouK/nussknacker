@@ -567,12 +567,12 @@ object typing {
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
       Option(typingResult)
         .filter(_.canBeLooselyAssignedTo(Typed.fromDetailedType[T]))
-        .map(new TypingResultTypedValue(_))
+        .map(TypingResultTypedValue(_))
     }
 
   }
 
-  class TypingResultTypedValue[T](typingResult: TypingResult) {
+  case class TypingResultTypedValue[T](typingResult: TypingResult) {
     def valueOpt: Option[T] = typingResult.valueOpt.asInstanceOf[Option[T]]
   }
 

@@ -234,6 +234,10 @@ object SpelExpressionTypingError {
       override def message: String = s"Bad '$operator' operator construction"
     }
 
+    case class OperatorNullOperandError(operator: String) extends OperatorError {
+      override def message: String = s"Operator '$operator' cannot be used with a null operand"
+    }
+
     case class DivisionByZeroError private (expression: String) extends OperatorError {
       override def message: String = s"Division by zero: $expression"
     }
