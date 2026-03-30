@@ -1,5 +1,5 @@
-import { EditOutlined } from "@mui/icons-material";
-import { Box, FormHelperText, InputBase, styled, Typography } from "@mui/material";
+import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined } from "@mui/icons-material";
+import { Box, Divider, FormHelperText, InputBase, styled, Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +13,7 @@ import { WindowKind } from "../../../../../../windowManager/WindowKind";
 import { StyledButton } from "../../../../styledButton";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
+import { useTestCaseDelete } from "./useTestCaseDelete";
 import { useTestCaseNameEdit } from "./useTestCaseNameEdit";
 
 export const TestCaseSelect = () => {
@@ -26,6 +27,15 @@ export const TestCaseSelect = () => {
     const { isEditing, editValue, editErrorMessage, setEditValue, startEditing, handleBlur, handleKeyDown } = useTestCaseNameEdit(
         activeTestCaseOption?.label,
     );
+
+    const {
+        isConfirming,
+        isDisabled: isDeleteDisabled,
+        disabledTooltip,
+        startDeleting,
+        cancelDelete,
+        confirmDelete,
+    } = useTestCaseDelete(activeTestCaseOption?.value, testCaseOptions.length, isEditing);
 
     const { open } = useWindows();
     const onDisplayEnterpriseInfo = useCallback(() => {
@@ -58,16 +68,40 @@ export const TestCaseSelect = () => {
             />
             {loggedUser.isWriter() && (
                 <>
-                    <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
-                        <StyledButton
-                            data-testid="edit-test-case-name"
-                            onClick={startEditing}
-                            disabled={isEditing}
-                            sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-                        >
-                            <EditOutlined fontSize="small" />
-                        </StyledButton>
-                    </InfoTooltip>
+                    {isConfirming ? (
+                        <>
+                            <InfoTooltip title={t("testCaseDelete.confirm", "Confirm deletion")} variant={"hover"} enterDelay={500}>
+                                <StyledButton data-testid="confirm-delete-test-case" onClick={confirmDelete}>
+                                    <CheckOutlined fontSize="small" />
+                                </StyledButton>
+                            </InfoTooltip>
+                            <InfoTooltip title={t("testCaseDelete.cancel", "Cancel deletion")} variant={"hover"} enterDelay={500}>
+                                <StyledButton data-testid="cancel-delete-test-case" onClick={cancelDelete}>
+                                    <CloseOutlined fontSize="small" />
+                                </StyledButton>
+                            </InfoTooltip>
+                        </>
+                    ) : (
+                        <>
+                            <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
+                                <StyledButton data-testid="edit-test-case-name" onClick={startEditing} disabled={isEditing}>
+                                    <EditOutlined fontSize="small" />
+                                </StyledButton>
+                            </InfoTooltip>
+                            <InfoTooltip
+                                title={disabledTooltip ?? t("testCaseDelete.delete", "Delete test case")}
+                                variant={"hover"}
+                                enterDelay={500}
+                            >
+                                <span>
+                                    <StyledButton data-testid="delete-test-case" onClick={startDeleting} disabled={isDeleteDisabled}>
+                                        <DeleteOutlined fontSize="small" />
+                                    </StyledButton>
+                                </span>
+                            </InfoTooltip>
+                        </>
+                    )}
+                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                     <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
                         <StyledButton
                             data-testid="save-as-test-case"

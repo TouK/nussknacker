@@ -168,6 +168,53 @@ describe("Test cases", () => {
         cy.get('[data-testid="window"]').should("not.contain.text", "Test case 1");
     });
 
+    it("should delete a test case", () => {
+        cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
+        cy.layoutScenario();
+
+        cy.openNodeWindow("Log");
+        cy.openNodeDetailsTestingTab();
+
+        // delete is disabled when only one test case exists
+        cy.get('[data-testid="delete-test-case"]').should("be.disabled");
+
+        // add a second test case
+        const secondTestCaseName = "Test case 2";
+        openSaveAsDialog();
+        cy.contains('[data-testid="window"]', /save as/i)
+            .find("input")
+            .clear()
+            .type(secondTestCaseName);
+        cy.contains('[data-testid="window"]', /save as/i)
+            .contains("button", /save as/i)
+            .click();
+
+        cy.get('[data-testid="delete-test-case"]').should("not.be.disabled");
+
+        // clicking delete enters confirm mode
+        clickDeleteTestCase();
+        cy.get('[data-testid="delete-test-case"]').should("not.exist");
+        cy.get('[data-testid="confirm-delete-test-case"]').should("be.visible");
+        cy.get('[data-testid="cancel-delete-test-case"]').should("be.visible");
+
+        // cancel returns to normal state
+        cancelDeleteTestCase();
+        cy.get('[data-testid="delete-test-case"]').should("be.visible");
+        cy.get('[data-testid="confirm-delete-test-case"]').should("not.exist");
+
+        // confirm deletion — active is "Test case 2", should switch to "Test case 1"
+        clickDeleteTestCase();
+        confirmDeleteTestCase();
+
+        cy.get('[data-testid="window"]').should("not.contain.text", secondTestCaseName);
+        cy.get('[data-testid="window"]').contains("Test case 1").should("be.visible");
+
+        // back to one test case — delete disabled again
+        cy.get('[data-testid="delete-test-case"]').should("be.disabled");
+    });
+
     it("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
@@ -262,6 +309,18 @@ const openSaveAsDialog = () => {
 
 const openEditNameInput = () => {
     cy.get('[data-testid="edit-test-case-name"]').click();
+};
+
+const clickDeleteTestCase = () => {
+    cy.get('[data-testid="delete-test-case"]').click();
+};
+
+const confirmDeleteTestCase = () => {
+    cy.get('[data-testid="confirm-delete-test-case"]').click();
+};
+
+const cancelDeleteTestCase = () => {
+    cy.get('[data-testid="cancel-delete-test-case"]').click();
 };
 
 const expandAssertionItem = (nodeId: string) => {

@@ -2,7 +2,13 @@ import type { WithUuid } from "../../components/graph/node-modal/appendUuid";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { TestCase } from "../../reducers/graph/testCase";
-import { getTestCaseAssertions, getTestCaseAssertionsForNode, getTestData, getTestCaseMocks } from "../../reducers/selectors/testCases";
+import {
+    getTestCaseAssertions,
+    getTestCaseAssertionsForNode,
+    getTestCases,
+    getTestData,
+    getTestCaseMocks,
+} from "../../reducers/selectors/testCases";
 import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
 import { changeActiveTestCase } from "./testingActions";
@@ -16,7 +22,8 @@ export type Mocks = Record<string, Mock>;
 
 export type TestCasesActions =
     | { type: "UPDATE_TEST_CASE"; testCaseId: string; updates: Omit<Partial<TestCase>, "id"> }
-    | { type: "ADD_TEST_CASE"; testCase: TestCase };
+    | { type: "ADD_TEST_CASE"; testCase: TestCase }
+    | { type: "REMOVE_TEST_CASE"; testCaseId: string };
 
 export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<Assertion>[]) => WithUuid<Assertion>[]): ThunkAction {
     return (dispatch, getState) => {
@@ -90,5 +97,20 @@ export function addTestCase(testCase: TestCase): ThunkAction {
             testCase,
         });
         dispatch(changeActiveTestCase(testCase.id));
+    };
+}
+
+export function removeTestCase(testCaseId: string): ThunkAction {
+    return (dispatch, getState) => {
+        const testCases = getTestCases(getState());
+        const deletedIndex = testCases.findIndex((tc) => tc.id === testCaseId);
+        const remaining = testCases.filter((tc) => tc.id !== testCaseId);
+        const nextActive = remaining[deletedIndex] ?? remaining[deletedIndex - 1];
+
+        dispatch({ type: "REMOVE_TEST_CASE", testCaseId });
+
+        if (nextActive) {
+            dispatch(changeActiveTestCase(nextActive.id));
+        }
     };
 }
