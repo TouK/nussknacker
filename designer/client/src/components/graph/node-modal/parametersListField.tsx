@@ -18,7 +18,6 @@ export type ParametersListFieldProps = ParametersListProps & {
 };
 
 function pickFieldWrapper(paramKey: ParamKeys) {
-    console.debug(`pickFieldWrapper: ${paramKey}`);
     switch (paramKey) {
         case OverrideKeys.SourceEndpoint:
             return EndpointFieldWrapper;

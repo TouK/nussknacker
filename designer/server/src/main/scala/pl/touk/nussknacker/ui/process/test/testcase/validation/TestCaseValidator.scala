@@ -19,36 +19,55 @@ import pl.touk.nussknacker.restmodel.validation.testcase.{
   ScenarioTestCasesValidationErrors
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionsCompiler
 
 class TestCaseValidator(
     enricherMockValidator: EnricherMockValidator,
     assertionValidator: AssertionValidator,
+    testCasesSettings: TestCasesSettings,
 ) {
 
   import TestCaseValidator._
+
+  def validateTestCaseBeforeResolving(testCases: List[TestCase]): ValidationResult = {
+    (for {
+      _ <- validateNameUniqueness(testCases)
+      _ <- validateMultipleTestCasesAvailable(testCases)
+    } yield ())
+      .fold(
+        globalError => ValidationResult.errors(globalErrors = List(globalError)),
+        _ => ValidationResult.success
+      )
+  }
+
+  private def validateNameUniqueness(testCases: List[TestCase]): Either[UIGlobalError, Unit] = {
+    val duplicateNames =
+      testCases.groupBy(_.name).collect { case (name, occurrences) if occurrences.size > 1 => name }.toList
+    Either.cond(
+      duplicateNames.isEmpty,
+      (),
+      errors.duplicateTestCaseNames(duplicateNames)
+    )
+  }
+
+  private def validateMultipleTestCasesAvailable(testCases: List[TestCase]): Either[UIGlobalError, Unit] = {
+    Either.cond(
+      testCasesSettings.multipleEnabled || testCases.size <= 1,
+      (),
+      errors.multipleTestCasesNotAvailable
+    )
+  }
 
   def validateScenarioTestCases(
       nodes: List[NodeData],
       nodesTyping: Map[String, TestCaseValidator.NodeTyping],
       testCases: List[TestCase],
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ValidationResult = {
-    val globalErrors              = validateNameUniqueness(testCases)
     val testCasesValidationErrors = validateScenarioTestCasesByNode(nodes, nodesTyping, testCases)
     ValidationResult.errors(
-      globalErrors = globalErrors,
       testCasesValidationErrors = Option.when(testCasesValidationErrors.nonEmpty)(testCasesValidationErrors),
     )
-  }
-
-  private def validateNameUniqueness(testCases: List[TestCase]): List[UIGlobalError] = {
-    val duplicateNames =
-      testCases.groupBy(_.name).collect { case (name, occurrences) if occurrences.size > 1 => name }.toList
-    Option
-      .when(duplicateNames.nonEmpty) {
-        errors.duplicateTestCaseNames(duplicateNames)
-      }
-      .toList
   }
 
   private def validateScenarioTestCasesByNode(
@@ -133,14 +152,15 @@ object TestCaseValidator {
     val empty = NodeTyping(Map.empty, Map.empty)
   }
 
-  def apply(modelData: ModelData): TestCaseValidator = {
+  def apply(modelData: ModelData, testCasesSettings: TestCasesSettings): TestCaseValidator = {
     val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
     val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
     new TestCaseValidator(
       new EnricherMockValidator(expressionCompiler, globalVariablesPreparer),
       new AssertionValidator(
         new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
-      )
+      ),
+      testCasesSettings,
     )
   }
 
@@ -159,6 +179,19 @@ object TestCaseValidator {
         nodeIds = List.empty,
       )
     }
+
+    def multipleTestCasesNotAvailable: UIGlobalError =
+      UIGlobalError(
+        error = NodeValidationError(
+          typ = "MultipleTestCasesDisabled",
+          message = "Multiple test cases are not available",
+          description = "Multiple test cases feature is disabled.",
+          fieldName = None,
+          errorType = NodeValidationErrorType.SaveNotAllowed,
+          details = None,
+        ),
+        nodeIds = List.empty,
+      )
 
   }
 
