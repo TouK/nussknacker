@@ -86,12 +86,14 @@ object ProcessingTypeServices {
     val nodeValidator = new NodeValidator(
       processingTypeData.designerModelData.modelData,
       scenarioCompilationDependenciesResource,
-      fragmentRepository
+      fragmentRepository,
+      designerConfig.testCasesSettings,
     )
     val scenarioValidator = new UIProcessValidator(
       processingType = processingTypeData.processingType,
       validator = ProcessValidator.default(processingTypeData.designerModelData.modelData),
-      testCaseValidator = TestCaseValidator(processingTypeData.designerModelData.modelData),
+      testCaseValidator =
+        TestCaseValidator(processingTypeData.designerModelData.modelData, designerConfig.testCasesSettings),
       scenarioProperties = processingTypeData.designerModelData.scenarioPropertiesConfig,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
