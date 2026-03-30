@@ -1,5 +1,5 @@
 import { EditOutlined } from "@mui/icons-material";
-import { Box, InputBase, styled, Tooltip, Typography } from "@mui/material";
+import { Box, FormHelperText, InputBase, styled, Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -135,7 +135,7 @@ const TestCaseField = ({
 
     if (isEditing) {
         return (
-            <Tooltip open={!!editErrorMessage} title={editErrorMessage ?? ""} placement="bottom-start">
+            <Box position="relative" height="100%">
                 <StyledTestCaseInput
                     autoFocus
                     hasError={!!editErrorMessage}
@@ -145,7 +145,16 @@ const TestCaseField = ({
                     onKeyDown={onEditKeyDown}
                     inputProps={{ "aria-label": "edit test case name" }}
                 />
-            </Tooltip>
+                {editErrorMessage && (
+                    <FormHelperText
+                        error
+                        title={editErrorMessage}
+                        sx={{ position: "fixed", mt: 0.5, zIndex: "tooltip", whiteSpace: "nowrap" }}
+                    >
+                        {editErrorMessage}
+                    </FormHelperText>
+                )}
+            </Box>
         );
     }
 
