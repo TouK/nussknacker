@@ -136,7 +136,7 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
       Typed.fromDetailedType[java.util.Map[Any, String]],
       Typed.fromDetailedType[java.util.Map[String, String]],
       Valid(NoConvertionIsNeeded),
-      Invalid(NonEmptyList.of("Key types of Maps Unknown and String are not equals"))
+      Invalid(NonEmptyList.of("Key types of Maps Unknown and String are not equal"))
     ),
     (
       Typed.fromDetailedType[java.util.Map[String, String]],
