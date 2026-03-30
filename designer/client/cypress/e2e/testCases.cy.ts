@@ -110,6 +110,42 @@ describe("Test cases", () => {
         verifyMockData('{\n  "foo": 0\n}');
     });
 
+    it("should add a new test case via Save As dialog", () => {
+        cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
+        cy.layoutScenario();
+
+        cy.openNodeWindow("Log");
+        cy.openNodeDetailsTestingTab();
+
+        openSaveAsDialog();
+
+        cy.contains('[data-testid="window"]', /save as/i).as("saveAsDialog");
+
+        cy.get("@saveAsDialog").find("input").should("have.value", "Copy: Test case 1");
+
+        cy.get("@saveAsDialog").find("input").clear();
+        cy.get("@saveAsDialog")
+            .contains("button", /save as/i)
+            .should("be.disabled");
+
+        cy.get("@saveAsDialog").find("input").type("Test case 1");
+        cy.get("@saveAsDialog")
+            .contains("button", /save as/i)
+            .should("be.disabled");
+
+        const newTestCaseName = "My New Test Case";
+        cy.get("@saveAsDialog").find("input").clear().type(newTestCaseName);
+        cy.get("@saveAsDialog")
+            .contains("button", /save as/i)
+            .should("not.be.disabled")
+            .click();
+
+        cy.get('[data-testid="window"]').should("not.contain.text", "Save as");
+        cy.get('[data-testid="window"]').contains(newTestCaseName).should("be.visible");
+    });
+
     it("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
@@ -196,6 +232,10 @@ const verifyMockData = (mockValue: string) => {
             expect(aceEditor.getValue()).to.eq(mockValue);
         });
     });
+};
+
+const openSaveAsDialog = () => {
+    cy.get('[data-testid="save-as-test-case"]').click();
 };
 
 const expandAssertionItem = (nodeId: string) => {

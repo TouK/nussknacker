@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.test.testcase
 import cats.data.NonEmptyList
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import enumeratum.EnumEntry.LowerCamelcase
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.deriveEncoder
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -13,23 +14,15 @@ final case class TestCases(list: NonEmptyList[TestCase])
 
 object TestCases {
 
-  // TODO: remove encoder and switch decoder to use "list" and fallback to "value" when FE is updated to use "list" field
-
-  implicit val encoder: Encoder[TestCases] = Encoder.instance { testCases =>
-    Json.obj(
-      "list" -> testCases.list.asJson,
-      // Return "value" for backward compatibility
-      "value" -> testCases.list.head.asJson
-    )
-  }
+  implicit val encoder: Encoder[TestCases] = deriveEncoder
 
   implicit val decoder: Decoder[TestCases] = Decoder.instance { cursor =>
-    val valueCursor = cursor.downField("value")
-    // For backward compatibility, if "value" field is present, try to decode a single test case from "value" field
-    if (valueCursor.succeeded) {
-      valueCursor.as[TestCase].map(testCase => TestCases(NonEmptyList.one(testCase)))
+    val listCursor = cursor.downField("list")
+    if (listCursor.succeeded) {
+      listCursor.as[NonEmptyList[TestCase]].map(TestCases(_))
     } else {
-      cursor.downField("list").as[NonEmptyList[TestCase]].map(TestCases(_))
+      // For backward compatibility, if "list" field is not present, try to decode a single test case from "value" field
+      cursor.downField("value").as[TestCase].map(testCase => TestCases(NonEmptyList.one(testCase)))
     }
   }
 
@@ -77,8 +70,12 @@ object Assertion {
   sealed trait AssertionOperator extends EnumEntry with LowerCamelcase
 
   object AssertionOperator extends Enum[AssertionOperator] with CirceEnum[AssertionOperator] {
-    case object Equals    extends AssertionOperator
-    case object NotEquals extends AssertionOperator
+    case object Equals             extends AssertionOperator
+    case object NotEquals          extends AssertionOperator
+    case object GreaterThan        extends AssertionOperator
+    case object LessThan           extends AssertionOperator
+    case object GreaterThanOrEqual extends AssertionOperator
+    case object LessThanOrEqual    extends AssertionOperator
 
     override def values: IndexedSeq[AssertionOperator] = findValues
   }

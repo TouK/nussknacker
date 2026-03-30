@@ -1,11 +1,15 @@
 package pl.touk.nussknacker.ui.api.testing
 
+import cats.data.NonEmptyList
+import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.parser
 import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.hamcrest.Matchers.{containsString, equalTo, nullValue}
+import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
@@ -15,9 +19,10 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.test.{
+  EitherValuesDetailedMessage,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLoggingIfValidationFails,
@@ -32,8 +37,12 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformMultipleTestCasesRequest,
+  PerformTestCaseRequest
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
+import sttp.model.sse.ServerSentEvent
 
 import java.util.UUID
 
@@ -49,9 +58,14 @@ class ScenarioTestingApiHttpServiceSpec
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
     with Matchers
+    with OptionValues
+    with EitherValuesDetailedMessage
     with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  override def designerRawConfig: Config = super.designerRawConfig
+    .withValue("testCasesSettings.multipleEnabled", ConfigValueFactory.fromAnyRef(true))
 
   "The endpoint for adhoc validate should" - {
     "return OK even if non-existing source component was used" in {
@@ -529,6 +543,105 @@ class ScenarioTestingApiHttpServiceSpec
         .Then()
         .statusCode(400)
         .equalsPlainBody("Problem in sample 2 detected: source with id 'unknown' doesn't exist in the scenario")
+    }
+  }
+
+  "The endpoint for performing multiple test cases should" - {
+    "stream results for each test case" in {
+      val validInputs =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+          |]""".stripMargin
+      val invalidInputs =
+        """[
+          |  {"sourceId":"unknownSource","variables":{"input":["ala"]}}
+          |]""".stripMargin
+      val completedTestCase1 = TestCase(
+        id = UUID.randomUUID(),
+        name = "test case 1",
+        inputs = validInputs,
+        mocks = Map.empty,
+        assertions = Map(
+          NodeId("endsuffix") -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#records[0].input[0]".spel)
+          )
+        )
+      )
+      val failingTestCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "invalid test case",
+        inputs = invalidInputs,
+        mocks = Map.empty,
+        assertions = Map.empty
+      )
+      val completedTestCase2 = TestCase(
+        id = UUID.randomUUID(),
+        name = "test case 2",
+        inputs = validInputs,
+        mocks = Map.empty,
+        assertions = Map(
+          NodeId("endsuffix") -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'notAla'".spel, "#records[0].input[0]".spel)
+          )
+        )
+      )
+
+      val responseBody = given()
+        .applicationState {
+          createSavedScenario(testCaseScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          PerformMultipleTestCasesRequest(
+            testCaseScenario.toScenarioGraph,
+            NonEmptyList.of(completedTestCase1, failingTestCase, completedTestCase2)
+          ).asJson.spaces2
+        )
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performMultipleTestCases")
+        .Then()
+        .statusCode(200)
+        .extract()
+        .asString()
+
+      val parsedEvents = responseBody
+        .split("\n\n")
+        .map(block => ServerSentEvent.parse(block.split("\n").toList))
+        .filter(_.data.isDefined)
+        .map(event => parser.parse(event.data.value).rightValue)
+        .toList
+
+      parsedEvents should have size 3
+
+      val eventById = parsedEvents
+        .map(json => json.hcursor.downField("testCaseId").as[TestCaseId].rightValue -> json)
+        .toMap
+
+      val testCase1Event = eventById(completedTestCase1.id)
+      testCase1Event.hcursor.downField("type").as[String].rightValue shouldBe "Completed"
+      testCase1Event.hcursor
+        .downField("result")
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downArray
+        .downField("type")
+        .as[String]
+        .rightValue shouldBe "SuccessfulAssertion"
+
+      val testCase2Event = eventById(completedTestCase2.id)
+      testCase2Event.hcursor.downField("type").as[String].rightValue shouldBe "Completed"
+      testCase2Event.hcursor
+        .downField("result")
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downArray
+        .downField("type")
+        .as[String]
+        .rightValue shouldBe "FailedAssertion"
+
+      val errorEvent = eventById(failingTestCase.id)
+      errorEvent.hcursor.downField("type").as[String].rightValue shouldBe "Error"
+      errorEvent.hcursor.downField("error").as[String].rightValue should include("unknownSource")
     }
   }
 

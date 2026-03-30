@@ -650,7 +650,7 @@ export class HttpService {
 
     getPropertiesAdditionalInfo(
         processName: string,
-        processProperties: NodeType,
+        processProperties: PropertiesType,
         controller?: AbortController,
     ): Promise<AdditionalInfo | null> {
         return api
@@ -837,11 +837,14 @@ export class HttpService {
         return promise;
     }
 
-    importProcess(processName: ProcessName, file: File) {
+    importScenario(scenarioName: ProcessName, file: File) {
         const data = new FormData();
         data.append("process", file);
 
-        const promise = api.post(`/processes/import/${encodeURIComponent(processName)}`, data);
+        const promise = api.post<Pick<Scenario, "scenarioGraph" | "validationResult">>(
+            `/processes/import/${encodeURIComponent(scenarioName)}`,
+            data,
+        );
         promise.catch((error) => {
             this.#addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true);
         });

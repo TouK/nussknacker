@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, NkGlobalParameters, RuntimeCtx}
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
@@ -29,10 +28,13 @@ import pl.touk.nussknacker.engine.process.compiler.{
   FlinkProcessCompilerDataFactory,
   UsedNodes
 }
-import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.resultcollector.{
+  ProductionServiceInvocationCollector,
+  ResultCollector,
+  SinkInvocationCollector
+}
 import pl.touk.nussknacker.engine.splittedgraph.{splittednode, SplittedNodesCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
-import pl.touk.nussknacker.engine.testmode.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -255,7 +257,7 @@ class FlinkProcessRegistrar(
     ): Map[BranchEndDefinition, BranchEndData] =
       processPart match {
         case part @ SinkPart(sink: FlinkSink, _, contextBefore, _) =>
-          registerSinkPark(start, part, sink, contextBefore)
+          registerSinkPart(start, part, sink, contextBefore)
         case part: SinkPart =>
           // TODO: fixme "part.obj" is not stringified well
           //      (eg. Scenario can only use flink sinks, instead given: pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink$@21220fd7)
@@ -264,7 +266,7 @@ class FlinkProcessRegistrar(
           registerCustomNodePart(start, part)
       }
 
-    def registerSinkPark(
+    def registerSinkPart(
         start: SingleOutputStreamOperator[Context],
         part: SinkPart,
         sink: FlinkSink,
@@ -272,34 +274,48 @@ class FlinkProcessRegistrar(
     ): Map[BranchEndDefinition, BranchEndData] = {
       val typeInformationForIR  = InterpretationResultTypeInformation.create(contextBefore)
       val typeInformationForCtx = TypeInformationDetection.instance.forContext(contextBefore)
-      val nodeComponentInfo     = nodeComponentInfoFrom(part)
+      val typeInformationForPreparedTestValue =
+        TypeInformationDetection.instance.forValueWithContext[AnyRef](
+          contextBefore,
+          TypeInformationDetection.instance.forClass[AnyRef]
+        )
+      val nodeComponentInfo = nodeComponentInfoFrom(part)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = sideOutput(
         registerInterpretationPart(start, part, SinkInterpretationName, nodeComponentInfo),
         new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR)
       )
         .map((value: InterpretationResult) => value.finalContext, typeInformationForCtx)
-      val customNodeContext = nodeContext(nodeComponentInfo, Left(contextBefore))
-      val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
-      // TODO: maybe this logic should be moved to compiler instead?
-      val withSinkAdded = resultCollector match {
-        case testResultCollector: TestServiceInvocationCollector =>
-          val typ                 = part.node.data.ref.typ
-          val collectingSink      = testResultCollector.createSinkInvocationCollector(part.id, typ)
-          val prepareTestValueFun = sink.prepareTestValueFunction
-          withValuePrepared
-            .map(
-              (ds: ValueWithContext[sink.Value]) => ds.map(prepareTestValueFun),
-              customNodeContext.valueWithContextInfo.forUnknown
-            )
-            .sinkTo(
-              new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id, part.node.data.name)
-            )
-        case _ =>
-          sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
+      val valuePreparingNodeContext = nodeContext(nodeComponentInfo, Left(contextBefore))
+      val withValuePrepared         = sink.prepareValue(afterInterpretation, valuePreparingNodeContext)
+      def registerCollectingSink(collectingSink: SinkInvocationCollector, uid: String, nameSuffix: String) = {
+        val prepareTestValueFun = sink.prepareTestValueFunction
+        withValuePrepared
+          .map(
+            (ds: ValueWithContext[sink.Value]) => ds.map(prepareTestValueFun),
+            typeInformationForPreparedTestValue
+          )
+          .sinkTo(
+            new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id, part.node.data.name)
+          )
+          .uid(uid)
+          .name(operatorName(compilerData.jobData, part.node, nameSuffix))
       }
-
-      withSinkAdded.name(operatorName(compilerData.jobData, part.node, "sink"))
+      def registerSink() =
+        sink
+          .registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
+          .uid(part.id.value)
+          .name(operatorName(compilerData.jobData, part.node, "sink"))
+      // TODO: maybe this logic should be moved to compiler instead?
+      resultCollector.createSinkInvocationCollector(part.id, part.node.data.name.value) match {
+        case Some(collectingSink) if resultCollector.shouldRegisterSinkInAdditionToCollector =>
+          registerCollectingSink(collectingSink, s"${part.id.value}-$$collecting", "sinkCollecting")
+          registerSink()
+        case Some(collectingSink) =>
+          registerCollectingSink(collectingSink, part.id.value, "sink")
+        case None =>
+          registerSink()
+      }
       Map()
     }
 
@@ -369,7 +385,7 @@ class FlinkProcessRegistrar(
             TimeUnit.MILLISECONDS,
             asyncExecutionContextPreparer.bufferSize
           )
-          .setUidAndName(node.id + "-$async", node.data.name.value + "-async")
+          .uid(node.id.value + "-$async")
       } else {
         val ti = InterpretationResultTypeInformation.create(outputContexts)
         stream.flatMap(

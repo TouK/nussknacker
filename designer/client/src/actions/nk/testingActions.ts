@@ -3,13 +3,13 @@ import type { ProcessName } from "src/components/Process/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type { ResultsWithCountsDto, TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { NodeAssertionResults, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
 import type { TestCase } from "../../reducers/graph/testCase";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { checkPendingChanges } from "./checkPendingChanges";
-import { displayProcessCounts } from "./displayProcessCounts";
+import { clearProcessCounts, displayProcessCounts } from "./displayProcessCounts";
 
 export function testProcessFromFile(testDataFile: File): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
@@ -44,7 +44,7 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
 
 export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: boolean): ThunkAction {
     const testData = isMockEnabled ? testCase : { ...testCase, mocks: {} };
-    return wrapWithTestAction((scenarioName, scenarioGraph) =>
+    return wrapWithTestCaseAction(testCase.id, (scenarioName, scenarioGraph) =>
         HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testData).then(({ data }) => ({
             testResults: data,
         })),
@@ -59,31 +59,39 @@ export type TestsActions =
           type: "TEST_RESULTS_FAILED";
       }
     | {
+          type: "TEST_CASE_ASSERTION_RESULTS_FAILED";
+          testCaseId: string;
+      }
+    | {
           type: "DISPLAY_TEST_RESULTS_DETAILS";
           testResults: TestResultsDto;
           testData?: SourceWithParametersTest;
           testingDataRecords?: TestingDataRecords[];
       }
     | {
+          type: "SET_TEST_CASE_ASSERTION_RESULTS_LOADING";
+          testCaseId: string;
+      }
+    | {
           type: "DISPLAY_TEST_ASSERTIONS_RESULTS";
-          assertionsResults: TestAssertionResults;
+          testCaseId: string;
+          assertionsResults: NodeAssertionResults;
       }
     | {
           type: "CLEAR_TEST_ASSERTIONS_RESULTS";
-      };
+      }
+    | { type: "CHANGE_ACTIVE_TEST_CASE"; testCaseId: string };
 
-function wrapWithTestAction(
-    fn: (
-        processName: ProcessName,
-        scenarioGraph: ScenarioGraph,
-    ) => Promise<{
-        assertionsResults?: TestAssertionResults;
-        testResults: ResultsWithCountsDto;
-        testData?: SourceWithParametersTest;
-    }>,
-): ThunkAction {
+type TestFn = (
+    processName: ProcessName,
+    scenarioGraph: ScenarioGraph,
+) => Promise<{
+    testResults: ResultsWithCountsDto;
+    testData?: SourceWithParametersTest;
+}>;
+
+function wrapWithTestAction(fn: TestFn): ThunkAction {
     return async (dispatch, getState) => {
-        dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
         dispatch({ type: "TEST_RESULTS_LOADING" });
         try {
             await dispatch(checkPendingChanges());
@@ -91,11 +99,29 @@ function wrapWithTestAction(
             const state = getState();
             const scenarioGraph = getScenarioGraph(state);
             const processName = getProcessName(state);
-
             const { testResults, testData } = await fn(processName, scenarioGraph);
             dispatch(testingActions(testResults, testData));
         } catch {
             dispatch({ type: "TEST_RESULTS_FAILED" });
+        }
+    };
+}
+
+function wrapWithTestCaseAction(testCaseId: string, fn: TestFn): ThunkAction {
+    return async (dispatch, getState) => {
+        dispatch({ type: "TEST_RESULTS_LOADING" });
+        try {
+            await dispatch(checkPendingChanges());
+
+            const state = getState();
+            const scenarioGraph = getScenarioGraph(state);
+            const processName = getProcessName(state);
+            const { testResults, testData } = await fn(processName, scenarioGraph);
+            dispatch(testingActions(testResults, testData));
+            dispatch(displayTestAssertionsResults(testCaseId, testResults.assertionsResults));
+        } catch {
+            dispatch({ type: "TEST_RESULTS_FAILED" });
+            dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId });
         }
     };
 }
@@ -108,17 +134,38 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
     };
 }
 
-export function displayTestAssertionsResults(assertionsResults: TestAssertionResults): Action {
+export function setTestCaseAssertionResultsLoading(testCaseId: string): Action {
+    return {
+        type: "SET_TEST_CASE_ASSERTION_RESULTS_LOADING",
+        testCaseId,
+    };
+}
+
+export function displayTestAssertionsResults(testCaseId: string, assertionsResults: NodeAssertionResults): Action {
     return {
         type: "DISPLAY_TEST_ASSERTIONS_RESULTS",
+        testCaseId,
         assertionsResults,
     };
 }
 
-function testingActions({ counts, results, assertionsResults }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
+export function changeActiveTestCase(testCaseId: string): ThunkAction {
+    return (dispatch) => {
+        dispatch(clearProcessCounts());
+        dispatch({
+            type: "CHANGE_ACTIVE_TEST_CASE",
+            testCaseId,
+        });
+    };
+}
+
+function testingActions({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
-        dispatch(displayTestAssertionsResults(assertionsResults));
     };
+}
+
+export function clearTestAssertionsResults(): Action {
+    return { type: "CLEAR_TEST_ASSERTIONS_RESULTS" };
 }

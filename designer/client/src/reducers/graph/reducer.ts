@@ -27,6 +27,7 @@ import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import { initialTestCasesState, testCaseReducer } from "./testCase";
+import type { TestingState } from "./testing";
 import { initialTestingState, testingReducer } from "./testing";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
@@ -136,6 +137,36 @@ const adjustScenarioData = flow(
     }),
 );
 
+type NodeTransition = NonNullable<NonNullable<GraphState["testing"]["testResults"]>["nodeTransitionResults"]>[number];
+
+function withSyntheticTransitions(
+    state: GraphState,
+    newState: GraphState,
+    buildSynthetic: (existing: NodeTransition[]) => NodeTransition[],
+): GraphState {
+    const existing = state.testing.testResults?.nodeTransitionResults;
+    if (!existing?.length) return newState;
+    const synthetic = buildSynthetic(existing);
+    if (!synthetic.length) return newState;
+    return {
+        ...newState,
+        testing: {
+            ...newState.testing,
+            testResults: {
+                ...newState.testing.testResults,
+                nodeTransitionResults: [...existing, ...synthetic],
+            },
+        },
+    };
+}
+
+const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph, testing: TestingState): string | undefined => {
+    const list = actionGraph?.testCases?.list ?? stateGraph?.testCases?.list ?? [];
+    const existsInList = (id: string | undefined) => list.some((tc) => tc.id === id);
+
+    return existsInList(testing.activeTestCaseId) ? testing.activeTestCaseId : list[0]?.id;
+};
+
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): GraphState => {
     const currentNodes = state.scenario.scenarioGraph.nodes;
     const currentEdges = state.scenario.scenarioGraph.edges;
@@ -149,12 +180,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(currentNodes.map((n) => n.id));
-            const adjustedScenario = adjustScenarioData(action.scenario);
+            const scenario: Scenario = { ...state.scenario, ...action.importedScenarioData };
+            const adjustedScenario = adjustScenarioData(scenario);
             const newNodeids = sortBy(adjustedScenario.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
-            const activeTestCaseId =
-                adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id;
+            const activeTestCaseId = getDefaultActiveTestCaseId(
+                adjustedScenario.scenarioGraph,
+                state.scenario.scenarioGraph,
+                state.testing,
+            );
 
             return {
                 ...state,
@@ -180,8 +215,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "DISPLAY_PROCESS": {
             const adjustedScenario = adjustScenarioData(action.scenario);
-            const activeTestCaseId =
-                adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id;
+            const activeTestCaseId = getDefaultActiveTestCaseId(
+                adjustedScenario.scenarioGraph,
+                state.scenario.scenarioGraph,
+                state.testing,
+            );
 
             return {
                 ...state,
@@ -283,7 +321,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                   )
                 : concat(currentEdges, newEdge);
 
-            return {
+            const newState = {
                 ...state,
                 scenario: {
                     ...state.scenario,
@@ -296,6 +334,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                     },
                 },
             };
+
+            return withSyntheticTransitions(state, newState, (existing) =>
+                existing.filter((t) => t.sourceNodeId === action.fromNode.id).map((t) => ({ ...t, destinationNodeId: action.toNode.id })),
+            );
         }
         case "NODES_DISCONNECTED": {
             const nodesToSet = adjustBranchParametersAfterDisconnect(currentNodes, [action]);
@@ -365,11 +407,17 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;
-            return addNodesWithLayout(state, {
-                nodes,
-                layout,
-                edges: adjustEdges(nodes, edges, currentNodes, currentEdges, processDefinitionData, idMapping),
-            });
+            const adjustedEdges = adjustEdges(nodes, edges, currentNodes, currentEdges, processDefinitionData, idMapping);
+            const newState = addNodesWithLayout(state, { nodes, layout, edges: adjustedEdges });
+
+            const newNodeIds = new Set(nodes.map((n) => n.id));
+            return withSyntheticTransitions(state, newState, (existing) =>
+                adjustedEdges
+                    .filter((e) => newNodeIds.has(e.to) && !newNodeIds.has(e.from))
+                    .flatMap((edge) =>
+                        existing.filter((t) => t.sourceNodeId === edge.from).map((t) => ({ ...t, destinationNodeId: edge.to })),
+                    ),
+            );
         }
         case "VALIDATION_RESULT": {
             return {

@@ -93,6 +93,16 @@ export function DataMapper({
         }
         prevFieldsLengthRef.current = dm.fields.length;
     }, [dm.fields.length]);
+    useEffect(() => {
+        if (dm.selField == null || !fieldsScrollRef.current) return;
+        const container = fieldsScrollRef.current;
+        const id = dm.selField;
+        // Wait for MUI Collapse animation to finish before scrolling
+        const timer = setTimeout(() => {
+            container.querySelector(`[data-field-id="${id}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }, 320);
+        return () => clearTimeout(timer);
+    }, [dm.selField]);
 
     return (
         <RootBox embedded={!!onInsert}>
@@ -181,7 +191,10 @@ export function DataMapper({
                                         onSelect={dm.onTreeSelect}
                                         selectedPath={dm.selPath}
                                         filterText={dm.contextFilter}
+                                        useTypedPaths
+                                        nullSafe
                                         nullSafeDrag
+                                        typing={variableTypes?.[key]}
                                     />
                                 ))}
                         </ScrollArea>

@@ -10,7 +10,7 @@ import { ParameterExpressionField } from "./ParameterExpressionField";
 import type { ParamKeys } from "./parameterHelpers";
 import { OverrideKeys } from "./parameterHelpers";
 import type { ParametersListProps, ParameterWithIndex } from "./parametersList";
-import { SpelExpressionPickerFieldWrapper } from "./spelExpressionPickerFieldWrapper";
+import { SpelExpressionBuilderFieldWrapper } from "./spelExpressionBuilderFieldWrapper";
 import { WebSocketUrlFieldWrapper } from "./webSocketUrlFieldWrapper";
 
 export type ParametersListFieldProps = ParametersListProps & {
@@ -18,7 +18,6 @@ export type ParametersListFieldProps = ParametersListProps & {
 };
 
 function pickFieldWrapper(paramKey: ParamKeys) {
-    console.debug(`pickFieldWrapper: ${paramKey}`);
     switch (paramKey) {
         case OverrideKeys.SourceEndpoint:
             return EndpointFieldWrapper;
@@ -29,7 +28,7 @@ function pickFieldWrapper(paramKey: ParamKeys) {
         case OverrideKeys.DecisionTableMatch:
             return ConditionBuilderFieldWrapper;
         case OverrideKeys.ForEachElements:
-            return SpelExpressionPickerFieldWrapper;
+            return SpelExpressionBuilderFieldWrapper;
         case OverrideKeys.SinkKafkaValue:
         case OverrideKeys.SinkKafkaValue2:
         case OverrideKeys.HttpBody:

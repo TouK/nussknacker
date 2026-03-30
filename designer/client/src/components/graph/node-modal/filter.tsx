@@ -11,7 +11,7 @@ import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { ExpressionLang } from "./editors/expression/types";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { useDiffMark } from "./PathsToMark";
 import { StaticExpressionField } from "./StaticExpressionField";
@@ -51,7 +51,7 @@ export function Filter({
     );
     return (
         <>
-            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
+            <NameField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <StaticExpressionField
                 setProperty={setProperty}
                 fieldLabel={"Condition"}

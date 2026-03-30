@@ -1,19 +1,22 @@
 import type { WithUuid } from "../../components/graph/node-modal/appendUuid";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestCase } from "../../reducers/graph/testCase";
 import { getTestCaseAssertions, getTestCaseAssertionsForNode, getTestData, getTestCaseMocks } from "../../reducers/selectors/testCases";
+import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
+import { changeActiveTestCase } from "./testingActions";
 
-export type Assertion = { description?: string; expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj };
+export type AssertionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "greaterThanOrEqual" | "lessThanOrEqual";
+export type Assertion = { description?: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 
 export type Mock = { expression: ExpressionObj };
 export type Mocks = Record<string, Mock>;
 
 export type TestCasesActions =
-    | { type: "SET_TEST_CASE_ASSERTIONS"; assertions: Assertions }
-    | { type: "SET_TEST_CASE_INPUTS"; inputs: string }
-    | { type: "SET_TEST_CASE_MOCKS"; mocks: Mocks };
+    | { type: "UPDATE_TEST_CASE"; testCaseId: string; updates: Omit<Partial<TestCase>, "id"> }
+    | { type: "ADD_TEST_CASE"; testCase: TestCase };
 
 export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<Assertion>[]) => WithUuid<Assertion>[]): ThunkAction {
     return (dispatch, getState) => {
@@ -22,9 +25,12 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<A
         const next = updater(prev);
 
         const testingAssertions = getTestCaseAssertions(state);
+        const activeTestCaseId = getActiveTestCaseId(state);
+
         dispatch({
-            type: "SET_TEST_CASE_ASSERTIONS",
-            assertions: { ...testingAssertions, [nodeId]: next },
+            type: "UPDATE_TEST_CASE",
+            testCaseId: activeTestCaseId,
+            updates: { assertions: { ...testingAssertions, [nodeId]: next } },
         });
     };
 }
@@ -34,10 +40,14 @@ export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => Testi
         const state = getState();
         const prev = getTestData(state);
         const next = updater(prev);
+        const activeTestCaseId = getActiveTestCaseId(state);
 
         dispatch({
-            type: "SET_TEST_CASE_INPUTS",
-            inputs: JSON.stringify(next),
+            type: "UPDATE_TEST_CASE",
+            testCaseId: activeTestCaseId,
+            updates: {
+                inputs: JSON.stringify(next),
+            },
         });
     };
 }
@@ -46,11 +56,28 @@ export function setTestCaseMock(nodeId: string, expression: ExpressionObj | unde
     return (dispatch, getState) => {
         const state = getState();
 
+        const activeTestCaseId = getActiveTestCaseId(state);
+
         const { [nodeId]: _, ...remainingMocks } = getTestCaseMocks(state);
-        if (!expression?.expression) {
-            dispatch({ type: "SET_TEST_CASE_MOCKS", mocks: remainingMocks });
+
+        if (expression?.expression) {
+            dispatch({
+                type: "UPDATE_TEST_CASE",
+                testCaseId: activeTestCaseId,
+                updates: { mocks: { ...remainingMocks, [nodeId]: { expression } } },
+            });
         } else {
-            dispatch({ type: "SET_TEST_CASE_MOCKS", mocks: { ...remainingMocks, [nodeId]: { expression } } });
+            dispatch({ type: "UPDATE_TEST_CASE", testCaseId: activeTestCaseId, updates: { mocks: remainingMocks } });
         }
+    };
+}
+
+export function addTestCase(testCase: TestCase): ThunkAction {
+    return (dispatch) => {
+        dispatch({
+            type: "ADD_TEST_CASE",
+            testCase,
+        });
+        dispatch(changeActiveTestCase(testCase.id));
     };
 }

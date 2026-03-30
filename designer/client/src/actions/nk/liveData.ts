@@ -8,6 +8,7 @@ import { getScenario } from "../../reducers/selectors/graph";
 import type { ThunkAction } from "../reduxTypes";
 import { AbortControllersStack } from "./abortControllersStack";
 import { hideTestRunDetails } from "./process";
+import { clearTestAssertionsResults } from "./testingActions";
 
 export enum Initiator {
     init = "initial",
@@ -84,7 +85,7 @@ export function startLiveData(initiator: Initiator | null = null, showErrors = f
         if (!getHasPauseReasons(getState())) {
             if (!getIsLiveDataWorking(getState())) {
                 dispatch(hideTestRunDetails());
-                dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
+                dispatch(clearTestAssertionsResults());
             }
             dispatch(fetchAndDisplayLiveData(showErrors));
         }

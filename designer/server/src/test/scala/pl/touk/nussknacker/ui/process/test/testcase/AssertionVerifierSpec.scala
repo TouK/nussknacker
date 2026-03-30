@@ -62,6 +62,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),
         "someArray"      -> Typed.fromInstance(new Array[String](1)),
         "someBigDecimal" -> Typed[java.math.BigDecimal],
+        "someNumber"     -> Typed[java.lang.Integer],
       ),
       parameters = None,
       typingInfo = Map.empty
@@ -189,6 +190,27 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
       val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
 
+      results shouldBe List(expectedResult)
+    }
+  }
+
+  test("should verify comparison operators") {
+    forAll(
+      Table(
+        ("operator", "expectedExpr", "actualValue", "expectedResult"),
+        (AssertionOperator.GreaterThan, "10", 5, SuccessfulAssertion),
+        (AssertionOperator.LessThan, "10", 10, FailedAssertion("Expected: [10] < [10]")),
+        (AssertionOperator.GreaterThanOrEqual, "10", 10, SuccessfulAssertion),
+        (AssertionOperator.LessThanOrEqual, "10", 5, FailedAssertion("Expected: [10] <= [5]")),
+      )
+    ) { (operator, expectedExpr, actualValue, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(
+          PredicateAssertion(operator, expectedExpr.spel, "#records[0].someNumber".spel)
+        )
+      )
+      val nodesResultsAfterTestRun = prepareNodeResults(List(Map("someNumber" -> actualValue)))
+      val results                  = verifyForTestCase(testCase, nodesResultsAfterTestRun)
       results shouldBe List(expectedResult)
     }
   }

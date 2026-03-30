@@ -62,8 +62,9 @@ export function NamedParamsDataMapper({
             for (const field of parsed) {
                 const paramIndex = currentParams.findIndex((p) => p.name === field.name);
                 if (paramIndex >= 0 && field.expression) {
+                    const fullExpr = field.defaultValue !== undefined ? `${field.expression} ?: ${field.defaultValue}` : field.expression;
                     setProperty(`${parametersBasePath}[${paramIndex}].expression`, {
-                        expression: field.expression,
+                        expression: fullExpr,
                         language: ExpressionLang.SpEL,
                     });
                 }

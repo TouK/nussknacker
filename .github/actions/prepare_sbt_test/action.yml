@@ -2,11 +2,6 @@ name: Prepare build artifacts for sbt tests
 runs:
   using: "composite"
   steps:
-    - name: Cancel previous runs
-      if: github.event_name != 'push'
-      uses: styfle/cancel-workflow-action@0.13.0
-      with:
-        access_token: ${{ secrets.GITHUB_TOKEN }}
     - uses: coursier/setup-action@v1
       with:
         jvm: temurin:1.17.0.5

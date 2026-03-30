@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9112](https://github.com/TouK/nussknacker/pull/9112) Sink output records are now visible in `Outgoing records` for both scenario tests and live data preview.
+    * Component API update for custom sink preview values: introduced `SinkDisplayableValue` trait.
+    * Added `ResultsVariableEncoder` utility for result/live data variable encoding.
+    * `ResultCollector` now supports sink-level collectors (`createSinkInvocationCollector`, `shouldRegisterSinkInAdditionToCollector`).
 * [#8988](https://github.com/TouK/nussknacker/pull/8988) Fixed fragment test data validation for required or restricted input parameters
 * [#8997](https://github.com/TouK/nussknacker/pull/8997) Introduce Node IDs as a stable UUIDs
   * Each scenario node now has two distinct fields: a stable `id` (UUID, never changes) and a user-editable `name` (human-readable label).

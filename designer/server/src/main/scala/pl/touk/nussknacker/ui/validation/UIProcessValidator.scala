@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.compile.{NameValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInput, FragmentInputDefinition, NodeData, Source}
-import pl.touk.nussknacker.engine.test.testcase.TestCases
+import pl.touk.nussknacker.engine.test.testcase.{TestCase, TestCases}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -147,6 +147,11 @@ class UIProcessValidator(
       .add(validateStickyNotesLimit(scenarioGraph))
       .add(validateEdgeUniqueness(scenarioGraph))
       .add(validateScenarioProperties(scenarioGraph.properties.additionalFields.properties, isFragment))
+      .add(
+        testCaseValidator.validateTestCaseBeforeResolving(
+          scenarioGraph.testCases.fold(List.empty[TestCase])(_.list.toList)
+        )
+      )
       .add(warningValidation(scenarioGraph))
   }
 

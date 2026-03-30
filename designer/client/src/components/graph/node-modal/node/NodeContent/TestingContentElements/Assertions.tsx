@@ -3,6 +3,7 @@ import { omit } from "lodash";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { AssertionOperator } from "../../../../../../actions/nk/testCasesActions";
 import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
 import httpService from "../../../../../../http/HttpService/instance";
 import { getProcessingType } from "../../../../../../reducers/selectors/graph";
@@ -74,7 +75,7 @@ export const Assertions = ({ node, edges }: Props) => {
             updated: Partial<{
                 description: string;
                 expected: { expression: string; language: string };
-                operator: "equals" | "notEquals";
+                operator: AssertionOperator;
                 actual: { expression: string; language: string };
             }>,
         ) => {

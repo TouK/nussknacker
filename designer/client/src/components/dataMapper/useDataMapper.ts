@@ -70,6 +70,15 @@ function findInTree(fields: FieldDef[], id: number): FieldDef | undefined {
     return undefined;
 }
 
+/** When expr contains an Elvis fallback (e.g. from applyTypeConversion), split it into expression + defaultValue. */
+function splitElvisIntoField(field: FieldDef, expr: string): FieldDef {
+    const elvisIdx = expr.lastIndexOf(" ?: ");
+    if (elvisIdx >= 0) {
+        return { ...field, expression: expr.slice(0, elvisIdx), defaultValue: expr.slice(elvisIdx + 4) };
+    }
+    return { ...field, expression: expr };
+}
+
 function mergeTypesFromSchema(parsed: FieldDef[], schema: FieldDef[]): FieldDef[] {
     return parsed.map((f) => {
         const schemaField = schema.find((s) => s.name === f.name);
@@ -109,7 +118,15 @@ export function useDataMapper({
                 return parsed;
             }
         }
-        if (initialFieldsProp && initialFieldsProp.length > 0) return initialFieldsProp;
+        if (initialFieldsProp && initialFieldsProp.length > 0) {
+            return initialFieldsProp.map((f) => {
+                const elvisIdx = f.expression.lastIndexOf(" ?: ");
+                if (elvisIdx >= 0) {
+                    return { ...f, expression: f.expression.slice(0, elvisIdx), defaultValue: f.expression.slice(elvisIdx + 4) };
+                }
+                return f;
+            });
+        }
         return isEmbedded ? [] : INITIAL_FIELDS.map((f) => ({ ...f, id: nextId() }));
     });
     const [selField, setSelField] = useState<number | null>(null);
@@ -162,7 +179,8 @@ export function useDataMapper({
     const addFieldFromDrop = useCallback(
         (path: string) => {
             const rawPath = path.replace(/^#/, "").replace(/\?/g, "");
-            const lastSegment = rawPath.split(".").pop() ?? "";
+            const bracketMatch = rawPath.match(/\['([^']+)'\]$/);
+            const lastSegment = bracketMatch ? bracketMatch[1] : rawPath.split(".").pop() ?? "";
             const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
             const field = makeField(lastSegment, sourceType ?? "Any");
             field.expression = nullSafe ? toNullSafe(`#${rawPath}`) : `#${rawPath}`;
@@ -244,15 +262,22 @@ export function useDataMapper({
 
     const handleAutoMap = useCallback(() => {
         const pathMap = new Map<string, string>();
-        function traverse(obj: unknown, path: string) {
+        function traverse(obj: unknown, path: string, typing: { fields?: Record<string, unknown> } | undefined) {
             if (obj !== null && typeof obj === "object" && !Array.isArray(obj)) {
-                Object.entries(obj as Record<string, unknown>).forEach(([k, v]) => traverse(v, `${path}.${k}`));
+                Object.entries(obj as Record<string, unknown>).forEach(([k, v]) => {
+                    const childTyping = typing?.fields?.[k] as { fields?: Record<string, unknown> } | undefined;
+                    const segment = childTyping !== undefined ? `.${k}` : `['${k}']`;
+                    traverse(v, `${path}${segment}`, childTyping);
+                });
             } else {
-                const key = path.split(".").pop()!.toLowerCase().replace(/[_\s]/g, "");
+                const bracketMatch = path.match(/\['([^']+)'\]$/);
+                const key = (bracketMatch ? bracketMatch[1] : path.split(".").pop() ?? "").toLowerCase().replace(/[_\s]/g, "");
                 if (!pathMap.has(key)) pathMap.set(key, path);
             }
         }
-        Object.entries(enrichedContext).forEach(([key, val]) => traverse(val, key));
+        Object.entries(enrichedContext).forEach(([key, val]) =>
+            traverse(val, key, variableTypes?.[key] as { fields?: Record<string, unknown> } | undefined),
+        );
 
         function autoMap(fs: FieldDef[]): FieldDef[] {
             return fs.map((f) => {
@@ -265,7 +290,7 @@ export function useDataMapper({
             });
         }
         setFields(autoMap);
-    }, [enrichedContext, nullSafe]);
+    }, [enrichedContext, nullSafe, variableTypes]);
 
     const onTreeSelect = useCallback(
         (path: string) => {
@@ -275,8 +300,8 @@ export function useDataMapper({
                 const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, path) : undefined;
                 setFields((f) => {
                     const targetField = findInTree(f, selField);
-                    const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any");
-                    return updateInTree(f, selField, (x) => ({ ...x, expression: expr }));
+                    const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any", targetField?.defaultValue);
+                    return updateInTree(f, selField, (x) => splitElvisIntoField(x, expr));
                 });
             }
         },
@@ -286,15 +311,16 @@ export function useDataMapper({
     const onDrop = useCallback(
         (path: string, fieldId: number) => {
             const rawPath = path.replace(/^#/, "").replace(/\?/g, "");
-            const lastSegment = rawPath.split(".").pop() ?? "";
+            const bracketMatch = rawPath.match(/\['([^']+)'\]$/);
+            const lastSegment = bracketMatch ? bracketMatch[1] : rawPath.split(".").pop() ?? "";
             const baseExpr = nullSafe ? toNullSafe(`#${rawPath}`) : `#${rawPath}`;
             const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
             setFields((prev) => {
                 const targetField = findInTree(prev, fieldId);
-                const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any");
+                const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any", targetField?.defaultValue);
                 return updateInTree(prev, fieldId, (x) => {
                     const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
-                    return { ...x, expression: expr, ...nameUpdate };
+                    return { ...splitElvisIntoField(x, expr), ...nameUpdate };
                 });
             });
             setDragOverId(null);
@@ -392,6 +418,7 @@ export function useDataMapper({
                             "Raw editor",
                             "Content type",
                             "Value validation mode",
+                            "Value",
                         ]);
 
                         // Case 1: single "Value" param (raw editor mode) — use its typing result

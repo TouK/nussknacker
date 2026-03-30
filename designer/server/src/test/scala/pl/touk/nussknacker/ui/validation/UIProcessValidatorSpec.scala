@@ -75,7 +75,7 @@ import pl.touk.nussknacker.test.mock.{
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
-import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
+import pl.touk.nussknacker.ui.config.{ScenarioLabelConfig, TestCasesSettings}
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
@@ -1728,7 +1728,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val validator = new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
-      testCaseValidator = TestCaseValidator(modelData),
+      testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
@@ -1788,7 +1788,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val validator = new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
-      testCaseValidator = TestCaseValidator(modelData),
+      testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
@@ -2819,7 +2819,7 @@ private object UIProcessValidatorSpec {
     new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
-      testCaseValidator = TestCaseValidator(modelData),
+      testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
@@ -2857,7 +2857,7 @@ private object UIProcessValidatorSpec {
     new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
-      testCaseValidator = TestCaseValidator(modelData),
+      testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),

@@ -186,6 +186,28 @@ trait BaseFlinkDeploymentManagerSpec
           invocationResult.name shouldBe "Value"
           invocationResult.value shouldBe Json.obj("pretty" -> "message".asJson)
         }
+
+        val endSendSinkOutputResults = eventually {
+          val sinkOutputResults = LiveDataCollectingListenerStorageHolder
+            .getLiveDataPreview(processName)
+            .value
+            .externalServiceInvocationResults
+            .get(NodeId("endSend"))
+            .value
+          sinkOutputResults.size should be >= totalCountWaitLimit
+          sinkOutputResults
+        }
+        endSendSinkOutputResults.size should be <= configuredMaxNumbersOfRecords
+        forAll(endSendSinkOutputResults.zipWithIndex) { case (invocationResult, idx) =>
+          invocationResult.contextId shouldBe ContextId(
+            scenarioName = processName,
+            originatingNodeId = NodeId("start"),
+            taskId = 0,
+            index = idx
+          )
+          invocationResult.name shouldBe "endSend"
+          invocationResult.value shouldBe Json.obj("pretty" -> "message".asJson)
+        }
       }
     } finally {
       cancelProcess(processName)
