@@ -33,7 +33,7 @@ const gridContainerStyle = css({
     "&&&&": {
         width: "100%",
         display: "grid",
-        gridTemplateColumns: "5fr 5fr 3fr 5fr",
+        gridTemplateColumns: "1fr 1fr minmax(7rem, max-content) 1fr",
         gridTemplateRows: "auto auto",
         gridTemplateAreas: `"field field field field remove" "expr expr expr expr remove"`,
     },
