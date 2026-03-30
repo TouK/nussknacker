@@ -67,14 +67,18 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
 
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeLooselyAssignedTo(Typed[Class[_]]))
 
+    def isUnknown = clazzDefinitions.map(_.clazzName.isUnknown).toList == List(true)
+
     val clazzMethods =
       if (reference.isStatic) clazzDefinitions.toList.flatMap(_.staticMethods.get(reference.methodName).toList.flatten)
       else clazzDefinitions.toList.flatMap(_.methods.get(reference.methodName).toList.flatten)
     clazzMethods match {
       // Static method can be invoked - we cannot find them ATM
       case Nil if isClass => Left(None)
-      case Nil            => Left(Some(UnknownMethodError(reference.methodName, displayableType)))
-      case first :: rest  => Right(NonEmptyList(first, rest))
+      // We cannot return UnknownMethodError if methodExecutionForUnknownAllowed is set
+      case Nil if isUnknown => Left(None)
+      case Nil              => Left(Some(UnknownMethodError(reference.methodName, displayableType)))
+      case first :: rest    => Right(NonEmptyList(first, rest))
     }
   }
 
