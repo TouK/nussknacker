@@ -123,25 +123,6 @@ const AssertionItemComponent = ({
                         placeholder={"Optional description"}
                     />
                 </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
-                    <EditableEditor
-                        showSwitch={false}
-                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={expected}
-                        variableTypes={variableTypes}
-                        onValueChange={handleExpectedChange}
-                        showValidation
-                        fieldErrors={expectedErrors}
-                        placeholder="true, 12, 'xxxx'"
-                    />
-                </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
-                    <TypeSelect
-                        value={assertionOptions.find((o) => o.value === operator)}
-                        options={assertionOptions}
-                        onChange={handleOperatorChange}
-                    />
-                </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
                     <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
                         <EditableEditor
@@ -155,6 +136,25 @@ const AssertionItemComponent = ({
                             placeholder="#records.size()"
                         />
                     </ParamKeyProvider>
+                </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
+                    <TypeSelect
+                        value={assertionOptions.find((o) => o.value === operator)}
+                        options={assertionOptions}
+                        onChange={handleOperatorChange}
+                    />
+                </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
+                    <EditableEditor
+                        showSwitch={false}
+                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                        expressionObj={expected}
+                        variableTypes={variableTypes}
+                        onValueChange={handleExpectedChange}
+                        showValidation
+                        fieldErrors={expectedErrors}
+                        placeholder="true, 12, 'xxxx'"
+                    />
                 </RowFieldLabel>
             </FieldsRow>
             {testAssertionResult && (
