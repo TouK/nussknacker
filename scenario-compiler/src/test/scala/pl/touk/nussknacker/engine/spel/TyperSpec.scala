@@ -234,16 +234,34 @@ class SpelTyperSpec
   test("comparison operators with null literal operand should produce a compilation error") {
     val expressions = Table(
       "expression",
+      // Only literals
       "null < 5",
       "5 > null",
       "null >= 5",
       "5 <= null",
       "null && true",
       "true || null",
+      // Null literal with non-literal
+      "null < 'abc'.length",
+      "'abc'.length > null",
+      "null >= 'abc'.length",
+      "'abc'.length <= null",
+      "null && !true",
+      "!true || null",
+      // Null literal with variable reference
+      "null < #n",
+      "#n > null",
+      "null >= #n",
+      "#n <= null",
+      "null && #b",
+      "#b || null",
     )
     forAll(expressions) { expr =>
-      typeExpression(expr).invalidValue.toList should matchPattern { case OperatorNullOperandError(_) :: Nil =>
-      }
+      typeExpression(
+        expr,
+        "n" -> Typed[Number],
+        "b" -> Typed[Boolean]
+      ).invalidValue.toList should matchPattern { case OperatorNullOperandError(_) :: Nil => }
     }
   }
 
