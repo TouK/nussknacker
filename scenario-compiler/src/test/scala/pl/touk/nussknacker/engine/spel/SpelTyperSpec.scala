@@ -213,7 +213,8 @@ class SpelTyperSpec
   }
 
   test("works with very long expressions") {
-    val longString = " ".padTo(SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH, ' ') + "abcd"
+    val spelMaxExpressionLength = 10_000
+    val longString              = " ".padTo(spelMaxExpressionLength, ' ') + "abcd"
     typeExpression(s"'$longString'").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[String], longString)
   }
