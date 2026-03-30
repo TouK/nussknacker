@@ -11,8 +11,8 @@ export const useTestCaseNameEdit = (currentName: string | undefined) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState("");
 
-    const { nameErrors, isValid } = useTestCaseNameValidation(editValue, currentName);
-    const editErrorMessage = nameErrors[0]?.message;
+    const { nameErrors, isValid } = useTestCaseNameValidation(isEditing ? editValue : currentName ?? "", currentName);
+    const editErrorMessage = isEditing ? nameErrors[0]?.message : undefined;
 
     const startEditing = useCallback(() => {
         setEditValue(currentName ?? "");
@@ -33,10 +33,10 @@ export const useTestCaseNameEdit = (currentName: string | undefined) => {
     }, []);
 
     const handleBlur = useCallback(() => {
-        if (!isValid) {
-            cancelEdit();
-        } else {
+        if (isValid) {
             confirmEdit();
+        } else {
+            cancelEdit();
         }
     }, [isValid, cancelEdit, confirmEdit]);
 
