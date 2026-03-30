@@ -21,7 +21,9 @@ on:
     tags-ignore:
       - '**'
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # head_ref - refs/heads/<branch_name>, declared only in pull_request events
+  # ref - refs/heads/<branch_name> (push) or refs/pull/<pr_number>/merge (pull_request)
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name != 'push' }}
 env:
   #we use this variable in ciRunSbt.sh
