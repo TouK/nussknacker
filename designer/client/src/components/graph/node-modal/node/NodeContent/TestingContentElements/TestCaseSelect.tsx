@@ -1,5 +1,5 @@
 import { EditOutlined } from "@mui/icons-material";
-import { Box, css, IconButton, InputBase, styled, Typography } from "@mui/material";
+import { Box, InputBase, styled, Tooltip, Typography } from "@mui/material";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +11,7 @@ import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../r
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../../../windowManager/WindowKind";
+import { useTestCaseNameValidation } from "../../../../../modals/useTestCaseNameValidation";
 import { StyledButton } from "../../../../styledButton";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
@@ -26,22 +27,34 @@ export const TestCaseSelect = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState("");
 
+    const { nameErrors, isValid } = useTestCaseNameValidation(editValue, activeTestCaseOption?.label);
+    const editErrorMessage = nameErrors[0]?.message;
+
     const startEditing = useCallback(() => {
         setEditValue(activeTestCaseOption?.label ?? "");
         setIsEditing(true);
     }, [activeTestCaseOption?.label]);
 
     const confirmEdit = useCallback(() => {
+        if (!isValid) return;
         const trimmed = editValue.trim();
         if (trimmed && trimmed !== activeTestCaseOption?.label) {
             dispatch(setTestCaseName(trimmed));
         }
         setIsEditing(false);
-    }, [dispatch, editValue, activeTestCaseOption?.label]);
+    }, [dispatch, editValue, activeTestCaseOption?.label, isValid]);
 
     const cancelEdit = useCallback(() => {
         setIsEditing(false);
     }, []);
+
+    const handleBlur = useCallback(() => {
+        if (isValid) {
+            confirmEdit();
+        } else {
+            cancelEdit();
+        }
+    }, [isValid, cancelEdit, confirmEdit]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -79,8 +92,9 @@ export const TestCaseSelect = () => {
                 activeOption={activeTestCaseOption}
                 isEditing={isEditing}
                 editValue={editValue}
+                editErrorMessage={editErrorMessage}
                 onEditValueChange={setEditValue}
-                onEditConfirm={confirmEdit}
+                onEditBlur={handleBlur}
                 onEditKeyDown={handleKeyDown}
             />
             <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
@@ -113,42 +127,32 @@ const StyledTestCaseLabel = styled(Box)(({ theme }) => ({
     height: "100%",
     width: "40cqw",
     maxWidth: "400px",
+    overflow: "hidden",
     paddingLeft: theme.spacing(1.5),
     paddingRight: theme.spacing(1.5),
     border: `1px solid ${getBorderColor(theme)}`,
 }));
 
-const StyledTestCaseInput = styled(InputBase)(({ theme }) => ({
+const StyledTestCaseInput = styled(InputBase, {
+    shouldForwardProp: (prop) => prop !== "hasError",
+})<{ hasError?: boolean }>(({ theme, hasError }) => ({
     width: "40cqw",
     maxWidth: "400px",
     height: "100%",
-    border: `1px solid ${theme.palette.primary.main}`,
+    border: `1px solid ${hasError ? theme.palette.error.main : theme.palette.primary.main}`,
     paddingLeft: theme.spacing(1.5),
     paddingRight: theme.spacing(1.5),
     fontSize: theme.typography.body2.fontSize,
 }));
-
-const StyledActionButton = styled(IconButton)(({ theme }) =>
-    css({
-        borderRadius: 0,
-        backgroundColor: theme.palette.background.paper,
-        transition: "background-color 0.2s",
-        "&:not(:disabled):hover": {
-            backgroundColor: theme.palette.action.hover,
-        },
-        "&:disabled": {
-            opacity: 0.3,
-        },
-    }),
-);
 
 type TestCaseFieldProps = {
     options: { label: string; value: string }[];
     activeOption: { label: string; value: string } | null;
     isEditing: boolean;
     editValue: string;
+    editErrorMessage: string | undefined;
     onEditValueChange: (value: string) => void;
-    onEditConfirm: () => void;
+    onEditBlur: () => void;
     onEditKeyDown: (e: React.KeyboardEvent) => void;
 };
 
@@ -157,8 +161,9 @@ const TestCaseField = ({
     activeOption,
     isEditing,
     editValue,
+    editErrorMessage,
     onEditValueChange,
-    onEditConfirm,
+    onEditBlur,
     onEditKeyDown,
 }: TestCaseFieldProps) => {
     const dispatch = useAppDispatch();
@@ -172,14 +177,17 @@ const TestCaseField = ({
 
     if (isEditing) {
         return (
-            <StyledTestCaseInput
-                autoFocus
-                value={editValue}
-                onChange={(e) => onEditValueChange(e.target.value)}
-                onBlur={onEditConfirm}
-                onKeyDown={onEditKeyDown}
-                inputProps={{ "aria-label": "edit test case name" }}
-            />
+            <Tooltip open={!!editErrorMessage} title={editErrorMessage ?? ""} placement="bottom-start">
+                <StyledTestCaseInput
+                    autoFocus
+                    hasError={!!editErrorMessage}
+                    value={editValue}
+                    onChange={(e) => onEditValueChange(e.target.value)}
+                    onBlur={onEditBlur}
+                    onKeyDown={onEditKeyDown}
+                    inputProps={{ "aria-label": "edit test case name" }}
+                />
+            </Tooltip>
         );
     }
 
