@@ -218,6 +218,19 @@ class SpelTyperSpec
       TypedObjectWithValue(Typed.typedClass[String], longString)
   }
 
+  test("works with equality operators with null operand") {
+    val expressions = Table(
+      "expression",
+      "null == 5",
+      "5 == null",
+      "null != 5",
+      "5 != null",
+    )
+    forAll(expressions) { expr =>
+      typeExpression(expr).validValue.finalResult.typingResult shouldBe Typed.typedClass[Boolean]
+    }
+  }
+
   test("comparison operators with null literal operand should produce a compilation error") {
     val expressions = Table(
       "expression",
