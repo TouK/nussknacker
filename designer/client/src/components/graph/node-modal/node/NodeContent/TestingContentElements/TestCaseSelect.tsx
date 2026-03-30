@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
 import { getBorderColor } from "../../../../../../containers/theme/helpers";
-import { getSettings } from "../../../../../../reducers/selectors/settings";
+import { getLoggedUser, getSettings } from "../../../../../../reducers/selectors/settings";
 import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
@@ -18,6 +18,7 @@ import { useTestCaseNameEdit } from "./useTestCaseNameEdit";
 export const TestCaseSelect = () => {
     const { t } = useTranslation();
     const settings = useAppSelector(getSettings);
+    const loggedUser = useAppSelector(getLoggedUser);
 
     const testCaseOptions = useAppSelector(getTestCaseOptions);
     const activeTestCaseOption = useAppSelector(getActiveTestCaseOption);
@@ -55,21 +56,29 @@ export const TestCaseSelect = () => {
                 onEditBlur={handleBlur}
                 onEditKeyDown={handleKeyDown}
             />
-            <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
-                <StyledButton
-                    data-testid="edit-test-case-name"
-                    onClick={startEditing}
-                    disabled={isEditing}
-                    sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-                >
-                    <EditOutlined fontSize="small" />
-                </StyledButton>
-            </InfoTooltip>
-            <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
-                <StyledButton data-testid="save-as-test-case" title={t("node.row.add.title", "Add test case")} onClick={handleSaveAsClick}>
-                    {t("node.row.add.text", "+")}
-                </StyledButton>
-            </InfoTooltip>
+            {loggedUser.isWriter() && (
+                <>
+                    <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
+                        <StyledButton
+                            data-testid="edit-test-case-name"
+                            onClick={startEditing}
+                            disabled={isEditing}
+                            sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                        >
+                            <EditOutlined fontSize="small" />
+                        </StyledButton>
+                    </InfoTooltip>
+                    <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
+                        <StyledButton
+                            data-testid="save-as-test-case"
+                            title={t("node.row.add.title", "Add test case")}
+                            onClick={handleSaveAsClick}
+                        >
+                            {t("node.row.add.text", "+")}
+                        </StyledButton>
+                    </InfoTooltip>
+                </>
+            )}
         </Box>
     );
 };
