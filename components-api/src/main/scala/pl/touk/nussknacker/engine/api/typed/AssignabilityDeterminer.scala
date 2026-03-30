@@ -207,7 +207,7 @@ private[engine] class AssignabilityDeterminer(typingConfigurationProvider: Typin
               givenKeyParam
             ).isValid || targetKeyParam.isUnknown),
             (),
-            s"Key types of Maps ${givenKeyParam.display} and ${targetKeyParam.display} are not equals"
+            s"Key types of Maps ${givenKeyParam.display} and ${targetKeyParam.display} are not equal"
           ) andThen { _ =>
             isAssignable(givenValueParam, targetValueParam).handleErrorWith { errors =>
               isEmptyMapLiteral(givenValueParam).toValid(errors)
