@@ -1,9 +1,8 @@
 import { EditOutlined } from "@mui/icons-material";
 import { Box, InputBase, styled, Tooltip, Typography } from "@mui/material";
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { setTestCaseName } from "../../../../../../actions/nk/testCasesActions";
 import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
 import { getBorderColor } from "../../../../../../containers/theme/helpers";
 import { getSettings } from "../../../../../../reducers/selectors/settings";
@@ -11,61 +10,20 @@ import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../r
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../../../windowManager/WindowKind";
-import { useTestCaseNameValidation } from "../../../../../modals/useTestCaseNameValidation";
 import { StyledButton } from "../../../../styledButton";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
+import { useTestCaseNameEdit } from "./useTestCaseNameEdit";
 
 export const TestCaseSelect = () => {
     const { t } = useTranslation();
     const settings = useAppSelector(getSettings);
-    const dispatch = useAppDispatch();
 
     const testCaseOptions = useAppSelector(getTestCaseOptions);
     const activeTestCaseOption = useAppSelector(getActiveTestCaseOption);
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [editValue, setEditValue] = useState("");
-
-    const { nameErrors, isValid } = useTestCaseNameValidation(editValue, activeTestCaseOption?.label);
-    const editErrorMessage = nameErrors[0]?.message;
-
-    const startEditing = useCallback(() => {
-        setEditValue(activeTestCaseOption?.label ?? "");
-        setIsEditing(true);
-    }, [activeTestCaseOption?.label]);
-
-    const confirmEdit = useCallback(() => {
-        if (!isValid) return;
-        const trimmed = editValue.trim();
-        if (trimmed && trimmed !== activeTestCaseOption?.label) {
-            dispatch(setTestCaseName(trimmed));
-        }
-        setIsEditing(false);
-    }, [dispatch, editValue, activeTestCaseOption?.label, isValid]);
-
-    const cancelEdit = useCallback(() => {
-        setIsEditing(false);
-    }, []);
-
-    const handleBlur = useCallback(() => {
-        if (isValid) {
-            confirmEdit();
-        } else {
-            cancelEdit();
-        }
-    }, [isValid, cancelEdit, confirmEdit]);
-
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent) => {
-            if (e.key === "Enter") {
-                confirmEdit();
-            } else if (e.key === "Escape") {
-                e.stopPropagation();
-                cancelEdit();
-            }
-        },
-        [confirmEdit, cancelEdit],
+    const { isEditing, editValue, editErrorMessage, setEditValue, startEditing, handleBlur, handleKeyDown } = useTestCaseNameEdit(
+        activeTestCaseOption?.label,
     );
 
     const { open } = useWindows();
