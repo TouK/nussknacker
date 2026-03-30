@@ -10,7 +10,7 @@ object FlinkApplicationName {
 
   val validationPattern: Regex = "^[a-zA-Z0-9-]+(?: +[a-zA-Z0-9-]+)*$".r
 
-  implicit class ScenarioNameOps(val scenarioName: ProcessName) extends AnyVal {
+  implicit class ScenarioNameOps(val scenarioName: ProcessName) {
 
     def toFlinkApplicationName: FlinkApplicationName = {
       val value = scenarioName.value
@@ -23,7 +23,7 @@ object FlinkApplicationName {
 
   }
 
-  implicit class FlinkApplicationNameOps(val flinkAppName: FlinkApplicationName) extends AnyVal {
+  implicit class FlinkApplicationNameOps(val flinkAppName: FlinkApplicationName) {
 
     def toProcessName: ProcessName =
       ProcessName(flinkAppName.value.replace('_', ' '))
