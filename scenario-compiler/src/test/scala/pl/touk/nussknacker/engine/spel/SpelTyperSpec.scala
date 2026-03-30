@@ -4,6 +4,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.SpelParserConfiguration
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectEr
   NoPropertyError,
   NoPropertyTypeError
 }
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.OperatorError.OperatorNullOperandError
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SpelExpressionTypingError
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.MapWithExpressionKeysError
 import pl.touk.nussknacker.engine.spel.SpelTyper.TypingResultWithContext
@@ -26,7 +28,11 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
-class SpelTyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class SpelTyperSpec
+    extends AnyFunSuite
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with TableDrivenPropertyChecks {
 
   private implicit val defaultTyper: SpelTyper = buildTyper()
   private val dynamicAccessTyper: SpelTyper    = buildTyper(dynamicPropertyAccessAllowed = true)
@@ -210,6 +216,53 @@ class SpelTyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetail
     val longString = " ".padTo(SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH, ' ') + "abcd"
     typeExpression(s"'$longString'").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[String], longString)
+  }
+
+  test("works with equality operators with null operand") {
+    val expressions = Table(
+      "expression",
+      "null == 5",
+      "5 == null",
+      "null != 5",
+      "5 != null",
+    )
+    forAll(expressions) { expr =>
+      typeExpression(expr).validValue.finalResult.typingResult shouldBe Typed.typedClass[Boolean]
+    }
+  }
+
+  test("comparison operators with null literal operand should produce a compilation error") {
+    val expressions = Table(
+      "expression",
+      // Only literals
+      "null < 5",
+      "5 > null",
+      "null >= 5",
+      "5 <= null",
+      "null && true",
+      "true || null",
+      // Null literal with non-literal
+      "null < 'abc'.length",
+      "'abc'.length > null",
+      "null >= 'abc'.length",
+      "'abc'.length <= null",
+      "null && !true",
+      "!true || null",
+      // Null literal with variable reference
+      "null < #n",
+      "#n > null",
+      "null >= #n",
+      "#n <= null",
+      "null && #b",
+      "#b || null",
+    )
+    forAll(expressions) { expr =>
+      typeExpression(
+        expr,
+        "n" -> Typed[Number],
+        "b" -> Typed[Boolean]
+      ).invalidValue.toList should matchPattern { case OperatorNullOperandError(_) :: Nil => }
+    }
   }
 
   private def buildTyper(dynamicPropertyAccessAllowed: Boolean = false) = new SpelTyper(

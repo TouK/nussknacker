@@ -209,13 +209,10 @@ private[spel] class SpelTyper(
       val castExpectedType = CastTypedValue[A]()
       val resultType       = Typed.fromDetailedType[R]
       withTypedChildren {
+        case TypedNull :: _ :: Nil | _ :: TypedNull :: Nil =>
+          OperatorNullOperandError(operatorName).invalidTypingResult(fallbackType = resultType)
         case castExpectedType(left) :: castExpectedType(right) :: Nil =>
-          val typeFromOp = for {
-            leftValue  <- left.valueOpt
-            rightValue <- right.valueOpt
-            res = op(leftValue, rightValue)
-          } yield Typed.fromInstance(res)
-          typeFromOp.getOrElse(resultType).validTypingResult
+          operationOnTypesValue[A, A, R](left.typingResult, right.typingResult, resultType)((a, b) => Valid(op(a, b)))
         case other =>
           val expectedType = Typed.fromDetailedType[A]
           InvalidPartsTypeError(operatorName, expectedType, other).invalidTypingResult(fallbackType = resultType)
