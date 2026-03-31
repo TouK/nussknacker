@@ -35,7 +35,7 @@ object JsonTestResults {
   final case class JsonExceptionResult(
       context: ResultContext[Json],
       nodeId: Option[NodeId],
-      message: Option[String],
+      throwable: Option[String],
   )
 
   object JsonExceptionResult {
@@ -43,7 +43,7 @@ object JsonTestResults {
     def apply(exceptionResult: ExceptionResult[Json]): JsonExceptionResult = JsonExceptionResult(
       context = exceptionResult.context,
       nodeId = exceptionResult.nodeId,
-      message = Option(exceptionResult.throwable.getMessage),
+      throwable = Option(exceptionResult.throwable.getMessage),
     )
 
   }
