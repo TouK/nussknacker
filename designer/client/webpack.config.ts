@@ -7,6 +7,8 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import HtmlWebpackHarddiskPlugin from "html-webpack-harddisk-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MomentLocalesPlugin from "moment-locales-webpack-plugin";
+import http from "http";
+import https from "https";
 import path from "path";
 import postcss_move_props_to_bg_image_query from "postcss-move-props-to-bg-image-query";
 import TerserPlugin from "terser-webpack-plugin";
@@ -37,6 +39,11 @@ const cssPreLoaders = [
 ];
 
 const outputPath = path.join(process.cwd(), "dist");
+
+const isBackendHttps = process.env.BACKEND_DOMAIN?.startsWith("https");
+const proxyAgent = isBackendHttps
+    ? new https.Agent({ keepAlive: true, maxSockets: 50 })
+    : new http.Agent({ keepAlive: true, maxSockets: 50 });
 
 const mode = isProd ? "production" : "development";
 const isBundleReport = process.env.NODE_ENV === "bundleReport";
@@ -105,6 +112,7 @@ const config: Configuration = {
             "/api": {
                 target: process.env.BACKEND_DOMAIN,
                 changeOrigin: true,
+                agent: proxyAgent,
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
                         proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
@@ -118,6 +126,7 @@ const config: Configuration = {
             "/hermesManagement": {
                 target: process.env.BACKEND_DOMAIN?.replace("-nussknacker.", "-hermes-management."),
                 changeOrigin: true,
+                agent: proxyAgent,
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
                         proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
@@ -130,6 +139,7 @@ const config: Configuration = {
             "/hermesFrontend": {
                 target: process.env.BACKEND_DOMAIN?.replace("-nussknacker.", "-gateway."),
                 changeOrigin: true,
+                agent: proxyAgent,
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
                         proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
@@ -142,6 +152,7 @@ const config: Configuration = {
             "/grafana": {
                 target: process.env.BACKEND_DOMAIN,
                 changeOrigin: true,
+                agent: proxyAgent,
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
                         proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
@@ -151,6 +162,7 @@ const config: Configuration = {
             "/be-static": {
                 target: process.env.BACKEND_DOMAIN,
                 changeOrigin: true,
+                agent: proxyAgent,
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
                         proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
