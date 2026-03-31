@@ -82,10 +82,6 @@ export type TestAssertionResult = TestAssertionResultSuccess | TestAssertionResu
 
 export type NodeAssertionResults = Record<string, TestAssertionResult[]>;
 
-export type TestCaseAssertionResult = { status: "loading" } | { status: "loaded"; results: NodeAssertionResults };
-
-export type TestAssertionResults = Record<string, TestCaseAssertionResult>;
-
 export type ProcessCounts = Record<string, NodeCounts>;
 
 export interface ResultsWithCountsDto {

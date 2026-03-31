@@ -15,11 +15,7 @@ const TestCasesPanel = () => {
         <ToolbarWrapper id={"test-cases-panel"} title={"Test cases"}>
             <Box mt={1} mb={0.5}>
                 {testCases.map((testCase) => (
-                    <TestCaseExpandable
-                        key={testCase.id}
-                        testCase={testCase}
-                        testCaseAssertionResult={testCaseAssertionResults?.[testCase.id]}
-                    />
+                    <TestCaseExpandable key={testCase.id} testCase={testCase} testCaseResult={testCaseAssertionResults?.[testCase.id]} />
                 ))}
             </Box>
         </ToolbarWrapper>

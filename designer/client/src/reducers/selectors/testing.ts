@@ -7,7 +7,7 @@ import { getGraph, getProcessCounts } from "./graph";
 export const getTesting = createSelector(getGraph, (g) => g.testing || ({} as TestingState));
 
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
-export const getTestAssertionResults = createSelector(getTesting, (g) => g.assertionsResults || {});
+export const getTestAssertionResults = createSelector(getTesting, (g) => g.testCasesResults || {});
 export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
 export const getTestData = createSelector(getTesting, (g) => g.testData || ({} as TestData));
 export const getIsTestingMode = createSelector(
@@ -25,7 +25,9 @@ export const getActiveTestCaseAssertionResult = createSelector(
 
 const getNodeId = (_: unknown, nodeId: string) => nodeId;
 export const getTestAssertionResultsForNode = createSelector(getActiveTestCaseAssertionResult, getNodeId, (testCaseResult, nodeId) =>
-    testCaseResult?.status === "loaded" ? testCaseResult.results[nodeId] : undefined,
+    testCaseResult?.status === "loaded" && testCaseResult.results.type === "Completed"
+        ? testCaseResult.results.result.assertionsResults[nodeId]
+        : undefined,
 );
 
 export const getActiveTestCaseAssertionResultLoading = createSelector(

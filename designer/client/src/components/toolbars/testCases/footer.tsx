@@ -4,17 +4,17 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePreviousDifferent } from "rooks";
 
-import type { TestCaseAssertionResult } from "../../../http/resultsWithCountsDto";
+import type { TestCaseResult } from "../../../reducers/graph/testing";
 import { VisibleDataType } from "../../../reducers/graph/types";
 import { getVisibleDataType } from "../../../reducers/selectors/getLiveData";
 import { useAppSelector } from "../../../store/storeHelpers";
 
 interface Props {
-    testCaseAssertionResult: TestCaseAssertionResult | undefined;
+    testCaseResult: TestCaseResult | undefined;
 }
 
-export const Footer = ({ testCaseAssertionResult }: Props) => {
-    const isLoading = testCaseAssertionResult?.status === "loading";
+export const Footer = ({ testCaseResult }: Props) => {
+    const isLoading = testCaseResult?.status === "loading";
 
     return (
         <Box px={1} sx={{ opacity: 0.7 }}>

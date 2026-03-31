@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 
 import { changeActiveTestCase } from "../../../actions/nk/testingActions";
 import TestingIcon from "../../../assets/img/toolbarButtons/test.svg";
-import type { TestCaseAssertionResult } from "../../../http/resultsWithCountsDto";
 import type { TestCase } from "../../../reducers/graph/testCase";
+import type { TestCaseResult } from "../../../reducers/graph/testing";
 import { getActiveTestCaseId } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
@@ -21,10 +21,10 @@ import { TestCaseSwitchMode } from "./TestCaseSwitchMode";
 
 interface TestCaseExpandableProps {
     testCase: TestCase;
-    testCaseAssertionResult: TestCaseAssertionResult | undefined;
+    testCaseResult: TestCaseResult | undefined;
 }
 
-export const TestCaseExpandable = ({ testCase, testCaseAssertionResult }: TestCaseExpandableProps) => {
+export const TestCaseExpandable = ({ testCase, testCaseResult }: TestCaseExpandableProps) => {
     const [mode, setMode] = useState<TestCaseMode>("results");
 
     const activeTestCaseId = useAppSelector(getActiveTestCaseId);
@@ -55,30 +55,34 @@ export const TestCaseExpandable = ({ testCase, testCaseAssertionResult }: TestCa
     return (
         <Expandable
             componentId={`test-case-${testCase.id}`}
-            expandableTitle={<TestCaseTitle testCase={testCase} testCaseAssertionResult={testCaseAssertionResult} />}
+            expandableTitle={<TestCaseTitle testCase={testCase} testCaseResult={testCaseResult} />}
             expanded={isExpanded}
             onChange={onExpandedChange}
             summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
             detailsSx={{ p: 0 }}
         >
             <TestCaseSwitchMode value={mode} onChange={setMode} />
-            {mode === "results" && <Results testCaseAssertionResult={testCaseAssertionResult} testCase={testCase} />}
+            {mode === "results" && <Results testCaseResult={testCaseResult} testCase={testCase} />}
             {mode === "definitions" && <Definitions />}
             <Divider sx={{ mt: 1.5 }} />
-            <Footer testCaseAssertionResult={testCaseAssertionResult} />
+            <Footer testCaseResult={testCaseResult} />
         </Expandable>
     );
 };
 
 interface TestCaseTitleProps {
     testCase: TestCase;
-    testCaseAssertionResult: TestCaseAssertionResult | undefined;
+    testCaseResult: TestCaseResult | undefined;
 }
 
-const TestCaseTitle = ({ testCase, testCaseAssertionResult }: TestCaseTitleProps) => {
+const TestCaseTitle = ({ testCase, testCaseResult }: TestCaseTitleProps) => {
     const { t } = useTranslation();
-    const allResults = testCaseAssertionResult?.status === "loaded" ? Object.values(testCaseAssertionResult.results).flat() : [];
-    const isLoading = testCaseAssertionResult?.status === "loading";
+    const nodeAssertionResults =
+        testCaseResult?.status === "loaded" && testCaseResult.results.type === "Completed"
+            ? testCaseResult.results.result.assertionsResults
+            : null;
+    const allResults = nodeAssertionResults ? Object.values(nodeAssertionResults).flat() : [];
+    const isLoading = testCaseResult?.status === "loading";
     const dispatch = useAppDispatch();
 
     const { runTest } = useRunTestScenario();

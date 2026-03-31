@@ -1,6 +1,6 @@
 import type { Reducer } from "../../actions/reduxTypes";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type { TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { MultipleResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
 import type { GraphState } from "./types";
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
@@ -8,7 +8,7 @@ export type TestData = Record<Source, SourceTestData>;
 
 export type TestingState = {
     testResults: TestResultsDto;
-    assertionsResults: TestAssertionResults;
+    testCasesResults: TestCasesResults;
     testResultsLoading?: boolean;
     testData?: TestData;
     activeTestCaseId?: string;
@@ -17,8 +17,12 @@ export type TestingState = {
 export const initialTestingState: GraphState["testing"] = {
     testData: null,
     testResults: null,
-    assertionsResults: null,
+    testCasesResults: null,
 };
+
+export type TestCaseResult = { status: "loading" } | { status: "loaded"; results: MultipleResultsWithCountsDto };
+
+export type TestCasesResults = Record<string, TestCaseResult>;
 
 export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTestingState, action) => {
     switch (action.type) {
@@ -36,8 +40,8 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
         case "SET_TEST_CASE_ASSERTION_RESULTS_LOADING": {
             return {
                 ...state,
-                assertionsResults: {
-                    ...state.assertionsResults,
+                testCasesResults: {
+                    ...state.testCasesResults,
                     [action.testCaseId]: { status: "loading" },
                 },
             };
@@ -45,16 +49,16 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
         case "DISPLAY_TEST_ASSERTIONS_RESULTS": {
             return {
                 ...state,
-                assertionsResults: {
-                    ...state.assertionsResults,
-                    [action.testCaseId]: { status: "loaded", results: action.assertionsResults },
+                testCasesResults: {
+                    ...state.testCasesResults,
+                    [action.testCaseId]: { status: "loaded", results: action.results },
                 },
             };
         }
         case "CLEAR_TEST_ASSERTIONS_RESULTS": {
             return {
                 ...state,
-                assertionsResults: null,
+                testCasesResults: null,
             };
         }
         case "TEST_RESULTS_LOADING": {
@@ -70,10 +74,10 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
             };
         }
         case "TEST_CASE_ASSERTION_RESULTS_FAILED": {
-            const { [action.testCaseId]: _, ...remainingAssertionResults } = state.assertionsResults;
+            const { [action.testCaseId]: _, ...remainingTestCasesResults } = state.testCasesResults ?? {};
             return {
                 ...state,
-                assertionsResults: remainingAssertionResults,
+                testCasesResults: remainingTestCasesResults,
             };
         }
         case "DISPLAY_PROCESS_COUNTS": {

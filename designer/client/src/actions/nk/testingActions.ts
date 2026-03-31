@@ -4,12 +4,7 @@ import type { ProcessName } from "src/components/Process/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type {
-    MultipleResultsWithCountsDto,
-    NodeAssertionResults,
-    ResultsWithCountsDto,
-    TestResultsDto,
-} from "../../http/resultsWithCountsDto";
+import type { MultipleResultsWithCountsDto, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
 import type { TestCase } from "../../reducers/graph/testCase";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getTestCases } from "../../reducers/selectors/testCases";
@@ -51,7 +46,7 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
 
 export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: boolean): ThunkAction {
     const testData = isMockEnabled ? testCase : { ...testCase, mocks: {} };
-    return wrapWithTestCaseAction(testCase.id, (scenarioName, scenarioGraph) =>
+    return wrapWithTestCaseAction(testCase, (scenarioName, scenarioGraph) =>
         HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testData).then(({ data }) => ({
             testResults: data,
         })),
@@ -87,7 +82,7 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
                     if (value.data) {
                         const data = JSON.parse(value.data) as MultipleResultsWithCountsDto;
                         if (data.type === "Completed") {
-                            dispatch(displayTestAssertionsResults(data.testCaseId, data.result.assertionsResults));
+                            dispatch(displayTestAssertionsResults(data.testCaseId, data));
                         } else {
                             dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: data.testCaseId });
                         }
@@ -126,7 +121,7 @@ export type TestsActions =
     | {
           type: "DISPLAY_TEST_ASSERTIONS_RESULTS";
           testCaseId: string;
-          assertionsResults: NodeAssertionResults;
+          results: MultipleResultsWithCountsDto;
       }
     | {
           type: "CLEAR_TEST_ASSERTIONS_RESULTS";
@@ -158,7 +153,7 @@ function wrapWithTestAction(fn: TestFn): ThunkAction {
     };
 }
 
-function wrapWithTestCaseAction(testCaseId: string, fn: TestFn): ThunkAction {
+function wrapWithTestCaseAction(testCase: TestCase, fn: TestFn): ThunkAction {
     return async (dispatch, getState) => {
         dispatch({ type: "TEST_RESULTS_LOADING" });
         try {
@@ -169,10 +164,16 @@ function wrapWithTestCaseAction(testCaseId: string, fn: TestFn): ThunkAction {
             const processName = getProcessName(state);
             const { testResults, testData } = await fn(processName, scenarioGraph);
             dispatch(testingActions(testResults, testData));
-            dispatch(displayTestAssertionsResults(testCaseId, testResults.assertionsResults));
+            const completedResult: MultipleResultsWithCountsDto = {
+                type: "Completed",
+                testCaseId: testCase.id,
+                testCaseName: testCase.name,
+                result: testResults,
+            };
+            dispatch(displayTestAssertionsResults(testCase.id, completedResult));
         } catch {
             dispatch({ type: "TEST_RESULTS_FAILED" });
-            dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId });
+            dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: testCase.id });
         }
     };
 }
@@ -192,11 +193,11 @@ export function setTestCaseAssertionResultsLoading(testCaseId: string): Action {
     };
 }
 
-export function displayTestAssertionsResults(testCaseId: string, assertionsResults: NodeAssertionResults): Action {
+export function displayTestAssertionsResults(testCaseId: string, results: MultipleResultsWithCountsDto): Action {
     return {
         type: "DISPLAY_TEST_ASSERTIONS_RESULTS",
         testCaseId,
-        assertionsResults,
+        results,
     };
 }
 
