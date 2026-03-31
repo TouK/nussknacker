@@ -16,6 +16,12 @@ final case class ResultsWithCounts(
     assertionsResults: Map[NodeId, List[AssertionResult]] = Map.empty
 )
 
+/** A projection of [[pl.touk.nussknacker.engine.testmode.TestProcess.TestResults]] that contains only JSON-typed,
+  * serialization-safe data that can be handled by the carrotsearch RamUsageEstimator used for size estimation.
+  * Compared to [[pl.touk.nussknacker.engine.testmode.TestProcess.TestResults]], it drops `originalNodeResults`
+  * (raw objects used only internally for assertion verification) and replaces throwable in
+  * exceptions with message string only, as both may contain hidden-class lambdas that RamUsageEstimator cannot handle.
+  */
 final case class JsonTestResults(
     nodeResults: Map[NodeId, List[ResultContext[Json]]],
     nodeTransitionResults: Map[NodeTransition, List[ResultContext[Json]]],
