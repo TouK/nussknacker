@@ -157,6 +157,23 @@ class UberJarAssemblerTest extends AnyFunSuite with Matchers {
     }
   }
 
+  test("applies Concat strategy rule - writes a single entry with concatenated content from matching entries") {
+    withTempDir { tempDir =>
+      val jar1 = createJar(tempDir, "jar1.jar", List("concat.txt" -> "part-1\n"))
+      val jar2 = createJar(tempDir, "jar2.jar", List("concat.txt" -> "part-2\n"))
+
+      val outputJar = new UberJarAssembler(
+        mergeRules = List(MergeRule("concat.txt", MergeStrategy.Concat)),
+        uberJarPrefix = "test-jar"
+      )
+        .buildJar(tempDir, List(jar1, jar2), "com.example.Main")
+
+      Using.resource(new JarFile(outputJar.toFile)) { jarFile =>
+        readEntryText(jarFile, "concat.txt") shouldBe "part-1\npart-2\n"
+      }
+    }
+  }
+
   test("applies Rename strategy rule - appends source jar name to entry name") {
     withTempDir { tempDir =>
       val jar1 = createJar(tempDir, "jar1.jar", List("rename.txt" -> "r1"))
