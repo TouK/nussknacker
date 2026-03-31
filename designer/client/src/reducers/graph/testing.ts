@@ -1,6 +1,6 @@
 import type { Reducer } from "../../actions/reduxTypes";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type { MultipleResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { MultipleResultsWithCountsDto, NodeAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
 import type { GraphState } from "./types";
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
@@ -23,6 +23,12 @@ export const initialTestingState: GraphState["testing"] = {
 export type TestCaseResult = { status: "loading" } | { status: "loaded"; results: MultipleResultsWithCountsDto };
 
 export type TestCasesResults = Record<string, TestCaseResult>;
+
+export function getNodeAssertionResults(testCaseResult: TestCaseResult | undefined): NodeAssertionResults | undefined {
+    return testCaseResult?.status === "loaded" && testCaseResult.results.type === "Completed"
+        ? testCaseResult.results.result.assertionsResults
+        : undefined;
+}
 
 export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTestingState, action) => {
     switch (action.type) {

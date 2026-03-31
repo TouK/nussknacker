@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { changeActiveTestCase } from "../../../actions/nk/testingActions";
 import TestingIcon from "../../../assets/img/toolbarButtons/test.svg";
 import type { TestCase } from "../../../reducers/graph/testCase";
+import { getNodeAssertionResults } from "../../../reducers/graph/testing";
 import type { TestCaseResult } from "../../../reducers/graph/testing";
 import { getActiveTestCaseId } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
@@ -77,10 +78,7 @@ interface TestCaseTitleProps {
 
 const TestCaseTitle = ({ testCase, testCaseResult }: TestCaseTitleProps) => {
     const { t } = useTranslation();
-    const nodeAssertionResults =
-        testCaseResult?.status === "loaded" && testCaseResult.results.type === "Completed"
-            ? testCaseResult.results.result.assertionsResults
-            : null;
+    const nodeAssertionResults = getNodeAssertionResults(testCaseResult);
     const allResults = nodeAssertionResults ? Object.values(nodeAssertionResults).flat() : [];
     const isLoading = testCaseResult?.status === "loading";
     const dispatch = useAppDispatch();

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import type { NodeAssertionResults } from "../../../http/resultsWithCountsDto";
 import type { TestCase } from "../../../reducers/graph/testCase";
+import { getNodeAssertionResults } from "../../../reducers/graph/testing";
 import type { TestCaseResult } from "../../../reducers/graph/testing";
 import type { NodeType } from "../../../types/node";
 import { Expandable } from "../../common/Expandable";
@@ -28,10 +29,7 @@ export const Results = ({ testCaseResult, testCase }: Props) => {
     const { nodes, sortByScenarioOrder } = useScenarioNodeOrder();
 
     const isLoading = testCaseResult?.status === "loading";
-    const nodeAssertionResults =
-        testCaseResult?.status === "loaded" && testCaseResult.results.type === "Completed"
-            ? testCaseResult.results.result.assertionsResults
-            : null;
+    const nodeAssertionResults = getNodeAssertionResults(testCaseResult) ?? null;
 
     const sortedNodeIds = useMemo(
         () => sortByScenarioOrder(Object.keys(nodeAssertionResults ?? {})),
