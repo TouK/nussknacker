@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.test
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.testmode.TestProcess._
+import pl.touk.nussknacker.ui.process.test.JsonTestResults.JsonExceptionResult
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionResult
 import pl.touk.nussknacker.ui.processreport.NodeCount
 
@@ -20,17 +21,33 @@ final case class JsonTestResults(
     nodeTransitionResults: Map[NodeTransition, List[ResultContext[Json]]],
     expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[Json]]],
     externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Json]]],
-    exceptions: List[ExceptionResult[Json]],
+    exceptions: List[JsonExceptionResult],
 )
 
 object JsonTestResults {
+
+  final case class JsonExceptionResult(
+      context: ResultContext[Json],
+      nodeId: Option[NodeId],
+      message: Option[String],
+  )
+
+  object JsonExceptionResult {
+
+    def apply(exceptionResult: ExceptionResult[Json]): JsonExceptionResult = JsonExceptionResult(
+      context = exceptionResult.context,
+      nodeId = exceptionResult.nodeId,
+      message = Option(exceptionResult.throwable.getMessage),
+    )
+
+  }
 
   def from(testResults: TestResults[Json]): JsonTestResults = JsonTestResults(
     nodeResults = testResults.nodeResults,
     nodeTransitionResults = testResults.nodeTransitionResults,
     expressionEvaluationResults = testResults.expressionEvaluationResults,
     externalServiceInvocationResults = testResults.externalServiceInvocationResults,
-    exceptions = testResults.exceptions,
+    exceptions = testResults.exceptions.map(JsonExceptionResult(_)),
   )
 
 }
