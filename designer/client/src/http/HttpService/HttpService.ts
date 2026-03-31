@@ -615,7 +615,7 @@ export class HttpService {
         );
 
         const expr = request.expression.expression;
-        if (!expr.endsWith(".")) {
+        if (!/[^.]\.$/.test(expr)) {
             return promise;
         }
 
