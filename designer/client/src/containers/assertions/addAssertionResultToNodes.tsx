@@ -21,9 +21,14 @@ export const AddAssertionResultToNodes = () => {
 
         if (!model) return;
 
+        const nodeAssertionResults =
+            testCaseAssertionResult?.status === "loaded" && testCaseAssertionResult.results.type === "Completed"
+                ? testCaseAssertionResult.results.result.assertionsResults
+                : undefined;
+
         const nodes = model.getElements().filter(isModelElement);
         nodes.forEach((element) => {
-            const nodeResults = testCaseAssertionResult?.status === "loaded" ? testCaseAssertionResult.results[element.id] : undefined;
+            const nodeResults = nodeAssertionResults?.[element.id];
             const { hasResult, failedCount, passedCount, total } = calculateAssertionResultsSummary(nodeResults ?? []);
 
             const text = hasResult ? `${passedCount}/${total}` : "";

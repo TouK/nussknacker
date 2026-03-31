@@ -8,6 +8,7 @@ import type { MultipleResultsWithCountsDto, ResultsWithCountsDto, TestResultsDto
 import type { TestCase } from "../../reducers/graph/testCase";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getTestCases } from "../../reducers/selectors/testCases";
+import { getActiveTestCaseId, getTestAssertionResults } from "../../reducers/selectors/testing";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { checkPendingChanges } from "./checkPendingChanges";
@@ -62,6 +63,8 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
         const processName = getProcessName(state);
         const testCases = getTestCases(state);
 
+        dispatch(clearProcessCounts());
+        dispatch({ type: "TEST_RESULTS_LOADING" });
         testCases.forEach((testCase) => dispatch(setTestCaseAssertionResultsLoading(testCase.id)));
 
         const testData = testCases.map((testCase) => (isMockEnabled ? testCase : { ...testCase, mocks: {} }));
@@ -80,9 +83,13 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
                     const { done, value } = await reader.read();
                     if (done) break;
                     if (value.data) {
-                        const data = JSON.parse(value.data) as MultipleResultsWithCountsDto;
+                        const data: MultipleResultsWithCountsDto = JSON.parse(value.data);
                         if (data.type === "Completed") {
                             dispatch(displayTestAssertionsResults(data.testCaseId, data));
+                            const activeTestCaseId = getActiveTestCaseId(getState());
+                            if (data.testCaseId === activeTestCaseId) {
+                                dispatch(testingActions(data.result));
+                            }
                         } else {
                             dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: data.testCaseId });
                         }
@@ -155,6 +162,7 @@ function wrapWithTestAction(fn: TestFn): ThunkAction {
 
 function wrapWithTestCaseAction(testCase: TestCase, fn: TestFn): ThunkAction {
     return async (dispatch, getState) => {
+        dispatch(clearProcessCounts());
         dispatch({ type: "TEST_RESULTS_LOADING" });
         try {
             await dispatch(checkPendingChanges());
@@ -202,12 +210,14 @@ export function displayTestAssertionsResults(testCaseId: string, results: Multip
 }
 
 export function changeActiveTestCase(testCaseId: string): ThunkAction {
-    return (dispatch) => {
+    return (dispatch, getState) => {
         dispatch(clearProcessCounts());
-        dispatch({
-            type: "CHANGE_ACTIVE_TEST_CASE",
-            testCaseId,
-        });
+        dispatch({ type: "CHANGE_ACTIVE_TEST_CASE", testCaseId });
+
+        const result = getTestAssertionResults(getState())[testCaseId];
+        if (result?.status === "loaded" && result.results.type === "Completed") {
+            dispatch(testingActions(result.results.result));
+        }
     };
 }
 
