@@ -797,14 +797,16 @@ lazy val flinkExecutor = (project in flink("executor"))
         // This is needed when flink minicluster is used for deployment
         "org.apache.flink"       % "flink-metrics-influxdb"       % flinkV                      % Provided,
         "org.apache.flink"       % "flink-metrics-prometheus"     % flinkV                      % Provided,
-        "commons-logging"        % "commons-logging"              % commonsLoggingV,
         // Provided by AWS Managed Flink environment
         "com.amazonaws"          % "aws-kinesisanalytics-runtime" % awsKinesisAnaliticsRuntimeV % Provided,
         // S3 is needed for reading a deployment-properties file containing scenario json and modelConfig. Alternatively
         // we could store this deployment-properties file in the application code jar, but then we would have to upload
         // this jar every deploy. Without this, we send just one application code jar for configured classpath and reuse
         // it every time.
-        "software.amazon.awssdk" % "s3"                           % awsSdkV                     % Provided
+        "software.amazon.awssdk" % "s3"                           % awsSdkV                     %
+          // commons-logging must be in flinkExecutor jar. Excluding it here is necessary, because otherwise it is
+          // classified as Provided and filtered out during assembly
+          Provided exclude ("commons-logging", "commons-logging")
       )
     },
     prepareItLibs               := {
