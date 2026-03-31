@@ -48,7 +48,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const dispatch = useAppDispatch();
 
-    const { runTest } = useRunTestScenario();
+    const { runTest, runAllTests } = useRunTestScenario();
 
     const icon = useMemo(
         () =>
@@ -75,13 +75,13 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const handlePresetChange = useCallback(
         (preset: Preset) => {
             if (preset.value === RUN_ALL) {
-                //TODO: Implement me when backend ready
+                runAllTests();
                 return;
             }
             dispatch(changeActiveTestCase(preset.value));
             handleRunTestCaseById(preset.value);
         },
-        [dispatch, handleRunTestCaseById],
+        [dispatch, handleRunTestCaseById, runAllTests],
     );
 
     const commonProps = {

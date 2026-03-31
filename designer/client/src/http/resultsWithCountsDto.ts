@@ -94,3 +94,17 @@ export interface ResultsWithCountsDto {
     counts: ProcessCounts;
     timestamp: string; // ISO
 }
+
+type MultipleResultsWithCountsSuccessDto = { result: ResultsWithCountsDto } & {
+    testCaseId: string;
+    testCaseName: string;
+    type: "Completed";
+};
+
+type MultipleResultsWithCountsErrorDto = { error: string } & {
+    testCaseId: string;
+    testCaseName: string;
+    type: "Error";
+};
+
+export type MultipleResultsWithCountsDto = MultipleResultsWithCountsSuccessDto | MultipleResultsWithCountsErrorDto;

@@ -1,11 +1,18 @@
+import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { ProcessName } from "src/components/Process/types";
 
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type { NodeAssertionResults, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type {
+    MultipleResultsWithCountsDto,
+    NodeAssertionResults,
+    ResultsWithCountsDto,
+    TestResultsDto,
+} from "../../http/resultsWithCountsDto";
 import type { TestCase } from "../../reducers/graph/testCase";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
+import { getTestCases } from "../../reducers/selectors/testCases";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { checkPendingChanges } from "./checkPendingChanges";
@@ -49,6 +56,50 @@ export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: bool
             testResults: data,
         })),
     );
+}
+
+export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
+    return async (dispatch, getState) => {
+        await dispatch(checkPendingChanges());
+
+        const state = getState();
+        const scenarioGraph = getScenarioGraph(state);
+        const processName = getProcessName(state);
+        const testCases = getTestCases(state);
+
+        testCases.forEach((testCase) => dispatch(setTestCaseAssertionResultsLoading(testCase.id)));
+
+        const testData = testCases.map((testCase) => (isMockEnabled ? testCase : { ...testCase, mocks: {} }));
+
+        try {
+            const response = await HttpService.testScenarioWithTestMultipleCases(processName, scenarioGraph, testData);
+            if (!response.ok || !response.body) {
+                testCases.forEach((testCase) => dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: testCase.id }));
+                return;
+            }
+
+            const reader = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream()).getReader();
+
+            try {
+                for (;;) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    if (value.data) {
+                        const data = JSON.parse(value.data) as MultipleResultsWithCountsDto;
+                        if (data.type === "Completed") {
+                            dispatch(displayTestAssertionsResults(data.testCaseId, data.result.assertionsResults));
+                        } else {
+                            dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: data.testCaseId });
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+        } catch {
+            testCases.forEach((tc) => dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: tc.id }));
+        }
+    };
 }
 
 export type TestsActions =

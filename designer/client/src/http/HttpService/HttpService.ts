@@ -913,6 +913,44 @@ export class HttpService {
         return promise;
     }
 
+    testScenarioWithTestMultipleCases(
+        scenarioName: ProcessName,
+        scenarioGraph: ScenarioGraph,
+        testCases: TestCase[],
+        signal?: AbortSignal,
+    ): Promise<Response> {
+        const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
+
+        let sanitizedTestCases: TestCase[];
+        try {
+            sanitizedTestCases = testCases.map((testCase) => ({
+                ...testCase,
+                inputs: JSON.stringify(JSON.parse(testCase.inputs).map(mapInputDataRecordsToRunTestsFormat)),
+            }));
+        } catch (error) {
+            this.#addError(
+                i18next.t("notification.error.invalidTestCaseInputsJson", "Failed to test: invalid JSON in test case inputs"),
+                error,
+                true,
+            );
+            return Promise.reject(error);
+        }
+
+        return fetch(
+            `${API_URL}/scenarioTesting/${encodeURIComponent(scenarioName)}/performMultipleTestCases`,
+            SystemUtils.setAuthHeader({
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+                credentials: "include" as RequestCredentials,
+                signal,
+                body: JSON.stringify({
+                    scenarioGraph: sanitized,
+                    testCases: sanitizedTestCases,
+                }),
+            }),
+        );
+    }
+
     validateTestDataWithDataRecords(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, dataRecords: TestingDataRecords) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
 
