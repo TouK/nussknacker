@@ -2867,7 +2867,6 @@ trait SpelExpressionSpec
       Table(
         ("expression with not null var", "expression with null var", "return type", "not null result"),
         ("#obj?.value", "#null_obj?.value", Unknown, 42L),
-        ("#array?.[1]", "#null_array?.[1]", Typed[JInteger], 20),
         (
           "#array?.?[#this > 10]",
           "#null_array?.?[#this > 10]",
@@ -2882,8 +2881,13 @@ trait SpelExpressionSpec
           Typed.genericTypeClass[JList[_]](List(Typed[JInteger])),
           List(20, 40, 60).asJava
         ),
-        ("#map?.['a']", "#null_map?.['a']", Typed[JInteger], 10),
-        ("#record?.['fieldString']", "#null_record?.['fieldString']", Typed[String], "string"),
+//      Indexing null-safe navigation test cases are disabled for now until SpEL is upgraded to version >= 6.2.0.
+//      Downgrade was necessary because from version 6.0, Spring jars have java 17 bytecode and certain environments
+//      needed to remain at java 11
+//      TODO: enable indexing test cases after upgrading Spring to >= 6.0
+//        ("#array?.[1]", "#null_array?.[1]", Typed[JInteger], 20),
+//        ("#map?.['a']", "#null_map?.['a']", Typed[JInteger], 10),
+//        ("#record?.['fieldString']", "#null_record?.['fieldString']", Typed[String], "string"),
       )
     ) { (expressionWithNotNullVar, expressionWithNullVar, returnType, result) =>
       val parsedWithNotNullVar = parseV[Any](expressionWithNotNullVar, validationContext).validValue
