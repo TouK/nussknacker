@@ -288,9 +288,13 @@ class ScenarioTestService(
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, canonical, testData)
       )
-
-      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
+      jsonTestResults = JsonTestResults.from(testResults)
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(jsonTestResults))
+    } yield ResultsWithCounts(
+      Instant.now(),
+      jsonTestResults,
+      computeCounts(canonical, isFragment, testResults)
+    )).value
   }
 
   def performTestCase(
@@ -325,11 +329,11 @@ class ScenarioTestService(
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, scenarioWithTyping.scenario, scenarioTestData)
       )
-
-      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+      jsonTestResults = JsonTestResults.from(testResults)
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(jsonTestResults))
     } yield ResultsWithCounts(
       Instant.now(),
-      testResults,
+      jsonTestResults,
       computeCounts(scenarioWithTyping.scenario, isFragment, testResults),
       assertionVerifier.verify(compiledAssertions, testResults.originalNodeResults, jobData)
     )).value
@@ -434,9 +438,13 @@ class ScenarioTestService(
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData)
       )
-
-      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
+      jsonTestResults = JsonTestResults.from(testResults)
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(jsonTestResults))
+    } yield ResultsWithCounts(
+      Instant.now(),
+      jsonTestResults,
+      computeCounts(canonical, isFragment, testResults)
+    )).value
   }
 
   private def performTestWithDeserializedRecords(
@@ -534,7 +542,11 @@ class ScenarioTestService(
       isFragment: Boolean,
   )(implicit user: LoggedUser): ResultsWithCounts = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))
+    ResultsWithCounts(
+      Instant.now(),
+      JsonTestResults.from(testResults),
+      computeCounts(canonical, isFragment, testResults)
+    )
   }
 
   def validateRecordsCount[E](size: Int)(tooManyRecordsError: Int => E): Either[E, Unit] = {
@@ -561,18 +573,18 @@ class ScenarioTestService(
     )
   }
 
-  private def validateTestResultsAreNotTooBig(testResults: TestResults[_]): Either[PerformTestError, Unit] = {
+  private def validateTestResultsAreNotTooBig(jsonTestResults: JsonTestResults): Either[PerformTestError, Unit] = {
     testDataSettings.resultsMaxBytes
       .map { definedResultsMaxBytes =>
-        val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
+        val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(jsonTestResults)
         Either.cond(
           testDataResultApproxByteSize <= definedResultsMaxBytes,
           (), {
             logger.whenDebugEnabled {
-              val fieldSizes = testResults.getClass.getDeclaredFields
+              val fieldSizes = jsonTestResults.getClass.getDeclaredFields
                 .map { field =>
                   field.setAccessible(true)
-                  val fieldSize = RamUsageEstimator.sizeOf(field.get(testResults))
+                  val fieldSize = RamUsageEstimator.sizeOf(field.get(jsonTestResults))
                   s"${field.getName}=$fieldSize"
                 }
                 .mkString(", ")
