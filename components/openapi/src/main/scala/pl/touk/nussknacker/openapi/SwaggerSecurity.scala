@@ -32,3 +32,16 @@ final case class ApiKeyInCookie(name: String, key: String) extends SwaggerSecuri
 final case class BasicAuth(name: String, username: String, password: String) extends SwaggerSecurity {
   override def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.auth.basic(username, password)
 }
+
+final case class OAuth2ClientCredentials(
+    name: String,
+    tokenUrl: String,
+    clientId: String,
+    clientSecret: String,
+    scope: Option[String]
+) extends SwaggerSecurity {
+
+  // OAuth2 client credentials are applied on backend send stage where token provider can be used.
+  override def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request
+
+}
