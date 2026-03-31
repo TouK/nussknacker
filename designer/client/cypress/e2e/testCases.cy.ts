@@ -193,7 +193,7 @@ describe("Test cases", () => {
 
 const addEmptyAssertion = () => {
     cy.get('[id="Assertions-content"]').within(() => {
-        cy.get('button[title="Add field"]').click();
+        cy.get('button[title="Add field"]').scrollIntoView().click();
     });
 };
 
