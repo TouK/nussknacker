@@ -332,6 +332,7 @@ val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.2.2"
 val sttpV                     = "3.11.0"
 val sttpSharedV               = "1.3.22"
+val sttpOAuth2V               = "0.19.2"
 val tapirV                    = "1.11.12"
 val openapiCirceYamlV         = "0.11.10"
 val monocleV                  = "2.1.0"
@@ -1705,6 +1706,9 @@ lazy val httpUtils = (project in utils("http-utils"))
         "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
         "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
+        "org.polyvariant"               %% "sttp-oauth2"                      % sttpOAuth2V,
+        "org.polyvariant"               %% "sttp-oauth2-circe"                % sttpOAuth2V,
+        "org.polyvariant"               %% "sttp-oauth2-cache-future"         % sttpOAuth2V,
         "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
         "io.netty"                       % "netty-handler"                    % nettyV,
       )
