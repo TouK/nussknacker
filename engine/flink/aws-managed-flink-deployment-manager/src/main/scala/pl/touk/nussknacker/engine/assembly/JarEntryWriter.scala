@@ -27,6 +27,7 @@ object JarEntryWriter extends LazyLogging {
       outputJar: JarOutputStream,
       state: AssemblyState
   ): Unit = strategy match {
+    case MergeStrategy.Concat      => writeConcatenatedToBuffer(entryName, entryJarPath, openEntryStream, state)
     case MergeStrategy.Discard     => logger.trace(s"[Discard] Skipped entry '$entryName' from '$entryJarPath'.")
     case MergeStrategy.Deduplicate => writeWithoutDuplicates(entryName, entryJarPath, openEntryStream, outputJar, state)
     case MergeStrategy.FilterDistinctLines =>
@@ -41,10 +42,17 @@ object JarEntryWriter extends LazyLogging {
   ): Unit = {
     val bufferedEntries = state.bufferedEntries
     if (bufferedEntries.nonEmpty) {
-      logger.trace(s"[FilterDistinctLines] Writing ${bufferedEntries.size} buffered entries.")
       bufferedEntries.toSeq.sortBy(_._1).foreach { case (entryName, buffer) =>
-        outputJar.writeArray(entryName, buffer.lines.mkString("\n").getBytes("UTF-8"))
-        logger.trace(s"[FilterDistinctLines] Wrote entry '$entryName' (${buffer.lines.size} unique lines).")
+        buffer match {
+          case BufferedEntry.ConcatenatedEntry(contents) =>
+            outputJar.writeEntry(entryName) { out =>
+              contents.foreach(out.write)
+            }
+            logger.trace(s"[Concat] Wrote entry '$entryName' from ${contents.size} buffered fragments.")
+          case BufferedEntry.DistinctLinesEntry(lines) =>
+            outputJar.writeArray(entryName, lines.mkString("\n").getBytes("UTF-8"))
+            logger.trace(s"[FilterDistinctLines] Wrote entry '$entryName' (${lines.size} unique lines).")
+        }
       }
     }
   }
@@ -81,12 +89,41 @@ object JarEntryWriter extends LazyLogging {
     }
     val buffer = state.bufferedEntries.getOrElseUpdate(
       entryName,
-      BufferedEntry(mutable.LinkedHashSet.empty)
+      BufferedEntry.DistinctLinesEntry(mutable.LinkedHashSet.empty[String])
     )
-    lines.foreach(buffer.lines.add)
-    logger.trace(
-      s"[FilterDistinctLines] Buffered entry '$entryName' from '$entryJarPath'."
+    buffer match {
+      case BufferedEntry.DistinctLinesEntry(bufferedLines) =>
+        lines.foreach(bufferedLines.add)
+        logger.trace(
+          s"[FilterDistinctLines] Buffered entry '$entryName' from '$entryJarPath'."
+        )
+      case BufferedEntry.ConcatenatedEntry(_) =>
+        throw new IllegalStateException(s"Entry '$entryName' is already buffered with Concat strategy.")
+    }
+  }
+
+  private def writeConcatenatedToBuffer(
+      entryName: String,
+      entryJarPath: Path,
+      openEntryStream: () => InputStream,
+      state: AssemblyState
+  ): Unit = {
+    val content = Using.resource(openEntryStream()) { entryStream =>
+      entryStream.readAllBytes()
+    }
+    val buffer = state.bufferedEntries.getOrElseUpdate(
+      entryName,
+      BufferedEntry.ConcatenatedEntry(mutable.ListBuffer.empty[Array[Byte]])
     )
+    buffer match {
+      case BufferedEntry.ConcatenatedEntry(contents) =>
+        contents += content
+        logger.trace(
+          s"[Concat] Buffered entry '$entryName' from '$entryJarPath'."
+        )
+      case BufferedEntry.DistinctLinesEntry(_) =>
+        throw new IllegalStateException(s"Entry '$entryName' is already buffered with FilterDistinctLines strategy.")
+    }
   }
 
   private def writeWithoutDuplicates(
