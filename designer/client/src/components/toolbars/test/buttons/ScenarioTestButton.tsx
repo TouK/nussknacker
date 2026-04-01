@@ -42,7 +42,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
     const isSingleTestCase = testCasePresets.length <= 1;
 
-    const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testCaseAssertionResult);
+    const { status } = getAssertionResultsSummary(testCaseAssertionResult);
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
 
     const dispatch = useAppDispatch();
@@ -50,13 +50,8 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { runTest, runAllTests } = useRunTestScenario();
 
     const icon = useMemo(
-        () =>
-            activeTestCasePreset?.value === RUN_ALL ? (
-                <TestingIcon />
-            ) : (
-                <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
-            ),
-        [activeTestCasePreset?.value, assertionsIsSuccess, hasResult],
+        () => (activeTestCasePreset?.value === RUN_ALL ? <TestingIcon /> : <TestingIconWithAssertionStatus status={status} />),
+        [activeTestCasePreset?.value, status],
     );
 
     const handleRunCurrentTestCase = useCallback(() => runTest(testCase), [runTest, testCase]);

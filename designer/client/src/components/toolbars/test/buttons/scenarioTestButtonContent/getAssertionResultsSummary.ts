@@ -1,12 +1,15 @@
 import { calculateAssertionResultsSummary } from "../../../../../containers/assertions/assertionResultsUtils";
 import { getNodeAssertionResults } from "../../../../../reducers/graph/testing";
 import type { TestCaseResult } from "../../../../../reducers/graph/testing";
+import type { AssertionStatus } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
 
-export const getAssertionResultsSummary = (testCaseResult: TestCaseResult | undefined) => {
+export const getAssertionResultsSummary = (testCaseResult: TestCaseResult | undefined): { status: AssertionStatus | null } => {
     const nodeAssertionResults = getNodeAssertionResults(testCaseResult);
-    const allResults = nodeAssertionResults ? Object.values(nodeAssertionResults).flat() : [];
-    const { hasResult, failedCount } = calculateAssertionResultsSummary(allResults);
-    const assertionsIsSuccess = hasResult && failedCount === 0;
+    if (nodeAssertionResults === undefined) return { status: null };
 
-    return { hasResult, assertionsIsSuccess };
+    const allResults = Object.values(nodeAssertionResults).flat();
+    const { hasResult, failedCount } = calculateAssertionResultsSummary(allResults);
+
+    if (!hasResult) return { status: "noAssertions" };
+    return { status: failedCount === 0 ? "success" : "error" };
 };
