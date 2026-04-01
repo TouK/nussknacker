@@ -13,7 +13,7 @@ export const ParamKeyProvider = ({
     param,
     custom,
     children,
-}: PropsWithChildren<{ node?: NodeType; param?: Parameter; custom: ParamKeys }>) => {
+}: PropsWithChildren<{ node?: NodeType; param?: Parameter; custom?: ParamKeys }>) => {
     const value = useMemo(() => {
         return custom ?? determineParameterKey(node, param);
     }, [custom, node, param]);
