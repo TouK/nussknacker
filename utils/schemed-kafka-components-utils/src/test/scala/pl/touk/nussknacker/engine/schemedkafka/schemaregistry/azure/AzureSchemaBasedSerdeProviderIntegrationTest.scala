@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, RawOptimizedGenericRecordSerializationConfig}
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalSchemaBasedSerdeProvider,
@@ -33,6 +33,7 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
     val kafkaComponentsConfig = KafkaComponentsConfig(
       config,
       None,
+      optimizedGenericRecordSerialization = RawOptimizedGenericRecordSerializationConfig(enabled = false),
       showTopicsWithoutSchema = false,
     )
     val schema = AvroUtils.parseSchema("""{

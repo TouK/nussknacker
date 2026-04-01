@@ -37,6 +37,7 @@ object StateCompatibilityTest {
   * Important:
   * A compliance with previous-snapshot strongly depends on serialVersionUID (all snapshot classes implement Serializable).
   * and this serialVersionUID should be explicitly provided in all savepoint-able classes.
+  * @see description in [[pl.touk.nussknacker.engine.process.util.Serializers]]
   * @see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html
   */
 class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {

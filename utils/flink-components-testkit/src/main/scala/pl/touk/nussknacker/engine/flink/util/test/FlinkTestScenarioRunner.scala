@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.{FlinkBaseUnboundedComponentProvider, FlinkScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
@@ -77,6 +78,7 @@ private object testComponents {
 
 class FlinkTestScenarioRunner(
     components: List[ComponentDefinition],
+    serializersRegistrars: List[SerializersRegistrar],
     globalVariables: Map[String, AnyRef],
     modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
@@ -236,7 +238,7 @@ class FlinkTestScenarioRunner(
           val registrar = FlinkProcessRegistrar(
             compilerFactory,
             FlinkJobConfig.parse(modelData.modelConfig),
-            ExecutionConfigPreparer.unOptimizedChain(modelData),
+            ExecutionConfigPreparer.unOptimizedChain(modelData, serializersRegistrars),
           )
           registrar.register(
             env,
@@ -302,7 +304,7 @@ class FlinkTestScenarioRunner(
               val registrar = FlinkProcessRegistrar(
                 compilerFactory,
                 FlinkJobConfig.parse(modelData.modelConfig),
-                ExecutionConfigPreparer.unOptimizedChain(modelData)
+                ExecutionConfigPreparer.unOptimizedChain(modelData, serializersRegistrars)
               )
 
               registrar.register(
@@ -392,6 +394,7 @@ object FlinkTestScenarioRunner {
     ): FlinkTestScenarioRunnerBuilder = {
       FlinkTestScenarioRunnerBuilder(
         components = List.empty,
+        serializersRegistrars = List.empty,
         globalVariables = Map.empty,
         modelConfig = modelConfig,
         flinkMiniClusterWithServices = flinkMiniClusterWithServices,
@@ -423,6 +426,7 @@ object FlinkTestScenarioRunner {
 
 final case class FlinkTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
+    serializersRegistrars: List[SerializersRegistrar],
     globalVariables: Map[String, AnyRef],
     modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
@@ -435,6 +439,11 @@ final case class FlinkTestScenarioRunnerBuilder(
   override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
     copy(components = components)
   }
+
+  def withExtraSerializersRegistrars(
+      serializersRegistrars: List[SerializersRegistrar]
+  ): FlinkTestScenarioRunnerBuilder =
+    copy(serializersRegistrars = serializersRegistrars)
 
   override def withExtraGlobalVariables(
       globalVariables: Map[String, AnyRef]
@@ -453,6 +462,7 @@ final case class FlinkTestScenarioRunnerBuilder(
   override def build() =
     new FlinkTestScenarioRunner(
       components,
+      serializersRegistrars,
       globalVariables,
       modelConfig,
       flinkMiniClusterWithServices,
