@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { changeActiveTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { getActiveTestCase, getTestCases } from "../../../../reducers/selectors/testCases";
+import { getActiveTestCase } from "../../../../reducers/selectors/testCases";
 import { getActiveTestCaseAssertionResult, getActiveTestCaseAssertionResultLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
@@ -31,7 +31,6 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { disabled, title, titleOverride, type } = props;
     const { t } = useTranslation();
     const testCase = useAppSelector(getActiveTestCase);
-    const testCases = useAppSelector(getTestCases);
     const isLoading = useAppSelector(getActiveTestCaseAssertionResultLoading);
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
@@ -62,26 +61,16 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const handleRunCurrentTestCase = useCallback(() => runTest(testCase), [runTest, testCase]);
 
-    const handleRunTestCaseById = useCallback(
-        (testCaseId: string) => {
-            const testCaseToRun = testCases.find((tc) => tc.id === testCaseId);
-            if (!testCaseToRun) return;
-
-            runTest(testCaseToRun);
-        },
-        [runTest, testCases],
-    );
-
     const handlePresetChange = useCallback(
         (preset: Preset) => {
             if (preset.value === RUN_ALL) {
                 runAllTests();
                 return { keepMenuOpen: true };
             }
+
             dispatch(changeActiveTestCase(preset.value));
-            handleRunTestCaseById(preset.value);
         },
-        [dispatch, handleRunTestCaseById, runAllTests],
+        [dispatch, runAllTests],
     );
 
     const commonProps = {
