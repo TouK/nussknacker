@@ -10,6 +10,7 @@ import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph
 import { getTestCases } from "../../reducers/selectors/testCases";
 import { getActiveTestCaseId, getTestAssertionResults } from "../../reducers/selectors/testing";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
+import { error } from "../notificationActions";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { checkPendingChanges } from "./checkPendingChanges";
 import { clearProcessCounts, displayProcessCounts } from "./displayProcessCounts";
@@ -63,6 +64,11 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
         const processName = getProcessName(state);
         const testCases = getTestCases(state);
 
+        const failTestCase = (id: string, name: string, details?: string) => {
+            dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: id });
+            dispatch(error(`Test case "${name}" failed`, details, !!details));
+        };
+
         dispatch(clearProcessCounts());
         dispatch({ type: "TEST_RESULTS_LOADING" });
         testCases.forEach((testCase) => dispatch(setTestCaseAssertionResultsLoading(testCase.id)));
@@ -72,7 +78,7 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
         try {
             const response = await HttpService.testScenarioWithTestMultipleCases(processName, scenarioGraph, testData);
             if (!response.ok || !response.body) {
-                testCases.forEach((testCase) => dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: testCase.id }));
+                testCases.forEach((testCase) => failTestCase(testCase.id, testCase.name));
                 return;
             }
 
@@ -91,7 +97,7 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
                                 dispatch(testingActions(data.result));
                             }
                         } else {
-                            dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: data.testCaseId });
+                            failTestCase(data.testCaseId, data.testCaseName, data.error);
                         }
                     }
                 }
@@ -99,7 +105,7 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
                 reader.releaseLock();
             }
         } catch {
-            testCases.forEach((tc) => dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId: tc.id }));
+            testCases.forEach((tc) => failTestCase(tc.id, tc.name));
         }
     };
 }
