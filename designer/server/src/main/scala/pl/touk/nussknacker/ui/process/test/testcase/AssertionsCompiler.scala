@@ -232,16 +232,23 @@ class AssertionsCompiler(
       actual: String
   ): String = {
     operator match {
-      case AssertionOperator.Equals      => s"($expected) == ($actual)"
-      case AssertionOperator.NotEquals   => s"($expected) != ($actual)"
-      case AssertionOperator.GreaterThan => s"($expected) != null && ($actual) != null && ($expected) > ($actual)"
-      case AssertionOperator.LessThan    => s"($expected) != null && ($actual) != null && ($expected) < ($actual)"
+      case AssertionOperator.Equals => s"($actual) == ($expected)"
+      case AssertionOperator.NotEquals =>
+        s"($actual) != ($expected)"
+      case AssertionOperator.GreaterThan =>
+        s"($actual) != null && ($expected) != null && ($actual) > ($expected)"
+      case AssertionOperator.LessThan =>
+        s"($actual) != null && ($expected) != null && ($actual) < ($expected)"
       case AssertionOperator.GreaterThanOrEqual =>
-        s"($expected) != null && ($actual) != null && ($expected) >= ($actual)"
-      case AssertionOperator.LessThanOrEqual => s"($expected) != null && ($actual) != null && ($expected) <= ($actual)"
-      case AssertionOperator.HasSize  => s"($actual) != null && ($expected) != null && ($actual).size() == ($expected)"
-      case AssertionOperator.Contains => s"($actual) != null && ($expected) != null && ($actual).contains(($expected))"
-      case AssertionOperator.Matches  => s"($actual) != null && ($expected) != null && ($actual) matches ($expected)"
+        s"($actual) != null && ($expected) != null && ($actual) >= ($expected)"
+      case AssertionOperator.LessThanOrEqual =>
+        s"($actual) != null && ($expected) != null && ($actual) <= ($expected)"
+      case AssertionOperator.HasSize =>
+        s"($actual) != null && ($expected) != null && ($actual).size() == ($expected)"
+      case AssertionOperator.Contains =>
+        s"($actual) != null && ($expected) != null && ($actual).contains(($expected))"
+      case AssertionOperator.Matches =>
+        s"($actual) != null && ($expected) != null && ($actual) matches ($expected)"
     }
   }
 

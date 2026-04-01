@@ -98,12 +98,12 @@ class AssertionsCompilerSpec
     compiledAssertionsForNode(0).operator shouldBe Assertion.AssertionOperator.Equals
     compiledAssertionsForNode(0).expectedExpression.original shouldBe "1"
     compiledAssertionsForNode(0).actualExpression.original shouldBe "#records.size"
-    compiledAssertionsForNode(0).comparisonExpression.original shouldBe "(1) == (#records.size)"
+    compiledAssertionsForNode(0).comparisonExpression.original shouldBe "(#records.size) == (1)"
 
     compiledAssertionsForNode(1).operator shouldBe Assertion.AssertionOperator.Equals
     compiledAssertionsForNode(1).expectedExpression.original shouldBe "true"
     compiledAssertionsForNode(1).actualExpression.original shouldBe "#records.size > 0"
-    compiledAssertionsForNode(1).comparisonExpression.original shouldBe "(true) == (#records.size > 0)"
+    compiledAssertionsForNode(1).comparisonExpression.original shouldBe "(#records.size > 0) == (true)"
   }
 
   test("should produce errors for assertions on missing nodes") {
@@ -211,10 +211,10 @@ class AssertionsCompilerSpec
             `nodeId`,
             _
           ) =>
-        message shouldBe "Operator '==' used with not comparable types: String and Integer"
+        message shouldBe "Operator '==' used with not comparable types: Integer and String"
         parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
         field shouldBe PredicateAssertionCompilationError.Field.Actual
-        originalExpr shouldBe "('string') == (123)"
+        originalExpr shouldBe "(123) == ('string')"
         details shouldBe None
         assertion shouldBe assertionComparingUnrelatedTypes
     }
@@ -238,7 +238,7 @@ class AssertionsCompilerSpec
         ),
         (
           PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "123".spel),
-          Validated.invalidNel("Operator '==' used with not comparable types: String and Integer")
+          Validated.invalidNel("Operator '==' used with not comparable types: Integer and String")
         ),
         (
           PredicateAssertion(
@@ -254,7 +254,7 @@ class AssertionsCompilerSpec
             "{'abc', 'def'}".spel,
             "{123}".spel,
           ),
-          Validated.invalidNel("Operator '==' used with not comparable types: List[String] and List[Integer]")
+          Validated.invalidNel("Operator '==' used with not comparable types: List[Integer] and List[String]")
         ),
         (
           PredicateAssertion(
