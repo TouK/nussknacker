@@ -48,6 +48,32 @@ describe("Expression suggester", () => {
         cy.contains("There is no property").should("exist");
     });
 
+    it("should insert bracket access for suggestion with space", () => {
+        cy.visitNewProcess(seed, "variables");
+        cy.layoutScenario();
+        cy.getNode("kafka-string").trigger("dblclick");
+        cy.get("[data-testid=window]").as("modal");
+        cy.get("[title=Value]").next().find(".ace_editor").click().type(".");
+        cy.get(".ace_autocomplete").should("be.visible").contains("with space").should("be.visible").click({ force: true });
+        cy.get("[title=Value]").next().find(".ace_editor").should("contain", '["with space"]');
+    });
+
+    it("should not offer bracket access suggestions for double dot", () => {
+        cy.visitNewProcess(seed, "variables");
+        cy.layoutScenario();
+        cy.getNode("kafka-string").trigger("dblclick");
+        cy.get("[data-testid=window]").as("modal");
+        cy.get("[title=Value]").next().find(".ace_editor").click().as("editor");
+        cy.get("@editor")
+            .type(".")
+            .contains(/[^.]\.$/);
+        cy.get(".ace_autocomplete").should("be.visible");
+        cy.get("@editor")
+            .type(".")
+            .contains(/[^.]\.\.$/);
+        cy.get(".ace_autocomplete").should("not.be.visible");
+    });
+
     it("should display completions for second line (bugfix)", () => {
         cy.visitNewProcess(seed, "variables");
         cy.layoutScenario();

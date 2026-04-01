@@ -604,7 +604,8 @@ export class HttpService {
     }
 
     getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {
-        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, request);
+        const url = `/parameters/${encodeURIComponent(processingType)}/suggestions`;
+        const promise = api.post<ExpressionSuggestion[]>(url, request);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),
@@ -612,7 +613,38 @@ export class HttpService {
                 true,
             ),
         );
-        return promise;
+
+        const expr = request.expression.expression;
+        if (!/[^.]\.$/.test(expr)) {
+            return promise;
+        }
+
+        const bracketRequest: ExpressionSuggestionRequest = {
+            ...request,
+            expression: {
+                ...request.expression,
+                expression: expr.slice(0, -1) + '[""]',
+            },
+            caretPosition2d: {
+                ...request.caretPosition2d,
+                column: request.caretPosition2d.column + 1,
+            },
+        };
+
+        const bracketPromise = api.post<ExpressionSuggestion[]>(url, bracketRequest).catch(() => null);
+
+        return Promise.all([promise, bracketPromise]).then(([dotResponse, bracketResponse]) => {
+            if (!bracketResponse) return dotResponse;
+
+            const existingNames = new Set(dotResponse.data.map((s) => s.methodName));
+            const additional = bracketResponse.data
+                .filter((s) => !existingNames.has(s.methodName))
+                .map((s) => ({ ...s, bracketAccess: true }));
+            return {
+                ...dotResponse,
+                data: [...dotResponse.data, ...additional],
+            };
+        });
     }
 
     validateProperties(

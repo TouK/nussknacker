@@ -1,8 +1,12 @@
 #!/usr/bin/env sh
 set -eu
 
-echo $PATH
-echo "Checking frontend files..."
+if git diff --cached --name-only --diff-filter=ACM | grep --max-count=1 -E "^designer/client/" > /dev/null; then
+  echo "Checking client files..."
+  npm run commit --if-present --prefix client
+fi
 
-npm run commit --if-present --prefix client
-npm run commit --if-present --prefix submodules
+if git diff --cached --name-only --diff-filter=ACM | grep --max-count=1 -E "^designer/submodules/" > /dev/null; then
+  echo "Checking submodules files..."
+  npm run commit --if-present --prefix submodules
+fi
