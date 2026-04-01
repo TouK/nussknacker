@@ -11,12 +11,12 @@ const ParamKey = React.createContext<ParamKeys>(null);
 export const ParamKeyProvider = ({
     node,
     param,
-    value: valueProp,
+    custom,
     children,
-}: PropsWithChildren<{ node?: NodeType; param?: Parameter; value?: ParamKeys }>) => {
+}: PropsWithChildren<{ node?: NodeType; param?: Parameter; custom: ParamKeys }>) => {
     const value = useMemo(() => {
-        return valueProp ?? determineParameterKey(node, param);
-    }, [valueProp, node, param]);
+        return custom ?? determineParameterKey(node, param);
+    }, [custom, node, param]);
 
     return (
         <ParamKey.Provider value={value}>

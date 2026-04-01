@@ -140,7 +140,7 @@ const AssertionItemComponent = ({
                     />
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
-                    <ParamKeyProvider value={OverrideKeys.AssertionActual}>
+                    <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
                         <EditableEditor
                             showSwitch={false}
                             editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
