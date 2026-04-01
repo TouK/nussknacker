@@ -41,6 +41,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import java.util.UUID
@@ -468,7 +469,7 @@ class ValidationResourcesSpec
     }
   }
 
-  it should "find error for duplicate test case names" in {
+  it should "validate test case metadata" in {
     val scenarioGraph = ScenarioBuilder
       .streaming("testCaseValidationScenario")
       .additionalFields(properties = Map("requiredStringProperty" -> "some value"))
@@ -493,6 +494,13 @@ class ValidationResourcesSpec
                 mocks = Map.empty,
                 assertions = Map.empty
               ),
+              TestCase(
+                id = UUID.randomUUID(),
+                name = "too long name " * 10,
+                inputs = "{}",
+                mocks = Map.empty,
+                assertions = Map.empty
+              )
             )
           )
         )
@@ -501,8 +509,12 @@ class ValidationResourcesSpec
     createAndValidateScenario(scenarioGraph, ProcessName("testCaseValidation")) {
       status shouldBe StatusCodes.OK
       val validation = responseAs[ValidationResult]
-      validation.errors.globalErrors should have size 1
-      validation.errors.globalErrors.head.error.message shouldBe "Duplicate test case names: duplicate"
+      validation.errors.globalErrors should have size 3
+      validation.errors.globalErrors.map(_.error.typ) should contain only (
+        "DuplicateTestCaseNames",
+        "InvalidTestCaseName",
+        "MultipleTestCasesDisabled"
+      )
     }
   }
 
