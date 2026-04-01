@@ -541,8 +541,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
 
     result.errors.globalErrors should have size 2
     forAll(result.errors.globalErrors) { case UIGlobalError(error, _) =>
-      error.typ shouldBe "InvalidTestCaseName"
-      error.message should startWith("Invalid test case name:")
+      error.typ shouldBe "TestCaseNameTooLong"
+      error.message should startWith("Test case name too long:")
       error.description shouldBe s"Test case name must not exceed ${TestCaseValidator.MaxTestCaseNameLength} characters"
       error.errorType shouldBe NodeValidationErrorType.SaveAllowed
     }

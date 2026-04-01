@@ -44,9 +44,9 @@ class TestCaseValidator(
   }
 
   private def validateNameLength(testCases: List[TestCase]): ValidatedNel[UIGlobalError, Unit] = {
-    val invalidNames      = testCases.filter(_.name.length > MaxTestCaseNameLength)
-    val invalidNameErrors = invalidNames.map(tc => errors.invalidTestCaseName(tc.name))
-    NonEmptyList.fromList(invalidNameErrors).toInvalid(())
+    val tooLongNames      = testCases.filter(_.name.length > MaxTestCaseNameLength)
+    val tooLongNameErrors = tooLongNames.map(tc => errors.testCaseNameTooLong(tc.name))
+    NonEmptyList.fromList(tooLongNameErrors).toInvalid(())
   }
 
   private def validateNameUniqueness(testCases: List[TestCase]): ValidatedNel[UIGlobalError, Unit] = {
@@ -180,11 +180,11 @@ object TestCaseValidator {
 
   private object errors {
 
-    def invalidTestCaseName(invalidName: TestCaseName): UIGlobalError = {
+    def testCaseNameTooLong(invalidName: TestCaseName): UIGlobalError = {
       UIGlobalError(
         error = NodeValidationError(
-          typ = "InvalidTestCaseName",
-          message = s"Invalid test case name: '${invalidName.take(MaxTestCaseNameLength / 5)}...'",
+          typ = "TestCaseNameTooLong",
+          message = s"Test case name too long: '${invalidName.take(MaxTestCaseNameLength / 5)}...'",
           description = s"Test case name must not exceed $MaxTestCaseNameLength characters",
           fieldName = None,
           errorType = NodeValidationErrorType.SaveAllowed,

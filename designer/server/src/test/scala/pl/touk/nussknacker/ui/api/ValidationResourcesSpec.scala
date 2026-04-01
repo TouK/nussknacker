@@ -512,7 +512,7 @@ class ValidationResourcesSpec
       validation.errors.globalErrors should have size 3
       validation.errors.globalErrors.map(_.error.typ) should contain only (
         "DuplicateTestCaseNames",
-        "InvalidTestCaseName",
+        "TestCaseNameTooLong",
         "MultipleTestCasesDisabled"
       )
     }
