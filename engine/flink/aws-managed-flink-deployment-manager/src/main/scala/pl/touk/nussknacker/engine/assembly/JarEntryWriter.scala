@@ -46,7 +46,13 @@ object JarEntryWriter extends LazyLogging {
         buffer match {
           case BufferedEntry.ConcatenatedEntry(contents) =>
             outputJar.writeEntry(entryName) { out =>
-              contents.foreach(out.write)
+              val separatorBytes = "\n".getBytes("UTF-8")
+              contents.foreach { content =>
+                out.write(content)
+                if (!content.endsWith(separatorBytes)) {
+                  out.write(separatorBytes)
+                }
+              }
             }
             logger.trace(s"[Concat] Wrote entry '$entryName' from ${contents.size} buffered fragments.")
           case BufferedEntry.DistinctLinesEntry(lines) =>
