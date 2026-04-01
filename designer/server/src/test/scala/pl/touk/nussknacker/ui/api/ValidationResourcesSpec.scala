@@ -496,7 +496,7 @@ class ValidationResourcesSpec
               ),
               TestCase(
                 id = UUID.randomUUID(),
-                name = "too long name " * 10,
+                name = "a" * TestCaseValidator.MaxTestCaseNameLength + 1,
                 inputs = "{}",
                 mocks = Map.empty,
                 assertions = Map.empty

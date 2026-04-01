@@ -155,7 +155,7 @@ class TestCaseValidator(
 
 object TestCaseValidator {
 
-  private[validation] val MaxTestCaseNameLength = 100
+  val MaxTestCaseNameLength = 100
 
   final case class NodeTyping(
       inputVariables: Map[String, TypingResult],
