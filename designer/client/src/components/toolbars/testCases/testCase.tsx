@@ -109,7 +109,7 @@ const TestCaseTitle = ({ testCase, testCaseResult }: TestCaseTitleProps) => {
             <Typography variant={"body1"} noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                 {testCase.name}
             </Typography>
-            <AssertionResultsBadge assertionResults={allResults} />
+            <AssertionResultsBadge assertionResults={nodeAssertionResults ? allResults : undefined} />
             {isLoading ? (
                 <CircularProgress size={14} />
             ) : (

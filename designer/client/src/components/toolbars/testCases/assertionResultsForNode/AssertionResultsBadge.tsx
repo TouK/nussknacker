@@ -5,7 +5,7 @@ import { calculateAssertionResultsSummary } from "../../../../containers/asserti
 import type { TestAssertionResult } from "../../../../http/resultsWithCountsDto";
 
 interface AssertionResultsBadgeProps {
-    assertionResults: TestAssertionResult[];
+    assertionResults: TestAssertionResult[] | undefined;
 }
 
 export const AssertionResultsBadge = ({ assertionResults }: AssertionResultsBadgeProps) => {
@@ -14,7 +14,7 @@ export const AssertionResultsBadge = ({ assertionResults }: AssertionResultsBadg
     const fillColor = failedCount > 0 ? theme.palette.error.dark : theme.palette.success.dark;
     const textColor = theme.palette.text.secondary;
 
-    if (!hasResult) return null;
+    if (assertionResults === undefined) return null;
 
     return (
         <Box
@@ -24,7 +24,7 @@ export const AssertionResultsBadge = ({ assertionResults }: AssertionResultsBadg
                 justifyContent: "center",
                 height: "18px",
                 px: 0.75,
-                backgroundColor: fillColor,
+                backgroundColor: hasResult ? fillColor : theme.palette.action.disabled,
                 borderRadius: 1,
             }}
         >
@@ -36,7 +36,7 @@ export const AssertionResultsBadge = ({ assertionResults }: AssertionResultsBadg
                     fontSize: 11,
                 }}
             >
-                {passedCount}/{total}
+                {hasResult ? `${passedCount}/${total}` : "N/A"}
             </Typography>
         </Box>
     );
