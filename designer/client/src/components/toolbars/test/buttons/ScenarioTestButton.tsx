@@ -76,7 +76,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         (preset: Preset) => {
             if (preset.value === RUN_ALL) {
                 runAllTests();
-                return;
+                return { keepMenuOpen: true };
             }
             dispatch(changeActiveTestCase(preset.value));
             handleRunTestCaseById(preset.value);

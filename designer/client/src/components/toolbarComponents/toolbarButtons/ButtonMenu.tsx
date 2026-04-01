@@ -13,7 +13,7 @@ import { ButtonsVariant, ToolbarButtonsContext } from "./ToolbarButtons";
 type ToolbarButtonMenuWrapperProps<T = Option> = {
     options: Array<T | OptionHeader>;
     selected: T;
-    onChange: (value: T) => void;
+    onChange: (value: T) => { keepMenuOpen?: boolean } | void;
     className?: string;
     buttonProps?: PropsOf<typeof ToolbarButton>;
 };
@@ -111,7 +111,9 @@ export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapper
                         option={option}
                         selected={selected}
                         onChange={(value) => {
-                            onChange(value);
+                            const result = onChange(value);
+                            if (result && result.keepMenuOpen) return;
+
                             setAnchorPosition(null);
                         }}
                     />
