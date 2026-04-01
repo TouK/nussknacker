@@ -14,6 +14,8 @@ import pl.touk.nussknacker.engine.flink.table.io.definition.FlinkDataDefinitionR
 }
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
+import scala.annotation.tailrec
+
 class TableRegistrationTest
     extends FixtureAnyFunSpec
     with Matchers
@@ -45,6 +47,10 @@ class TableRegistrationTest
       test(env)
     }
   }
+
+  @tailrec
+  private def getRootCause(t: Throwable): Throwable =
+    if (t.getCause != null && t.getCause != t) getRootCause(t.getCause) else t
 
   private def registerTables(
       sql: String,
@@ -81,9 +87,7 @@ class TableRegistrationTest
          |)""".stripMargin
     val registrationError = registerTables(sql, sEnv).invalidValue.toList.loneElement
     inside(registrationError) { case e: CatalogRegistrationError =>
-      e.message shouldBe
-        """Could not create catalog.
-          |Cause: Connection refused""".stripMargin
+      getRootCause(e.causedBy) shouldBe a[java.net.ConnectException]
     }
   }
 
