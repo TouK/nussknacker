@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.test.testcase.validation
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits._
+import cats.syntax.all._
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
