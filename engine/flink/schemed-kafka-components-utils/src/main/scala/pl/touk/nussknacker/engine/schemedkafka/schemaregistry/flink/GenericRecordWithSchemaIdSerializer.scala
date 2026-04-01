@@ -75,7 +75,7 @@ class GenericRecordWithSchemaIdSerializer
 
     val lengthOfData          = input.readVarInt(true)
     val recordBytes           = input.readBytes(lengthOfData)
-    val recordWithoutSchemaId = deserializeRecord(schemaRegistryId, lengthOfData, schemaId, recordBytes)
+    val recordWithoutSchemaId = deserializeRecord(lengthOfData, schemaRegistryId, schemaId, recordBytes)
     new GenericRecordWithSchemaId(recordWithoutSchemaId, schemaRegistryId, schemaId, false)
   }
 

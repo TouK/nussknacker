@@ -15,28 +15,40 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 
 class GenericRecordWithSchemaIdSerializerSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
-  private lazy val schema: Schema = SchemaBuilder
-    .record("name")
+  private lazy val schema1: Schema = SchemaBuilder
+    .record("schema1")
     .fields()
-    .nullableString("f1", "")
+    .requiredString("f1")
+    .endRecord()
+
+  private lazy val schema2: Schema = SchemaBuilder
+    .record("schema2")
+    .fields()
+    .requiredInt("f2")
     .endRecord()
 
   // we put it in object to avoid serialization problems
-  private lazy val (schemaRegistryClient, schemaId) = {
+  private lazy val (schemaRegistryClient1, schemaId1) = {
     val client = new MockSchemaRegistryClient
-    val id     = client.register("t1", new AvroSchema(schema))
+    val id     = client.register("t1", new AvroSchema(schema1))
     (client, SchemaId.fromInt(id))
   }
 
-  private val schemaRegistryId = 6
+  private lazy val (schemaRegistryClient2, schemaId2) = {
+    val client = new MockSchemaRegistryClient
+    val id     = client.register("t1", new AvroSchema(schema2))
+    (client, SchemaId.fromInt(id))
+  }
+
+  private val schemaRegistry1Id = 6
+  private val schemaRegistry2Id = 0
 
   override protected def afterAll(): Unit = {
     GenericRecordWithSchemaIdSerializer.clearRegistrations()
   }
 
-  test("should be able to serialize and duplicate serializer after use") {
-    val config  = KafkaComponentsConfig(Map("bootstrap.servers" -> "dummy:9092"), None, None)
-    val factory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryClient)
+  test("should be able to serialize/deserialize") {
+    val config = KafkaComponentsConfig(Map("bootstrap.servers" -> "dummy:9092"), None, None)
 
     val serializerConfig = new SerializerConfigImpl()
     serializerConfig.registerTypeWithKryoSerializer(
@@ -44,18 +56,38 @@ class GenericRecordWithSchemaIdSerializerSpec extends AnyFunSuite with Matchers 
       classOf[GenericRecordWithSchemaIdSerializer]
     )
 
-    GenericRecordWithSchemaIdSerializer.register(1, factory.create(config.schemaRegistryClientKafkaConfig))
+    GenericRecordWithSchemaIdSerializer.register(
+      schemaRegistry1Id,
+      MockSchemaRegistryClientFactory
+        .confluentBased(schemaRegistryClient1)
+        .create(config.schemaRegistryClientKafkaConfig)
+    )
+    GenericRecordWithSchemaIdSerializer.register(
+      schemaRegistry2Id,
+      MockSchemaRegistryClientFactory
+        .confluentBased(schemaRegistryClient2)
+        .create(config.schemaRegistryClientKafkaConfig)
+    )
+
+    val record1 = new GenericRecordWithSchemaId(schema1, schemaRegistry1Id, schemaId1)
+    record1.put("f1", "str1")
+    val record2 = new GenericRecordWithSchemaId(schema2, schemaRegistry2Id, schemaId2)
+    record2.put("f2", 5)
 
     val serializer = new KryoSerializer(classOf[GenericRecordWithSchemaId], serializerConfig)
-    checkSerializationRoundTrip(serializer)
+    checkSerializationRoundTrip(serializer, record1)
+    checkSerializationRoundTrip(serializer, record2)
 
     // check if SchemaIdBasedAvroGenericRecordSerializer can *really* be duplicated and that it still works
-    checkSerializationRoundTrip(serializer.duplicate())
+    checkSerializationRoundTrip(serializer.duplicate(), record1)
+    checkSerializationRoundTrip(serializer.duplicate(), record2)
   }
 
-  private def checkSerializationRoundTrip(serializer: KryoSerializer[GenericRecordWithSchemaId]) = {
+  private def checkSerializationRoundTrip(
+      serializer: KryoSerializer[GenericRecordWithSchemaId],
+      record: GenericRecordWithSchemaId
+  ) = {
     val output = new DataOutputSerializer(100)
-    val record = new GenericRecordWithSchemaId(schema, schemaRegistryId, schemaId)
     serializer.serialize(record, output)
     val afterRoundTrip = serializer.deserialize(new DataInputDeserializer(output.getCopyOfBuffer))
     afterRoundTrip shouldBe record
