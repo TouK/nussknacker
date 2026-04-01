@@ -77,6 +77,7 @@ class SchemedKafkaScenarioTestingSpec
       fromAnyRef("schema_registry_should_not_be_used:8081")
     )
     .withValue("components.kafka.config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+    .withValue("components.kafka.config.optimizedGenericRecordSerialization.enabled", fromAnyRef(false))
 
   private val modelData =
     LocalModelData(

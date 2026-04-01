@@ -343,6 +343,9 @@ description: Stay informed with detailed changelogs covering new features, impro
   * Dynamic record indexing returns value type instead of `Unknown`
   * Limited support for function references in SpEL
   * Improved typing for properties derived from `Unknown` values
+* [#9196](https://github.com/TouK/nussknacker/pull/9196) Added support for optimized serialization of Avro `GenericRecord`
+  when using multiple Schema Registries - configured by a new `optimizedGenericRecordSerialization` setting
+  that replaces the old `avroKryoGenericRecordSchemaIdSerialization` flag
 
 ## 1.18
 

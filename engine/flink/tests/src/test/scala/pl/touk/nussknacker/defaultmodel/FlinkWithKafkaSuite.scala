@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
@@ -33,6 +34,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.flink.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -76,7 +78,22 @@ abstract class FlinkWithKafkaSuite
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(extraComponents)
+      .withExtraSerializersRegistrars(List((_: Config, _: ExecutionConfig) => {
+        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerialization(
+          schemaRegistryClientProvider.schemaRegistryClientFactory,
+          kafkaComponentsConfig.copy(
+            optimizedGenericRecordSerialization = kafkaComponentsConfig.optimizedGenericRecordSerialization.copy(
+              schemaRegistryId = Some(1)
+            )
+          )
+        )
+      }))
       .build()
+  }
+
+  override protected def afterAll(): Unit = {
+    AvroSerializersRegistrar.clearRegistrations()
+    super.afterAll()
   }
 
   protected def createFinkKafkaComponentProvider(
@@ -92,6 +109,11 @@ abstract class FlinkWithKafkaSuite
       .resolveModelConfig(config)
       .withValue(s"$kafkaComponentsConfigPrefix.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
       .withValue(s"$kafkaComponentsConfigPrefix.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+      // we turn off auto registration to do it on our own passing mocked schema registry client
+      .withValue(
+        s"$kafkaComponentsConfigPrefix.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
+        fromAnyRef(false)
+      )
     maybeAddSchemaRegistryUrl(baseModelConfig)
   }
 

@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
@@ -24,6 +25,7 @@ class SerializationBenchmarkSetup[T](
   private val serializer = typeInfo.createSerializer(config.getSerializerConfig)
 
   {
+    FlinkTypeInfoRegistrar.validateKryoTypeRegistrations()
     serializer.serialize(record, new DataOutputViewStreamWrapper(data))
     logger.debug(s"Size: ${data.size()}")
   }
