@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.process.test.testcase.validation
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{Inside, OptionValues}
+import org.scalatest.{Inside, Inspectors, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationErrorType, UIGlobalError}
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
   EnricherMockValidationError,
@@ -33,7 +34,7 @@ import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import java.util.UUID
 import scala.concurrent.Future
 
-class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
+class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues with Inspectors {
 
   object TestEnricher extends Service {
     @MethodToInvoke
@@ -524,6 +525,27 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     error.typ shouldBe "DuplicateTestCaseNames"
     error.message shouldBe "Duplicate test case names: duplicateA, duplicateB"
     error.errorType shouldBe NodeValidationErrorType.SaveAllowed
+    result.errors.testCasesValidationErrors shouldBe None
+  }
+
+  test("should return errors for test case names exceeding maximum length") {
+    val longName1 = "a" * (TestCaseValidator.MaxTestCaseNameLength + 1)
+    val longName2 = "b" * (TestCaseValidator.MaxTestCaseNameLength + 1)
+    val testCases = List(
+      TestCase(id = UUID.randomUUID(), name = longName1, inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(id = UUID.randomUUID(), name = "validName", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(id = UUID.randomUUID(), name = longName2, inputs = "{}", mocks = Map.empty, assertions = Map.empty)
+    )
+
+    val result = testCaseValidatorMultipleEnabled.validateTestCaseBeforeResolving(testCases)
+
+    result.errors.globalErrors should have size 2
+    forAll(result.errors.globalErrors) { case UIGlobalError(error, _) =>
+      error.typ shouldBe "InvalidTestCaseName"
+      error.message should startWith("Invalid test case name:")
+      error.description shouldBe s"Test case name must not exceed ${TestCaseValidator.MaxTestCaseNameLength} characters"
+      error.errorType shouldBe NodeValidationErrorType.SaveAllowed
+    }
     result.errors.testCasesValidationErrors shouldBe None
   }
 
