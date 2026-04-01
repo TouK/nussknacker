@@ -2,17 +2,27 @@ package pl.touk.nussknacker.engine.schemedkafka.helpers
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
+import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.kafka.OptimizedGenericRecordSerializationConfig
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.AvroPayloadDeserializer
 
 import java.io.IOException
 import java.nio.ByteBuffer
 
 class SimpleKafkaAvroDeserializer(schemaRegistry: SchemaRegistryClient) extends Deserializer[Any] {
+
+  private lazy val avroPayloadDeserializer = new AvroPayloadDeserializer(
+    new GenericRecordSchemaIdSerializationSupport.Wrapping(
+      OptimizedGenericRecordSerializationConfig(enabled = true, schemaRegistryId = 0)
+    ),
+    DecoderFactory.get()
+  )
 
   override def deserialize(topic: String, payload: Array[Byte]): Any = {
     val buffer = ConfluentUtils.parsePayloadToByteBuffer(payload).valueOr(ex => throw ex)
@@ -26,7 +36,7 @@ class SimpleKafkaAvroDeserializer(schemaRegistry: SchemaRegistryClient) extends 
       schemaId = buffer.getInt
       val parsedSchema     = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(AvroUtils.extractSchema(parsedSchema), Some(SchemaId.fromInt(schemaId)))
-      AvroPayloadDeserializer.instance.deserialize(
+      avroPayloadDeserializer.deserialize(
         None,
         writerSchemaData.toParsedSchemaData,
         buffer

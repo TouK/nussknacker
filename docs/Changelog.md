@@ -362,6 +362,9 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#9286](https://github.com/TouK/nussknacker/pull/9286) Fixed handling of Avro records in Flink SQL component.
 * [#9322](https://github.com/TouK/nussknacker/pull/9322) Added mockable Azure Schema Registry client
 * [#9327](https://github.com/TouK/nussknacker/pull/9327) Remove bind mounts from Docker tests
+* [#9196](https://github.com/TouK/nussknacker/pull/9196) Added support for optimized serialization of Avro `GenericRecord`
+  when using multiple Schema Registries - configured by a new `optimizedGenericRecordSerialization` setting
+  that replaces the old `avroKryoGenericRecordSchemaIdSerialization` flag
 
 ## 1.18
 

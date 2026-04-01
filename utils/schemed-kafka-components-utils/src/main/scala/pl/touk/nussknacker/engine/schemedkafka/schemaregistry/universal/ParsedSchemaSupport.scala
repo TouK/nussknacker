@@ -37,6 +37,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.JsonSchemaSupport.defaultJsonTemplateFor
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.NoSchemaJsonSupport.jsonSupport
 import pl.touk.nussknacker.engine.schemedkafka.typed.{
   AvroSchemaTypeDefinitionExtractor,
   AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
@@ -61,7 +63,7 @@ class AvroSchemaSupport(kafkaComponentsConfig: KafkaComponentsConfig) extends Pa
     if (kafkaComponentsConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadDeserializer
     } else {
-      AvroPayloadDeserializer.instance
+      AvroPayloadDeserializer(kafkaComponentsConfig)
     }
   }
 

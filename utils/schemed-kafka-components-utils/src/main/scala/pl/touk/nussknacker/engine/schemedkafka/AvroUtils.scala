@@ -11,6 +11,7 @@ import org.apache.avro.data.TimeConversions
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.ResourceLoader
@@ -26,6 +27,22 @@ object AvroUtils extends LazyLogging {
   import scala.jdk.CollectionConverters._
 
   val genericData: GenericData = addLogicalTypeConversions(new GenericData(getClass.getClassLoader) {
+
+    override def deepCopy[T](schema: Schema, value: T): T = {
+      val copiedRecord = super.deepCopy(schema, value)
+      value match {
+        case withSchemaId: GenericRecordWithSchemaId =>
+          new GenericRecordWithSchemaId(
+            copiedRecord.asInstanceOf[GenericData.Record],
+            withSchemaId.getSchemaRegistryId,
+            withSchemaId.getSchemaId,
+            false
+          )
+            .asInstanceOf[T]
+        case _ => copiedRecord
+      }
+    }
+
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] =
       createGenericDatumReader(writer, reader)
 

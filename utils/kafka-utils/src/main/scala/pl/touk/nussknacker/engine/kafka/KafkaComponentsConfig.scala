@@ -20,6 +20,8 @@ case class KafkaComponentsConfig(
     // TODO: Replace this map with normal fields
     kafkaEspProperties: Option[Map[String, String]] = None,
     consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
+    optimizedGenericRecordSerialization: RawOptimizedGenericRecordSerializationConfig =
+      RawOptimizedGenericRecordSerializationConfig(enabled = true),
     topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = true),
     // By default we want to handle keys as ordinary String. For specific scenario,
     // when complex key with its own schema is provided, this flag is false
@@ -98,6 +100,26 @@ object KafkaComponentsConfig {
   }
 
 }
+
+case class RawOptimizedGenericRecordSerializationConfig(
+    enabled: Boolean,
+    schemaRegistryId: Option[Int] = None,
+) {
+
+  def toValidConfig(schemaRegistryUrl: => String): OptimizedGenericRecordSerializationConfig =
+    OptimizedGenericRecordSerializationConfig(
+      enabled = enabled,
+      schemaRegistryId = getOrComputeSchemaRegistryId(schemaRegistryUrl),
+    )
+
+  private def getOrComputeSchemaRegistryId(schemaRegistryUrl: => String): Int =
+    schemaRegistryId.getOrElse(schemaRegistryUrl.hashCode)
+}
+
+case class OptimizedGenericRecordSerializationConfig(
+    enabled: Boolean,
+    schemaRegistryId: Int,
+)
 
 final case class TopicsExistenceValidationConfig(
     enabled: Boolean,

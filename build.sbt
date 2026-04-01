@@ -848,6 +848,9 @@ lazy val benchmarks = (project in file("benchmarks"))
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
+    // test forking is needed so that plain tests run in a similar environment to JMH, i.e. in a forked JVM,
+    // where e.g. flink-scala needs to be correctly initialized
+    Test / fork                          := true,
     Jmh / run / javaOptions ++= (
       if (System.getProperty("os.name").startsWith("Windows")) {
         // Allow long classpath on Windows, JMH requires that classpath and temp directory have common root path,
