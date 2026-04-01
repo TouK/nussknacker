@@ -15,12 +15,26 @@ import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import { Expandable } from "../../../../../common/Expandable";
 import { withUuid } from "../../../appendUuid";
+import { useHelpText } from "../../../editors/expression/helpText";
+import { ExpressionLang } from "../../../editors/expression/types";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
+import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
+import { OverrideKeys } from "../../../parameterHelpers";
 import { useGetNodeTestCasesErrors, useValidation, useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
 import { AssertionItem } from "./AssertionItem";
 import { StyledStack } from "./components/Styled";
+
+function AssertionHelpTooltip() {
+    return (
+        <InfoTooltip
+            variant="hover"
+            customComponentsProps={{ tooltip: { sx: { maxWidth: 400 } } }}
+            title={useHelpText(ExpressionLang.SpEL)}
+        />
+    );
+}
 
 interface Props {
     node: NodeType;
@@ -94,14 +108,9 @@ export const Assertions = ({ node, edges }: Props) => {
                         <Typography variant={"body2"} color={"text.secondary"}>
                             {t("testingDialog.label.assertions", "Assertions")}
                         </Typography>
-                        <InfoTooltip
-                            variant={"hover"}
-                            customComponentsProps={{ tooltip: { sx: { maxWidth: 400 } } }}
-                            title={t(
-                                "testingDialog.assertions.hint",
-                                "Use **#records** to access all events that passed through this node.\n\ncount `#records.size()`  \nfield access `#records[0].status`  \nfilter `#records.?[#this.amount > 100].size()`",
-                            )}
-                        />
+                        <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
+                            <AssertionHelpTooltip />
+                        </ParamKeyProvider>
                     </Box>
                 }
                 expanded={isExpanded}
