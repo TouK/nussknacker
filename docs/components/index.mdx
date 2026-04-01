@@ -1,0 +1,91 @@
+---
+title: Components
+---
+
+import DocCardList from '@theme/DocCardList';
+
+# Components
+
+Components are building blocks of [scenarios](/docs/about/GLOSSARY.md#scenario). Once a component is used in a scenario, it becomes a node. There are different types of components, each performing a different type of processing. An example of a basic component would be a filter, which filters only those records which match certain criteria. An example of a complex component would be a session window, which can perform aggregations in a session window.
+
+Some components will become available in the Component Palette once you define the Integration required by the given component. For example OpenAPI enrichers will be available after you define the OpenAPI integration, the Postgres integration will generate a source, sink and enricher components.  See [Integrations](/docs/integrations/1overview.mdx) for more details.
+
+
+In Component Palette in the Designer components are divided into the following functional groups:
+- **Sources** ingest [records](/docs/about/GLOSSARY.md#record) into scenario.
+- **Stream Transformers** modify the flow of records through the scenario.
+- **Data Transformers** transform data carried by the records.
+- **Enrichers** add information collected from external systems to the records.
+- **Processors** reach out to external systems and cause changes ("side effects") in those systems.
+- **Stateful Transformers** are available only in the Streaming [processing mode](/docs/about/GLOSSARY.md#processing-mode); they process the current event remembering information about previous ones. Stateful Transformers use state  - data kept across events - to produce context-aware results, such as aggregations, pattern detection, or correlation over time.
+- **Sinks** write records to external systems. Unlike Processors, sinks terminate scenario branch in which they are placed. 
+
+## Available components
+
+### Sources
+
+<div style={{marginLeft:'2rem'}}>
+[Event Generator](/docs/components/eventGenerator.mdx)  <br />
+[HTTP Endpoint](/docs/components/eventGenerator.mdx)  <br />
+[WebSocket](/docs/components/websocket.mdx)  <br />
+[Kafka](/docs/components/kafkaSource.mdx)  <br />
+[Query](/docs/components/querySource.mdx)  <br />
+[Table](/docs/components/tableSource.mdx)  <br />
+[Topic](/docs/components/topicSource.mdx)  <br />
+</div>
+
+### Stream Transformers
+<div style={{marginLeft:'2rem'}}>
+[Choice](/docs/components/choice.mdx)  <br />
+[Filter](/docs/components/filter.mdx)  <br />
+[For Each](/docs/components/forEach.mdx)  <br />
+[Split](/docs/components/split.mdx)  <br />
+[Union](/docs/components/union.mdx)  <br />
+</div>
+
+### Data Transformers
+<div style={{marginLeft:'2rem'}}>
+[Decision Table](/docs/components/decisionTable.mdx)  <br />
+[Record](/docs/components/recordVariable.mdx)  <br />
+[Variable](/docs/components/variable.mdx)  <br />
+</div>
+
+### Enrichers
+<div style={{marginLeft:'2rem'}}>
+[Chat](/docs/components/chatLLM.mdx)  <br />
+[Lookup](/docs/components/lookup.mdx)  <br />
+[ML](/docs/components/mlEnricher.mdx)  <br />
+[OpenAPI](/docs/components/openAPIEnricher.mdx)  <br />
+[Query](/docs/components/query.mdx)  <br />
+[Vector store](/docs/components/vectorStore.mdx)  <br />
+</div>
+
+
+### Processors
+<div style={{marginLeft:'2rem'}}>
+[HTTP](/docs/components/http.mdx)  <br />
+[Logger](/docs/components/logger.mdx)  <br />
+</div>
+
+### Stateful Transformers
+<div style={{marginLeft:'2rem'}}>
+[Aggregate Session](/docs/components/aggregateSession.mdx)  <br />
+[Aggregate Sliding](/docs/components/aggregateSliding.mdx)  <br />
+[Aggregate Tumbling](/docs/components/aggregateTumblinkg.mdx)  <br />
+[Delay](/docs/components/delay.mdx)  <br />
+[Full Outer Join](/docs/components/fullOuterJoin.mdx)  <br />
+[Previous Value](/docs/components/previousValue.mdx)  <br />
+[Single Side Join](/docs/components/singleSideJoin.mdx)  <br />
+[Union Memo](/docs/components/unionMemo.mdx)  <br />
+</div>
+
+
+### Sinks
+<div style={{marginLeft:'2rem'}}>
+[HTTP Callback](/docs/components/httpCallback.mdx)  <br />
+[Kafka](/docs/components/kafkaSink.mdx)  <br />
+[Table](/docs/components/tableSink.mdx)  <br />
+[Topic](/docs/components/topicSink.mdx)  <br />
+</div>
+
+

@@ -1,0 +1,79 @@
+---
+# front matter metadata for Docusaurus
+title: Filter
+description: Apply IF - ELSE logic to filter and route
+sidebar_label: Filter
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Filter
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Flow
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# Filter
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />
+
+## Description
+Filter is used to control the flow of records in the scenarios. It evaluates each incoming record against a filtering condition and allows only those records that satisfy the condition to pass through. Records that don't meet the condition are either discarded or directed to a "false" branch. 
+
+## Parameters and configuration
+
+|Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Condition           | SpEL expression of type boolean                   |
+| Outputs       | Associates the "true" and "false" condition results with the appropriate branch. You can rearrange this association here, if needed                   |
+
+
+
+## Filter expression examples
+
+
+Some common filtering expressions:
+``` Groovy
+// Check if a field exists
+#input.containsKey("fieldName")
+
+// Numeric comparison
+#input.age > 18
+
+// String comparison 
+#input.status == "COMPLETED"
+
+// Logical operators
+#input.age > 18 && #input.status == "ACTIVE"
+
+// Using functions
+#input.timestamp > DATE.parse("2023-01-01")
+```
+## Additional considerations
+### Best practices
+
+1. For complex filtering logic, consider using multiple filters for easier debugging
+2. Use [counts](/docs/scenariosAuthoring/testingAndDebugging.mdx#watching-algorithm-behavior-with-counts) functionality to understand how many records are filtered out by the filter.
+3. Use descriptive names for your filters to document their purpose
+4. Test with sample data to verify filter behavior
+
+
+### Related components
+
+For more advanced filtering needs, consider using the [Choice](/docs/components/choice.mdx) component, which allows for multiple conditions and paths.
+
+### Why it’s called Filter, not IF?
+
+The **Filter** node doesn’t make a decision in the classical “flow-chart” sense; it doesn’t control program execution, but rather affects how the **records flow**.  
+Each record arriving at this node is evaluated against the filter condition.  
+Records for which the condition is `true` continue through the main path, while records for which it’s `false` can optionally follow the “False” branch or simply stop flowing further.  
+Thinking this way — as records moving through a network of transformations rather than instructions being executed — helps understand how scenarios in Nussknacker work: it’s a **data-flow graph**, not a decision tree.
+
+
+### See also 
+
+- [Introduction to SpEL](/docs/scenariosAuthoring/introduction.mdx#spel) 

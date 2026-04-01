@@ -1,0 +1,50 @@
+---
+
+# front matter metadata for Docusaurus
+title: Chat with the LLM 
+description: Chat with the LLM
+sidebar_label: Chat LLM
+
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Chat LLM
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Enricher
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+
+# Chat LLM
+
+<!-- Processing modes -->
+<Enterprise /><ModeStreaming /> <ModeRequestResponse />
+
+## Description
+
+Chat LLM component allows prompting LLM chat models. It is available once at least one [AI integration](/docs/integrations/AImodels.mdx) is configured in the Admin Panel.
+
+## Parameters and configuration
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| LLM Integration       | [LLM integration](/docs/integrations/1overview.mdx#ai-providers) to use | 
+| Chat model name            | The chat model to use. The available models depend on the LLM Integration selected    |
+| Prompt  | Prompt send to the chat model  |
+| Structured output    | Optional; json schema of the desired response      |
+| Temperature          | Temperature is a hyperparameter that controls the randomness of text generation. Lower values (e.g., 0.2) make the model’s output more focused and deterministic by favoring the most likely tokens, while higher values (e.g., 0.8 or above) produce more diverse and creative responses by flattening the probability distribution.         |
+| Output variable name | Variable name under which node result will be available in a subsequent nodes.   |
+
+## Returned value
+
+The node returns chat model response as a text.
+
+## Additional considerations
+- Chat model response is always a raw text (even in the case when Structured Output schema is provided). If you expect it to be a json you can parse it using `#CONV.toJson()` or `#CONV.toJson()` or `#CONV.toJsonOrNull()` functions.
+- Chat models may not follow the provided output structure - models can even not return a valid json in some cases. 
+- You can use [string template](/docs/scenariosAuthoring/introduction.mdx#string-template) during prompt creation to use data available in the scenario (e.g., documents retrieved from the vector store)
+- Currently only selected models are available. Contact us if you need to use additional ones.

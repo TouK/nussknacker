@@ -1,0 +1,62 @@
+---
+# front matter metadata for Docusaurus
+title: Admin Page 
+description: Manage your instances, set up integrations with external system, monitor your scenarios 
+sidebar_label: Admin Panel
+sidebar_position: 1
+
+# front matter metadata for LLM
+
+# keywords: []
+---
+
+import CloudVersion from '/badges/cloudVersion.mdx';
+
+# Admin Panel
+<CloudVersion />
+
+You can access the Admin Panel from the Nussknacker Designer by clicking the **"Admin"** button in the top-right corner. To return to the Designer, use the **"Open scenario"** option in the Admin view.
+
+---
+
+## Functionality
+
+The Admin Panel is divided into five main sections:
+
+### Dashboard
+
+This is the default landing view in the Admin Panel. It provides a summary of:
+
+- Status: number of scenarios currently running.
+- Event processing: number of events received and processed in the past hour and 24 hours.
+- Service metrics: throughput and error data (if available).
+- Resources: links to documentation and a short overview video.
+
+### Settings
+
+In this section, you can configure security for accessing scenarios that expose HTTP endpoints. This includes managing authentication and authorization to control who can access and interact with the deployed APIs.
+
+### Integrations
+
+This section allows you to connect Nussknacker Cloud with various external systems. Unlike the open-source version where integrations are configured via configuration files, the cloud version provides a UI for setup.
+After configuring an integration, the relevant components will be automatically added to the Nussknacker Designer's Component Palette, allowing you to use them when authoring scenarios. Go to [integrations overview page](/docs/integrations/1overview.mdx) to learn more.
+
+### Logs
+
+This section provides access to logs for all running scenarios. It’s useful for debugging and monitoring scenario behavior in real time.
+
+### Audit
+
+The Audit section allows you to track user actions within the system. You can view who accessed what, when, and what changes were made. This is especially useful for compliance and operational transparency.
+
+---
+
+## Switching Back to Designer
+
+From the Admin Panel, you can return to the Nussknacker Designer by clicking **"Open scenario"** in the upper-right corner.
+
+---
+
+## Summary
+
+The Admin Panel in Nussknacker Cloud is the control center for managing your scenarios, connecting to external systems, monitoring runtime metrics, and maintaining operational visibility. It complements the Designer, allowing you to build and operate powerful real-time data applications with ease.

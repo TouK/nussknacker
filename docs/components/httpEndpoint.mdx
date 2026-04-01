@@ -1,0 +1,59 @@
+---
+
+# front matter metadata for Docusaurus
+title: HTTP Endpoint
+description: Push events to streaming scenarios via the HTTP endpoint
+sidebar_label: HTTP Endpoint
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: HTTP-endpoint
+processingModes: [Streaming]
+componentPaletteGroup: Sources
+# keywords: []
+
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+
+# HTTP Endpoint
+
+<!-- Processing modes -->
+<ModeStreaming />
+
+## Description
+
+HTTP-endpoint is a streaming only source component. An external system has to invoke this endpoint to insert event into the scenario. If you just want to experiment, you can use `curl` command (available in all Unix variants) to call the http endpoint; the `curl` command is also available in PowerShell on Windows. For more advanced use cases use your favorite http client library.   
+
+
+
+## Parameters and configuration
+
+| Name         | Description                                       |
+|--------------|---------------------------------------------------|
+| Endpoint     | Endpoint URL; in the most common use case you need to generate it - press the `Generate New Endpoint` button |  
+| Content type | `JSON` - Nussknacker will use user provided `Data sample` to infer schema of ingested events. Use `PLAIN` if you do not want this behavior. See also [Additional considerations](/docs/components/httpEndpoint.mdx#additional-considerations).   |
+| Data sample  |  See above and [Additional considerations](/docs/components/httpEndpoint.mdx#additional-considerations).        |
+
+
+### Advanced parameters
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Event time            | Expression which evaluates to the time when the event was created. For Kafka sources, creation timestamp is available in the Kafka event and can be accessed in SpEL as `#inputMeta.timestamp`. Check [here](/docs/scenariosAuthoring/streamingProcessingMode.md#predefined-variables).  |
+| Max out-of-orderness               | The maximum amount of time an event is allowed to be late before being ignored when computing the result for time-based stream transformations: aggregates in time windows and joins. To read more about this mechanism see Flink documentation.        |
+| Idleness              | The time period after which partition is marked as idle if no events are received from it. To read more about this mechanism see [Flink documentation](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources).
+
+## Additional considerations
+
+The table below shows how Nussknacker functionality differs in the case of `JSON` and `PLAIN` `Content type`.
+
+| Name         | JSON                                       | PLAIN |
+|--------------|--------------------------------------------|-------|
+| Schema inference     | Nussknacker will infer schema (information on the content of the message) from the provided `Data sample`. | The whole data payload will be of type `String`. |
+| Hints | Field names will be hinted.  | N/A  |  
+| Field access | You can use both `#input.field-name` notation and [dynamic navigation](/docs/scenariosAuthoring/SpEL.md#dynamic-navigation) (`#input[field-name]`). | Use `#CONV.toJson` function to convert your payload to JSON and then use dynamic field navigation. |
+| Live data    | Only fields 'declared' in `Data sample` are shown. | Whole event content is shown. |
+
+
+

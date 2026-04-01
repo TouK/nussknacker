@@ -1,0 +1,55 @@
+---
+
+# front matter metadata for Docusaurus
+title: Union Memo
+description: Enrich events with information from other data streams 
+sidebar_label: UnionMemo
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Kafka
+processingModes: [Streaming]
+componentPaletteGroup: Joins and Aggregates
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+# UnionMemo
+
+<!-- Processing modes -->
+<ModeStreaming />
+
+## Description
+Similarly to [Union](/docs/components/union.mdx), UnionMemo node merges branches into one branch. Events are emitted on every incoming event
+and event time is inherited from the incoming event.
+
+There are however important differences in the way UnionMemo works:
+
+- events from the incoming branches are merged together based on a common key value
+- data that arrived from any of the incoming branches will be memoized by the UnionMemo node for time duration
+  defined in stateTimeout. If new event arrives before stateTimeout, the stateTimeout timer is reset
+- `#input` variable is no longer available downstream the UnionMemo node
+
+
+## Parameters and configuration
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| key                   | Expression, which used to match events from the incoming branches |
+| value                 | The result of this expression will be put in the a field of the output variable. The name of the field will be the same as branch id |
+| stateTimeout          | Defines for how long events are memoized          |
+| Output variable name  | This variable will hold result of the UnionMemo node |
+ 
+
+The output variable will contain the following json object. 
+
+```json
+{
+  "key": "value of key expression for given event",
+  "branch1-name": "value of output expression if memoized, otherwise null",
+  "branch2-name": "value of output expression if memoized, otherwise null",
+  "branchN-name": "value of output expression if memoized, otherwise null"
+}
+```

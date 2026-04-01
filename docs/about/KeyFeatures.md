@@ -1,77 +1,39 @@
 ---
-title: Key Features, Low-Code, Streaming, Integration-Ready
-description: Explore Nussknacker’s key features, including visual scenario design, real-time processing, integrations, and extensibility for developers.
-sidebar_label: Key features
+title: Key Features
 ---
 
-## Scenario authoring
+# Key Features
 
-Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer) allowing to define decision algorithms – we call them scenarios – without the need to write code.
+## Real-Time Data and Algorithms for Everybody
+- Spreadsheet-like ease for real-time data
+- Apache Flink and Kafka complexity hidden from developers
+- Algorithms authored using highly flexible, prefabricated [functionality blocks](/docs/components/index.mdx) 
+- Algorithm visualized as an interactive flow diagram
+- Powerful, yet easy [expression language](/docs/scenariosAuthoring/introduction.mdx#spel) for data transformations and flow control
+- Schema-aware autocompletion and validation, like in modern developer tools
+- [Testing and debugging](/docs/scenariosAuthoring/testingAndDebugging.mdx) with real-time visualization of data and algorithm behavior
+- AI-powered Assistant
+- One-click deployment
 
-A scenario is a sequence of different nodes:
-- flow control functions: filter, switch, split etc.
-- data enrichments from external sources (JDBC, OpenAPI, ML)
-- aggregates in different types of time windows (available with Flink-based [engine](./GLOSSARY.md#engine))
-- custom, tailor-made components, which extend default functionality
-- and more
+## Fit for your use case
+- Unifies streaming, batch and request-response  
+- [Kafka® and Kafka compatible](/docs/integrations/1overview.mdx#message-brokers) sources and sinks
+- [Databases & data lakes](/docs/integrations/1overview.mdx) sources and sinks via Flink's connectors
+- REST (Open API) enrichments
+- Database (JDBC) enrichments
+- Generalized [decision table](/docs/components/decisionTable.mdx) for complex IF-ELSE logic
+- Enrichments powered by ML models
+- Agentic AI: LLM execution, MCP server integration, embeddings management via vector stores integration
 
-Before a scenario is run, it can be tested to see if the algorithm works as expected with different samples of test data.
+## Rock solid foundations of Apache Flink
+- Scales horizontally to millions of events per second
+- Built for low latency
+- Stateful processing (time windows, state management)
+- Exactly-once processing
+- Efficient binary serialization (Avro)
+- Built-in checkpointing for fault tolerance
 
-Check [introduction to scenario authoring](../scenarios_authoring/Intro.md) to learn more.
-
-![Scenario in Nussknacker Designer](img/nu_scenario.png)
-
-*Scenario in Nussknacker Designer*
-
-![Node parameterization](img/nu_aggregate_node_details.png)
-
-*Node parameterization*
-
-## SpEL
-
-SpEL (Spring Expression Language) is a powerful expression language that supports querying and manipulating a data 
-object at runtime. It is used by Nussknacker to access processed data. Some examples:
-- create boolean expression (for example in filters) based on logical or relational (equal, greater than, etc) operators
-- access, query and manipulate fields of the incoming data
-- format output data
-- provide helper functions like date and time, access to system variables, etc.
-- and many more
-
-Check [SpEL overview](../scenarios_authoring/Intro.md/#spel) to learn more.
-
-![SpEL expression in filter](img/spel.png)
-
-*Example of SpEL expression used in a filter; the .size method returns number of elements in a list*
-
-## Smart code suggestions and validation
-
-Nussknacker Designer has an advanced mechanism providing contextual expression suggestions, autocompletion and validation. 
-It guides the user to discover and use available functions and data from sources and enrichments. It can also quickly 
-detect most typical errors – from misspelling field names to wrong data type usage.
-
-Nussknacker integrates with various metadata sources, to automatically discover structure of input and output data:
-- Schema Registry for Kafka inputs and outputs
-- OpenAPI for REST API enrichments
-- SQL table metadata for database enrichments
-
-![Code suggestions and validation](img/nu_code_suggestions.gif)
-
-*Example of code suggestions and validation*
-
-## One click deployment
-
-Once authored, with a click of a button, scenario definitions are deployed for processing. 
-Processing can either be done by Nussknacker’s own engine or using Flink, depending on which better suits a particular 
-use case.
-
-Once deployed, scenarios can be modified and redeployed, again with just a click of a button. Nussknacker always 
-encourages iterative improvement of decision logic by business users.
-
-## Scenario monitoring
-
-Nussknacker and Flink generate a wide range of metrics. Nussknacker out of the box makes these metrics available on 
-a Grafana dashboard. You can easily check scenario throughput, statistics about decisions made, errors and more.
-
-![Monitoring dashboard](img/overview_monitoring.png)
-
-*Scenario monitoring dashboard*
+## Deployment Flexibility
+- Run in Nu Cloud or on-premises
+- Kubernetes or OS-based installations
+- Nu Cloud Managed Flink, Ververica Platform, or Bring Your Own Flink

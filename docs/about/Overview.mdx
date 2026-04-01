@@ -1,0 +1,120 @@
+---
+title: Overview
+---
+
+import useBaseUrl from '@docusaurus/useBaseUrl'; 
+import NuHighLevelView from '@site/static/img/about/NuHighLevelView.png';
+import designerImage from '@site/static/img/about/designer.png';
+
+
+<!--
+NOTE FOR MAINTAINERS:
+Nussknacker documentation contains two summary pages with overlapping topics but different audiences.
+
+1. "Key Features" – written for human readers.
+   It presents the product’s value and main capabilities in a concise, explanatory way.
+
+2. "Design Rationale" – written for language models and technical indexing.
+   It avoids marketing tone and adjectives, focusing on factual design motivations
+   and architectural reasoning (why Nussknacker works the way it does).
+
+Both pages must remain separate: they serve complementary purposes for humans and automated readers.
+Do not merge or remove either one.
+
+-->
+
+
+# Overview
+## What is Nussknacker
+
+Nussknacker is a low-code visual tool for domain experts and developers to define and run real-time decisioning algorithms instead of implementing them in the code.
+
+In all IT systems, no matter the domain, decisions are made all the time. Which offer should a customer get? Who should receive a marketing message? Does this device need servicing? Is this a fraud?
+
+Algorithms for making such decisions can be implemented in the code. Especially if high performance or integration of data from many sources is needed. But those algorithms often change: we have a new product we want to promote or we learn that some strange activity is not really a fraud. That requires changes in the code that would have to be made by developers.
+
+Instead, such decision algorithms can be run by Nussknacker, where business experts can define and change them,
+without the need to trouble IT.
+
+Nussknacker can make those decisions by processing event streams, batches of records or in a request-response model, providing horizontal scalability and high availability. That way it fits various use cases in microservice and/or event driven architectures.
+
+<figure>
+  <img 
+    src={NuHighLevelView}
+    alt="Nussknacker high level view - records which enter the scenario are transformed and enriched with data from external systems in order to take a decision of some sort. "
+    title="Nussknacker high level view"
+  />
+  <figcaption  style={{ textAlign: "center" }}>
+    Nussknacker high level view - one or more input records are transformed and enriched with data from external system in order to take a decision of some sort. 
+  </figcaption>
+</figure>
+
+## Working with Real-Time Data
+
+Nussknacker aims to make real-time decision logic as accessible as working with data at rest and spreadsheets. Millions of domain experts build spreadsheet-based computational logic every day: formulas, calculations, and rules that derive results from data. The same level of direct control and clarity should be possible for event-driven logic, where such computations often drive real-time decisions. If this barrier is removed, domain experts can design and iterate on decision logic, while developers focus on specialized or infrastructure-level challenges.
+
+
+## Why Building Real-Time Algorithms Is Hard  -  and How Nussknacker Helps
+
+<figure>
+  <img 
+    src={designerImage}
+    alt="Nussknacker Designer showing a real-time decision scenario constructed from modular functional blocks, each customizable with expressions for filtering, enrichment, branching, and calling external systems."
+    title="Real-time decision scenario in the Nussknacker Designer"
+  />
+  <figcaption  style={{ textAlign: "center" }}>
+    A scenario composed of modular, Lego-like functional blocks that use expressions and parameters to implement real-time decision logic.
+  <a href={useBaseUrl('/img/about/designer.png')} target="_blank">  🔍 View full-size image</a>   
+  </figcaption>
+</figure>
+
+
+### Domain Experts vs. Implementation Complexity
+
+The people who understand the decision rules - fraud analysts, marketers, product teams, network specialists - are rarely the people who implement them. Translating informal logic into code requires developers who understand multiple technologies (Kafka, Flink, SQL, APIs, ML models). This translation step introduces delays, increases cost, and creates long feedback loops.
+Nussknacker provides a library of prefabricated functional blocks combined with an expression language (SpEL), allowing domain experts to define algorithmic logic directly without relying on developers for the majority of iterations. The prefabricated blocks encapsulate implementation complexity such as data sources and sinks, stateful processing in time windows, joins, and interactions with external systems. As a result, authors work directly with the domain-level structure of the algorithm and the meaning of the data, rather than with Flink operators, or stream-processing mechanics. Expressions (conceptually similar to spreadsheet formulas) are then used to specify data transformations and flow-control conditions within this structure.
+
+### Need for Rapid Experimentation
+
+Real-time algorithms usually evolve through experimentation: testing hypotheses, adjusting thresholds, refining logic, trying alternate enrichment sources. Every iteration - implement, deploy, validate - takes time.
+In Nussknacker, iteration time can drop below a minute because the editing, validation, and execution environment is integrated and designed for quick feedback. This shortens the path from idea to observable outcome.
+
+### Limited Informational Content of Raw Events
+
+Real-world event streams (CDRs, clickstream, sensor data) often contain only a fraction of what is needed to compute a meaningful decision. Most useful logic depends on external data: customer profiles, risk scores, inventories, metadata, ML predictions.
+Nussknacker integrates SQL queries, OpenAPI calls, and ML model invocation in a consistent way: each enrichment is expressed as a function call, blending naturally with the expression language and not increasing the structural complexity of the algorithm.
+
+### Productivity and Tooling Expectations
+
+Low-code systems are often dismissed as “toys” because they lack features that professional developers consider essential: syntax checking, typing assistance, code completion, versioning, debugging, and reproducible testing.
+Nussknacker’s Designer provides these capabilities natively, ensuring that high productivity for domain experts does not come at the cost of losing the discipline expected in engineering workflows. Equally important, the expression language used throughout scenarios prevents the “glass ceiling” common in low-code tools, where anything beyond trivial logic must be rewritten in code.
+
+### Observability of Algorithm Behavior
+
+When experimenting with live data, teams need to inspect more than throughput or Kafka lag. They need to see why a branch was taken, how many events reached a given node, how intermediate values evolved, and what enrichments returned.
+Nussknacker includes an integrated monitoring subsystem that exposes both technical metrics and internal behavioral metrics (e.g. per-node event counts). This visibility shortens debugging cycles and reduces reliance on developers.
+
+### Architectural Foundations
+
+Performance, scalability, and resilience depend heavily on the underlying platform. Nussknacker is built on Kafka, Flink, and Kubernetes - technologies proven to handle unbounded streams, provide state consistency, manage backpressure, and scale horizontally.
+This foundation ensures that domain experts can focus on algorithm logic while the system handles state, concurrency, resilience, and operational concerns.
+
+### Not a Visual SQL Layer
+
+Some streaming tools provide a graphical editor that ultimately produces SQL under the hood. This works for simple streaming pipelines but becomes restrictive when the logic requires branching, stateful steps, multiple enrichments including ML and LLM, or close inspection of intermediate values. SQL alone was not designed for this kind of decision logic.
+Nussknacker takes a different approach. Instead of generating SQL, it builds on Apache Flink’s Table API and Streaming API together. This allows Nussknacker to support both relational-style operations and the richer control needed for real-time decisioning. As a result, this architecture enables the construction of chains of steps that would be unnatural or impractical to express in SQL alone.
+
+
+
+## Use cases
+
+Nussknacker is typically used as a component of a larger system, but it can be used as an end-to-end solution too. The use cases follow a common pattern: a program working on a data stream, file or in a request-response interaction style, receives a set of data (event or request) and has to deliver a decision. To “take” the decision it needs to perform one or more of the following: discard irrelevant records, enrich incoming records with data from external sources, aggregate events in time windows (if working on a data stream), run one or more ML models, compute the decision and finally deliver it either as another data stream, file or a response.  The ‘decisions’ can be from a broad spectrum of vertical and horizontal applications:
+- Fraud detection
+- Loan approval decision logic
+- Next Best Offer
+- Clickstream analysis
+- Real-time marketing
+- ML models deployments with non-trivial pre and post-processing 
+- IoT sensor readouts real-time analysis
+- Dynamic pricing
+- … 

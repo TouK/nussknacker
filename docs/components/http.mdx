@@ -1,0 +1,49 @@
+---
+
+# front matter metadata for Docusaurus
+title: HTTP 
+description: Call REST APIs to get data or perform action in external systems
+sidebar_label: HTTP
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: OpenAPI Enricher
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Enrichers and Actuators
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# HTTP
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />
+
+## Description
+HTTP component allows to perform a HTTP call.
+
+## Parameters and configuration
+Parameter names follow standard HTTP terminology. If unsure, refer to an HTTP reference such as [MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/HTTP).”
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| URL                   | The target URL for the request. The URL should contain scheme - typically `http` or `https`. |
+| HTTP Method  | the HTTP verb to use: GET, POST, PUT, DELETE, etc           |
+| Body | The request body. Optional for methods like POST or PUT. Can be a raw expression or structured JSON. |
+| Output variable name | The name of the variable that will hold the HTTP response. |
+
+
+### Advanced parameters
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+|  Path Segments | Additional segments to append to the (base) URL. Each entry will be URL-encoded and joined with "/". |
+|  Query Parameters | Key-value pairs added as query parameters to the URL. Corresponds to the query string `?key=value&...`. |
+|  Headers | HTTP request headers. Often used for content types, authentication, or custom metadata. |
+|  Body Type | Defines how the body content is serialized. |
+|  Error Strategy | Determines when the HTTP response is considered successful |
+
+

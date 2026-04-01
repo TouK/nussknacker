@@ -1,0 +1,54 @@
+---
+# front matter metadata for Docusaurus
+title: Collect
+description: Reassemble outputs from mutliple branches
+sidebar_label: Collect
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Collect
+processingModes: [Request-Response]
+componentPaletteGroup: Flow
+# keywords: []
+---
+
+import ModeRequestResponse from  '/badges/modeRequestResponse.mdx';
+
+# Collect
+
+<!-- Processing modes -->
+
+<ModeRequestResponse />
+
+## Description 
+
+It is possible that in the request - response scenario, multiple records start to "flow" through the scenario. This situation happens in the following cases:
+
+- as the result of the execution of the [for-each](/docs/components/forEach.mdx) node,
+- if [split](/docs/components/split.mdx) node is used
+
+In such cases, the `collect` node provides a convenient way of collecting records from these branches into a list. Each branch can 'contribute' one 'data item' only and these 'data items' have to be of the same data type.
+**Before** data from from different branches can be 'collected',a [union](/docs/components/union.mdx) node should be used to merge the branches.
+
+
+## Parameters and configuration
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Ouput expression      | For each branch, defines 'data item' to be 'collected' from the given branch. |
+| Output variable name  | Name of the variable which will store a list of 'data items' collected from the branches.   |
+
+
+## Example
+
+- For-each node executes on a list `{"one", "two", "three"}`, the output variable is `Element`.
+- The subsequent variable node defines `elementSize` variable; `#Element.length` (returns length of the string) is an
+  expression defining this variable. Because this node is "after" the for-each node, it will execute as many times as
+  there are elements in the list on which for-each node executed, producing 3 `#elementSize` records.
+- Collect node is configured to collect `#elementSize` 'data item' (in this example there is only one branch entering collect node).
+
+The output from collect node will be a list: `{3, 3, 5}`.
+
+## Additional considerations
+Collect is designed to be used in simple collect cases, it might not work as expected in nested structures (like
+for-each inside for-each)
