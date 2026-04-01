@@ -1,8 +1,8 @@
-import { PlayArrow } from "@mui/icons-material";
 import type { ReactNode } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
+import TestingIcon from "../../../../../assets/img/toolbarButtons/test.svg";
 import { getTestCases } from "../../../../../reducers/selectors/testCases";
 import { getActiveTestCaseId, getTestAssertionResults } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
@@ -42,7 +42,7 @@ export const useScenarioTestPresets = () => {
 
     const runAllPreset: Preset = useMemo(
         () => ({
-            icon: <PlayArrow sx={{ fontSize: "20px" }} />,
+            icon: <TestingIcon style={{ color: "white", marginRight: "6px" }} />,
             label: t("testingForm.test.menu.runAll", "Run all"),
             value: RUN_ALL,
         }),
