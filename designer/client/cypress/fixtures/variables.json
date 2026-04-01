@@ -58,6 +58,13 @@
                         "language": "spel",
                         "expression": "\"Test\""
                     }
+                },
+                {
+                    "name": "with space",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "'value with space'"
+                    }
                 }
             ],
             "additionalFields": {
