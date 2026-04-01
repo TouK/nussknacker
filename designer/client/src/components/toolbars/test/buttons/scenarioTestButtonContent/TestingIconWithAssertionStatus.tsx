@@ -20,7 +20,7 @@ export const TestingIconWithAssertionStatus = ({ status }: Props) => (
         }}
     >
         <TestingIcon />
-        {status && (
+        {status && status !== "loading" && (
             <Box
                 component="span"
                 sx={{

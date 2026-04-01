@@ -4,6 +4,8 @@ import type { TestCaseResult } from "../../../../../reducers/graph/testing";
 import type { AssertionStatus } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
 
 export const getAssertionResultsSummary = (testCaseResult: TestCaseResult | undefined): { status: AssertionStatus | null } => {
+    if (testCaseResult?.status === "loading") return { status: "loading" };
+
     const nodeAssertionResults = getNodeAssertionResults(testCaseResult);
     if (nodeAssertionResults === undefined) return { status: null };
 
