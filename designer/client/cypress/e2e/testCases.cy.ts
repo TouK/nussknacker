@@ -192,7 +192,7 @@ describe("Test cases", () => {
 });
 
 const addEmptyAssertion = () => {
-    cy.get('[id="Assertions-content"]').should("be.visible").find('[data-testid="add-field-button"]').click();
+    cy.get('[data-testid="add-field-button"]').scrollIntoView().click();
 };
 
 const fillAssertion = (assertionNumber: number, expected: string, actual: string, operator?: "==" | "!=") => {
