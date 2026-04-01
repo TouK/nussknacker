@@ -31,6 +31,7 @@ export const OverrideKeys = {
     SinkKafkaValue2: "sink-sendSms/Value",
     SourceEventGeneratorValue: "source-event-generator/value",
     ForEachElements: "custom-for-each/Elements",
+    AssertionActual: "assertion/actual",
 } as const;
 
 export type ParamKeys = (typeof OverrideKeys)[keyof typeof OverrideKeys] | (string & NonNullable<unknown>);

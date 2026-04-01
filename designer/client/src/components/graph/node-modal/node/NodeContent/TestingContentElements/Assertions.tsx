@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { omit } from "lodash";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,11 +15,26 @@ import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import { Expandable } from "../../../../../common/Expandable";
 import { withUuid } from "../../../appendUuid";
+import { useHelpText } from "../../../editors/expression/helpText";
+import { ExpressionLang } from "../../../editors/expression/types";
+import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
+import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
+import { OverrideKeys } from "../../../parameterHelpers";
 import { useGetNodeTestCasesErrors, useValidation, useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
 import { AssertionItem } from "./AssertionItem";
 import { StyledStack } from "./components/Styled";
+
+function AssertionHelpTooltip() {
+    return (
+        <InfoTooltip
+            variant="hover"
+            customComponentsProps={{ tooltip: { sx: { maxWidth: 400 } } }}
+            title={useHelpText(ExpressionLang.SpEL)}
+        />
+    );
+}
 
 interface Props {
     node: NodeType;
@@ -86,7 +101,21 @@ export const Assertions = ({ node, edges }: Props) => {
 
     return (
         <StyledStack>
-            <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
+            <Expandable
+                componentId={"Assertions"}
+                expandableTitle={
+                    <Box display={"flex"} gap={2} alignItems={"center"}>
+                        <Typography variant={"body2"} color={"text.secondary"}>
+                            {t("testingDialog.label.assertions", "Assertions")}
+                        </Typography>
+                        <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
+                            <AssertionHelpTooltip />
+                        </ParamKeyProvider>
+                    </Box>
+                }
+                expanded={isExpanded}
+                onChange={setIsExpanded}
+            >
                 {testCaseAssertions.length === 0 && (
                     <Typography variant={"body2"}>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>
                 )}
