@@ -499,8 +499,12 @@ describe("Fragment", () => {
             .first()
             .should("be.visible")
             .as("source");
-
         cy.get("@output").then((node) => {
+            /*
+             *  FIXME: for some unknown for now reason first monitor.getClientOffset() reports wrong values
+             *  check src/components/graph/ProcessGraph.tsx:89
+             *  */
+            cy.get("@source").move({ deltaX: 1, deltaY: 1 });
             cy.get("@source").drag("@output", {
                 force: true,
                 target: {

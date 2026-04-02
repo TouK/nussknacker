@@ -85,6 +85,7 @@ export const ProcessGraph = forwardRef<
                 const canInjectNode = NodeUtils.hasInputs(node) || NodeUtils.hasOutputs(node);
 
                 if (canInjectNode) {
+                    // TODO: investigate cypress problems
                     const clientOffset = monitor.getClientOffset();
                     const paper = graph.current.processGraphPaper;
                     const rect = getPaperPreviewRect(paper, clientOffset);
