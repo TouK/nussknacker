@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Divider, Typography } from "@mui/material";
+import { Box, Divider, Typography } from "@mui/material";
 import SvgIcon from "@mui/material/SvgIcon/SvgIcon";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -109,10 +109,8 @@ const TestCaseTitle = ({ testCase, testCaseResult }: TestCaseTitleProps) => {
             <Typography variant={"body1"} noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                 {testCase.name}
             </Typography>
-            <AssertionResultsBadge assertionResults={nodeAssertionResults ? allResults : undefined} />
-            {isLoading ? (
-                <CircularProgress size={14} />
-            ) : (
+            <AssertionResultsBadge assertionResults={nodeAssertionResults ? allResults : undefined} isLoading={isLoading} />
+            {!isLoading && (
                 <InfoTooltip variant={"hover"} title={t("testCases.run", "Run test")} enterDelay={500}>
                     <SvgIcon fontSize={"small"} className={"action-slot"} onClick={handleRun}>
                         <TestingIcon />
