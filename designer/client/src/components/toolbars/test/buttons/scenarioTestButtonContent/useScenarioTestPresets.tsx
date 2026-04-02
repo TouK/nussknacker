@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import TestingIcon from "../../../../../assets/img/toolbarButtons/test.svg";
 import { getTestCases, hasMultipleTestCases } from "../../../../../reducers/selectors/testCases";
-import { getActiveTestCaseId, getTestAssertionResults } from "../../../../../reducers/selectors/testing";
+import { getActiveTestCaseId, getTestAssertionResults, getTestResultsLoading } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { AssertionStatusIcon } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
@@ -24,6 +24,7 @@ export const useScenarioTestPresets = () => {
     const testCases = useAppSelector(getTestCases);
     const multipleTestCases = useAppSelector(hasMultipleTestCases);
     const testAssertionResults = useAppSelector(getTestAssertionResults);
+    const isLoading = useAppSelector(getTestResultsLoading);
 
     const testCasePresets: Preset[] = useMemo(() => {
         if (testCases.length === 0) return [];
@@ -46,8 +47,9 @@ export const useScenarioTestPresets = () => {
             icon: <TestingIcon style={{ color: "white", marginRight: "6px" }} />,
             label: t("testingForm.test.menu.runAll", "Run all"),
             value: RUN_ALL,
+            isDisabled: isLoading,
         }),
-        [t],
+        [isLoading, t],
     );
 
     const testCasesHeader = useMemo(() => ({ header: t("testingForm.test.menu.testCasesHeader", "Test cases") }), [t]);

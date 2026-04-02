@@ -168,11 +168,10 @@ function wrapWithTestAction(fn: TestFn): ThunkAction {
 
 function wrapWithTestCaseAction(testCase: TestCase, fn: TestFn): ThunkAction {
     return async (dispatch, getState) => {
+        await dispatch(checkPendingChanges());
         dispatch(clearProcessCounts());
         dispatch({ type: "TEST_RESULTS_LOADING" });
         try {
-            await dispatch(checkPendingChanges());
-
             const state = getState();
             const scenarioGraph = getScenarioGraph(state);
             const processName = getProcessName(state);
