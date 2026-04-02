@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import TestingIcon from "../../../../../assets/img/toolbarButtons/test.svg";
-import { getTestCases } from "../../../../../reducers/selectors/testCases";
+import { getTestCases, hasMultipleTestCases } from "../../../../../reducers/selectors/testCases";
 import { getActiveTestCaseId, getTestAssertionResults } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../../graph/node-modal/fragment-input-definition/TypeSelect";
@@ -22,6 +22,7 @@ export type Preset = {
 export const useScenarioTestPresets = () => {
     const { t } = useTranslation();
     const testCases = useAppSelector(getTestCases);
+    const multipleTestCases = useAppSelector(hasMultipleTestCases);
     const testAssertionResults = useAppSelector(getTestAssertionResults);
 
     const testCasePresets: Preset[] = useMemo(() => {
@@ -52,8 +53,8 @@ export const useScenarioTestPresets = () => {
     const testCasesHeader = useMemo(() => ({ header: t("testingForm.test.menu.testCasesHeader", "Test cases") }), [t]);
 
     const presets: Array<Preset | OptionHeader> = useMemo(
-        () => (testCasePresets.length > 1 ? [runAllPreset, testCasesHeader, ...testCasePresets] : [testCasesHeader, ...testCasePresets]),
-        [runAllPreset, testCasePresets, testCasesHeader],
+        () => (multipleTestCases ? [runAllPreset, testCasesHeader, ...testCasePresets] : [testCasesHeader, ...testCasePresets]),
+        [multipleTestCases, runAllPreset, testCasePresets, testCasesHeader],
     );
 
     return { presets, testCasePresets, runAllPreset, activeTestCasePreset };
