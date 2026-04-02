@@ -1,0 +1,36 @@
+---
+# front matter metadata for Docusaurus
+title: HTTP Callback
+description: Push streaming scenario decisions to the external system using HTTP call.
+sidebar_label: HTTP Callback
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: HTTP Callback
+processingModes: [Streaming]
+componentPaletteGroup: Sinks
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+# HTTP Callback
+
+<!-- Engines -->
+<ModeStreaming />
+
+## Description
+ 
+ HTTP Callback allow to pass the 'decisions' taken by the Nussknacker scenarios (or simply results) to systems which do not have a streaming ingestion mechanism. With HTTP Callback sink, the external system can expose a HTTP endpoint, which will be called for each event entering the HTTP Callback node. 
+
+
+## Parameters and configuration
+
+| Name         | Description                                       |
+|--------------|---------------------------------------------------|
+| URL          | The url of the external system endpoint |
+| Content type | `JSON` - Nussknacker will validate whether the specified message body is a valid JSON. If `PLAIN` no validation is performed.   |
+
+
+

@@ -1,0 +1,42 @@
+---
+# front matter metadata for Docusaurus
+title: Previous Value
+description: Recall a last seen value for the particular event key
+sidebar_label: Previous Value
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Previous Value
+processingModes: [Streaming]
+componentPaletteGroup: Data Transformers
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+# PreviousValue
+
+<!-- Processing modes -->
+<ModeStreaming />
+
+## Description
+The `PreviousValue` node recalls a value that was captured during a previous occurrence of an event with a specific key. It allows you to access the *last seen* value of a given expression for each group of events defined by a grouping key.
+
+## Parameters and configuration
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Output variable name  | This variable will contain the last value seen for the particular grouping *key*   |
+| Key                   | Defines how input events are grouped. The component keeps track of the last value separately for each unique key, based on this expression. |
+| Value                 | The value to remember. It will be recalled when another event with the same grouping *key* arrives. |
+
+
+## Example
+
+Given stream of events which contain users with their current location, when we set 
+- groupBy as `#input.userId`
+- value as `#input.location`
+
+then the value of the output variable is the previous location for the current user. If this is the first appearance 
+of this user, the **current** location will be returned.

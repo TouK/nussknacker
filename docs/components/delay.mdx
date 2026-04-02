@@ -1,0 +1,30 @@
+---
+
+# front matter metadata for Docusaurus
+title: Delay
+description: Delay flow of events
+sidebar_label: Delay
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Delay
+processingModes: [Streaming]
+componentPaletteGroup: Flow
+# keywords: []
+
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+# Delay
+<!-- Processing modes -->
+<ModeStreaming />
+
+## Description
+
+Holds event in the node until 
+  *event time* + `delay` >= max (*event time* ever seen by the Delay node). 
+
+## Additional considerations
+The `key` parameter will be removed in the future release of Nussknacker, for the time being, configure it to `#inputMeta.key`.

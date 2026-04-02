@@ -1,0 +1,54 @@
+---
+# front matter metadata for Docusaurus
+title: Nussknacker Cloud Hosted Kafka Topics
+description: Ingest events and produce events to Kafka topics hosted in Nussknacker Cloud
+sidebar_label: Topics
+
+# sidebar_position: 2
+
+# front matter metadata for LLM
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+import CloudVersion from '/badges/cloudVersion.mdx';
+
+# Nussknacker Cloud Hosted Kafka Topics
+
+<!-- Badges -->
+<CloudVersion /><ModeStreaming />
+
+## Description
+ 
+ You can use Kafka topics hosted in Nussknacker Cloud as a source or sink for your streaming scenarios. As the result, you can also use these internal topics for communication between scenarios. Unlike in the case of externally hosted Kafka topics, there is no need to define a [Kafka integration](/docs/integrations/kafka.md) to use internally hosted Kafka topics. 
+
+## Adding a new topic
+
+Topics have to be explicitly defined via the Topics page: follow the Topic link is the top right part of the screen and choose `ADD TOPIC` button.
+
+
+### Parameters and configuration
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Topic name            | This will be a name of the Kafka topic you will create |
+| Topic description           | Narrative of your choice |
+| Content type          | `With schema` - you will need to define Avro schema for the topic. <br/>  `W/o schema` - in this case Nussknacker will not be able to help with field names and data type related validation of SpEL expressions. If Kafka messages content is in the JSON format, you can still use [dynamic field access](/docs/scenariosAuthoring/SpEL.md#dynamic-navigation) to access fields of the Kafka messages. |
+| Avro schema           | Avro schema for the topic; read [this section](/docs/integrations/kafka.md#schemas-and-schema-registry) to understand the role of topic schema.     |
+
+
+#### Advanced parameters
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Acknowledgement  | Consult [Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for the meaning of this parameter  |
+| Max messages size  | This is the [max.message.bytes](https://kafka.apache.org/documentation/#topicconfigs_max.message.bytes) Kafka configuration parameter. Effectively, this is the size of the biggest message that can be added to the topic. |
+| Retention time   | Consult [Kafka documentation](https://kafka.apache.org/documentation/#topicconfigs_retention.ms) for the meaning of this parameter |
+
+## Additional info
+
+Check schema for the `example-input` topic (go to Topics page) to get a first idea how Avro schema looks like. 
+
+
+

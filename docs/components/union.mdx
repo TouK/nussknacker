@@ -1,0 +1,44 @@
+---
+
+# front matter metadata for Docusaurus
+title: Union
+description: Merge two data streams into one data stream
+sidebar_label: Union
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Union
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Joins and Aggregates
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# Union
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />
+
+## Description
+Union merges multiple branches into one branch.
+
+In the Streaming processing mode events from the incoming branches are passed to the output branch without an attempt to combine or match them.
+
+In the Request-Response mode the Union node is used to combine outputs from different scenario branches into just one output. The reason for this is that in the Request - Response processing mode only one [response sink](/docs/scenariosAuthoring/requestResponseProcessingMode.mdx#scenario-response-in-scenarios-with-split-and-for-each-nodes) can return value. If there are parallel branches of processing the Union node will merge merge them into one. You still have to use [Collect](/docs/components/collect.mdx) node to collect results of processing in each of the merged branches. Check [Introduction to Scenario Authoring](/docs/scenariosAuthoring/introduction.mdx#nussknacker-scenario-diagram) for details on how to interpret the scenario graph in different processing modes.
+
+The `#input` variable will be no longer available downstream the union node; a new variable will be available instead, its name is configured in the union node.
+
+Branch names visible in the node configuration form are derived from node names preceding the union node.
+
+
+## Parameters and configuration
+<ModeRequestResponse />
+The following parameters apply to Request - Response mode only.
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Output variable name  | This variable will hold result of the UnionMemo node |
+| Output Expression | When event arrives from a particular input branch, the `output expression` defined for this branch is evaluated and passed to the output branch. The expressions defined for all incoming branches **need to be of identical data type**. In the example above it is always a record containing fields `branchName` and `value`. Note, that the `#input` variable used in the Output expression field refers to the content of the respective incoming branch. |

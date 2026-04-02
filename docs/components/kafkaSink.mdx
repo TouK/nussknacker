@@ -1,0 +1,58 @@
+---
+# front matter metadata for Docusaurus
+title: Kafka (Sink)
+description: Write events to a Kafka topic
+sidebar_label: Kafka (Sink)
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Kafka (Sink)
+processingModes: [Streaming]
+componentPaletteGroup: Sinks
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+# Kafka (Sink)
+
+<!-- Engines -->
+<ModeStreaming />
+
+## Description
+Kafka topics are a common streaming output from Nussknacker scenarios. You need to define Kafka integration to make Kafka source and sink components available in the Component Palette. Check [Kafka Integration](/docs/integrations/kafka.md)  page for the list of available Kafka or Kafka compatible integrations and integration set up information. 
+
+
+
+## Parameters and configuration
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Topic name            | Kafka topic to write to |
+| Version               | Schema version          |
+| Key                   | Partitioning key used to distribute events among topic partitions |
+| Raw editor            | Set to `true` If you want to write the whole output message as one expression |
+| Validation mode       | See below               |
+
+When using the Raw editor, you can choose the [validation mode](/docs/integrations/dataTypingAndSchemasHandling.mdx#validation-modes):
+
+* _strict_ - requires providing all fields, including optional fields, without redundant fields;
+* _lax_ - requires providing only required fields, you can skip optional fields and add redundant fields.
+ 
+If no schema for the topic is found in the Schema Registry, the expression for the sink Kafka message can be created using `Raw editor` only. No validation will be applied to the content of the Kafka message.  
+
+## Additional considerations
+
+### Event time
+
+In general following rules apply:
+
+* We use _event time_ in scenarios to handle notion of passing time
+* Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time_) that generated them
+* We use *bound of order watermark generator*, with configurable amount of lateness
+  (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](/docs/integrations/kafka.md#) for details).
+
+### Schema registry and its role
+
+When writing to the sink, if Schema Registry contains schema for your topic, Nussknacker will be able to help with field names and data type related validation of SpEL expressions,  You can find some more details on schemas [here](/docs/integrations/kafka.md#schemas-and-schema-registry).

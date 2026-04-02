@@ -1,0 +1,32 @@
+---
+# front matter metadata for Docusaurus
+title: Split
+description: Split processing flow into multiple branches
+sidebar_label: Split
+s# idebar_position: 
+
+# front matter metadata for LLM
+componentName: Split
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Flow
+#keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# Split
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />
+
+## Description
+Split node splits processing into two or more parallel branches. Each branch receives all records and processes them independently and in parallel.
+
+In the Request - Response processing mode you can use this feature to paralellize and hence speed up the processing. You must use a sequence of [Union](/docs/components/union.mdx) and [Collect](/docs/components/collect.mdx) nodes to merge parallelly executed branches and collect the results from these branches. A discussion of Request - Response scenario with multiple branches can be found [here](/docs/scenariosAuthoring/requestResponseProcessingMode.mdx#scenario-response-in-scenarios-with-split-and-for-each-nodes).
+In the Streaming processing mode the most typical reason for using a Split node is to define dedicated logic and dedicated sink for each of the branches.
+
+<!-- Example: (Streaming processing mode) - every record from the `source` goes to `sink 1` and `sink 2`. -->
+
+Split node doesn't have any parameters.

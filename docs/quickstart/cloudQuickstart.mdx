@@ -1,0 +1,138 @@
+---
+# front matter metadata for Docusaurus
+title: Authoring your first Nussknacker Scenario
+description: Learn how to create Hello World scenario
+sidebar_label: Cloud
+# sidebar_position: 
+
+# front matter metadata for LLM
+
+processingModes: [Streaming, Request-Response]
+# keywords: []
+---
+import infoIcon from '@site/static/img/infoIcon.png'; 
+import saveIcon from '@site/static/img/scenarioAuthoring/saveScenarioIcon.png'; 
+import deployIcon from '@site/static/img/scenarioAuthoring/deployIcon.png'; 
+import liveDataIcon from '@site/static/img/scenarioAuthoring/liveDataIcon.png';
+import greenLiveDataIcon from '@site/static/img/greenLiveDataIcon.png';
+import myFirstScenario from '@site/static/img/myFirstScenario.png'; 
+
+# Quickstart
+
+## A very concise Nussknacker terminology primer
+
+In Nussknacker, [scenario](/docs/about/GLOSSARY.md#scenario) describes a decision algorithm i.e. how [records](/docs/about/GLOSSARY.md#record) ingested into scenario should be processed and what actions should be performed. Scenarios are composed of [nodes](/docs/about/GLOSSARY.md#node), which work with records. Nodes can  organize the flow, transform data carried in records, bring additional data ("enrich"), call actions in external systems, etc.
+
+
+
+## Get oriented with the example scenario
+
+*Once you sign up to [Nussknacker Cloud](https://cloud.nussknacker.io), scenario `my-scenario` will be created for you. It contains only three nodes: a source ([HTTP Endpoint](/docs/components/httpEndpoint.mdx)), [Log Message](/docs/components/logger.mdx) and [Aggregate Sliding](/docs/components/aggregatesInTimeWindows.mdx).*
+
+
+*`my-scenario` works in the streaming [processing mode](/docs/about/GLOSSARY.md#processing-mode) and processes streams of data. A [HTTP Endpoint](/docs/components/aggregateSliding.mdx) source exposes a http endpoint which can be used to insert events into the data stream processed by a scenario.*
+
+*The numbers shown next to the nodes indicate how many records each node has processed while the scenario was running. If you want to explore this functionality in more detail — including live monitoring, debugging, and testing — see the [dedicated guide](/docs/scenariosAuthoring//testingAndDebugging.mdx).*
+
+
+<figure>
+  <img 
+    src={myFirstScenario}
+    alt="The scenario created at sign up to Nussknacker cloud. It works in the streaming [processing mode](/docs/about/GLOSSARY.md#processing-mode) and processes streams of data. It contains three nodes: a HTTP Endpoint source, Log Message and Aggregate Sliding. "
+    title="Real-time decision scenario in the Nussknacker Designer"
+  />
+  <figcaption>
+    Scenario automatically created at sign up. 
+  </figcaption>
+</figure>
+
+1. Double click on the HTTP Endpoint node to see its configuration and information on how to insert a new event into the scenario.
+<div className="qs-inline-note"> Note, the `Content type` and `Data sample` - because of these settings, Nussknacker will assume that events payload is in JSON format and that field `name` will be present in the input events. </div>
+
+ 
+1. Close the HTTP Endpoint node details window.
+
+1. Double click the [Logger](/docs/components/logger.mdx) node.
+<div className="qs-inline-note">Logger will log a message of your choice to the processing log - we will examine its content later on. </div>
+
+1. Click the <img src={infoIcon} style={{  height: "1.25em" }} /> icon in the `message` parameter entry field to understand how the string template works. You can find more [here](/docs/scenariosAuthoring/introduction.mdx#string-template).
+<div className="qs-inline-note">Take a look at the `#input.toString` expression. The `#input` variable contains the data carried in the input event ingested by the scenario. The `toString` method converts it to the string - the `message` parameter needs to be of type `string`. </div>
+
+
+1. Close the HTTP Endpoint node.
+
+1. Double click the [Aggregate Sliding](/docs/components/aggregateSliding.mdx) node
+<div className="qs-inline-note">This node keeps each event in memory for the time specified in `windowLength`; the events are put into dedicated "buckets" (groups) for every different value of `name` field and counted within each group. Whenever an event arrives, the count is updated and the event is enriched with an updated count value. Note the name of the variable which will contain the count - we will use this variable soon. As there is no downstream node which would consume those events, we cannot see this value for now - we will address it soon. </div>
+
+
+1. Close the Aggregate Sliding node details window. 
+
+## Inspect live records processed by a node
+
+*You should see the scenario graph now.*
+
+1. Ensure that the scenario is running - deploy it <img src={deployIcon} style={{  height: "1.25em" }} />  if necessary. Also, ensure that [Live Data](/docs/scenariosAuthoring/testingAndDebugging.mdx#watch-live-data) functionality is activated - the Live Data icon  <img src={liveDataIcon} style={{  height: "1.25em" }} /> should be green <img src={greenLiveDataIcon} style={{  height: "1.25em" }} />. 
+
+2. Double click the the HTTP Endpoint node and decide how you want to insert events into the scenario. The simplest way is to click the `Send Request` button (do it more than once, if you want). 
+<br /> *Inspecting records stops Live Data; re-enable Live Data once you are finished.*
+
+3. Watch the outgoing records (called events in the streaming mode) shown in the right part of the node details window. Double click on the record 'tile' to inspect data ([variables](/docs/scenariosAuthoring/introduction.mdx#variables)) carried by the chosen event.
+
+<div className="qs-inline-note">When record inspection starts, the Live Data functionality is disabled. You can re-enable it once you are finished. </div>
+
+4. Close the HTTP Endpoint node details window.
+
+5. Double click the `Aggregate Sliding` node. Next, double click any of the output records in the right panel. Examine the data (variables) carried by the record. Check content of the `#aggregate_sliding_output_var` variable - we will use it soon. This variable carries the result of the aggregation in the sliding window, the content of its "fields" was configured in the `Aggregate Sliding` node.
+
+6. Click the `Admin` button (top right corner) and choose Logs tab. You should see messages logged by the Logger node.
+
+7. Return to the scenario - click  `Open scenario` link. 
+
+
+## Modify the scenario
+
+
+*Let's add another Logger node to the scenario to log the result of the aggregation in the Aggregation Sliding node.*
+
+1. Click the bottom dock of the Aggregate Sliding node; the Component Pallette will open. Scroll to Processors  section and choose Logger - the new node will be automatically appended to the scenario. 
+
+2. Double click the newly added Logger node. 
+
+3. Enter the following text into the `message` field: 
+```
+I have seen #{ #input.name }  #{ #aggregate_sliding_output_var.count } times in the last 60s 
+```
+
+<div className="qs-inline-note">The `message` field is of type string, the default [expression type](/docs/scenariosAuthoring/introduction.mdx#ways-of-providing-parameter-values) used is a string template. You do not need to use quotes as text delimiters. Also, although `#aggregate_sliding_output_var.count` is of type integer, Nussknacker silently converted it to string, to ensure that the expression evaluates to string. </div>
+
+4. Close the Logger node details window. 
+
+5. Save the scenario by pressing the Save <img src={saveIcon} style={{  height: "1.25em" }} />  button. 
+
+6. Deploy scenario by pressing the Deploy  <img src={deployIcon} style={{  height: "1.25em" }} /> button.
+
+## Observe the newly added Logger node 
+
+1. Ensure that the scenario is running - deploy it <img src={deployIcon} style={{  height: "1.25em" }} />  if necessary. Also, ensure that [Live Data](/docs/scenariosAuthoring/testingAndDebugging.mdx#watch-live-data) functionality is activated - the Live Data icon should be green.  
+
+1. Insert one or more events into the scenario - do it in same way as before.
+
+1. Double click the newly added Logger node to inspect records live.
+
+1. Go to the Admin Panel, Logs tab to check messages logged by the scenario.
+
+
+## Try a small challenge
+
+The text `I have seen Hannah 1 times in the last 60s` does not sound correct in English. Your task is to improve the scenario so that message handles singular and plural form correctly.
+
+<div className="qs-inline-note">You can do it in two ways. In the first method you add an IF-ELSE logic in the form of an additional node - in Nussknacker this would be a [filter](/docs/components/filter.mdx) - it can have `true` and `false` outgoing branches. Next, you will have to merge both branches or have a dedicated Logger node in each of the branches. </div>
+
+<div className="qs-inline-note">The alternative is to use [conditional processing](/docs/scenariosAuthoring/SpEL.md#conditional-operators)</div>
+
+
+<div className="qs-inline-note"> `conditionExpression ? expressionIfTrue : expressionIfFalse` </div>
+
+
+<div className="qs-inline-note">to compute text value in the `message` field. In this case you may find that using a SpEL expression may be easier than using a string template expression (opinions vary). </div>
+

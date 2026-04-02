@@ -1,0 +1,26 @@
+---
+
+# front matter metadata for Docusaurus
+title: Qdrant
+description: Define integration with Qdrant vector database
+sidebar_label: Qdrant
+
+# sidebar_position: 
+
+---
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# Qdrant 
+<Enterprise />
+
+## Overview
+
+Once the Qdrant integration is configured, the configured vector store instance will be available for use in the [Vector Store](/docs/components/vectorStore.mdx) component.
+
+## Configuring Qdrant vector store integration
+
+| Parameter              | Required |  Description                                                                                                                                            |
+|------------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Integration name       | true     | Unique name for the integration                        |
+| URL                    | true     | URL of the vector store                                |
+| API Key                | false    | API key used to authenticate with the vector store     |
