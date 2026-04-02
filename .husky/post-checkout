@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Delegates to per-repo private scripts from ~/.config/git-hooks/<repo>/post-checkout.d/
+# Arguments passed through: $1=prev_ref, $2=new_ref, $3=branch_flag
+
+repo_name="$(basename "$(git rev-parse --git-common-dir | xargs dirname)")"
+hook_dir="$HOME/.config/git-hooks/$repo_name/post-checkout.d"
+
+if [[ -d "$hook_dir" ]]; then
+    for script in "$hook_dir"/*.sh; do
+        [[ -x "$script" ]] && "$script" "$@"
+    done
+fi
