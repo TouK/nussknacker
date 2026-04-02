@@ -15,7 +15,7 @@ To better understand how Nussknacker works with Kafka, it's recommended to read 
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
 
 If you want to use Flink engine, this is also recommended:
-* [Flink keyed state](https://nightlies.apache.org/flink/flink-docs-master/docs//concepts/stateful-stream-processing/#keyed-state)
+* [Flink keyed state](https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/stateful-stream-processing/#keyed-state)
 
 ## Concepts
 
@@ -285,7 +285,8 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 ```json
 {
   "processName" : "Premium Customer Scenario",
-  "nodeId" : "filter premium customers",
+  "nodeId" : "513eab33-d9b3-4c67-a9e7-b84ae184eb64",
+  "nodeName" : "filter premium customers",
   "message" : "Unknown exception",
   "exceptionInput" : "SpelExpressionEvaluationException:Expression [1/0 != 10] evaluation failed, message: / by zero",
   "inputEvent" : "{ \" field1\": \"vaulue1\" }",

@@ -33,7 +33,7 @@ In this documentation, **record** is a neutral term used across all [processing 
 In purely streaming contexts, we typically use term **event** - that simply means a record with a timestamp, which lets Nussknacker apply time-based processing logic.
 :::
 
-Acting (transforming, aggregating) on events caught into different variants of time windows is the very essence of stream processing. Results of functions applied to all events which fall into the particular time window can bring valuable insights in fraud detection, IoT events analysis, clickstream analysis, etc. A good introduction to aggregating events in streams can be found in this [article](https://nightlies.apache.org/flink/flink-docs-master/docs//concepts/time/#windowing). 
+Acting (transforming, aggregating) on events caught into different variants of time windows is the very essence of stream processing. Results of functions applied to all events which fall into the particular time window can bring valuable insights in fraud detection, IoT events analysis, clickstream analysis, etc. A good introduction to aggregating events in streams can be found in this [article](https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/time/#windowing). 
 
 Regardless of the window type used, events are caught into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find more info [here](/docs/scenariosAuthoring/streamingProcessingMode.md#notion-of-time).
 

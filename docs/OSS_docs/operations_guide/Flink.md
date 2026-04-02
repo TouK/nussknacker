@@ -118,7 +118,7 @@ Below we give a few tips on how to configure your cluster. Some of the configura
 
 #### Memory parameters
 
-Flink's memory configuration is pretty complex, [https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/memory/mem_setup/](https://nightlies.apache.org/flink/flink-docs-master/docs//deployment/memory/mem_setup/) - please see the official documentation for the details. Nussknacker-specific settings:
+Flink's memory configuration is pretty complex, [https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/memory/mem_setup/](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/memory/mem_setup/) - please see the official documentation for the details. Nussknacker-specific settings:
 
 
 
@@ -346,7 +346,7 @@ If the scenario requires high throughput and has a small, predictable state (e.g
 
 Keep only what’s necessary in the scenario state (e.g. aggregate definitions). Use aggregates of variable size such as List or Set cautiously. If you only need to know the count or unique occurrences, consider using ‘Approximate cardinality’ aggregation - it should be sufficient in most cases.
 
-You can check the size of state in Grafana, in the scenario dashboard (this is the size of data on TaskManagers, not directly related to checkpoint size - see [incremental checkpoint documentation](https://nightlies.apache.org/flink/flink-docs-master/docs//ops/state/state_backends/#incremental-checkpoints) for details).
+You can check the size of state in Grafana, in the scenario dashboard (this is the size of data on TaskManagers, not directly related to checkpoint size - see [incremental checkpoint documentation](https://nightlies.apache.org/flink/flink-docs-master/docs/ops/state/state_backends/#incremental-checkpoints) for details).
 
 
 ##### Tuning RocksDB and checkpoints
@@ -370,7 +370,7 @@ Nussknacker needs to know the exact type of processed data during compilation of
 
 ##### Asynchronous execution
 
-For scenarios with a large number of enrichments the “should use async interpretation” flag (in scenario properties) can be used. It will enable asynchronous execution of large parts of the scenario (using [Flink async I/O](https://nightlies.apache.org/flink/flink-docs-master/docs//dev/datastream/operators/asyncio/)) which can significantly increase enricher throughput.
+For scenarios with a large number of enrichments the “should use async interpretation” flag (in scenario properties) can be used. It will enable asynchronous execution of large parts of the scenario (using [Flink async I/O](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/operators/asyncio/)) which can significantly increase enricher throughput.
 
 It causes some performance degradation of other parts of the scenario, so it’s not enabled by default - the rule of the thumb is to consider it if the total mean response time of external service invocations for one event exceeds average time between events (e.g. latency > 1ms for expected throughput 1000 events/s).
 

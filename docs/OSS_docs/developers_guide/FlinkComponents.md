@@ -14,7 +14,7 @@ In order to implement any of those you need to provide:
 ## Sources
 
 ### Standard implementation
-The recommended way to implement a source is through [StandardFlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala)
+The recommended way to implement a source is through [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala)
 interface. Your source only has to implement a `sourceStream` method that provides [DataStreamSource](https://nightlies.apache.org/flink/flink-docs-master/api/java/org/apache/flink/streaming/api/datastream/DataStreamSource.html)
 based on [StreamExecutionEnvironment](https://nightlies.apache.org/flink/flink-docs-master/api/java/org/apache/flink/streaming/api/environment/StreamExecutionEnvironment.html).
 
@@ -54,8 +54,8 @@ returning your source implementation.
   reading Kafka in different formats: Avro or Json with schemas defined in Schema Registry.
 
 Sources for various systems like RabbitMQ, JDBC, etc. do not necessarily have to be implemented from scratch. Flink comes with
-simple sources [already predefined](https://nightlies.apache.org/flink/flink-docs-master/docs//dev/datastream/overview/#data-sources)
-and [connectors](https://nightlies.apache.org/flink/flink-docs-master/docs//connectors/datastream/overview) with third-party systems.
+simple sources [already predefined](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/overview/#data-sources)
+and [connectors](https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/datastream/overview) with third-party systems.
 All of them can be used to implement a Nussknacker source.
 
 ## Sinks
@@ -78,8 +78,8 @@ have to implement `FlinkSink` (or its subtrait `BasicFlinkSink`).
 - [FlinkKafkaUniversalSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/sink/flink/FlinkKafkaUniversalSink.scala)
   and its factory [UniversalKafkaSinkFactory](https://github.com/TouK/nussknacker/blob/staging/utils/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/sink/UniversalKafkaSinkFactory.scala)
 
-Flink provides [basic](https://nightlies.apache.org/flink/flink-docs-master/docs//dev/datastream/overview/#data-sinks) sinks
-and [connectors](https://nightlies.apache.org/flink/flink-docs-master/docs//connectors/datastream/overview) which can be used while implementing
+Flink provides [basic](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/overview/#data-sinks) sinks
+and [connectors](https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/datastream/overview) which can be used while implementing
 own Nussknacker sinks.
 
 ## Custom stream transformations
@@ -94,7 +94,7 @@ Access to metadata like node id or scenario name and various helpers is provided
 
 Special care should be taken to handle:
 - lifecycle - preparing the operator (source, sink or functions registered by custom transformers), closing resources, handling failures and restoring the state.
-  See Flink's operators lifecycle for more details [here](https://nightlies.apache.org/flink/flink-docs-master/docs//internals/task_lifecycle/)
+  See Flink's operators lifecycle for more details [here](https://nightlies.apache.org/flink/flink-docs-master/docs/internals/task_lifecycle/)
 - exceptions, e.g. during deserialization, since any thrown and unhandled exception by the source, causes the Flink job to restart.
 
 :warning: **Flink components should not extend Lifecycle** - it won't be handled properly
