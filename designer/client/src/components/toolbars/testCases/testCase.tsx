@@ -12,6 +12,7 @@ import { getActiveTestCaseId } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
+import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { useRunTestScenario } from "../test/useRunTestScenario";
 import { AssertionResultsBadge } from "./assertionResultsForNode/AssertionResultsBadge";
 import { Definitions } from "./definitions";
@@ -81,6 +82,8 @@ const TestCaseTitle = ({ testCase, testCaseResult }: TestCaseTitleProps) => {
     const nodeAssertionResults = getNodeAssertionResults(testCaseResult);
     const allResults = nodeAssertionResults ? Object.values(nodeAssertionResults).flat() : [];
     const isLoading = testCaseResult?.status === "loading";
+    const testingEnabled = useTestingScenarioEnabled({ disabled: false });
+    const showRunButton = !isLoading && testingEnabled;
     const dispatch = useAppDispatch();
 
     const { runTest } = useRunTestScenario();
@@ -110,7 +113,7 @@ const TestCaseTitle = ({ testCase, testCaseResult }: TestCaseTitleProps) => {
                 {testCase.name}
             </Typography>
             <AssertionResultsBadge assertionResults={nodeAssertionResults ? allResults : undefined} isLoading={isLoading} />
-            {!isLoading && (
+            {showRunButton && (
                 <InfoTooltip variant={"hover"} title={t("testCases.run", "Run test")} enterDelay={500}>
                     <SvgIcon fontSize={"small"} className={"action-slot"} onClick={handleRun}>
                         <TestingIcon />
