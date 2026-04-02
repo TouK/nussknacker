@@ -48,6 +48,11 @@ Use autocompletion to explore available options. To read more see [Documentation
                             ),
                             helpText,
                         );
+                    case OverrideKeys.AssertionActual:
+                        return t(
+                            "editors.spelEditor.additionalInfoText.assertionActual",
+                            "Use **#records** to access all events that passed through this node.\n\ncount `#records.size()`  \nfield access `#records[0].status`  \nfilter `#records.?[#this.amount > 100].size()`",
+                        );
                     case OverrideKeys.SinkKafkaValue:
                         return mergeTexts(
                             t(

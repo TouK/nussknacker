@@ -4,8 +4,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
-import io.swagger.v3.oas.models.security.SecurityScheme.Type.{APIKEY, HTTP}
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import io.swagger.v3.oas.models.security.SecurityScheme.Type.{APIKEY, HTTP, OAUTH2}
 import pl.touk.nussknacker.openapi.{
   ApiKeyInCookie,
   ApiKeyInHeader,
@@ -13,7 +12,8 @@ import pl.touk.nussknacker.openapi.{
   ApiKeySecret,
   BasicAuth,
   HttpBasicAuthSecret,
-  Secret,
+  OAuth2ClientCredentials,
+  OAuth2ClientCredentialsSecret,
   SecurityConfig,
   SecuritySchemeName,
   SwaggerSecurity
@@ -26,6 +26,8 @@ import scala.jdk.CollectionConverters._
 private[parser] object SecuritiesParser extends LazyLogging {
 
   import cats.syntax.apply._
+
+  private final case class RequiredScheme(name: String, scopes: List[String])
 
   def parseOperationSecurities(
       securityRequirementsDefinition: List[SecurityRequirement],
@@ -41,8 +43,11 @@ private[parser] object SecuritiesParser extends LazyLogging {
             // finds the first security requirement that can be met by the config
             securityRequirementsDefinition.view
               .map { securityRequirement =>
+                val requiredSchemes = securityRequirement.asScala.toList.map { case (schemeName, scopes) =>
+                  RequiredScheme(schemeName, Option(scopes).map(_.asScala.toList).getOrElse(Nil))
+                }
                 matchSecretsForRequiredSchemes(
-                  securityRequirement.asScala.keys.toList,
+                  requiredSchemes,
                   securitySchemes,
                   securityConfig
                 )
@@ -55,27 +60,29 @@ private[parser] object SecuritiesParser extends LazyLogging {
     }
 
   private def matchSecretsForRequiredSchemes(
-      requiredSchemesNames: List[String],
+      requiredSchemes: List[RequiredScheme],
       securitySchemes: Map[String, SecurityScheme],
       securitiesConfig: SecurityConfig
   ): ValidationResult[List[SwaggerSecurity]] =
-    requiredSchemesNames.map { schemeName =>
+    requiredSchemes.map { requiredScheme =>
       {
         val validatedSecurityScheme: ValidationResult[SecurityScheme] = Validated
           .fromOption(
-            securitySchemes.get(schemeName),
-            NonEmptyList.of(s"""there is no security scheme definition for scheme name "$schemeName"""")
+            securitySchemes.get(requiredScheme.name),
+            NonEmptyList.of(s"""there is no security scheme definition for scheme name "${requiredScheme.name}"""")
           )
         validatedSecurityScheme
-          .andThen { scheme => matchSecretForScheme(scheme, SecuritySchemeName(schemeName), securitiesConfig) }
+          .andThen { scheme => matchSecretForScheme(scheme, requiredScheme, securitiesConfig) }
       }
     }.sequence
 
   private def matchSecretForScheme(
       scheme: SecurityScheme,
-      schemeName: SecuritySchemeName,
+      requiredScheme: RequiredScheme,
       securitiesConfig: SecurityConfig
   ) = {
+    val schemeName = SecuritySchemeName(requiredScheme.name)
+
     def securitySchemeNotFoundError: String =
       s"""there is no security config for scheme name "${schemeName.value}""""
 
@@ -89,6 +96,12 @@ private[parser] object SecuritiesParser extends LazyLogging {
       case (HTTP, "basic") => {
         securitiesConfig.httpBasicAuthSecret(schemeName) match {
           case Some(secret) => BasicAuth(schemeName.value, secret.username, secret.password).validNel
+          case None         => securitySchemeNotFoundError.invalidNel
+        }
+      }
+      case (OAUTH2, _) => {
+        securitiesConfig.oauth2ClientCredentialsSecret(schemeName) match {
+          case Some(secret) => getOauth2ClientCredentialsSecurity(scheme, requiredScheme, secret)
           case None         => securitySchemeNotFoundError.invalidNel
         }
       }
@@ -112,5 +125,35 @@ private[parser] object SecuritiesParser extends LazyLogging {
         ApiKeyInCookie(name, key)
     }
   }
+
+  private def getOauth2ClientCredentialsSecurity(
+      securityScheme: SecurityScheme,
+      requiredScheme: RequiredScheme,
+      oauthSecret: OAuth2ClientCredentialsSecret
+  ): ValidationResult[SwaggerSecurity] =
+    oauth2ClientCredentialsTokenUrl(securityScheme, requiredScheme.name).map { tokenUrl =>
+      val scope = requiredScheme.scopes match {
+        case Nil => None
+        case nonEmptyScopes =>
+          Some(nonEmptyScopes.mkString(" "))
+      }
+      OAuth2ClientCredentials(
+        requiredScheme.name,
+        tokenUrl,
+        oauthSecret.clientId,
+        oauthSecret.clientSecret,
+        scope
+      )
+    }
+
+  private def oauth2ClientCredentialsTokenUrl(
+      securityScheme: SecurityScheme,
+      schemeName: String
+  ): ValidationResult[String] =
+    Option(securityScheme.getFlows)
+      .flatMap(flows => Option(flows.getClientCredentials))
+      .flatMap(flow => Option(flow.getTokenUrl))
+      .filter(_.nonEmpty)
+      .toValidNel(s"""OAuth2 scheme "$schemeName" requires clientCredentials flow with tokenUrl""")
 
 }

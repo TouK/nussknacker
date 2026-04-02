@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9167](https://github.com/TouK/nussknacker/pull/9167) OpenAPI enricher: added OAuth2 Client Credentials authentication support.
+  * New security type: `oauth2ClientCredentials` (alias: `oauth2`) with `clientId` and `clientSecret`.
+  * `tokenUrl` and scopes are resolved from OpenAPI `securitySchemes` and operation `security` requirements.
+  * `docs/integration/OpenAPI.md` removed in favor of `https://docs.nussknacker.io/OSS_docs/integration/OpenAPI/`.
 * [#9112](https://github.com/TouK/nussknacker/pull/9112) Sink output records are now visible in `Outgoing records` for both scenario tests and live data preview.
     * Component API update for custom sink preview values: introduced `SinkDisplayableValue` trait.
     * Added `ResultsVariableEncoder` utility for result/live data variable encoding.

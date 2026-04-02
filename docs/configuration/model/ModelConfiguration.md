@@ -45,7 +45,7 @@ Nussknacker comes with a set of provided components. Some of them (e.g. `filter`
 predefined and accessible by default. Others need additional configuration - the most important ones are enrichers, where you have to set e.g. JDBC URL or external service address.
 
 Check Integration documentation for the details on how to configure the following components:
-- [OpenAPI](../../integration/OpenAPI.md) Supports accessing external APIs directly from scenario 
+- [OpenAPI](https://docs.nussknacker.io/OSS_docs/integration/OpenAPI/) Supports accessing external APIs directly from scenario 
 - [SQL](../../integration/Sql.md)         Supports access to SQL database engines    
 - [Machine Learning](../../integration/MachineLearning.md)         Infers ML models
 
