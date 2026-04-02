@@ -109,7 +109,7 @@ const TestCaseTitle = ({ testCase, testCaseResult }: TestCaseTitleProps) => {
                 "&:hover .action-slot": { opacity: 1 },
             }}
         >
-            <Typography variant={"body1"} noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+            <Typography variant={"body2"} noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                 {testCase.name}
             </Typography>
             <AssertionResultsBadge assertionResults={nodeAssertionResults ? allResults : undefined} isLoading={isLoading} />
