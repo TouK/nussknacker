@@ -270,7 +270,7 @@ It can be configured with following options.
 |-----------|---------|---------------|-------------------------------------------------------------------------------------------------------------------------------|
 | enabled   | boolean | false         | Either streaming or request-response                                                                                          |
 | host      | string  |               | Name of the [ingress host](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules)                    |
-| rootPath  | string  | "/"           | Root path for the ingress path, by default ingress path is rootPath + [slug](/docs/scenariosAuthoring/requestResponseProcessingMode.mdx#scenario-properties) (../scenarios_authoring/RRDataSourcesAndSinks.md) |
+| rootPath  | string  | "/"           | Root path for the ingress path, by default ingress path is rootPath + [slug](/docs/scenariosAuthoring/requestResponseProcessingMode.mdx#scenario-properties) |
 | config    | config  | {}            | Additional ingress config customization                                                                                       |
 
 #### Configuring custom ingress class
