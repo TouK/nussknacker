@@ -92,10 +92,6 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
                         const data: MultipleResultsWithCountsDto = JSON.parse(value.data);
                         if (data.type === "Completed") {
                             dispatch(displayTestAssertionsResults(data.testCaseId, data));
-                            const activeTestCaseId = getActiveTestCaseId(getState());
-                            if (data.testCaseId === activeTestCaseId) {
-                                dispatch(testingActions(data.result));
-                            }
                         } else {
                             failTestCase(data.testCaseId, data.testCaseName, data.error);
                         }
@@ -103,6 +99,12 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
                 }
             } finally {
                 reader.releaseLock();
+            }
+
+            const activeTestCaseId = getActiveTestCaseId(getState());
+            const activeResult = getTestAssertionResults(getState())[activeTestCaseId];
+            if (activeResult?.status === "loaded" && activeResult.results.type === "Completed") {
+                dispatch(testingActions(activeResult.results.result));
             }
         } catch {
             testCases.forEach((tc) => failTestCase(tc.id, tc.name));
