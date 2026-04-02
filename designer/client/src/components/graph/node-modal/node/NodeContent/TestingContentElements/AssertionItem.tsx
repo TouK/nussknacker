@@ -24,13 +24,16 @@ export const ASSERTION_SYMBOLS: Record<AssertionOperator, string> = {
     lessThan: "<",
     greaterThanOrEqual: ">=",
     lessThanOrEqual: "<=",
+    hasSize: "has size",
+    contains: "contains",
+    matches: "matches",
 };
 
 const gridContainerStyle = css({
     "&&&&": {
         width: "100%",
         display: "grid",
-        gridTemplateColumns: "3fr 3fr 1fr 3fr",
+        gridTemplateColumns: "1fr 1fr minmax(7rem, max-content) 1fr",
         gridTemplateRows: "auto auto",
         gridTemplateAreas: `"field field field field remove" "expr expr expr expr remove"`,
     },
@@ -120,25 +123,6 @@ const AssertionItemComponent = ({
                         placeholder={"Optional description"}
                     />
                 </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
-                    <EditableEditor
-                        showSwitch={false}
-                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={expected}
-                        variableTypes={variableTypes}
-                        onValueChange={handleExpectedChange}
-                        showValidation
-                        fieldErrors={expectedErrors}
-                        placeholder="true, 12, 'xxxx'"
-                    />
-                </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
-                    <TypeSelect
-                        value={assertionOptions.find((o) => o.value === operator)}
-                        options={assertionOptions}
-                        onChange={handleOperatorChange}
-                    />
-                </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
                     <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
                         <EditableEditor
@@ -152,6 +136,25 @@ const AssertionItemComponent = ({
                             placeholder="#records.size()"
                         />
                     </ParamKeyProvider>
+                </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
+                    <TypeSelect
+                        value={assertionOptions.find((o) => o.value === operator)}
+                        options={assertionOptions}
+                        onChange={handleOperatorChange}
+                    />
+                </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
+                    <EditableEditor
+                        showSwitch={false}
+                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                        expressionObj={expected}
+                        variableTypes={variableTypes}
+                        onValueChange={handleExpectedChange}
+                        showValidation
+                        fieldErrors={expectedErrors}
+                        placeholder="true, 12, 'xxxx'"
+                    />
                 </RowFieldLabel>
             </FieldsRow>
             {testAssertionResult && (

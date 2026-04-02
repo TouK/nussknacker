@@ -7,7 +7,16 @@ import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
 import { changeActiveTestCase } from "./testingActions";
 
-export type AssertionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "greaterThanOrEqual" | "lessThanOrEqual";
+export type AssertionOperator =
+    | "equals"
+    | "notEquals"
+    | "greaterThan"
+    | "lessThan"
+    | "greaterThanOrEqual"
+    | "lessThanOrEqual"
+    | "hasSize"
+    | "contains"
+    | "matches";
 export type Assertion = { description?: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 

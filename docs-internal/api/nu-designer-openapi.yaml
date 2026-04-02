@@ -5878,11 +5878,14 @@ components:
       title: AssertionOperator
       type: string
       enum:
+      - contains
       - equals
       - greaterThan
       - greaterThanOrEqual
+      - hasSize
       - lessThan
       - lessThanOrEqual
+      - matches
       - notEquals
     AssertionResult:
       title: AssertionResult
