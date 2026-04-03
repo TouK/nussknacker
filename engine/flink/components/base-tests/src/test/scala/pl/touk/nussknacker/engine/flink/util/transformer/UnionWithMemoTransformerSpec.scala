@@ -102,6 +102,66 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     }
   }
 
+  test("union with memo should keep non-null values for UUID-like branch ids") {
+    val BranchFooId = "72e08173-4a3c-45f0-ab26-4d1686a3e483"
+    val BranchBarId = "15ebb252-2ec9-4829-bcd9-3d18a39c6940"
+
+    val process = ScenarioBuilder
+      .streaming("sample-union-memo")
+      .sources(
+        GraphBuilder
+          .source("start-foo", "start-foo")
+          .branchEnd(BranchFooId, UnionNodeId.value),
+        GraphBuilder
+          .source("start-bar", "start-bar")
+          .branchEnd(BranchBarId, UnionNodeId.value),
+        GraphBuilder
+          .join(
+            UnionNodeId.value,
+            "union-memo",
+            Some(OutVariableName),
+            List(
+              BranchFooId -> List(
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
+              ),
+              BranchBarId -> List(
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
+              )
+            ),
+            "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
+          )
+          .emptySink(EndNodeId.value, "dead-end")
+      )
+
+    val key       = "fooKey"
+    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      def outValues = {
+        collectingListener.results
+          .nodeResults(EndNodeId)
+          .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
+      }
+
+      withProcess(process, sourceFoo, sourceBar, collectingListener) {
+        sourceFoo.add(OneRecord(key, 0, 123))
+        eventually {
+          outValues.last("key") shouldBe key
+          outValues.last.values should contain(123)
+        }
+        sourceBar.add(OneRecord(key, 1, 234))
+        eventually {
+          outValues.last("key") shouldBe key
+          outValues.last.values should contain(123)
+          outValues.last.values should contain(234)
+        }
+      }
+    }
+  }
+
   test("union with memo should handle input nodes named \"key\"") {
     val BranchFooId = UnionWithMemoTransformer.KeyField
     val BranchBarId = "bar"
