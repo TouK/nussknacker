@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9167](https://github.com/TouK/nussknacker/pull/9167) OpenAPI enricher: added OAuth2 Client Credentials authentication support.
+  * New security type: `oauth2ClientCredentials` (alias: `oauth2`) with `clientId` and `clientSecret`.
+  * `tokenUrl` and scopes are resolved from OpenAPI `securitySchemes` and operation `security` requirements.
+  * `docs/integration/OpenAPI.md` removed in favor of `https://docs.nussknacker.io/OSS_docs/integration/OpenAPI/`.
 * [#9112](https://github.com/TouK/nussknacker/pull/9112) Sink output records are now visible in `Outgoing records` for both scenario tests and live data preview.
     * Component API update for custom sink preview values: introduced `SinkDisplayableValue` trait.
     * Added `ResultsVariableEncoder` utility for result/live data variable encoding.
@@ -343,6 +347,10 @@ description: Stay informed with detailed changelogs covering new features, impro
   * Dynamic record indexing returns value type instead of `Unknown`
   * Limited support for function references in SpEL
   * Improved typing for properties derived from `Unknown` values
+* [#9083](https://github.com/TouK/nussknacker/pull/9083) Added configuration option to restrict assignments from Unknown type.
+  When enabled, expressions with Unknown type cannot be assigned to fields with a concrete type, reducing runtime type errors for partially typed data.
+  Can be configured by implementing TypingConfigurationProvider and registering it as SPI.
+  By default, the existing permissive behavior is preserved.
 
 ## 1.18
 

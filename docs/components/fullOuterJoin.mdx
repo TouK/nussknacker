@@ -1,0 +1,63 @@
+---
+
+# front matter metadata for Docusaurus
+title: Full Outer Join
+description: Merge and aggregate events from different event streams
+sidebar_label: Full Outer Join
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: [Full Outer Join]
+processingModes: [Streaming]
+componentPaletteGroup: Joins and Aggregates
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+# Full-outer-join
+
+<!-- Processing modes -->
+<ModeStreaming />
+
+## Description
+
+:::note
+In this documentation, **record** is a neutral term used across all [processing modes](/docs/about/ProcessingModes.md).  
+In purely streaming contexts, we typically use term **event** - that simply means a  record with a timestamp, which lets Nussknacker apply time-based processing logic.
+:::
+
+Full Outer Join is Nussknacker's version of SQLs full outer join. It works much like [Single Side Join](/docs/components/singleSideJoin.mdx) component,
+but it has aggregates for all branches and emits a new event for every event it receives. Every time
+a new event is received, it is matched with events with the same key from the other branches in the time window of *windowLength*, then the aggregate for each branch is calculated. A new event is emitted containing aggregates for both branches. **The time window boundaries will be determined by the event which has just arrived** and will be in the range of \[event-time - windowLength, event-time\].
+
+
+If an event cannot be matched, then a new event is still emitted, but the aggregate for the branch which had no matching events will have a value of zero or null, depending on the `aggregator` configured. 
+
+
+## Parameters and configuration
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Key          | Expression, which is used to match events from different branches; separate expression for each branch. The expression in this field can refer to events and their associated variables (including `#input`) from their respective branches only.  |
+| AggregateBy  | The input to the *aggregator* function; separate for each branch. Only variables associated with the event from the given branch can be used in the *AggregateBy* expression. |
+| Aggregator   | Aggregator function; separate for each branch. See [this document](/docs/components/aggregatesInTimeWindows.mdx#common-to-all-window-types) for the list of available aggregator functions. |
+| WindowLength | See above for explanation |
+| Output variable name | the name of the variable which will hold the results of the *aggregator* function. |
+
+Content of the output variable:
+```json
+{
+    "key" : "value of the key used to join branches",
+    "branch-one-name" : "branch-one-aggregator-result",
+    "branch-two-name" : "branch-two-aggregator-result"
+}
+``` 
+
+## Additional considerations
+
+* Unlike Single Side Join, Full Outer Join can have more than two input branches.
+* The `#input` variable will not be available downstream. 
+* We use slice optimization to reduce amount of memory used by Flink state. Read [here](/docs/components/aggregatesInTimeWindows.mdx#additional-considerations) to find more. 
+

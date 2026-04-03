@@ -1,0 +1,36 @@
+---
+# front matter metadata for Docusaurus
+title: Log Message
+description: Log a message to your instance log
+sidebar_label: Logger
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Logger
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Enrichers and Actuators
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# Logger
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />
+
+## Description
+
+This component allows insert a message into the processing log. The messages in the processing log can be accessed via the Admin Panel. 
+
+The scenario name and the node name will be automatically added to the log message. 
+
+## Parameters and configuration
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Message               | The message to be added to the log           |
+| Log Level             | Filter displayed messages by the message log level: `Debug`, `Info`, `Warning`, `Error` | 
+

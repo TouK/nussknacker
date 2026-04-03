@@ -10,9 +10,11 @@ import { EditableEditor } from "../../../editors/EditableEditor";
 import type { ExpressionObj } from "../../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../../editors/expression/types";
 import Input from "../../../editors/field/Input";
+import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 import type { Option } from "../../../fragment-input-definition/TypeSelect";
+import { OverrideKeys } from "../../../parameterHelpers";
 import { AssertionStatus } from "./AssertionStatus";
 
 export const ASSERTION_SYMBOLS: Record<AssertionOperator, string> = {
@@ -22,13 +24,16 @@ export const ASSERTION_SYMBOLS: Record<AssertionOperator, string> = {
     lessThan: "<",
     greaterThanOrEqual: ">=",
     lessThanOrEqual: "<=",
+    hasSize: "has size",
+    contains: "contains",
+    matches: "matches",
 };
 
 const gridContainerStyle = css({
     "&&&&": {
         width: "100%",
         display: "grid",
-        gridTemplateColumns: "3fr 3fr 1fr 3fr",
+        gridTemplateColumns: "1fr 1fr minmax(7rem, max-content) 1fr",
         gridTemplateRows: "auto auto",
         gridTemplateAreas: `"field field field field remove" "expr expr expr expr remove"`,
     },
@@ -118,6 +123,27 @@ const AssertionItemComponent = ({
                         placeholder={"Optional description"}
                     />
                 </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
+                    <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
+                        <EditableEditor
+                            showSwitch={false}
+                            editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                            expressionObj={actual}
+                            variableTypes={variableTypes}
+                            onValueChange={handleActualChange}
+                            showValidation
+                            fieldErrors={actualErrors}
+                            placeholder="#records.size()"
+                        />
+                    </ParamKeyProvider>
+                </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
+                    <TypeSelect
+                        value={assertionOptions.find((o) => o.value === operator)}
+                        options={assertionOptions}
+                        onChange={handleOperatorChange}
+                    />
+                </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
                     <EditableEditor
                         showSwitch={false}
@@ -127,24 +153,7 @@ const AssertionItemComponent = ({
                         onValueChange={handleExpectedChange}
                         showValidation
                         fieldErrors={expectedErrors}
-                    />
-                </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
-                    <TypeSelect
-                        value={assertionOptions.find((o) => o.value === operator)}
-                        options={assertionOptions}
-                        onChange={handleOperatorChange}
-                    />
-                </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
-                    <EditableEditor
-                        showSwitch={false}
-                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={actual}
-                        variableTypes={variableTypes}
-                        onValueChange={handleActualChange}
-                        showValidation
-                        fieldErrors={actualErrors}
+                        placeholder="true, 12, 'xxxx'"
                     />
                 </RowFieldLabel>
             </FieldsRow>

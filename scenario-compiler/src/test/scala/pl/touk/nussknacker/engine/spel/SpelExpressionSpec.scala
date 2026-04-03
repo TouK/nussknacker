@@ -7,8 +7,8 @@ import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.flink.types.Row
 import org.scalacheck.Gen
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.Inside.inside
-import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.api.generics.{
 }
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
-import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypingConfiguration, TypingConfigurationProvider}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
@@ -59,6 +59,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectEr
   UnresolvedReferenceError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.OperatorError._
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SelectionProjectionError.IllegalSelectionTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.ArrayConstructorError
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
@@ -80,6 +81,7 @@ import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.varargs
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
@@ -87,7 +89,37 @@ import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success}
 
-class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with OptionValues {
+class SpelExpressionSpecWithLenientUnknown extends SpelExpressionSpec {
+  override protected val allowUnknownToAnyAssignment: Boolean = true
+}
+
+class SpelExpressionSpecWithStrictUnknown extends SpelExpressionSpec {
+  override protected val allowUnknownToAnyAssignment: Boolean = false
+}
+
+trait SpelExpressionSpec
+    extends AnyFunSuite
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with OptionValues
+    with BeforeAndAfterAll {
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    MutableTypingConfigurationProvider.set(
+      TypingConfiguration(allowUnknownToAnyAssignment = allowUnknownToAnyAssignment)
+    )
+  }
+
+  override def afterAll(): Unit = {
+    MutableTypingConfigurationProvider.reset()
+    super.afterAll()
+  }
+
+  protected val allowUnknownToAnyAssignment: Boolean
+
+  private def expectDependingOnMode(lenient: => Unit, strict: => Unit): Unit =
+    if (allowUnknownToAnyAssignment) lenient else strict
 
   private implicit class ValidatedExpressionOps[E](validated: Validated[E, TypedExpression]) {
     def validExpression: TypedExpression = validated.validValue
@@ -548,10 +580,19 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("selection access on unknown - array like case") {
-    parse[java.util.List[Object]](
-      "#containerWithUnknownArray.value.?[#this.toString() == \"b\"]"
-    ).validExpression
-      .evaluateSync[java.util.ArrayList[String]](ctx) should equal(util.Arrays.asList("b"))
+    val rawExpression = "#containerWithUnknownArray.value.?[#this.toString() == \"b\"]"
+    expectDependingOnMode(
+      lenient = {
+        parse[java.util.List[Object]](rawExpression).validExpression
+          .evaluateSync[java.util.ArrayList[String]](ctx) should equal(util.Arrays.asList("b"))
+      },
+      strict = {
+        val expression = parse[Object](rawExpression).validExpression
+        expression.returnType shouldBe Unknown
+        val result = expression.evaluateSync[Object](ctx)
+        result should equal(Array("b"))
+      }
+    )
   }
 
   test("parsing Selection on array") {
@@ -597,11 +638,19 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("blocking excluded in runtime, without previous static validation, allowed class and package") {
-    parse[JBigInteger](
+    def parseExpression[T: TypeTag] = parse[T](
       "T(java.math.BigInteger).valueOf(1L)",
       staticMethodInvocationsChecking = false,
       methodExecutionForUnknownAllowed = true
-    ).validExpression.evaluateSync[JBigInteger](ctx) should equal(JBigInteger.ONE)
+    )
+    expectDependingOnMode(
+      lenient = {
+        parseExpression[JBigInteger].validExpression.evaluateSync[JBigInteger](ctx) should equal(JBigInteger.ONE)
+      },
+      strict = {
+        parseExpression[Object].validExpression.evaluateSync[JBigInteger](ctx) should equal(JBigInteger.ONE)
+      }
+    )
   }
 
   test("blocking excluded in runtime, allowed reference") {
@@ -717,9 +766,23 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     val daysRawExpression      = "#date.until(#today()).days"
     val timestampRawExpression = "#timestampFromMillis(60)"
-    parse[Integer](daysRawExpression, context).validExpression.evaluateSync[Integer](context) should equal(2)
-    parse[Instant](timestampRawExpression, context).validExpression.evaluateSync[Instant](context) should equal(
-      Instant.parse("1970-01-01T00:01:00Z")
+
+    expectDependingOnMode(
+      lenient = {
+        parse[Integer](daysRawExpression, context).validExpression.evaluateSync[Integer](context) should equal(2)
+        parse[Instant](timestampRawExpression, context).validExpression.evaluateSync[Instant](context) should equal(
+          Instant.parse("1970-01-01T00:01:00Z")
+        )
+      },
+      strict = {
+        inside(parse[Integer](daysRawExpression, context)) {
+          case Invalid(NonEmptyList(SpelExpressionTypingParseError(error1: ArgumentTypeError, _), error2 :: Nil)) =>
+            error1.message shouldBe "Mismatch parameter types. Found: until(Unknown). Required: until(ChronoLocalDate)"
+            error2.message shouldBe "Property access on Unknown is not allowed"
+        }
+        val timestampExpression = parse[Object](timestampRawExpression, context)
+        timestampExpression.validExpression.returnType shouldBe Unknown
+      }
     )
   }
 
@@ -747,12 +810,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("#processHelper.add(1L, 1)", ctxWithGlobal) shouldBe Symbol("valid")
     parse[Any]("#processHelper.addLongs(1L, 1L)", ctxWithGlobal) shouldBe Symbol("valid")
     parse[Any]("#processHelper.addLongs(1, 1L)", ctxWithGlobal) shouldBe Symbol("valid")
-    parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe Symbol("valid")
-
     inside(parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)) {
       case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: ArgumentTypeError, _), Nil)) =>
         error.message shouldBe s"Mismatch parameter types. Found: add(${Typed.fromInstance("1").display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)"
     }
+
+    expectDependingOnMode(
+      lenient = {
+        parse[Any]("#processHelper.add(#processHelper.toAny(1), 1)", ctxWithGlobal) shouldBe Symbol("valid")
+      },
+      strict = {
+        inside(parse[Any]("#processHelper.add(#processHelper.toAny(1), 1)", ctxWithGlobal)) {
+          case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: ArgumentTypeError, _), Nil)) =>
+            error.message shouldBe s"Mismatch parameter types. Found: add(Unknown, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)"
+        }
+      }
+    )
   }
 
   test("validate MethodReference for scala varargs") {
@@ -1065,8 +1138,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("allow access to objects with get method in dot notation") {
     val withObjVar = ctx.withVariable("obj", new SampleObjectWithGetMethod(Map("key1" -> "value1", "key2" -> 20)))
 
-    parse[String]("#obj.key1", withObjVar).validExpression.evaluateSync[String](withObjVar) should equal("value1")
-    parse[Integer]("#obj.key2", withObjVar).validExpression.evaluateSync[Integer](withObjVar) should equal(20)
+    parse[Any]("#obj.key1", withObjVar).validExpression.evaluateSync[String](withObjVar) should equal("value1")
+    parse[Any]("#obj.key2", withObjVar).validExpression.evaluateSync[Integer](withObjVar) should equal(20)
   }
 
   test("check property if is defined even if class has get method") {
@@ -1089,7 +1162,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val record = new GenericData.Record(schema)
     record.put("text", "foo")
     val withObjVar = ctx.withVariable("obj", record)
-    parse[String]("#obj.text", withObjVar).validExpression.evaluateSync[String](withObjVar) shouldEqual "foo"
+
+    expectDependingOnMode(
+      lenient = {
+        parse[String]("#obj.text", withObjVar).validExpression.evaluateSync[String](withObjVar) shouldEqual "foo"
+      },
+      strict = {
+        parse[Object]("#obj.text", withObjVar).validExpression.evaluateSync[String](withObjVar) shouldEqual "foo"
+      }
+    )
   }
 
   test("allow access to statics") {
@@ -1122,14 +1203,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("not allow unknown variables in methods") {
-    inside(parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject))) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+    val parsedHelperExpression =
+      parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject))
+    expectDependingOnMode(
+      lenient = inside(parsedHelperExpression) { case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
         error.message shouldBe "Unresolved reference 'a'"
-    }
+      },
+      strict = inside(parsedHelperExpression) {
+        case Invalid(NonEmptyList(error1: ExpressionParseError, (error2: ExpressionParseError) :: Nil)) =>
+          error1.message shouldBe "Unresolved reference 'a'"
+          error2.message shouldBe "Mismatch parameter types. Found: add(Unknown, Integer(1)). Required: add(Integer, Integer)"
+      }
+    )
 
-    inside(parse[Any]("T(java.text.NumberFormat).getNumberInstance('PL').format(#a)", ctx)) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
-        error.message shouldBe "Unresolved reference 'a'"
+    val parsedStaticExpression = parse[Any]("T(java.text.NumberFormat).getNumberInstance('PL').format(#a)", ctx)
+    inside(parsedStaticExpression) { case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      error.message shouldBe "Unresolved reference 'a'"
     }
   }
 
@@ -1192,11 +1281,21 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[java.util.List[_]]("{44, 44}.?[#this > 4]", ctx) shouldBe Symbol("valid")
 
     val parsedExpression = parse[Long]("{44, 44}.?[#this.alamakota]", ctx)
-    inside(parsedExpression) {
-      case Invalid(
-            NonEmptyList(SpelExpressionTypingParseError(MissingObjectError.NoPropertyError(_, "alamakota"), _), Nil)
-          ) =>
-    }
+    expectDependingOnMode(
+      lenient = inside(parsedExpression) {
+        case Invalid(
+              NonEmptyList(SpelExpressionTypingParseError(MissingObjectError.NoPropertyError(_, "alamakota"), _), Nil)
+            ) if allowUnknownToAnyAssignment =>
+      },
+      strict = inside(parsedExpression) {
+        case Invalid(
+              NonEmptyList(
+                SpelExpressionTypingParseError(MissingObjectError.NoPropertyError(_, "alamakota"), _),
+                SpelExpressionTypingParseError(IllegalSelectionTypeError(List(Unknown)), _) :: Nil
+              )
+            ) =>
+      }
+    )
   }
 
   test("validate selection and projection for list variable") {
@@ -1859,11 +1958,25 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("indexing on maps and lists should validate expression inside indexer") {
-    List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
-      parse[Any](expr, ctxWithGlobal).invalidValue.toList should matchPattern {
-        case SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _) :: Nil =>
+    val parsedHelperExpression = parse[Any]("#processHelper.stringOnStringMap[#invalidRef]", ctxWithGlobal)
+
+    expectDependingOnMode(
+      lenient = inside(parsedHelperExpression) {
+        case Invalid(NonEmptyList(SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _), Nil)) =>
+      },
+      strict = inside(parsedHelperExpression) {
+        case Invalid(
+              NonEmptyList(
+                SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _),
+                SpelExpressionTypingParseError(IllegalIndexingOperation, _) :: Nil
+              )
+            ) =>
       }
     )
+
+    inside(parse[Any]("{1,2,3}[#invalidRef]", ctxWithGlobal)) {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _), Nil)) =>
+    }
   }
 
   test("indexing on unknown should validate expression inside indexer") {
@@ -2855,4 +2968,27 @@ class SampleObjectWithGetMethod(map: Map[String, Any]) {
 
   def definedProperty: String = "123"
 
+}
+
+private object MutableTypingConfigurationProvider extends TypingConfigurationProvider {
+
+  private val currentConfig: AtomicReference[TypingConfiguration] =
+    new AtomicReference[TypingConfiguration](TypingConfiguration.default)
+
+  override def config: TypingConfiguration = {
+    currentConfig.get()
+  }
+
+  def set(typingConfiguration: TypingConfiguration): Unit = {
+    currentConfig.set(typingConfiguration)
+  }
+
+  def reset(): Unit = {
+    currentConfig.set(TypingConfiguration.default)
+  }
+
+}
+
+final class MutableTypingConfigurationProviderWrapper extends TypingConfigurationProvider {
+  override def config: TypingConfiguration = MutableTypingConfigurationProvider.config
 }

@@ -48,6 +48,39 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
       .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
   }
 
+  test("should parse oauth2 client credentials secret for each scheme") {
+    val config = ConfigFactory.parseString("""url: "http://foo"
+                                             |security {
+                                             |  oauth2SecurityScheme {
+                                             |    type: "oauth2ClientCredentials"
+                                             |    clientId: "my-client-id"
+                                             |    clientSecret: "my-client-secret"
+                                             |  }
+                                             |}""".stripMargin)
+
+    val parsedConfig = OpenAPIServicesConfig.parse(config)
+    parsedConfig.securityConfig
+      .oauth2ClientCredentialsSecret(SecuritySchemeName("oauth2SecurityScheme"))
+      .value shouldEqual OAuth2ClientCredentialsSecret("my-client-id", "my-client-secret")
+  }
+
+  test("should parse common oauth2 client credentials secret for any scheme") {
+    val config = ConfigFactory.parseString("""url: "http://foo"
+                                             |secret {
+                                             |  type: "oauth2ClientCredentials"
+                                             |  clientId: "my-client-id"
+                                             |  clientSecret: "my-client-secret"
+                                             |}""".stripMargin)
+
+    val parsedConfig = OpenAPIServicesConfig.parse(config)
+    parsedConfig.securityConfig
+      .oauth2ClientCredentialsSecret(SecuritySchemeName("someScheme"))
+      .value shouldEqual OAuth2ClientCredentialsSecret("my-client-id", "my-client-secret")
+    parsedConfig.securityConfig
+      .oauth2ClientCredentialsSecret(SecuritySchemeName("someOtherScheme"))
+      .value shouldEqual OAuth2ClientCredentialsSecret("my-client-id", "my-client-secret")
+  }
+
   test("should parse common secrets") {
     val config = ConfigFactory.parseString("""url: "http://foo"
                                              |secrets: [
@@ -103,6 +136,26 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
     intercept[RuntimeException] {
       OpenAPIServicesConfig.parse(config)
     }.getMessage shouldBe "requirement failed: Only one `apiKey` common secret (with unspecified scheme name) is allowed"
+  }
+
+  test("should not allow multiple common oauth2 client credentials secrets") {
+    val config = ConfigFactory.parseString("""url: "http://foo"
+                                             |secrets: [
+                                             |  {
+                                             |    type: "oauth2ClientCredentials"
+                                             |    clientId: "my-client-id"
+                                             |    clientSecret: "my-client-secret"
+                                             |  },
+                                             |  {
+                                             |    type: "oauth2ClientCredentials"
+                                             |    clientId: "my-client-id-2"
+                                             |    clientSecret: "my-client-secret-2"
+                                             |  }
+                                             |]""".stripMargin)
+    intercept[RuntimeException] {
+      OpenAPIServicesConfig.parse(config)
+    }.getMessage shouldBe
+      "requirement failed: Only one `oauth2ClientCredentials` common secret (with unspecified scheme name) is allowed"
   }
 
   test("should parse combined apikey secret for each scheme and common apikey secret for any scheme") {

@@ -1,0 +1,26 @@
+---
+
+# front matter metadata for Docusaurus
+title: ONNX and PMML integration
+description: INfer ML models encoded in ONNX or PMML
+sidebar_label: ONNX and PMML
+
+# sidebar_position: 
+
+# front matter metadata for LLM
+# keywords: []
+---
+
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# ONNX and PMML encoded ML models
+<Enterprise />
+
+## Description
+Nussknacker can infer models encoded using ONNX and PMML ML interchange formats. You can find more details about these formats here:
+- [ONNX](https://onnx.ai/)
+- [PMML](https://en.wikipedia.org/wiki/Predictive_Model_Markup_Language)
+
+Once the integration is defined, Nussknacker will generate [ML enricher](/docs/components/mlEnricher.mdx), which infers ONNX or PMML encoded models. A great advantage of inferring ML models encoded using ONNX or PMML is that they are executed in-process, without the communication overhead with the additional ML inference server. You can read more about ML enricher [here](/docs/components/mlEnricher.mdx).
+
+Our implementation of [components](/docs/about/GLOSSARY.md#component) allowing inference of ONNX and PMML encoded models uses licensed software libraries - contact us at enterprose@nussknacker.io if you want to have this functionality enabled.

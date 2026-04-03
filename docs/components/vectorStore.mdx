@@ -1,0 +1,64 @@
+---
+
+# front matter metadata for Docusaurus
+title: Vector Store
+description: Store text documents and search for them in the vector store
+sidebar_label: Vector Store
+
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Vector Store
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Enricher
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# Vector Store
+
+<!-- Processing modes -->
+<Enterprise /><ModeStreaming /> <ModeRequestResponse />
+## Description
+
+The Vector-Store component allows interaction with a vector store. It is available if at least one LLM integration (MistralAI, OpenAI) is configured in the Admin Panel console (Integration tab). It allows users to add, search and truncate the vector store based on the Operation parameter:
+
+- The `add` operation uses the selected LLM embedding model to convert provided text document ("content") to the embedding vector and stores the text and the vector in the vector store.
+- The `search` operation searches for text documents which are close to the provided text.
+- The `truncate` operation removes all previously added embedding vectors and associated texts.
+
+
+
+## Parameters and configuration
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Vector store          | The vector store instance to use; configure [Qdrant](/docs/integrations/qdrant.mdx) or [Weaviate](/docs/integrations/weaviate.mdx) integration to use this component. See also [Additional considerations](/docs/components/vectorStore.mdx) section for additional information. |
+| Operation             | Operation to perform.|
+| LLM Integration       | `add` and `search` operations only - [LLM integration](/docs/integrations/1overview.mdx#ai-providers) to use | 
+| Collection            | Some vector stores allow dividing its space into separate collections. This parameter is available only if selected vector store supports collections.    |
+| Embedding model name  | `add` and `search` operations only - LLM provided model to use when adding or searching embeddings.  |
+| Content              | `add` and `search` operations only - text document to use as the basis of the `add` or `search`.        |
+| Max results          | `search` operation only - upper boundary of number of text documents to return.         |
+| Metadata             | `add` operation - metadata to be put in the vector store together with vector and text document. Provided metadata will be available in results returned from the vector store after performing the `search` operation. Metadata must be in a form of string to string map.         |
+| Output variable name | Variable name under which node result will be available in a subsequent nodes.   |
+
+ ## Returned value
+
+ The return value will be stored in the user defined variable (see above) and depends on the operation performed
+
+| Operation  | Returned value             |
+|------------|-------------------------|
+| `add`      | *id* of the stored embedding |
+| `search`   | List of records, each containing: <br/> - `"content"` - the text document which was stored as an embedding vector <br/> - `"metadata"` - the metadata associated with the stored document <br/> - `"score"` - the similarity score indicating how close the result is to the query <br/> |
+| `truncate` | For this operation the value is not deterministic. |               
+
+
+## Additional considerations
+- `add`/`truncate` operations are also performed when testing scenarios on the selected vector store.
+- For testing purposes the  “in-memory” vector store is provided. The "in-memory" vector store is not durable or accessible outside the Nussknacker Cloud and therefore should not be used for scenarios running in production.
+- The vector length used by the vector store collection must be of the same length as the vector length produced by embedding model (e.g., 1024 for mistral-embed model).
+- Nussknacker does not create collections in a vector store. If needed it must be created before using it from a scenario.

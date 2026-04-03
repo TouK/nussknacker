@@ -31,6 +31,8 @@ class MergeRuleResolver(mergeRules: List[MergeRule]) {
 object MergeRuleResolver {
 
   private val fallbackMergeRules: List[MergeRule] = List(
+    // merge Netty version information files
+    MergeRule("META-INF/io.netty.versions.properties", MergeStrategy.Concat),
     // META-INF/services should be merged line-by-line
     MergeRule("META-INF/services/**", MergeStrategy.FilterDistinctLines),
     // These META-INF entries are either regenerated or not applicable to the uber-jar. Keeping originals can cause conflicts.

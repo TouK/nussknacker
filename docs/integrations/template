@@ -1,0 +1,23 @@
+---
+
+# front matter metadata for Docusaurus
+title: 
+description: 
+sidebar_label: 
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: 
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: 
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# 
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />

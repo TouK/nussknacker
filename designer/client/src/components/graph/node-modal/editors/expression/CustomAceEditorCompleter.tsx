@@ -81,6 +81,9 @@ const DocHTML = ({ description, parameters, methodName, refClazz }: ExpressionSu
 };
 
 const getNormalizedValue = (suggestion: ExpressionSuggestion): string => {
+    if (suggestion.bracketAccess) {
+        return `["${suggestion.methodName}"]`;
+    }
     switch (suggestion.refClazz.type) {
         case "TypedDict":
             if (suggestion.methodName.match(/\s/)) {

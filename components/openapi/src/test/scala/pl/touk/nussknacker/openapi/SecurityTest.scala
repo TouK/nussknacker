@@ -12,6 +12,7 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.model.{HeaderNames, StatusCode}
 
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
@@ -131,6 +132,8 @@ class SecurityTest
             .map {
               case (name, ApiKeySecret(_))           => name -> ApiKeySecret("wrong")
               case (name, HttpBasicAuthSecret(_, _)) => name -> HttpBasicAuthSecret("wrongUsername", "wrongPassword")
+              case (name, OAuth2ClientCredentialsSecret(_, _)) =>
+                name -> OAuth2ClientCredentialsSecret("wrongClientId", "wrongClientSecret")
             }
             .toMap,
         )
@@ -214,6 +217,48 @@ class SecurityTest
           .futureValue shouldBe TypedMap(Map.empty)
       }
     }
+  }
+
+  test("oauth2 client credentials secret configured for oauth2 scheme") {
+    val oauthSchemeName      = SecuritySchemeName("oauth2Config")
+    val oauth2AccessToken    = "oauth2-access-token"
+    val oauthTokenCallsCount = new AtomicInteger(0)
+
+    val oauthBackend: SttpBackend[Future, Any] = SttpBackendStub.asynchronousFuture.whenAnyRequest
+      .thenRespondF { request =>
+        Future {
+          request.uri.path match {
+            case "oauth" :: "token" :: Nil =>
+              oauthTokenCallsCount.incrementAndGet()
+              Response(
+                s"""{"access_token":"$oauth2AccessToken","token_type":"Bearer","expires_in":3600}""",
+                StatusCode.Ok
+              )
+            case "oauth2Path" :: Nil =>
+              request.headers.find(_.name == HeaderNames.Authorization).map(_.value) shouldBe Some(
+                s"Bearer $oauth2AccessToken"
+              )
+              Response("{}", StatusCode.Ok)
+            case otherPath =>
+              throw new IllegalArgumentException(s"Unexpected request path: ${otherPath.mkString("/")}")
+          }
+        }
+      }
+
+    val enricherWithOAuth2Config = parseToEnrichers(
+      "service-security-oauth2-client-credentials.yml",
+      oauthBackend,
+      baseConfig.copy(
+        security = Map(
+          oauthSchemeName -> OAuth2ClientCredentialsSecret("oauth2-client-id", "oauth2-client-secret")
+        )
+      )
+    )
+
+    val oauth2Enricher = enricherWithOAuth2Config(ServiceName("oauth2OperationId"))
+    oauth2Enricher.invoke(context).futureValue shouldBe TypedMap(Map.empty)
+    oauth2Enricher.invoke(context).futureValue shouldBe TypedMap(Map.empty)
+    oauthTokenCallsCount.get() shouldBe 1
   }
 
 }

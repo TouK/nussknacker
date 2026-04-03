@@ -1,0 +1,36 @@
+---
+
+# front matter metadata for Docusaurus
+title: Databricks Unity Catalog ML models registry integration
+description: Connect to Databricks Unity Catalog models registry
+sidebar_label: Databricks Unity Catalog Registry
+
+# sidebar_position: 
+
+# front matter metadata for LLM
+# keywords: []
+---
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# Databricks Unity Catalog ML models registry integration
+<Enterprise />
+
+## Overview
+Nussknacker ML Runtime can serve models registered in the Databricks Unity Catalog ML models registry. Once the integration is configured, Nussknacker will generate an [ML Enricher](/docs/components/mlEnricher.mdx) component, which can be used in the scenario to infer ML models. 
+
+This document explains how to configure Databricks Unity Catalog integration.
+
+## Integration parameters
+
+- **Databricks instance URL**:  
+  Databricks [instance URL](https://docs.databricks.com/aws/en/workspace/workspace-details).  
+  _Example_: ` https://dbc-a1b2345c-d6e7.cloud.databricks.com`
+
+- **Client ID**:  
+  The _Service Principal_ client ID.
+  
+- **Client Secret**:  
+  The _Service Principal_ secret.
+
+> Refer to the [Databricks documentation](https://docs.databricks.com/en/dev-tools/auth/index.html) for instructions on on configuring Service Principals and authorizing access to your instance.
+> Ensure the Service Principal is assigned the correct roles (`Can Read`), on experiments and models.

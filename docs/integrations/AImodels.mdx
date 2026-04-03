@@ -1,0 +1,37 @@
+---
+
+# front matter metadata for Docusaurus
+title: AI Models
+description: Learn how to connect Nussknacker with AI Models services providers
+sidebar_label: AI Models
+
+# sidebar_position: 
+
+# front matter metadata for LLM
+processingModes: [Streaming, Request-Response]
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# AI Models Services Providers
+
+<!-- Processing modes -->
+<Enterprise />
+
+## Overview
+
+
+This group of integrations allows the use of AI models in Nussknacker scenarios. Chat models will be available via the [Chat LLM](/docs/components/chatLLM.mdx) component and embedding models will be available via the [Vector Store](/docs/components/vectorStore.mdx) component.
+
+Currently, the following AI models providers are supported: Amazon Bedrock, Google AI Gemini, MistralAI, Nvidia, OpenAI. 
+
+## Integration parameters
+
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Integration name      | The integration name will be used refer to this configuration in [Chat LLM](/docs/components/chatLLM.mdx) enrichers
+| API key               | API key to access the AI models provider. API key validity can be checked using the `Check Connection` button.       |

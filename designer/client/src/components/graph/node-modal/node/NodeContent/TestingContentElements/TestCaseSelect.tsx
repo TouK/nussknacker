@@ -84,7 +84,12 @@ export const TestCaseSelect = () => {
                     ) : (
                         <>
                             <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
-                                <StyledButton data-testid="edit-test-case-name" onClick={startEditing} disabled={isEditing}>
+                                <StyledButton
+                                    data-testid="edit-test-case-name"
+                                    onClick={startEditing}
+                                    disabled={isEditing}
+                                    sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                                >
                                     <EditOutlined fontSize="small" />
                                 </StyledButton>
                             </InfoTooltip>

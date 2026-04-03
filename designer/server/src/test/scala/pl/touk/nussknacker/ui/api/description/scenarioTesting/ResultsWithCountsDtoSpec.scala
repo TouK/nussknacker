@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{
   TestResults
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
-import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
+import pl.touk.nussknacker.ui.process.test.{JsonTestResults, ResultsWithCounts}
 
 import java.time.Instant
 
@@ -43,7 +43,8 @@ class ResultsWithCountsDtoSpec extends AnyFunSuite with Matchers with OptionValu
     )
 
     val dto = ResultsWithCountsDto.from(
-      resultsWithCounts = ResultsWithCounts(Instant.parse("2026-03-25T12:00:00Z"), testResults, counts = Map.empty),
+      resultsWithCounts =
+        ResultsWithCounts(Instant.parse("2026-03-25T12:00:00Z"), JsonTestResults.from(testResults), counts = Map.empty),
       skipResultsPerNode = SkipResultsPerNode(value = false),
       skipResultsPerTransition = SkipResultsPerTransition(value = false),
     )
@@ -79,7 +80,8 @@ class ResultsWithCountsDtoSpec extends AnyFunSuite with Matchers with OptionValu
     )
 
     val dto = ResultsWithCountsDto.from(
-      resultsWithCounts = ResultsWithCounts(Instant.parse("2026-03-25T12:00:00Z"), testResults, counts = Map.empty),
+      resultsWithCounts =
+        ResultsWithCounts(Instant.parse("2026-03-25T12:00:00Z"), JsonTestResults.from(testResults), counts = Map.empty),
       skipResultsPerNode = SkipResultsPerNode(value = false),
       skipResultsPerTransition = SkipResultsPerTransition(value = false),
     )

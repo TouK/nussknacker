@@ -5878,11 +5878,14 @@ components:
       title: AssertionOperator
       type: string
       enum:
+      - contains
       - equals
       - greaterThan
       - greaterThanOrEqual
+      - hasSize
       - lessThan
       - lessThanOrEqual
+      - matches
       - notEquals
     AssertionResult:
       title: AssertionResult
@@ -6462,21 +6465,6 @@ components:
       - $ref: '#/components/schemas/CoordinatesBasedTextRange'
       - $ref: '#/components/schemas/IncompatibleParameterDefinitionErrorDetails'
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
-    ExceptionResult_Json:
-      title: ExceptionResult_Json
-      type: object
-      required:
-      - context
-      - throwable
-      properties:
-        context:
-          $ref: '#/components/schemas/ResultContext_Json'
-        nodeId:
-          anyOf:
-          - $ref: '#/components/schemas/NodeId'
-          - type: 'null'
-        throwable:
-          type: string
     Expression:
       title: Expression
       type: object
@@ -6856,6 +6844,22 @@ components:
     InvalidScenario:
       title: InvalidScenario
       type: object
+    JsonExceptionResult:
+      title: JsonExceptionResult
+      type: object
+      required:
+      - context
+      properties:
+        context:
+          $ref: '#/components/schemas/ResultContext_Json'
+        nodeId:
+          anyOf:
+          - $ref: '#/components/schemas/NodeId'
+          - type: 'null'
+        throwable:
+          type:
+          - string
+          - 'null'
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
@@ -8652,7 +8656,7 @@ components:
         exceptions:
           type: array
           items:
-            $ref: '#/components/schemas/ExceptionResult_Json'
+            $ref: '#/components/schemas/JsonExceptionResult'
         exceptionsByNodeId:
           $ref: '#/components/schemas/Map_NodeId_V'
     TestSourceParameters:
