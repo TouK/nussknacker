@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErro
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{ParametersValidationResultDto, RecordsRequestDto}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.{
   ResultsWithCountsDto,
   ResultsWithCountsDtoCodecs,
@@ -157,6 +158,80 @@ class ScenarioTestingApiHttpService(
                             CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
                         }
                     }
+                  },
+                  testWithGeneratedData = testWithLiveDataResult,
+                  testWithLiveData = testWithLiveDataResult,
+                )
+            }
+          } yield result
+        }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.scenarioSourceCapabilitiesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, recordsRequestDto) =>
+          for {
+            sourceNodeData <- EitherT.fromEither[Future](recordsRequestDto.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(ErrorResult(s"Expected SourceNodeData, got: ${other.getClass.getSimpleName}"): TestingError)
+            })
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT.fromOption[Future](
+              scenarioWithDetails.processId,
+              noScenarioError(scenarioName),
+            )
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            metaData = recordsRequestDto.processProperties.toMetaData(scenarioName)
+            capabilitiesAndParameters = scenarioTestService.getTestingCapabilitiesForSingleSource(
+              metaData,
+              sourceNodeData
+            )
+            canDeploy <- EitherT.right(scenarioAuthorizer.check(processId, Permission.Deploy, loggedUser))
+            result = capabilitiesAndParameters match {
+              case Left(TestingCapabilitiesError.NoSourcesError) =>
+                val noSourcesStatus = CapabilityStatus.NotAvailable(NotAvailableReason.NoSources)
+                ScenarioTestCapabilities(noSourcesStatus, noSourcesStatus, noSourcesStatus)
+              case Left(TestingCapabilitiesError.SourcesCompilationError(_)) =>
+                val invalidScenarioStatus = CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+                ScenarioTestCapabilities(invalidScenarioStatus, invalidScenarioStatus, invalidScenarioStatus)
+              case Right((capabilities, parametersResult)) =>
+                val testWithLiveDataResult =
+                  (canDeploy, capabilities.canBeTested && capabilities.canFetchLiveData) match {
+                    case (false, _) =>
+                      CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
+                    case (true, false) =>
+                      CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                    case (true, true) =>
+                      CapabilityStatus.available
+                  }
+                ScenarioTestCapabilities(
+                  testWithParameters = (canDeploy, capabilities.canTestWithForm) match {
+                    case (false, _) =>
+                      CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
+                    case (true, false) =>
+                      CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                    case (true, true) =>
+                      parametersResult match {
+                        case Right(parameters) =>
+                          val uiParameters = List(
+                            UISourceParameters(
+                              sourceNodeData.id.value,
+                              sourceNodeData.name.value,
+                              parameters.map(DefinitionsService.createUIParameter)
+                            )
+                          )
+                          CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
+                        case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_, _)) =>
+                          CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                        case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
+                          CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+                      }
                   },
                   testWithGeneratedData = testWithLiveDataResult,
                   testWithLiveData = testWithLiveDataResult,

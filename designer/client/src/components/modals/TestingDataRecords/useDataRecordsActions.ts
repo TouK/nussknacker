@@ -163,10 +163,10 @@ export const useDataRecordsActions = () => {
     );
 
     const addDefaultRecord = useCallback(
-        async (sourceId: string) => {
+        async (sourceId: string, nodeData: NodeType, scenarioProperties: PropertiesType) => {
             if (!validateForCount((currentCount) => currentCount + 1)) return;
 
-            const { data: capabilities } = await HttpService.getTestCapabilities(scenarioName, scenarioGraph);
+            const { data: capabilities } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
             const sourceParameters =
                 capabilities.testWithParameters.status === TestCapabilityStatus.AVAILABLE
                     ? capabilities.testWithParameters.sourceParameters
@@ -174,7 +174,7 @@ export const useDataRecordsActions = () => {
             const variables = buildDefaultVariablesMap(sourceParameters)[sourceId] ?? "";
             dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables }]));
         },
-        [validateForCount, scenarioName, scenarioGraph, dispatch],
+        [validateForCount, scenarioName, dispatch],
     );
 
     return {

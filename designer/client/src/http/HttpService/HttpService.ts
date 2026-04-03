@@ -750,6 +750,17 @@ export class HttpService {
         return promise;
     }
 
+    getSourceTestCapabilities(processName: string, scenarioProperties: PropertiesType, nodeData: NodeType) {
+        const promise = api.post(`/scenarioTesting/${encodeURIComponent(processName)}/sourceCapabilities`, {
+            processProperties: scenarioProperties,
+            nodeData,
+        });
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true),
+        );
+        return promise;
+    }
+
     getActionParameters(processName: string) {
         const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
         promise.catch((error) =>
