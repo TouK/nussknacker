@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.process.test.testcase.validation
 
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.syntax.all._
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -31,32 +33,42 @@ class TestCaseValidator(
   import TestCaseValidator._
 
   def validateTestCaseBeforeResolving(testCases: List[TestCase]): ValidationResult = {
-    (for {
-      _ <- validateNameUniqueness(testCases)
-      _ <- validateMultipleTestCasesAvailable(testCases)
-    } yield ())
-      .fold(
-        globalError => ValidationResult.errors(globalErrors = List(globalError)),
-        _ => ValidationResult.success
-      )
+    (
+      validateNameLength(testCases),
+      validateNameUniqueness(testCases),
+      validateMultipleTestCasesAvailable(testCases),
+    ).tupled.fold(
+      errors => ValidationResult.errors(globalErrors = errors.toList),
+      _ => ValidationResult.success
+    )
   }
 
-  private def validateNameUniqueness(testCases: List[TestCase]): Either[UIGlobalError, Unit] = {
+  private def validateNameLength(testCases: List[TestCase]): ValidatedNel[UIGlobalError, Unit] = {
+    val tooLongNames      = testCases.filter(_.name.length > MaxTestCaseNameLength)
+    val tooLongNameErrors = tooLongNames.map(tc => errors.testCaseNameTooLong(tc.name))
+    NonEmptyList.fromList(tooLongNameErrors).toInvalid(())
+  }
+
+  private def validateNameUniqueness(testCases: List[TestCase]): ValidatedNel[UIGlobalError, Unit] = {
     val duplicateNames =
       testCases.groupBy(_.name).collect { case (name, occurrences) if occurrences.size > 1 => name }.toList
-    Either.cond(
-      duplicateNames.isEmpty,
-      (),
-      errors.duplicateTestCaseNames(duplicateNames)
-    )
+    Validated
+      .cond(
+        duplicateNames.isEmpty,
+        (),
+        errors.duplicateTestCaseNames(duplicateNames)
+      )
+      .toValidatedNel
   }
 
-  private def validateMultipleTestCasesAvailable(testCases: List[TestCase]): Either[UIGlobalError, Unit] = {
-    Either.cond(
-      testCasesSettings.multipleEnabled || testCases.size <= 1,
-      (),
-      errors.multipleTestCasesNotAvailable
-    )
+  private def validateMultipleTestCasesAvailable(testCases: List[TestCase]): ValidatedNel[UIGlobalError, Unit] = {
+    Validated
+      .cond(
+        testCasesSettings.multipleEnabled || testCases.size <= 1,
+        (),
+        errors.multipleTestCasesNotAvailable
+      )
+      .toValidatedNel
   }
 
   def validateScenarioTestCases(
@@ -143,6 +155,8 @@ class TestCaseValidator(
 
 object TestCaseValidator {
 
+  val MaxTestCaseNameLength = 100
+
   final case class NodeTyping(
       inputVariables: Map[String, TypingResult],
       outputVariables: Map[String, TypingResult],
@@ -165,6 +179,20 @@ object TestCaseValidator {
   }
 
   private object errors {
+
+    def testCaseNameTooLong(invalidName: TestCaseName): UIGlobalError = {
+      UIGlobalError(
+        error = NodeValidationError(
+          typ = "TestCaseNameTooLong",
+          message = s"Test case name too long: '${invalidName.take(MaxTestCaseNameLength / 5)}...'",
+          description = s"Test case name must not exceed $MaxTestCaseNameLength characters",
+          fieldName = None,
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None,
+        ),
+        nodeIds = List.empty,
+      )
+    }
 
     def duplicateTestCaseNames(duplicateNames: List[TestCaseName]): UIGlobalError = {
       UIGlobalError(

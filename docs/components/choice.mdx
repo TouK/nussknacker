@@ -1,0 +1,44 @@
+---
+# front matter metadata for Docusaurus
+title: Choice
+description: Perform complex IF-ELSE logic
+sidebar_label: Choice
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Choice
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: Flow
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# Choice
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />
+
+## Description
+The Choice component is a more advanced version of the Filter component. Instead of defining a single condition, it allows you to specify multiple output branches, each with its own match condition.
+
+When a record arrives, the Choice node evaluates the match conditions in order, from top to bottom as shown in the configuration panel. The record is routed to the first branch whose condition evaluates to true, and no further conditions are checked after that.
+
+The evaluation order is also visible on the scenario graph: each outgoing condition branch from the Choice node is annotated with a number indicating its position in the evaluation sequence.
+
+## Parameters and configuration
+
+The configuration panel contains two configuration fields for each condition branch leaving the choice node:
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Branch name           | Derived from the next node name                   |
+| Match condition       | SpEL expression of type boolean                   |
+
+To change the order of branches, simply drag and drop them in the node’s configuration panel.
+
+
+<!-- After a record leaves`source` it arrives in `choice`, the record's attributes' values are tested against each of the defined conditions.  If `#input.color` is `blue`, the record ends up in `blue sink`.  
+If `#input.color` is `green`,the record is sent to the `green sink`. For every other value, the record is sent to `sink for others` because condition `true` is always true. -->

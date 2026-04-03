@@ -1,0 +1,37 @@
+---
+# front matter metadata for Docusaurus
+title: Query Source
+description: Ingest data from SQL compliant source 
+sidebar_label: SQL Source
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: SQL Source
+processingModes: [Streaming]
+componentPaletteGroup: Sources
+# keywords: []
+---
+
+import ModeStreaming from  '/badges/modeStreaming.mdx';
+
+
+
+# Query Source
+
+<!-- Processing modes -->
+<ModeStreaming />
+
+## Description
+Unlike the Flink's [Table API](/docs/integrations/tableAPI.mdx) based sources which read all the records from the table (or view), Query Source allows to enter the SQL `SELECT` statement to control which records should be ingested by the scenario. The `SELECT` statement has to follow the SQL variant supported by the database system from which the data is read. You need to configure a [database integration](/docs/integrations/databases.mdx) to have this component available.
+
+The Query Source behaves differently from the Flink's Table API based sources: it first writes the selected records to a file and then injects them into the scenario. For scenarios executed in batch processing mode, this allows the processing to be restarted after a failure without repeating the select step - assuming that the select step completed successfully before the failure. For scenarios executed in streaming mode, execution will resume from the last checkpoint. As the checkpoint contains the position in the file from which to resume reading in case of a restart, there will be no need to reprocess all records.
+
+Unlike with Flink's Table API based database integrations, there is no need to provide the mapping between data types of the source database system and Flink - these mappings are provided by Nussknacker.
+
+If the database of your choice is not supported yet by the SQL Source component, please contact us via info@nussknacker.io - we will handle the data types mappings and other technical details for you. 
+
+## Parameters and configuration
+
+| Name                  | Data Type               | Description           |
+|-----------------------|-------------------------|-----------------------|
+| SQL Select Statement  | String               | Valid SQL `SELECT` statement; can include `JOIN`, `WHERE`, `GROUP BY` clauses    |

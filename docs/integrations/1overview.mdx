@@ -1,0 +1,122 @@
+---
+# front matter metadata for Docusaurus
+title: Overview
+description: Integrate Nussknacker with streaming and queuing systems, consumable computer services, databases, ML deployment platforms, data formats and catalogues.
+
+# front matter metadata for LLM
+keywords: [integrations, components]
+---
+
+
+# Integrations
+
+Nussknacker allows to reach out to the data and services provided via streaming and queuing systems, consumable computer services, databases, ML deployment platforms, data formats and catalogues. Integration definition allows to define shared integration parameters only once for multiple components. You can see what kind of components will be generated on the integration tile in the Integrations tab.
+Nussknacker will automatically generate [components](/docs/about/GLOSSARY.md#component) relevant to the given integration, for example source, enricher or sink and will add them to the Component Palette in Designer. 
+
+## Configuring a new integration
+
+Navigate to the Admin panel, Integration tab to add a new integration.
+
+:::note
+The functionality allowing to define integrations using UI rather than config files is available in Cloud Version only. If you use OSS edition, check the [Open Source version integrations documentation](/docs/OSS_docs/integration/) for details on how to configure integrations.
+:::
+
+## Supported integrations
+
+### Message brokers
+
+The following queueing and streaming systems are currently supported:
+
+| Integration             | Type(s)                       |
+|-------------------------|-------------------------------|
+| Aiven Kafka             | Source / Sink                 |
+| Azure Event Hubs        | Source / Sink                 |
+| Confluent Cloud         | Source / Sink                 |
+| Elastic Search          | Sink                          |
+| (generic) Kafka         | Source / Sink                 |
+| MQTT                    | Source / Sink                 |
+| Redpanda                | Source / Sink                 |
+| Table (Flink Table API)* | Source / Sink                |
+
+*Check Flink Table API section for more details.
+
+
+### Databases
+
+Integrations with database systems are implemented using multiple and diverse mechanisms, which results in different types of components being available. The table below summarizes different integration mechanisms and component types that they yield.
+
+| Integration                                   | Components               | Comments                                                                    |
+| ----------------------------------------------|--------------------------|-----------------------------------------------------------------------------|
+| plain JDBC                                    | Enricher                 | No need to provide data type mappings between target database and data types used by Nussknacker |
+| Flink connector available (Table API is used) | Source / Sink            | The integration definition includes data type mappings between the database and Flink |
+| Flink catalog support available               | Enricher / Source / Sink | No need to provide data type mappings                                                 |
+
+The following database systems are supported:
+
+| Integration              | Type(s)                        |
+|--------------------------|--------------------------------|
+| Clickhouse               | Source / Sink                 |
+| MariaDB                  | Enricher                      |
+| MySQL                    | Enricher / Source / Sink      |
+| MS SQL Server *(Premium)* | Enricher                     |
+| Oracle *(Premium)*       | Enricher                      |
+| PostgreSQL               | Enricher / Source / Sink      |
+| Redshift                 | Enricher                      |
+| Snowflake                | Enricher                      |
+| Table (Flink Table API)* | Source / Sink                 |
+
+*Check Flink Table API section for more dtails.
+
+
+### Services:
+
+| Integration             | Type(s)                        |
+|-------------------------|--------------------------------|
+| OpenAPI                 | Enricher                       |
+
+
+### ML Models Registries:
+
+| Integration             | Type(s)                       |
+|-------------------------|-------------------------------|
+| Databricks Unity Catalog| Enricher                      |
+| MLflow                  | Enricher                      |
+
+
+### Filesystems
+
+| Integration              | Type(s)                       |
+|--------------------------|-------------------------------|
+| Table (Flink Table API)* | Source / Sink                 |
+
+*Check Flink Table API section for more dtails.
+
+
+### Flink Table API 
+
+The Flink's Table API provides a relational abstraction for unified stream and batch processing, allowing to define logical tables in Flink that map to data stored in external systems such as databases, message queues or file systems using SQL-like syntax. See [Table API integration](/docs/integrations/tableAPI.mdx) for more details.
+
+
+### AI Services
+
+#### Vector databases
+
+| Integration              | Type(s)                       |
+|--------------------------|-------------------------------|
+| Qdrant                 | Enricher                      |
+| Weaviate                 | Enricher                      |
+
+
+#### AI Providers
+
+| Integration          | Type(s)                       |
+|----------------------|-------------------------------|
+| Amazon Bedrock       | Enricher                      |
+| Google AI Gemini     | Enricher                      |
+| MistralAI            | Enricher                      |
+| Nvidia               | Enricher                      |
+| OpenAI               | Enricher                      |
+
+
+## Integration missing?
+If the provider or system of your choice is not supported yet, please contact us via info@nussknacker.io - we will handle the data types mappings and other technical details for you.

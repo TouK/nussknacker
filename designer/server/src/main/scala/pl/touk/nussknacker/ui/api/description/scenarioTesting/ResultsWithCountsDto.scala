@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsD
   ContextIdDto,
   ContextIdPathPartDto
 }
+import pl.touk.nussknacker.ui.process.test.JsonTestResults.JsonExceptionResult
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionResult
 import pl.touk.nussknacker.ui.processreport.NodeCount
@@ -82,7 +83,11 @@ object ResultsWithCountsDto {
       withSinkOutputTransitions(rawNodeTransitionResults, externalServiceInvocationResults)
     lazy val exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
       nodeId -> results.map(e =>
-        ExceptionResult(ResultContext(e.contextId, e.timestamp, e.variables), Some(nodeId), e.throwable)
+        JsonExceptionResult(
+          ResultContext(e.contextId, e.timestamp, e.variables),
+          Some(nodeId),
+          Option(e.throwable.getMessage)
+        )
       )
     }
     ResultsWithCountsDto(
@@ -174,7 +179,7 @@ object ResultsWithCountsDto {
   implicit def expressionInvocationResultSchema: Schema[ExpressionEvaluationResult[Json]]    = Schema.derived
   implicit def externalInvocationResultSchema: Schema[ExternalServiceInvocationResult[Json]] = Schema.derived
   implicit def throwableSchema: Schema[Throwable]                                            = Schema.string
-  implicit def exceptionResultSchema: Schema[ExceptionResult[Json]]                          = Schema.derived
+  implicit def exceptionResultSchema: Schema[JsonExceptionResult]                            = Schema.derived
   implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                      = Schema.derived
   implicit def testResultsSchema: Schema[TestResultsDto]                                     = Schema.derived
   implicit def nodeCountSchema: Schema[NodeCount]                                            = Schema.anyObject
@@ -188,8 +193,8 @@ final case class TestResultsDto(
     nodeTransitionResults: Option[List[NodeTransitionResult]],
     expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[Json]]],
     externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Json]]],
-    exceptions: List[ExceptionResult[Json]],
-    exceptionsByNodeId: Map[NodeId, List[ExceptionResult[Json]]],
+    exceptions: List[JsonExceptionResult],
+    exceptionsByNodeId: Map[NodeId, List[JsonExceptionResult]],
 )
 
 final case class NodeTransitionResult(

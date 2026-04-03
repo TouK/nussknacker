@@ -15,7 +15,8 @@ import java.net.URL
 
 object ServiceRequest {
 
-  type SwaggerRequestType = RequestT[Identity, Either[ResponseException[String, circe.Error], Option[Json]], Any]
+  type SwaggerRequestType  = RequestT[Identity, Either[ResponseException[String, circe.Error], Option[Json]], Any]
+  type SwaggerResponseType = Response[Either[ResponseException[String, circe.Error], Option[Json]]]
 
   def apply(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, Any]): SwaggerRequestType =
     addSecurities(swaggerService, new ServiceRequest(rootUrl, swaggerService, inputParams).apply)

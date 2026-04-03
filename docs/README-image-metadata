@@ -1,0 +1,112 @@
+## Image metadata guidelines (ALT, title, caption)
+
+When adding images to the documentation, every image must include:
+
+- ALT text  
+- title attribute  
+- figure caption  
+
+Each of these is used by different systems (screen readers, search engines, LLMs, humans) and must be written with a different purpose in mind.
+Check [this document](README-image-metadata) for more details if not certain - metadata are important!
+
+---
+
+### 1. ALT text
+
+Who uses it:
+
+- screen readers (accessibility)  
+- large language models  
+- search engines  
+- users with images disabled  
+
+Purpose:
+
+- describe exactly what the image shows
+
+How to write:
+
+- one or two complete sentences  
+- factual and neutral  
+- describe only what is visually present  
+- include relevant Nussknacker terminology where helpful (for example: “scenario node”, “incoming records”, “counts”, “live data view”)  
+- do not guess how the UI behaves or what the user should do  
+- do not keep it short: ALT text is intentionally descriptive  
+
+Template guidance:
+
+> Describe the visible elements in the image in one or two factual sentences.  
+> Include important domain terms.  
+> Do not explain meaning or purpose.
+
+---
+
+### 2. Title attribute
+
+Who uses it:
+
+- human users (browser tooltip on hover)
+
+Purpose:
+
+- provide a short label for the image
+
+How to write:
+
+- a few words (3–8)  
+- not a full sentence  
+- not a description, just a label  
+
+Template guidance:
+
+> A short label shown as a tooltip on hover, for example “Scenario with counts”, “Live data view”, “Test input form”.
+
+---
+
+### 3. Figure caption
+
+Who uses it:
+
+- human readers  
+- (secondarily) LLMs
+
+Purpose:
+
+- explain why the image is included on this page
+
+How to write:
+
+- one short sentence  
+- explain the role of the image in the surrounding text  
+- do not repeat the ALT description  
+
+Template guidance:
+
+> One short sentence explaining why this image is included in the context of this section.
+
+---
+
+### 4. Summary
+
+- ALT: what the image shows (one or two sentences, descriptive).  
+- title: a short label (a few words, tooltip).  
+- caption: why the image is here (one short sentence).
+
+---
+
+### 5. Example structure (for MDX files)
+
+This example is shown as code so it is not rendered. Use it as a pattern when editing MDX docs:
+
+```mdx
+<figure>
+  <img
+    src={imageImport}
+    alt="Descriptive ALT text here (what the image shows)."
+    title="Short label here."
+  />
+  <figcaption>
+    One short sentence explaining why the image is included.
+  </figcaption>
+</figure>
+

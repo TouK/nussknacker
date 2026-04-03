@@ -1,0 +1,53 @@
+---
+# front matter metadata for Docusaurus
+title: Kafka (Source)
+description: Read events from a Kafka topic
+sidebar_label: Kafka (Source)
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Kafka (Source)
+processingModes: [Streaming]
+componentPaletteGroup: Sources
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+# Kafka (Source)
+
+<!-- Engines -->
+<ModeStreaming />
+
+## Description
+ 
+ Kafka topics are a common streaming data input to the Nussknacker scenarios. You need to define Kafka integration to make Kafka source and sink components available in the Component Palette. Check [Kafka Integration](/docs/integrations/kafka.md) page for the list of available Kafka or Kafka compatible integrations and integration configuration info.
+
+
+## Parameters and configuration
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Topic name            | Kafka topic to write to |
+| Schema version        | Schema version          |
+
+### Advanced parameters
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Event time            | Expression which evaluates to the time when the event was created. For Kafka sources, creation timestamp is available in the Kafka event and can be accessed in SpEL as `#inputMeta.timestamp`. Check [here](/docs/scenariosAuthoring/streamingProcessingMode.md#predefined-variables)  |
+| Max out-of-orderness               | The maximum amount of time an element is allowed to be late before being ignored when computing the result for time-based stream transformations: aggregates in time windows and joins. To read more about this mechanism see Flink documentation         |
+| Idleness              | The time period after which partition is marked as idle if no events are received from it. To read more about this mechanism see [Flink documentation](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources).
+
+
+## Additional considerations
+
+### Schema Registry and its role
+
+If Schema Registry contains schema for the Kafka source topic, Nussknacker will be able to help with field names and data type related validation of SpEL expressions. 
+
+If schema for the Kafka topic is not defined or Kafka messages are transmitted in plain text and are in the JSON format, it is possible to use [dynamic field access](/docs/scenariosAuthoring/SpEL.md#dynamic-navigation) to access fields of the Kafka messages.
+
+
+

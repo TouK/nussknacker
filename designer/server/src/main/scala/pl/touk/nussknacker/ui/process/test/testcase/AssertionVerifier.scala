@@ -96,8 +96,10 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       val expectedValue = expectedExpression.evaluate[Any](context, globalVariables)
       val actualValue   = actualExpression.evaluate[Any](context, globalVariables)
       operator match {
-        case AssertionOperator.Equals    => AssertionResult.produceFailedEqualsAssertion(expectedValue, actualValue)
-        case AssertionOperator.NotEquals => AssertionResult.produceFailedNotEqualsAssertion(expectedValue)
+        case AssertionOperator.Equals =>
+          AssertionResult.produceFailedEqualsAssertion(expectedValue, actualValue)
+        case AssertionOperator.NotEquals =>
+          AssertionResult.produceFailedNotEqualsAssertion(expectedValue)
         case AssertionOperator.GreaterThan =>
           AssertionResult.produceFailedComparisonAssertion(">", expectedValue, actualValue)
         case AssertionOperator.LessThan =>
@@ -106,6 +108,12 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
           AssertionResult.produceFailedComparisonAssertion(">=", expectedValue, actualValue)
         case AssertionOperator.LessThanOrEqual =>
           AssertionResult.produceFailedComparisonAssertion("<=", expectedValue, actualValue)
+        case AssertionOperator.Contains =>
+          AssertionResult.produceFailedContainsAssertion(expectedValue, actualValue)
+        case AssertionOperator.Matches =>
+          AssertionResult.produceFailedMatchesAssertion(expectedValue, actualValue)
+        case AssertionOperator.HasSize =>
+          AssertionResult.produceFailedHasSizeAssertion(expectedValue, actualValue)
       }
     }
   }

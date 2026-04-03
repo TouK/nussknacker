@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExternalServiceInvocationResult,
   ResultContext
 }
+import pl.touk.nussknacker.ui.process.test.JsonTestResults.JsonExceptionResult
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionResult
 
 object ResultsWithCountsDtoCodecs {
@@ -70,9 +71,7 @@ object ResultsWithCountsDtoCodecs {
       )
     }
 
-    // TODO: do we want more information here?
-    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-    implicit val exceptionResultEncoder: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
+    implicit val exceptionResultEncoder: Encoder[JsonExceptionResult] = deriveConfiguredEncoder
 
     override def apply(a: TestResultsDto): Json = a match {
       case TestResultsDto(

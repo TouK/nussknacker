@@ -23,6 +23,7 @@ export type ExpressionSuggestion = {
             display: string;
         };
     }[];
+    bracketAccess?: boolean;
 };
 
 export interface ExpressionSuggester {

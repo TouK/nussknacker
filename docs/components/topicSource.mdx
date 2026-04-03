@@ -1,0 +1,48 @@
+---
+# front matter metadata for Docusaurus
+title: Topic Source
+description: Read events from Nussknacker Cloud hosted Kafka topic
+sidebar_label: Topic (Source)
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: Topic Source
+processingModes: [Streaming]
+componentPaletteGroup: Sources
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# Topic (Source) 
+
+<!-- Badges -->
+<Enterprise /><ModeStreaming />
+
+## Description
+
+ Topic Source allows to read events from the Kafka topic hosted Nussknacker Cloud ("internal topics"). You can use internal Kafka topics to:
+- route data between scenarios
+- send events to a topic via public HTTPS or WebSocket endpoint
+- receive results via HTTP callback or WebSocket subscription
+ 
+Use the `Topic` link (top right of the Designer window) to create a topic; read [this document](/docs/cloudUI/topics.mdx) to learn how to create a Nussknacker Cloud hosted Kafka topic. 
+
+
+## Parameters and configuration
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Topic name            | Kafka topic to write to |
+| Version               | Schema version          |
+
+### Advanced parameters
+
+| Name                  | Description             |
+|-----------------------|-------------------------|
+| Event time            | Expression which evaluates to the time when the event was created. For Kafka sources, creation timestamp is available in the Kafka event and can be accessed in SpEL as `#inputMeta.timestamp`. Check [here](/docs/scenariosAuthoring/streamingProcessingMode.md#predefined-variables)  |
+| Max out-of-orderness  | The maximum amount of time an element is allowed to be late before being ignored when computing the result for time-based stream transformations: aggregates in time windows and joins. To read more about this mechanism see Flink documentation         |
+| Idleness              | The time period after which partition is marked as idle if no events are received from it. To read more about this mechanism see [Flink documentation](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources). |
+

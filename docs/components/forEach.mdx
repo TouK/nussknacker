@@ -1,0 +1,43 @@
+---
+# front matter metadata for Docusaurus
+title: For Each
+description: Transform lists into events
+sidebar_label: For Each
+# sidebar_position: 
+
+# front matter metadata for LLM
+componentName: For Each
+processingModes: [Streaming, Request-Response]
+componentPaletteGroup: ?????
+# keywords: []
+---
+
+import ModeStreaming from '/badges/modeStreaming.mdx';
+import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
+
+
+# For Each
+
+<!-- Processing modes -->
+<ModeStreaming /> <ModeRequestResponse />
+
+## Description
+
+`For Each` node transforms the incoming event to N events, where N is number of elements in the list provided to it at runtime.
+
+## Parameters and configuration
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Elements | List of elements. It can contain both fixed values and expressions evaluated during execution. |
+| Output variable name |  The name of the variable which will contain value of the list element for which this particular event was generated.|
+
+## Example 
+
+- Elements is `{"John", "Betty"}`
+- Output Variable Name is `outputVar`,
+
+then two events will be emitted, with `#outputVar` equal to `"John"` for the first event and `"Betty"` for the second.
+
+## Additional considerations
+The `#input` variable is available downstream the `for-each` node.

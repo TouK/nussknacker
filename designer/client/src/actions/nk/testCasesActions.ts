@@ -7,7 +7,16 @@ import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
 import { changeActiveTestCase } from "./testingActions";
 
-export type AssertionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "greaterThanOrEqual" | "lessThanOrEqual";
+export type AssertionOperator =
+    | "equals"
+    | "notEquals"
+    | "greaterThan"
+    | "lessThan"
+    | "greaterThanOrEqual"
+    | "lessThanOrEqual"
+    | "hasSize"
+    | "contains"
+    | "matches";
 export type Assertion = { description?: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 
@@ -48,6 +57,17 @@ export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => Testi
             updates: {
                 inputs: JSON.stringify(next),
             },
+        });
+    };
+}
+
+export function setTestCaseName(name: string): ThunkAction {
+    return (dispatch, getState) => {
+        const activeTestCaseId = getActiveTestCaseId(getState());
+        dispatch({
+            type: "UPDATE_TEST_CASE",
+            testCaseId: activeTestCaseId,
+            updates: { name },
         });
     };
 }

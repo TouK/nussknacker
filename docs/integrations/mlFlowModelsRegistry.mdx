@@ -1,0 +1,72 @@
+---
+
+# front matter metadata for Docusaurus
+title: MLflow models registry integration
+description: Connect to MLflow models registry
+sidebar_label: MLflow Registry
+
+# sidebar_position: 
+
+# front matter metadata for LLM
+# keywords: []
+---
+
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# MLflow models registry integration
+<Enterprise />
+
+## Overview
+Nussknacker ML Runtime can serve models registered in MLflow models registry. Once the MLflow integration is configured, Nussknacker will generate an [ML Enricher](/docs/components/mlEnricher.mdx) component, which can be used in the scenario to infer ML models. 
+
+This document explains how to configure native MLflow integration.
+
+## Integration parameters
+
+The configuration differs slightly depending on whether this is a self hosted MLflow installation or Databricks hosted.
+
+### Self-hosted MLflow secured with OAuth2
+
+Use this configuration when connecting Nussknacker Cloud to a **self-hosted** MLflow Tracking Server protected by an **OAuth2-compliant identity provider** (e.g., Keycloak, Auth0, Okta, Azure AD, etc.) using the **Client Credentials (M2M) OAuth2 flow**.
+
+- **Server URL**:  
+  The base URL of your self-hosted MLflow Tracking Server.  
+  _Example_: `https://mlflow.my-company.com`
+
+- **Token URL**:  
+  The OAuth2 token endpoint provided by your identity provider, used to obtain access tokens for API calls.  
+  _Example (Keycloak)_: `https://auth.my-company.com/realms/<realm>/protocol/openid-connect/token`
+
+- **Client ID**:  
+  The OAuth2 client ID registered in your identity provider.  
+  This identifies the Nussknacker client requesting access.
+
+- **Client Secret**:  
+  The secret associated with the registered client.
+
+- **Scope** _(optional)_:  
+  The scope(s) required to access the MLflow server APIs.  
+  This is provider-specific and may be required depending on identity provider settings.__
+  _Example_: `mlflow.read`, `api`, or `openid`
+
+### Databricks-managed MLflow
+
+Use this configuration when integrating with MLflow hosted on **Databricks**.
+
+- **Server URL**:  
+  Databricks [instance URL](https://docs.databricks.com/aws/en/workspace/workspace-details).  
+  _Example_: ` https://dbc-a1b2345c-d6e7.cloud.databricks.com`
+
+- **Token URL**:  
+  The Databricks OAuth2 token endpoint, formed by appending `/oidc/v1/token` to the _Server URL_ (Databricks workspace URL).  
+  _Example_: `https://dbc-a1b2345c-d6e7.cloud.databricks.com/oidc/v1/token`
+
+- **Client ID**:  
+  The _Service Principal_ client ID.
+  
+- **Client Secret**:  
+  The _Service Principal_ secret.
+
+- **Scope**:  
+  Must be set to: `all-apis`.__
+  

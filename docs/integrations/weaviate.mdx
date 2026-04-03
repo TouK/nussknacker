@@ -1,0 +1,26 @@
+---
+
+# front matter metadata for Docusaurus
+title: Weaviate
+description: Define integration with Weaviate vector database
+sidebar_label: Weaviate
+
+# sidebar_position: 
+
+---
+import Enterprise from '/badges/enterpriseVersion.mdx';
+
+# Weaviate 
+<Enterprise />
+
+## Overview
+
+Once the Weaviate integration is configured, the configured vector store instance will be available for use in the [Vector Store](/docs/components/vectorStore.mdx) component.
+
+## Configuring Weaviate vector store integration
+
+| Parameter              | Required |  Description                                                                                                                                            |
+|------------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Integration name       | true     | Unique name for the integration                        |
+| URL                    | true     | URL of the vector store                                |
+| API Key                | false    | API key used to authenticate with the vector store     |

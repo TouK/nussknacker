@@ -205,7 +205,7 @@ class AssertionsCompiler(
       .compile(
         // Compiling the below expression can result in errors like: Operator '==' used with not comparable types: String and Integer
         // If we need to report more user-friendly error (without: Operator '=='), we can use CommonSupertypeFinder here to check if types are comparable before compiling.
-        s"(${assertion.expected.expression}) ${toComparisonOperator(assertion.operator)} (${assertion.actual.expression})".spel,
+        buildComparisonExpression(assertion.operator, assertion.expected.expression, assertion.actual.expression).spel,
         // See comment below - we report errors on actual field.
         paramName = Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
@@ -226,14 +226,30 @@ class AssertionsCompiler(
       .toValidatedNel
   }
 
-  private def toComparisonOperator(operator: Assertion.AssertionOperator): String = {
+  private def buildComparisonExpression(
+      operator: Assertion.AssertionOperator,
+      expected: String,
+      actual: String
+  ): String = {
     operator match {
-      case AssertionOperator.Equals             => "=="
-      case AssertionOperator.NotEquals          => "!="
-      case AssertionOperator.GreaterThan        => ">"
-      case AssertionOperator.LessThan           => "<"
-      case AssertionOperator.GreaterThanOrEqual => ">="
-      case AssertionOperator.LessThanOrEqual    => "<="
+      case AssertionOperator.Equals =>
+        s"($actual) == ($expected)"
+      case AssertionOperator.NotEquals =>
+        s"($actual) != ($expected)"
+      case AssertionOperator.GreaterThan =>
+        s"($actual) != null && ($expected) != null && ($actual) > ($expected)"
+      case AssertionOperator.LessThan =>
+        s"($actual) != null && ($expected) != null && ($actual) < ($expected)"
+      case AssertionOperator.GreaterThanOrEqual =>
+        s"($actual) != null && ($expected) != null && ($actual) >= ($expected)"
+      case AssertionOperator.LessThanOrEqual =>
+        s"($actual) != null && ($expected) != null && ($actual) <= ($expected)"
+      case AssertionOperator.HasSize =>
+        s"($actual) != null && ($expected) != null && ($actual).size() == ($expected)"
+      case AssertionOperator.Contains =>
+        s"($actual) != null && ($expected) != null && ($actual).contains(($expected))"
+      case AssertionOperator.Matches =>
+        s"($actual) != null && ($expected) != null && ($actual) matches ($expected)"
     }
   }
 

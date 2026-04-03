@@ -70,7 +70,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const commonProps = {
         onClick: handleRunCurrentTestCase,
-        title: tooltip || t("panels.actions.scenarioTest.button.title", "run test"),
+        title:
+            tooltip ||
+            t("panels.actions.scenarioTest.button.testCaseTitle", "run {{testCaseName}}", { testCaseName: activeTestCasePreset?.label }),
         icon,
         side,
         variant,
@@ -124,9 +126,13 @@ const StyledScenarioTestButton = styled(ToolbarButton, {
             ? {
                   fontSize: "1em",
                   minWidth: "5em",
+                  maxWidth: "10em",
                   marginRight: theme.spacing(0.5),
                   display: "inline",
                   textTransform: "initial",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
               }
             : null,
     };
