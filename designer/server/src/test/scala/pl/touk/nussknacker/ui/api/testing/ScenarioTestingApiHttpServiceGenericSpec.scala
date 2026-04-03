@@ -251,6 +251,12 @@ trait ScenarioTestingApiHttpServiceGenericSpec
     }
   }
 
+  "The endpoint for source capabilities should" - {
+    "return source parameters for a single source node" in {
+      shouldProperlyGetSourceCapabilities()
+    }
+  }
+
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
       shouldValidateParametersProperly()

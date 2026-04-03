@@ -1,15 +1,18 @@
 package pl.touk.nussknacker.ui.api.testing
 
+import io.circe.parser
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, EqualsJsonBody, JsonBody}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{RecordsRequestDto, TestSourceParameters}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 
@@ -78,6 +81,31 @@ trait WithAdHocTestsLogic {
       .Then()
       .statusCode(200)
       .equalsJsonBody(responseWithParameters(expectedTestParametersJson))
+  }
+
+  def shouldProperlyGetSourceCapabilities(): Unit = {
+    val sourceNode = exampleScenario.nodes
+      .collectFirst { case FlatNode(s: SourceNodeData) => s }
+      .getOrElse(throw new RuntimeException("No source node found in exampleScenario"))
+    val requestBody = RecordsRequestDto(exampleScenario.toScenarioGraph.properties, sourceNode).asJson.noSpaces
+    val expectedJson = parser
+      .parse(expectedTestParametersJson)
+      .toOption
+      .flatMap(_.asArray.flatMap(_.headOption))
+      .map(_.spaces2)
+      .getOrElse(throw new RuntimeException("Failed to derive expected single source capabilities JSON"))
+
+    given()
+      .applicationState {
+        createSavedScenario(exampleScenario)
+      }
+      .when()
+      .basicAuthAllPermUser()
+      .jsonBody(requestBody)
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/sourceCapabilities")
+      .Then()
+      .statusCode(200)
+      .equalsJsonBody(expectedJson)
   }
 
   def responseWithParameters(parametersJson: String): String =
