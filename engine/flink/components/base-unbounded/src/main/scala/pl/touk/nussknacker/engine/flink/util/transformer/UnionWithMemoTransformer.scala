@@ -71,7 +71,10 @@ class UnionWithMemoTransformer(
             val mapTypeInfo = typeInfoDetector
               .forType(
                 Typed.record(
-                  valueByBranchId.mapValuesNow(_.returnType),
+                  valueByBranchId
+                    .map { case (branchId, valueParam) =>
+                      ContextTransformation.sanitizeBranchName(branchId) -> valueParam.returnType
+                    },
                   Typed.typedClass[java.util.Map[_, _]]
                 )
               )
