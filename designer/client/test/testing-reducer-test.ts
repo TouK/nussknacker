@@ -79,4 +79,80 @@ describe("testingReducer", () => {
         const state = testingReducer(initial, { type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
         expect(state.testCasesResults).toBeNull();
     });
+
+    describe("DELETE_NODES", () => {
+        it("removes deleted node from loaded assertionsResults", () => {
+            const assertions = { node1: [{ type: "SuccessfulAssertion" as const }], node2: [{ type: "SuccessfulAssertion" as const }] };
+            const initial = {
+                ...initialTestingState,
+                testCasesResults: { "tc-1": { status: "loaded" as const, results: completedResult(assertions) } },
+            };
+            const state = testingReducer(initial, { type: "DELETE_NODES", ids: ["node1"] });
+            expect(getNodeAssertionResults(state.testCasesResults["tc-1"])).toEqual({
+                node2: [{ type: "SuccessfulAssertion" }],
+            });
+        });
+
+        it("keeps results for nodes that were not deleted", () => {
+            const assertions = { node1: [{ type: "SuccessfulAssertion" as const }], node2: [{ type: "SuccessfulAssertion" as const }] };
+            const initial = {
+                ...initialTestingState,
+                testCasesResults: { "tc-1": { status: "loaded" as const, results: completedResult(assertions) } },
+            };
+            const state = testingReducer(initial, { type: "DELETE_NODES", ids: ["node1"] });
+            expect(getNodeAssertionResults(state.testCasesResults["tc-1"])).toHaveProperty("node2");
+        });
+
+        it("passes through loading results unchanged", () => {
+            const initial = { ...initialTestingState, testCasesResults: { "tc-1": { status: "loading" as const } } };
+            const state = testingReducer(initial, { type: "DELETE_NODES", ids: ["node1"] });
+            expect(state.testCasesResults["tc-1"]).toEqual({ status: "loading" });
+        });
+
+        it("does nothing when testCasesResults is null", () => {
+            const state = testingReducer(initialTestingState, { type: "DELETE_NODES", ids: ["node1"] });
+            expect(state.testCasesResults).toBeNull();
+        });
+
+        it("cleans results across multiple test cases", () => {
+            const assertions = { node1: [{ type: "SuccessfulAssertion" as const }] };
+            const initial = {
+                ...initialTestingState,
+                testCasesResults: {
+                    "tc-1": { status: "loaded" as const, results: completedResult(assertions) },
+                    "tc-2": { status: "loaded" as const, results: completedResult(assertions) },
+                },
+            };
+            const state = testingReducer(initial, { type: "DELETE_NODES", ids: ["node1"] });
+            expect(getNodeAssertionResults(state.testCasesResults["tc-1"])).toEqual({});
+            expect(getNodeAssertionResults(state.testCasesResults["tc-2"])).toEqual({});
+        });
+    });
+
+    describe("ADD_NODE_REPLACE", () => {
+        it("removes replaced node from loaded assertionsResults", () => {
+            const assertions = { node1: [{ type: "SuccessfulAssertion" as const }], node2: [{ type: "SuccessfulAssertion" as const }] };
+            const initial = {
+                ...initialTestingState,
+                testCasesResults: { "tc-1": { status: "loaded" as const, results: completedResult(assertions) } },
+            };
+            const state = testingReducer(initial, {
+                type: "ADD_NODE_REPLACE",
+                old: { id: "node1" } as any,
+                node: { id: "node1-new" } as any,
+            });
+            expect(getNodeAssertionResults(state.testCasesResults["tc-1"])).toEqual({
+                node2: [{ type: "SuccessfulAssertion" }],
+            });
+        });
+
+        it("does nothing when testCasesResults is null", () => {
+            const state = testingReducer(initialTestingState, {
+                type: "ADD_NODE_REPLACE",
+                old: { id: "node1" } as any,
+                node: { id: "node1-new" } as any,
+            });
+            expect(state.testCasesResults).toBeNull();
+        });
+    });
 });
