@@ -31,9 +31,9 @@ export function useTestingContentRenderer() {
     const CONFIG: { when: (node: TestingContentProps["node"]) => boolean; render: (props: TestingContentProps) => React.JSX.Element }[] = [
         {
             when: (node) => node.type === "Source",
-            render: ({ node, edges, scenarioGraph }) => (
+            render: ({ node, edges }) => (
                 <>
-                    <InputDataRecords sourceId={node.id} node={node} scenarioGraph={scenarioGraph} />
+                    <InputDataRecords sourceId={node.id} node={node} />
                     <Assertions node={node} edges={edges} />
                 </>
             ),

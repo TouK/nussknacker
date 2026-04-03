@@ -42,13 +42,12 @@ export interface TestingDataRecords {
 interface TableProps {
     data?: TestingDataRecords[];
     onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
-    onRowAdded: (rowIndex: number, row: TestingDataRecords) => void;
+    onRowAppended: () => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
-    getDefaultRecord: () => Promise<TestingDataRecords>;
+    sourceParameters: TestFormParameters[];
     sourceOptions: string[];
     className?: string;
-    sourceParameters: TestFormParameters[];
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
 }
@@ -74,13 +73,12 @@ type HeaderRenderArgs = { columnIndex: number; theme: Theme; rect: { width: numb
 export const Table: React.FC<TableProps> = ({
     data = [],
     onRowUpdated,
-    onRowAdded,
+    onRowAppended,
     onRowsDeleted,
     onRowMoved,
+    sourceParameters,
     sourceOptions,
     className,
-    getDefaultRecord,
-    sourceParameters,
     cellErrors,
     recordsToAddLimitExceeded,
 }) => {
@@ -163,11 +161,6 @@ export const Table: React.FC<TableProps> = ({
         },
         [buildRowUpdates, onRowUpdated],
     );
-
-    const onCellAdded = useCallback((): void => {
-        const rowIndex = data.length;
-        getDefaultRecord().then((newRow) => onRowAdded(rowIndex, newRow));
-    }, [data.length, getDefaultRecord, onRowAdded]);
 
     const onCellDeleted = useCallback(
         (rows: number[]): number[] => {
@@ -348,7 +341,7 @@ export const Table: React.FC<TableProps> = ({
                     customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
-                    onRowAppended={recordsToAddLimitExceeded || noSourcesDefined ? undefined : onCellAdded}
+                    onRowAppended={recordsToAddLimitExceeded || noSourcesDefined ? undefined : onRowAppended}
                     rowMarkers="both"
                     rows={data.length}
                     smoothScrollX

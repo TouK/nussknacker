@@ -1,21 +1,27 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
+import { displayTestCapabilities } from "../../../actions/nk/process";
 import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
+import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, PropertiesType } from "../../../types/node";
-import type { ScenarioGraph } from "../../../types/scenarioGraph";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { TestingDataRecords } from "./Table";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
-import { mapGeneratedTestingDataToTableFormat } from "./utils";
+import { buildDefaultVariablesMap, mapGeneratedTestingDataToTableFormat } from "./utils";
 
-export const useDataRecordsActions = (scenarioGraph: ScenarioGraph) => {
+export const useDataRecordsActions = () => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
     const dispatch = useAppDispatch();
     const { recordsErrors, validateForCount } = useDataRecordsValidation();
+
+    useEffect(() => {
+        dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
+    }, [dispatch, scenarioName, scenarioGraph]);
 
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
@@ -156,6 +162,21 @@ export const useDataRecordsActions = (scenarioGraph: ScenarioGraph) => {
         [dispatch],
     );
 
+    const addDefaultRecord = useCallback(
+        async (sourceId: string) => {
+            if (!validateForCount((currentCount) => currentCount + 1)) return;
+
+            const { data: capabilities } = await HttpService.getTestCapabilities(scenarioName, scenarioGraph);
+            const sourceParameters =
+                capabilities.testWithParameters.status === TestCapabilityStatus.AVAILABLE
+                    ? capabilities.testWithParameters.sourceParameters
+                    : [];
+            const variables = buildDefaultVariablesMap(sourceParameters)[sourceId] ?? "";
+            dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables }]));
+        },
+        [validateForCount, scenarioName, scenarioGraph, dispatch],
+    );
+
     return {
         cellErrors,
         recordsErrors,
@@ -164,6 +185,7 @@ export const useDataRecordsActions = (scenarioGraph: ScenarioGraph) => {
         handleRowsDeleted,
         handleGenerateTestData,
         generateTestDataForSingleSource,
+        addDefaultRecord,
         handleRowMoved,
     };
 };
