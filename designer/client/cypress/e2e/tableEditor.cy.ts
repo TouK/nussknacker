@@ -1,7 +1,3 @@
-function snapshot() {
-    cy.get("@editor").matchImage();
-}
-
 describe("Table editor", () => {
     const seed = "table";
 
@@ -13,53 +9,45 @@ describe("Table editor", () => {
         cy.deleteAllTestProcesses({ filter: seed });
     });
 
-    it.skip("should display rich table editor", () => {
+    it("should display rich table editor", () => {
         cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "table", "Default");
+        const conditionFieldName = `Match condition`;
+        const tableFieldName = `Decision Table`;
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
-            if (request.body.nodeData.service?.parameters.find((p) => p.name === "Expression")) {
+            if (request.body.nodeData.service?.parameters.find((p) => p.name === conditionFieldName)) {
                 request.alias = "validation";
             }
         });
 
         cy.openNodeWindow("decision-table").as("modal");
-        cy.get("[title='Basic Decision Table']").next().as("editor");
+        cy.get(`[title="${tableFieldName}"]`).next().as("editor");
         cy.get("[data-testid='table-container']").should("be.visible").as("table");
-        snapshot();
+        cy.get("@editor").matchImage();
 
-        cy.get("@table").click(100, 50);
+        cy.get("@table").realClick({ x: 100, y: 50 });
         cy.get("[role='menuitem']").contains("Double").click();
-        cy.get("@table").click(550, 18);
+        cy.get("@table").realClick({ x: 550, y: 18 });
         cy.realType("some name");
         cy.realPress("Enter");
 
-        cy.get("@table").click(100, 125);
+        cy.get("@table").realClick({ x: 100, y: 125 });
         cy.get("#portal textarea").should("be.visible");
         cy.realType("2.0");
         cy.realPress("Enter");
-        cy.get("@table").click(580, 25).click(580, 25);
-        cy.get("@table").click(350, 125).click(350, 125);
+        cy.get("@table").realClick({ x: 580, y: 25 });
+        cy.get("@table").realClick({ x: 580, y: 25 });
+        cy.get("@table").realClick({ x: 350, y: 125, clickCount: 2 });
         cy.get("#portal textarea").should("be.visible");
         cy.realType("true").realPress("Tab");
         cy.realType("bar").realPress("Enter");
         cy.realPress("Enter");
         cy.realPress("Escape");
         cy.realType("xxx");
-        cy.get("@table")
-            .realMouseMove(210, 50)
-            .realMouseDown({
-                x: 210,
-                y: 50,
-            })
-            .realMouseMove(210, 50)
-            .realMouseUp({
-                x: 210,
-                y: 50,
-            });
-        cy.get("@table").dblclick(381, 50);
-        snapshot();
+        cy.realPress("Enter");
+        cy.get("@table").matchImage();
 
-        cy.get("[title=Expression]").next().find(".ace_editor").as("expr");
+        cy.get(`[title="${conditionFieldName}"]`).next().find(".ace_editor").as("expr");
 
         cy.get("@expr").click().type("{selectall}#ROW.").contains(/.$/);
         cy.get(".ace_autocomplete")
@@ -68,14 +56,14 @@ describe("Table editor", () => {
                 maxDiffThreshold: 0.0025,
                 screenshotConfig: { padding: [25, 1, 1] },
             });
-        cy.get("@expr").type("B");
+        cy.get("@expr").type("B{esc}");
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
-        cy.contains(`Bad expression type, expected: Boolean, found: String`).should("be.visible");
+        cy.contains(`Bad expression type, expected: Boolean, found: String`).should("be.visible").as("exception");
 
         cy.get("@table").click(230, 50);
         cy.get("[role='menuitem']").contains("Boolean").click();
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
-        cy.contains(`Bad expression type, expected: Boolean, found: String`).should("not.be.visible");
+        cy.get("@exception").should("not.exist");
 
         cy.get("@expr").click().type(`{selectall}#ROW["{ctrl} `);
         cy.get(".ace_autocomplete")
@@ -84,7 +72,8 @@ describe("Table editor", () => {
                 maxDiffThreshold: 0.0025,
                 screenshotConfig: { padding: [25, 1, 1] },
             });
-        cy.get("@expr").type(`{leftarrow}{leftarrow}some name`);
+        // arrows as workaround for wrong cursor position after query
+        cy.get("@expr").type(`{leftarrow}{leftarrow}some name{rightarrow}{rightarrow}`);
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.contains(`Bad expression type, expected: Boolean, found: Double`).should("be.visible");
 
@@ -103,7 +92,7 @@ describe("Table editor", () => {
         cy.contains(/^remove 1 row$/i).click();
         cy.get("@table").rightclick(50, 90);
         cy.contains(/^remove 1 column$/i).click();
-        snapshot();
+        cy.get("@table").matchImage();
 
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.contains(`There is no property 'some name' in type`).should("be.visible");
@@ -167,7 +156,7 @@ describe("Table editor", () => {
 
         // Move the last column to the first place
         cy.get("@table").realMouseDown({ x: 400, y: 40 }).realMouseMove(50, 40).realMouseUp();
-        snapshot();
+        cy.get("@editor").matchImage();
 
         //FIXME: for now, clicking the apply changes button makes the test run forever, even when the test is green.
         // Looks like it's a problem with real events.

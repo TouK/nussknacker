@@ -159,26 +159,28 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
             const value = rows[row]?.[col];
             const column = columns[col];
 
-            if (column.type === "java.time.LocalDateTime" || column.type === "java.time.LocalDate") {
-                return {
-                    kind: GridCellKind.Custom,
-                    allowOverlay: true,
-                    copyData: value ?? "",
-                    data: {
-                        kind: "date-picker-cell",
-                        date: value ?? "",
-                        format: column.type,
-                    },
-                };
+            switch (column?.type) {
+                case "java.time.LocalDateTime":
+                case "java.time.LocalDate":
+                    return {
+                        kind: GridCellKind.Custom,
+                        allowOverlay: true,
+                        copyData: value ?? "",
+                        data: {
+                            kind: "date-picker-cell",
+                            date: value ?? "",
+                            format: column.type,
+                        },
+                    };
+                default:
+                    return {
+                        kind: GridCellKind.Text,
+                        displayData: value ?? "",
+                        data: value ?? "",
+                        allowOverlay: true,
+                        readonly: false,
+                    };
             }
-
-            return {
-                kind: GridCellKind.Text,
-                displayData: value ?? "",
-                data: value ?? "",
-                allowOverlay: true,
-                readonly: false,
-            };
         },
         [columns, rows],
     );
