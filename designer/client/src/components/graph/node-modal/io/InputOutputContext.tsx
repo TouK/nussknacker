@@ -1,3 +1,4 @@
+import { isPlainObject, mapValues } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
 
@@ -8,6 +9,21 @@ import { getTestResults } from "../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import NodeUtils from "../../NodeUtils";
 import type { VariableContextType } from "./VariableContextTree";
+
+function mapNodeIdKeysToNames(value: unknown, nodeNameById: Record<string, string>): unknown {
+    if (Array.isArray(value)) {
+        return value.map((entry) => mapNodeIdKeysToNames(entry, nodeNameById));
+    }
+    if (!isPlainObject(value)) {
+        return value;
+    }
+
+    return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [key, nestedValue]) => {
+        const normalizedKey = nodeNameById[key] || key;
+        acc[normalizedKey] = mapNodeIdKeysToNames(nestedValue, nodeNameById);
+        return acc;
+    }, {});
+}
 
 export type InputOutputState = {
     inputDataSetId?: string | null;
@@ -73,6 +89,10 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
 }>) {
     const scenario = useAppSelector(getScenarioGraph);
     const testResults = useAppSelector(getTestResults);
+    const nodeNameById = useMemo<Record<string, string>>(
+        () => Object.fromEntries((scenario.nodes || []).map((graphNode) => [graphNode.id, graphNode.name])),
+        [scenario.nodes],
+    );
 
     const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -147,12 +167,16 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                             foundContext.nodeIds.push(contextNodeId);
                             return;
                         }
+                        const variablesWithMappedNodeNames = mapValues(variables, (entry) => ({
+                            ...entry,
+                            pretty: mapNodeIdKeysToNames(entry?.pretty, nodeNameById),
+                        }));
 
                         const error = direction === "input" && getError(destinationNodeId, id);
 
                         contexts.push({
                             id,
-                            variables,
+                            variables: variablesWithMappedNodeNames,
                             disabled: isContextDisabled(id, direction),
                             nodeIds: [contextNodeId],
                             error: error?.throwable,
@@ -163,7 +187,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
             const count = transitionResults.reduce((sum, { totalCount = 0 }) => sum + totalCount, 0);
             return [contexts, count];
         },
-        [inputs, outputs, getError, isContextDisabled],
+        [inputs, nodeNameById, outputs, getError, isContextDisabled],
     );
 
     const value = useMemo<ContextType>(
