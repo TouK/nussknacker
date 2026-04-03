@@ -30,6 +30,32 @@ export function getNodeAssertionResults(testCaseResult: TestCaseResult | undefin
         : undefined;
 }
 
+function cleanTestCaseResultOfNodes(testCaseResult: TestCaseResult, deletedIds: Set<string>): TestCaseResult {
+    if (testCaseResult.status !== "loaded" || testCaseResult.results.type !== "Completed") {
+        return testCaseResult;
+    }
+    const { assertionsResults } = testCaseResult.results.result;
+    const updatedAssertionsResults = Object.fromEntries(Object.entries(assertionsResults).filter(([nodeId]) => !deletedIds.has(nodeId)));
+    return {
+        ...testCaseResult,
+        results: {
+            ...testCaseResult.results,
+            result: { ...testCaseResult.results.result, assertionsResults: updatedAssertionsResults },
+        },
+    };
+}
+
+function cleanTestCasesResultsOfNodes(testCasesResults: TestCasesResults | null, nodeIds: string[]): TestCasesResults | null {
+    if (!testCasesResults) return null;
+    const deletedIds = new Set(nodeIds);
+    return Object.fromEntries(
+        Object.entries(testCasesResults).map(([testCaseId, testCaseResult]) => [
+            testCaseId,
+            cleanTestCaseResultOfNodes(testCaseResult, deletedIds),
+        ]),
+    );
+}
+
 export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTestingState, action) => {
     switch (action.type) {
         case "DISPLAY_TEST_RESULTS_DETAILS": {
@@ -66,6 +92,12 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
                 ...state,
                 testCasesResults: null,
             };
+        }
+        case "DELETE_NODES": {
+            return { ...state, testCasesResults: cleanTestCasesResultsOfNodes(state.testCasesResults, action.ids) };
+        }
+        case "ADD_NODE_REPLACE": {
+            return { ...state, testCasesResults: cleanTestCasesResultsOfNodes(state.testCasesResults, [action.old.id]) };
         }
         case "TEST_RESULTS_LOADING": {
             return {

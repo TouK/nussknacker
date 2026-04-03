@@ -2,7 +2,7 @@ import { Box } from "@mui/material";
 import React from "react";
 
 import { getTestCases, hasMultipleTestCases } from "../../../reducers/selectors/testCases";
-import { getTestAssertionResults } from "../../../reducers/selectors/testing";
+import { getFilteredTestAssertionResults } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { RunAllTestsButton } from "./RunAllTestsButton";
@@ -10,7 +10,7 @@ import { TestCaseExpandable } from "./testCase";
 
 const TestCasesPanel = () => {
     const testCases = useAppSelector(getTestCases);
-    const testCaseAssertionResults = useAppSelector(getTestAssertionResults);
+    const testCaseAssertionResults = useAppSelector(getFilteredTestAssertionResults);
     const showRunAll = useAppSelector(hasMultipleTestCases);
 
     return (
