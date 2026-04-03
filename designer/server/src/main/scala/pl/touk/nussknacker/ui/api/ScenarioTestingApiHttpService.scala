@@ -180,64 +180,18 @@ class ScenarioTestingApiHttpService(
                 Left(ErrorResult(s"Expected SourceNodeData, got: ${other.getClass.getSimpleName}"): TestingError)
             })
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
-            processId <- EitherT.fromOption[Future](
-              scenarioWithDetails.processId,
-              noScenarioError(scenarioName),
-            )
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
             metaData = recordsRequestDto.processProperties.toMetaData(scenarioName)
-            capabilitiesAndParameters = scenarioTestService.getTestingCapabilitiesForSingleSource(
-              metaData,
-              sourceNodeData
-            )
-            canDeploy <- EitherT.right(scenarioAuthorizer.check(processId, Permission.Deploy, loggedUser))
-            result = capabilitiesAndParameters match {
-              case Left(TestingCapabilitiesError.NoSourcesError) =>
-                val noSourcesStatus = CapabilityStatus.NotAvailable(NotAvailableReason.NoSources)
-                ScenarioTestCapabilities(noSourcesStatus, noSourcesStatus, noSourcesStatus)
-              case Left(TestingCapabilitiesError.SourcesCompilationError(_)) =>
-                val invalidScenarioStatus = CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
-                ScenarioTestCapabilities(invalidScenarioStatus, invalidScenarioStatus, invalidScenarioStatus)
-              case Right((capabilities, parametersResult)) =>
-                val testWithLiveDataResult =
-                  (canDeploy, capabilities.canBeTested && capabilities.canFetchLiveData) match {
-                    case (false, _) =>
-                      CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
-                    case (true, false) =>
-                      CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
-                    case (true, true) =>
-                      CapabilityStatus.available
-                  }
-                ScenarioTestCapabilities(
-                  testWithParameters = (canDeploy, capabilities.canTestWithForm) match {
-                    case (false, _) =>
-                      CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
-                    case (true, false) =>
-                      CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
-                    case (true, true) =>
-                      parametersResult match {
-                        case Right(parameters) =>
-                          val uiParameters = List(
-                            UISourceParameters(
-                              sourceNodeData.id.value,
-                              sourceNodeData.name.value,
-                              parameters.map(DefinitionsService.createUIParameter)
-                            )
-                          )
-                          CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
-                        case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_, _)) =>
-                          CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
-                        case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
-                          CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
-                      }
-                  },
-                  testWithGeneratedData = testWithLiveDataResult,
-                  testWithLiveData = testWithLiveDataResult,
-                )
-            }
-          } yield result
+            parameters = scenarioTestService
+              .getSourceTestParameters(metaData, sourceNodeData)
+              .getOrElse(Nil)
+          } yield UISourceParameters(
+            sourceNodeData.id.value,
+            sourceNodeData.name.value,
+            parameters.map(DefinitionsService.createUIParameter)
+          )
         }
       }
   }

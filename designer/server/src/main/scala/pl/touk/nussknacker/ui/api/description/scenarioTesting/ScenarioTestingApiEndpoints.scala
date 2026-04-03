@@ -20,6 +20,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationResultDto,
   RecordsRequestDto,
@@ -128,16 +129,16 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
   def scenarioSourceCapabilitiesEndpoint: SecuredEndpoint[
     (ProcessName, RecordsRequestDto),
     TestingError,
-    ScenarioTestCapabilities,
+    UISourceParameters,
     Any
   ] =
     baseNuApiEndpoint
-      .summary("Describes available test modes for a single source node")
+      .summary("Returns test parameters definition for a single source node")
       .tag("Testing")
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "sourceCapabilities")
       .in(jsonBody[RecordsRequestDto])
-      .out(statusCode(Ok).and(jsonBody[ScenarioTestCapabilities]))
+      .out(statusCode(Ok).and(jsonBody[UISourceParameters]))
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 

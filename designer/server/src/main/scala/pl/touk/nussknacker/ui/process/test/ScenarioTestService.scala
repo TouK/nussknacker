@@ -97,10 +97,10 @@ class ScenarioTestService(
   private val assertionCompiler                    = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   private val assertionVerifier: AssertionVerifier = new AssertionVerifier(globalVariablesPreparer)
 
-  def getTestingCapabilitiesForSingleSource(
+  def getSourceTestParameters(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
-  ): Either[TestingCapabilitiesError, (TestingCapabilities, Either[ParametersDefinitionError, List[Parameter]])] = {
+  ): Either[TestingCapabilitiesError, List[Parameter]] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       val nodeId            = sourceNodeData.id
@@ -108,18 +108,18 @@ class ScenarioTestService(
       compilationResult.compiledObject
         .leftMap(errors => TestingCapabilitiesError.SourcesCompilationError(NonEmptyList.one(nodeId -> errors)))
         .toEither
-        .map { compiledSource =>
-          val capabilities = getTestingCapabilitiesForCompiledSource(compiledSource)
-          val parametersResult = testDataFormatHandler
+        .map { _ =>
+          testDataFormatHandler
             .getTestParametersDefinition(nodeId, sourceNodeData.name, compilationResult)
-            .map { params =>
-              StandardParameterEnrichment.enrichParameterDefinitions(
-                original = params,
-                parametersConfig = Map.empty,
-                globalParametersConfig = modelData.modelConfig.globalParametersConfig
-              )
-            }
-          (capabilities, parametersResult)
+            .fold(
+              _ => Nil,
+              params =>
+                StandardParameterEnrichment.enrichParameterDefinitions(
+                  original = params,
+                  parametersConfig = Map.empty,
+                  globalParametersConfig = modelData.modelConfig.globalParametersConfig
+                )
+            )
         }
     }
   }

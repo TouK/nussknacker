@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 
 import { displayTestCapabilities } from "../../../actions/nk/process";
 import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
-import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
@@ -166,12 +165,8 @@ export const useDataRecordsActions = () => {
         async (sourceId: string, nodeData: NodeType, scenarioProperties: PropertiesType) => {
             if (!validateForCount((currentCount) => currentCount + 1)) return;
 
-            const { data: capabilities } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
-            const sourceParameters =
-                capabilities.testWithParameters.status === TestCapabilityStatus.AVAILABLE
-                    ? capabilities.testWithParameters.sourceParameters
-                    : [];
-            const variables = buildDefaultVariablesMap(sourceParameters)[sourceId] ?? "";
+            const { data: uiSourceParameters } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
+            const variables = buildDefaultVariablesMap([uiSourceParameters])[sourceId] ?? "";
             dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables }]));
         },
         [validateForCount, scenarioName, dispatch],
