@@ -38,6 +38,7 @@ export function Expandable({
             sx={{ border: 0, "&::before": { display: "none" } }}
             onChange={accordionOnChange}
             expanded={expanded}
+            id={componentId}
         >
             <AccordionSummary
                 expandIcon={<ExpandMoreIcon sx={expandIconSx} />}

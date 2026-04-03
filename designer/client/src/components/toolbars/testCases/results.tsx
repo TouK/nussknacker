@@ -71,13 +71,19 @@ const NoResults = ({
                         size="small"
                         onClick={onRun}
                         disabled={isRunTestButtonDisabled}
+                        title={t("testCases.results.run", "Run {{name}}", { name: testCaseName })}
                         sx={{
                             fontSize: "inherit",
                             fontWeight: "inherit",
                             p: 0,
                             minWidth: 0,
+                            maxWidth: "15em",
                             verticalAlign: "baseline",
                             textTransform: "lowercase",
+                            display: "inline-block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                         }}
                     >
                         {t("testCases.results.run", "Run {{name}}", { name: testCaseName })}
