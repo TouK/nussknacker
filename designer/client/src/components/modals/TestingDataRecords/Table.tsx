@@ -45,7 +45,7 @@ interface TableProps {
     onRowAppended: () => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
-    sourceParameters: TestFormParameters[];
+    sourceParameters?: TestFormParameters;
     sourceOptions: string[];
     className?: string;
     cellErrors: CellError[];
@@ -132,7 +132,7 @@ export const Table: React.FC<TableProps> = ({
         [theme],
     );
 
-    const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters[0]), [sourceParameters]);
+    const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters), [sourceParameters]);
 
     const getCellContent = useCallback(
         (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceParameters),
@@ -309,7 +309,7 @@ export const Table: React.FC<TableProps> = ({
         [getDeletedColumn, handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
     );
 
-    const noSourcesDefined = sourceParameters.length === 0;
+    const noSourcesDefined = !sourceParameters;
 
     return (
         <Box

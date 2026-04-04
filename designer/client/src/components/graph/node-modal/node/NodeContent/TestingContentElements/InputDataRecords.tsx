@@ -34,7 +34,8 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
         generateTestDataForSingleSource,
     } = useDataRecordsActions();
 
-    const sourceParameters = useAppSelector(getTestParameters);
+    const allSourceParameters = useAppSelector(getTestParameters);
+    const sourceParameters = allSourceParameters.find((sp) => sp.sourceId === sourceId);
     const scenarioProperties = useAppSelector(getProcessProperties);
 
     const onRowAppended = useCallback(

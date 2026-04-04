@@ -24,7 +24,7 @@ export function getTestingCellContent(
     item: Item,
     data: TestingDataRecords[],
     sourceOptions: string[],
-    sourceParameters: TestFormParameters[],
+    sourceParameters: TestFormParameters | undefined,
 ): GridCell {
     const [columnIndex, rowIndex] = item;
     const rowData = data[rowIndex];
@@ -37,9 +37,9 @@ export function getTestingCellContent(
             data: {
                 kind: "source-select-cell",
                 value: rowData.sourceId || "",
-                displayValue: sourceParameters.find((sp) => sp.sourceId === rowData.sourceId)?.sourceName || rowData.sourceId || "",
+                displayValue: sourceParameters?.sourceName || rowData.sourceId || "",
                 options: sourceOptions,
-                optionLabels: sourceOptions.map((id) => sourceParameters.find((sp) => sp.sourceId === id)?.sourceName || id),
+                optionLabels: sourceOptions.map((id) => (id === sourceParameters?.sourceId ? sourceParameters.sourceName : id)),
             },
             readonly: false,
         } as SourceSelectCell;
