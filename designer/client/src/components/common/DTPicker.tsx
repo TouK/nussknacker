@@ -1,6 +1,6 @@
-import type { SxProps } from "@mui/material";
 import { styled } from "@mui/material";
-import React from "react";
+import type { ComponentProps } from "react";
+import React, { forwardRef } from "react";
 import DateTimePicker from "react-datetime";
 import { useTranslation } from "react-i18next";
 
@@ -16,26 +16,9 @@ const style = {
     alignItems: "center",
 };
 
-export function DTPicker({
-    dateFormat,
-    timeFormat,
-    inputProps,
-    onChange,
-    value,
-    open,
-    sx,
-}: DateTimePicker.DatetimepickerProps & { sx?: SxProps }): React.JSX.Element {
+type Props = Omit<ComponentProps<typeof DTPickerStyled>, "locale">;
+
+export const DTPicker = forwardRef<DateTimePicker, Props>(function DTPicker({ inputProps, ...props }, ref) {
     const { i18n } = useTranslation();
-    return (
-        <DTPickerStyled
-            open={open}
-            dateFormat={dateFormat}
-            timeFormat={timeFormat}
-            inputProps={{ style, onFocusCapture: (e) => e.stopPropagation(), ...inputProps }}
-            onChange={onChange}
-            value={value}
-            locale={i18n.language}
-            sx={sx}
-        />
-    );
-}
+    return <DTPickerStyled ref={ref} closeOnSelect {...props} inputProps={{ style, ...inputProps }} locale={i18n.language} />;
+});

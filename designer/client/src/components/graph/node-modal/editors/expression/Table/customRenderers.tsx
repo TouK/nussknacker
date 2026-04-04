@@ -2,6 +2,7 @@ import type { CustomRenderer, EditListItem, Item } from "@glideapps/glide-data-g
 import { drawTextCell, GridCellKind } from "@glideapps/glide-data-grid";
 
 import type { DatePickerCell } from "./customCells/DatePicker";
+import { toDisplayFormat } from "./customCells/DatePicker";
 import { DatePicker, isDatePickerCell } from "./customCells/DatePicker";
 
 declare module "@glideapps/glide-data-grid" {
@@ -17,14 +18,15 @@ export const customRenderers: CustomRenderer<DatePickerCell>[] = [
         isMatch: isDatePickerCell,
         draw: (args, cell) => {
             const { date } = cell.data;
-
             if (date) {
-                drawTextCell(args, date, cell.contentAlign);
+                drawTextCell(args, toDisplayFormat(date), cell.contentAlign);
             }
             return true;
         },
         provideEditor: () => ({
             editor: DatePicker,
+            styleOverride: { overflow: "visible" },
+            disablePadding: true,
             deletedValue: (v) => ({
                 ...v,
                 copyData: "",
