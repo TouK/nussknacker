@@ -17,20 +17,27 @@ export default defineConfig({
         video: true,
         experimentalMemoryManagement: true,
         experimentalRunAllSpecs: true,
-        numTestsKeptInMemory: 10,
+        numTestsKeptInMemory: 0,
         // We've imported your old cypress plugins here.
         // You may want to clean this up later by importing these.
         setupNodeEvents(on, config) {
             on("before:browser:launch", (browser, launchOptions) => {
+                if (browser.family === "chromium") {
+                    launchOptions.args.push("--disable-dev-shm-usage");
+                }
                 const width = 1920;
                 const height = 1200;
                 if (browser.isHeadless) {
                     if (browser.name === "chrome") {
                         launchOptions.args.push(`--window-size=${width},${height}`);
+                        launchOptions.args.push("--disable-gpu");
+                        launchOptions.args.push("--disable-software-rasterizer");
                     }
                     if (browser.name === "electron") {
                         launchOptions.preferences.width = width;
                         launchOptions.preferences.height = height;
+                        launchOptions.args.push("--disable-gpu");
+                        launchOptions.args.push("--disable-software-rasterizer");
                     }
                     if (browser.name === "firefox") {
                         launchOptions.args.push(`--width=${width}`);
