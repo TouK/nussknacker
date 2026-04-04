@@ -18,10 +18,6 @@ export default defineConfig({
         experimentalMemoryManagement: true,
         experimentalRunAllSpecs: true,
         numTestsKeptInMemory: 0,
-        env: {
-            ELECTRON_DISABLE_GPU: "true",
-            ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu",
-        },
         // We've imported your old cypress plugins here.
         // You may want to clean this up later by importing these.
         setupNodeEvents(on, config) {
@@ -40,6 +36,8 @@ export default defineConfig({
                     if (browser.name === "electron") {
                         launchOptions.preferences.width = width;
                         launchOptions.preferences.height = height;
+                        launchOptions.args.push("--disable-gpu");
+                        launchOptions.args.push("--disable-software-rasterizer");
                     }
                     if (browser.name === "firefox") {
                         launchOptions.args.push(`--width=${width}`);
