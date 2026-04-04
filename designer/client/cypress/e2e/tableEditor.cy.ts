@@ -27,24 +27,24 @@ describe("Table editor", () => {
         cy.get("@table").matchImage();
 
         // select 1st column type
-        cy.get("@table").realClick({ x: 100, y: 50 });
+        cy.get("@table").click(100, 50);
         cy.get("[role='menuitem']").contains("Double").click();
 
         // change 1st column name
-        cy.get("@table").realClick({ x: 550, y: 18 });
+        cy.get("@table").click(550, 18);
         cy.realType("some name");
         cy.realPress("Enter");
 
         // add and change 1st column, 2nd row value
-        cy.get("@table").realClick({ x: 100, y: 125 });
+        cy.get("@table").click(100, 132);
         cy.get("#portal textarea").should("be.visible");
         cy.realType("2.0");
         cy.realPress("Enter");
 
         // add column
-        cy.get("@table").realClick({ x: 585, y: 30 });
+        cy.get("@table").click(585, 30);
         // add column
-        cy.get("@table").realClick({ x: 585, y: 30 });
+        cy.get("@table").click(585, 30);
 
         // change 2nd column, 2nd row value
         cy.get("@table").realClick({ x: 350, y: 125, clickCount: 2 });
@@ -52,7 +52,10 @@ describe("Table editor", () => {
         cy.realType("true").realPress("Tab");
 
         // change 3rd column, 2nd row value
-        cy.realType("bar").realPress("Enter");
+        cy.realType("bar");
+        cy.realPress("Enter");
+
+        // add row
         cy.realPress("Enter");
 
         // check typing on cell
