@@ -31,7 +31,7 @@ import { SourceEditor } from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { TableFooter } from "./TableFooter";
 import { useTableHeight } from "./useTableHeight";
-import { buildDefaultVariablesMap, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
+import { buildDefaultVariables, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
 
 export interface TestingDataRecords {
@@ -132,7 +132,7 @@ export const Table: React.FC<TableProps> = ({
         [theme],
     );
 
-    const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
+    const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters[0]), [sourceParameters]);
 
     const getCellContent = useCallback(
         (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceParameters),
@@ -140,8 +140,8 @@ export const Table: React.FC<TableProps> = ({
     );
     const buildRowUpdates = useCallback(
         (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
-            buildInputDataRecordUpdates(changes, data, defaultVariablesBySourceId),
-        [data, defaultVariablesBySourceId],
+            buildInputDataRecordUpdates(changes, data, defaultVariables),
+        [data, defaultVariables],
     );
 
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(

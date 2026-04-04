@@ -49,29 +49,6 @@ export function buildDefaultVariables(sourceParameter?: TestFormParameters): str
     }
 }
 
-export function buildDefaultVariablesMap(sourceParameters?: TestFormParameters[]): Record<string, string> {
-    const defaultsBySourceId: Record<string, string> = {};
-    if (!sourceParameters) return defaultsBySourceId;
-
-    for (const sourceParameter of sourceParameters) {
-        let values: unknown = {};
-        const params = sourceParameter?.parameters ?? [];
-        for (const param of params) {
-            const expr = param?.defaultValue?.expression ?? "";
-            values = safeParseExpression(expr);
-        }
-
-        try {
-            defaultsBySourceId[sourceParameter.sourceId] = JSON.stringify(values, null, 2);
-        } catch {
-            // If stringify fails for any reason, fall back to empty string
-            defaultsBySourceId[sourceParameter.sourceId] = "";
-        }
-    }
-
-    return defaultsBySourceId;
-}
-
 export function computeVariablesRowHeight(variables: string, columnInnerWidth: number, themeLineHeight: number): number {
     const tokens = variables ? formatDataRecordsVariablesForDisplay(variables).split(SPLIT_SEPARATOR) : [];
     const rowLines = getRowLines(tokens, columnInnerWidth - paddingX);
@@ -82,7 +59,7 @@ export function computeVariablesRowHeight(variables: string, columnInnerWidth: n
 export function buildInputDataRecordUpdates(
     changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[],
     data: TestingDataRecords[],
-    defaultVariablesBySourceId: Record<string, string>,
+    defaultVariables: string,
 ): Record<number, TestingDataRecords> {
     const rowUpdates: Record<number, TestingDataRecords> = {};
     changes.forEach(({ location, value }) => {
@@ -104,8 +81,7 @@ export function buildInputDataRecordUpdates(
 
         if (col === 0) {
             if (prevRow?.sourceId !== cellValue) {
-                const resetVars = cellValue ? defaultVariablesBySourceId[cellValue] ?? "" : "";
-                rowUpdates[row] = { ...base, sourceId: cellValue, variables: resetVars };
+                rowUpdates[row] = { ...base, sourceId: cellValue, variables: cellValue ? defaultVariables : "" };
             } else {
                 rowUpdates[row] = { ...base, sourceId: cellValue };
             }
