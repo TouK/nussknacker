@@ -309,8 +309,6 @@ export const Table: React.FC<TableProps> = ({
         [getDeletedColumn, handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
     );
 
-    const noSourcesDefined = !sourceParameters;
-
     return (
         <Box
             sx={{
@@ -336,7 +334,7 @@ export const Table: React.FC<TableProps> = ({
                     customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
-                    onRowAppended={recordsToAddLimitExceeded || noSourcesDefined ? undefined : onRowAppended}
+                    onRowAppended={recordsToAddLimitExceeded ? undefined : onRowAppended}
                     rowMarkers="both"
                     rows={data.length}
                     smoothScrollX
