@@ -23,8 +23,7 @@ describe("Table editor", () => {
         });
 
         cy.openNodeWindow("decision-table").as("modal");
-        cy.get(`[title="${tableFieldName}"]`).next().as("editor");
-        cy.get("[data-testid='table-container']").should("be.visible").as("table");
+        cy.get(`[title="${tableFieldName}"]`).next().find("[data-testid='table-container']").should("be.visible").as("table");
         cy.get("@table").matchImage();
 
         // select 1st column type
