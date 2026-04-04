@@ -12,8 +12,10 @@ describe("Table editor", () => {
     it("should display rich table editor", () => {
         cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "table", "Default");
+
         const conditionFieldName = `Match condition`;
         const tableFieldName = `Decision Table`;
+
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
             if (request.body.nodeData.service?.parameters.find((p) => p.name === conditionFieldName)) {
                 request.alias = "validation";
@@ -23,32 +25,46 @@ describe("Table editor", () => {
         cy.openNodeWindow("decision-table").as("modal");
         cy.get(`[title="${tableFieldName}"]`).next().as("editor");
         cy.get("[data-testid='table-container']").should("be.visible").as("table");
-        cy.get("@editor").matchImage();
+        cy.get("@table").matchImage();
 
+        // select 1st column type
         cy.get("@table").realClick({ x: 100, y: 50 });
         cy.get("[role='menuitem']").contains("Double").click();
+
+        // change 1st column name
         cy.get("@table").realClick({ x: 550, y: 18 });
         cy.realType("some name");
         cy.realPress("Enter");
 
+        // add and change 1st column, 2nd row value
         cy.get("@table").realClick({ x: 100, y: 125 });
         cy.get("#portal textarea").should("be.visible");
         cy.realType("2.0");
         cy.realPress("Enter");
-        cy.get("@table").realClick({ x: 580, y: 25 });
-        cy.get("@table").realClick({ x: 580, y: 25 });
+
+        // add column
+        cy.get("@table").realClick({ x: 585, y: 30 });
+        // add column
+        cy.get("@table").realClick({ x: 585, y: 30 });
+
+        // change 2nd column, 2nd row value
         cy.get("@table").realClick({ x: 350, y: 125, clickCount: 2 });
         cy.get("#portal textarea").should("be.visible");
         cy.realType("true").realPress("Tab");
+
+        // change 3rd column, 2nd row value
         cy.realType("bar").realPress("Enter");
         cy.realPress("Enter");
+
+        // check typing on cell
         cy.realPress("Escape");
         cy.realType("xxx");
         cy.realPress("Enter");
+
         cy.get("@table").matchImage();
 
+        // check #ROW suggestions
         cy.get(`[title="${conditionFieldName}"]`).next().find(".ace_editor").as("expr");
-
         cy.get("@expr").click().type("{selectall}#ROW.").contains(/.$/);
         cy.get(".ace_autocomplete")
             .should("be.visible")
@@ -60,6 +76,7 @@ describe("Table editor", () => {
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.contains(`Bad expression type, expected: Boolean, found: String`).should("be.visible").as("exception");
 
+        // select 2nd column type
         cy.get("@table").click(230, 50);
         cy.get("[role='menuitem']").contains("Boolean").click();
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
