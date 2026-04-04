@@ -1,6 +1,7 @@
 import type { CustomCell, GridCell, Item } from "@glideapps/glide-data-grid";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
+import type { TestFormParameters } from "../../../common/TestResultUtils";
 import type { TestingDataRecords } from "./Table";
 
 type SourceSelectCellData = {
@@ -23,7 +24,7 @@ export function getTestingCellContent(
     item: Item,
     data: TestingDataRecords[],
     sourceOptions: string[],
-    sourceNameById: Record<string, string>,
+    sourceParameters: TestFormParameters[],
 ): GridCell {
     const [columnIndex, rowIndex] = item;
     const rowData = data[rowIndex];
@@ -36,9 +37,9 @@ export function getTestingCellContent(
             data: {
                 kind: "source-select-cell",
                 value: rowData.sourceId || "",
-                displayValue: (rowData.sourceId && sourceNameById[rowData.sourceId]) || rowData.sourceId || "",
+                displayValue: sourceParameters.find((sp) => sp.sourceId === rowData.sourceId)?.sourceName || rowData.sourceId || "",
                 options: sourceOptions,
-                optionLabels: sourceOptions.map((id) => sourceNameById[id] || id),
+                optionLabels: sourceOptions.map((id) => sourceParameters.find((sp) => sp.sourceId === id)?.sourceName || id),
             },
             readonly: false,
         } as SourceSelectCell;

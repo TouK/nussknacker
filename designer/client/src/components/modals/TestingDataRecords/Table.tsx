@@ -134,14 +134,9 @@ export const Table: React.FC<TableProps> = ({
 
     const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
 
-    const sourceNameById = useMemo(
-        () => sourceParameters.reduce<Record<string, string>>((acc, sp) => ({ ...acc, [sp.sourceId]: sp.sourceName }), {}),
-        [sourceParameters],
-    );
-
     const getCellContent = useCallback(
-        (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceNameById),
-        [data, sourceOptions, sourceNameById],
+        (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceParameters),
+        [data, sourceOptions, sourceParameters],
     );
     const buildRowUpdates = useCallback(
         (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
