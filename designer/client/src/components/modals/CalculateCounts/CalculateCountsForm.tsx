@@ -60,11 +60,13 @@ export function CalculateCountsForm({
 
     return (
         <>
-            <Picker label={t("calculateCounts.processCountsFrom", "Scenario counts from")} onChange={setFrom} value={from} />
-            <Picker label={t("calculateCounts.processCountsTo", "Scenario counts to")} onChange={setTo} value={to} />
-            <Box sx={{ display: "flex", justifyContent: "flex-end", marginY: 1 }}>
-                <RefreshSelectButton onChange={setRefresh} value={refresh} disabled={!refreshAllowed} options={[10, 30, 60, 300]} />
-            </Box>
+            <div data-no-autofocus>
+                <Picker label={t("calculateCounts.processCountsFrom", "Scenario counts from")} onChange={setFrom} value={from} />
+                <Picker label={t("calculateCounts.processCountsTo", "Scenario counts to")} onChange={setTo} value={to} />
+                <Box sx={{ display: "flex", justifyContent: "flex-end", marginY: 1 }}>
+                    <RefreshSelectButton onChange={setRefresh} value={refresh} disabled={!refreshAllowed} options={[10, 30, 60, 300]} />
+                </Box>
+            </div>
             <CountsRanges label={t("calculateCounts.quickRanges", "Quick ranges")} onChange={setRange} />
         </>
     );
