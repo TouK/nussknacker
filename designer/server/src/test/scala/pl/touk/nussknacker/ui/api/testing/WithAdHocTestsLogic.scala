@@ -13,7 +13,6 @@ import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, Equals
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
-  RecordsRequestDto,
   SourceCapabilitiesRequestDto,
   TestSourceParameters
 }

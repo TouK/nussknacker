@@ -36,6 +36,19 @@ export function safeParseExpression<T = unknown>(expr: string): T {
     }
 }
 
+export function buildDefaultVariables(sourceParameter?: TestFormParameters): string {
+    if (!sourceParameter) return "";
+    let values: unknown = {};
+    for (const param of sourceParameter.parameters ?? []) {
+        values = safeParseExpression(param?.defaultValue?.expression ?? "");
+    }
+    try {
+        return JSON.stringify(values, null, 2);
+    } catch {
+        return "";
+    }
+}
+
 export function buildDefaultVariablesMap(sourceParameters?: TestFormParameters[]): Record<string, string> {
     const defaultsBySourceId: Record<string, string> = {};
     if (!sourceParameters) return defaultsBySourceId;

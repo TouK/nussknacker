@@ -9,7 +9,7 @@ import type { NodeType, PropertiesType } from "../../../types/node";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { TestingDataRecords } from "./Table";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
-import { buildDefaultVariablesMap, mapGeneratedTestingDataToTableFormat } from "./utils";
+import { buildDefaultVariables, mapGeneratedTestingDataToTableFormat } from "./utils";
 
 export const useDataRecordsActions = () => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
@@ -166,7 +166,7 @@ export const useDataRecordsActions = () => {
             if (!validateForCount((currentCount) => currentCount + 1)) return;
 
             const { data: uiSourceParameters } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
-            const variables = buildDefaultVariablesMap([uiSourceParameters])[sourceId] ?? "";
+            const variables = buildDefaultVariables(uiSourceParameters);
             dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables }]));
         },
         [validateForCount, scenarioName, dispatch],

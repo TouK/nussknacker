@@ -112,7 +112,10 @@ class ScenarioTestService(
           testDataFormatHandler
             .getTestParametersDefinition(nodeId, sourceNodeData.name, compilationResult)
             .fold(
-              _ => Nil,
+              errors => {
+                logger.warn(s"Failed to get test parameters definition for source node $nodeId: $errors")
+                Nil
+              },
               params =>
                 StandardParameterEnrichment.enrichParameterDefinitions(
                   original = params,
