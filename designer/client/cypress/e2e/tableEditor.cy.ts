@@ -117,72 +117,49 @@ describe("Table editor", () => {
         cy.contains(`There is no property 'some name' in type`).should("be.visible");
     });
 
-    // For now, it's a separate test. However, we can merge it should display rich table editor when fixed
-    // TODO: Fix flaky tests on CI
-    it.skip("should change columns position", () => {
+    it("should change columns position", () => {
         cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "table", "Default");
+
+        const conditionFieldName = `Match condition`;
+        const tableFieldName = `Decision Table`;
+
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
-            if (request.body.nodeData.service?.parameters.find((p) => p.name === "Expression")) {
+            if (request.body.nodeData.service?.parameters.find((p) => p.name === conditionFieldName)) {
                 request.alias = "validation";
             }
         });
 
         cy.openNodeWindow("decision-table").as("modal");
-        cy.get("[title='Decision Table']").next().as("editor");
-        cy.get("[data-testid='table-container']").should("be.visible").as("table");
+        cy.get(`[title="${tableFieldName}"]`).next().find("[data-testid='table-container']").should("be.visible").as("table");
 
-        // Provide data to the table
+        // select 1st column type
         cy.get("@table").click(100, 50);
-        cy.get("[role='menuitem']").contains("Double").click();
-        cy.get("@table").click(550, 18);
-        cy.realType("some name");
-        cy.realPress("Enter");
-        cy.get("@table").click(100, 125);
-        cy.get("#portal textarea").should("be.visible");
-        cy.realType("2.0");
-        cy.realPress("Enter");
-        cy.get("@table").click(580, 25).click(580, 25);
-        cy.get("@table").click(350, 125).click(350, 125);
-        cy.get("#portal textarea").should("be.visible");
-        cy.realType("true").realPress("Tab");
-        cy.realType("bar").realPress("Enter");
-        cy.realPress("Enter");
-        cy.realPress("Escape");
-        cy.realType("xxx");
-
-        // Add date picker field
-        cy.get("@table").click(580, 25);
-        cy.get("@table").click(550, 50);
         cy.get("[role='menuitem']").contains("LocalDate").click();
 
-        // Check if date picker is visible
-        cy.get("@table").click(550, 125).click(550, 125).click(550, 125);
-        cy.get("#portal input").type("2023-02-02");
-        cy.get("@modal").matchImage();
+        // add and change 1st column, 2nd row value
+        // date picker field
+        cy.get("@table").click(100, 132);
+        cy.get("#portal input").should("be.visible");
+        cy.realType("2023-02-02");
         cy.realPress("Enter");
+        cy.get("@table").realClick({ x: 100, y: 132, clickCount: 2 });
+        cy.get("@table").matchImage();
 
-        // Add datetime picker field
-        cy.get("@table").click(580, 25);
-        cy.get("@table").click(550, 50);
+        // add column
+        cy.get("@table").click(585, 30);
+        cy.get("@table").click(400, 50);
         cy.get("[role='menuitem']").contains("LocalDateTime").click();
-
-        // Check if datetime picker is visible
-        cy.get("@table").click(550, 125).click(550, 125).click(550, 125);
-        cy.get("#portal input").type("2023-02-02T12:40:01");
-        cy.get("@modal").matchImage();
+        cy.get("@table").click(400, 132);
+        cy.realPress("Enter"); // all cypress methods for dblclick doesn't work here
+        cy.get("#portal input").should("be.visible");
+        cy.realType("2023-02-02 12:40:01");
         cy.realPress("Enter");
 
-        // Move the last column to the first place
         cy.get("@table").realMouseDown({ x: 400, y: 40 }).realMouseMove(50, 40).realMouseUp();
-        cy.get("@editor").matchImage();
 
-        //FIXME: for now, clicking the apply changes button makes the test run forever, even when the test is green.
-        // Looks like it's a problem with real events.
-
-        // // Reopen the node and verify if position is persisted
-        // cy.applyNodeChanges();
-        // cy.openNodeWindow("decision-table");
-        // snapshot();
+        cy.applyNodeChanges();
+        cy.openNodeWindow("decision-table");
+        cy.get(`[title="${tableFieldName}"]`).next().find("[data-testid='table-container']").should("be.visible").matchImage();
     });
 });

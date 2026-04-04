@@ -34,14 +34,7 @@ export function Picker({ label, onChange, value }: PickerProps): React.JSX.Eleme
         <>
             <p>{label}</p>
             <DTPickerWrapper>
-                <DTPicker
-                    dateFormat={dateFormat}
-                    timeFormat={timeFormat}
-                    inputProps={datePickerStyle}
-                    onChange={onChange}
-                    value={value}
-                    locale={i18n.language}
-                />
+                <DTPicker dateFormat={dateFormat} timeFormat={timeFormat} inputProps={datePickerStyle} onChange={onChange} value={value} />
             </DTPickerWrapper>
         </>
     );
