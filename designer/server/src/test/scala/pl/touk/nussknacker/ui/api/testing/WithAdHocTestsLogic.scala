@@ -12,7 +12,11 @@ import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, EqualsJsonBody, JsonBody}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{RecordsRequestDto, TestSourceParameters}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+  RecordsRequestDto,
+  SourceCapabilitiesRequestDto,
+  TestSourceParameters
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 
@@ -87,7 +91,8 @@ trait WithAdHocTestsLogic {
     val sourceNode = exampleScenario.nodes
       .collectFirst { case FlatNode(s: SourceNodeData) => s }
       .getOrElse(throw new RuntimeException("No source node found in exampleScenario"))
-    val requestBody = RecordsRequestDto(exampleScenario.toScenarioGraph.properties, sourceNode).asJson.noSpaces
+    val requestBody =
+      SourceCapabilitiesRequestDto(exampleScenario.toScenarioGraph.properties, sourceNode).asJson.noSpaces
     val expectedJson = parser
       .parse(expectedTestParametersJson)
       .toOption
@@ -102,7 +107,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(requestBody)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/sourceCapabilities")
+      .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/sourceCapabilities")
       .Then()
       .statusCode(200)
       .equalsJsonBody(expectedJson)

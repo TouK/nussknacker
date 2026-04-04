@@ -55,7 +55,7 @@ import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, Pr
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
+import pl.touk.nussknacker.restmodel.definition.{UIParameter, UISourceParameters, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.restmodel.validation.testcase.{
@@ -69,6 +69,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
 import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
@@ -585,6 +586,33 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .withSecurity(auth)
   }
+
+  lazy val sourceCapabilitiesEndpoint: SecuredEndpoint[
+    (ProcessName, SourceCapabilitiesRequestDto),
+    NodesError,
+    SourceCapabilitiesDto,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Returns test parameters definition for a single source node")
+      .tag("Nodes")
+      .post
+      .in("nodes" / path[ProcessName]("scenarioName") / "sourceCapabilities")
+      .in(jsonBody[SourceCapabilitiesRequestDto])
+      .out(statusCode(Ok).and(jsonBody[SourceCapabilitiesDto]))
+      .errorOut(
+        oneOf[NodesError](
+          scenarioNotFoundErrorOutput,
+          oneOfVariant[BadRequestNodesError](
+            BadRequest,
+            plainBody[BadRequestNodesError]
+              .example(
+                Example.of(summary = Some("Invalid node type"), value = InvalidNodeType("SourceNodeData", "Sink"))
+              )
+          )
+        )
+      )
+      .withSecurity(auth)
 
   lazy val parametersValidationEndpoint: SecuredEndpoint[
     (ProcessingType, ParametersValidationRequestDto),
@@ -2063,6 +2091,14 @@ object NodesApiEndpoints {
         processProperties: ProcessProperties,
         nodeData: NodeData
     )
+
+    @derive(schema, encoder, decoder)
+    final case class SourceCapabilitiesRequestDto(
+        processProperties: ProcessProperties,
+        nodeData: NodeData
+    )
+
+    type SourceCapabilitiesDto = UISourceParameters
 
   }
 

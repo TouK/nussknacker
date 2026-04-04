@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
-import pl.touk.nussknacker.restmodel.definition.UIValueParameter
+import pl.touk.nussknacker.restmodel.definition.{UISourceParameters, UIValueParameter}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationRequest,
   ParametersValidationRequestDto,
   ParametersValidationResultDto,
+  SourceCapabilitiesRequestDto,
   TestCaseAdditionalVariablesResponseDto
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
@@ -48,6 +49,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
 }
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
+import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -267,6 +269,34 @@ class NodesApiHttpService(
               }
             )
           } yield parametersDefinition
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.sourceCapabilitiesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            sourceNodeData <- EitherT.fromEither[Future](request.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(InvalidNodeType("SourceNodeData", other.getClass.getSimpleName))
+            })
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            metaData = request.processProperties.toMetaData(scenarioName)
+            parameters = scenarioTestService
+              .getSourceTestParameters(metaData, sourceNodeData)
+              .getOrElse(Nil)
+          } yield UISourceParameters(
+            sourceNodeData.id.value,
+            sourceNodeData.name.value,
+            parameters.map(DefinitionsService.createUIParameter)
+          )
         }
       }
   }
