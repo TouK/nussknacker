@@ -24,7 +24,7 @@ export function CountsRanges({ label, onChange }: RangesProps): React.JSX.Elemen
     return (
         <>
             <p>{label}</p>
-            <StyledRangesWrapper>
+            <StyledRangesWrapper data-autofocus>
                 <CountsRangesButtons ranges={dates} onChange={onChange} />
                 <CountsRangesButtons ranges={activities} onChange={onChange} limit={1}>
                     {t("calculateCounts.activities", "Previous activities...")}
