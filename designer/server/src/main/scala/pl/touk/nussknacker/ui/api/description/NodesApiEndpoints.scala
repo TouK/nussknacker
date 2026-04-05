@@ -2098,7 +2098,31 @@ object NodesApiEndpoints {
         nodeData: NodeData
     )
 
-    type SourceCapabilitiesDto = UISourceParameters
+    sealed trait SourceCapabilitiesDto
+
+    object SourceCapabilitiesDto {
+      final case class Available(sourceParameters: UISourceParameters) extends SourceCapabilitiesDto
+      case object NotAvailable                                         extends SourceCapabilitiesDto
+
+      implicit val encoder: Encoder[SourceCapabilitiesDto] = Encoder.instance {
+        case Available(sp) =>
+          Json
+            .obj("status" -> Json.fromString("AVAILABLE"))
+            .deepMerge(Encoder[UISourceParameters].apply(sp))
+        case NotAvailable =>
+          Json.obj("status" -> Json.fromString("NOT_AVAILABLE"))
+      }
+
+      implicit val decoder: Decoder[SourceCapabilitiesDto] = Decoder.instance { c =>
+        c.downField("status").as[String].flatMap {
+          case "AVAILABLE"     => c.as[UISourceParameters].map(Available.apply)
+          case "NOT_AVAILABLE" => Right(NotAvailable)
+          case other => Left(io.circe.DecodingFailure(s"Unknown SourceCapabilitiesDto status: $other", c.history))
+        }
+      }
+
+      implicit val schema: Schema[SourceCapabilitiesDto] = Schema.anyObject
+    }
 
   }
 

@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationRequest,
   ParametersValidationRequestDto,
   ParametersValidationResultDto,
+  SourceCapabilitiesDto,
   SourceCapabilitiesRequestDto,
   TestCaseAdditionalVariablesResponseDto
 }
@@ -289,14 +290,18 @@ class NodesApiHttpService(
               scenarioWithDetails.processingType
             )
             metaData = request.processProperties.toMetaData(scenarioName)
-            parameters = scenarioTestService
-              .getSourceTestParameters(metaData, sourceNodeData)
-              .getOrElse(Nil)
-          } yield UISourceParameters(
-            sourceNodeData.id.value,
-            sourceNodeData.name.value,
-            parameters.map(DefinitionsService.createUIParameter)
-          )
+          } yield scenarioTestService.getSourceTestParameters(metaData, sourceNodeData) match {
+            case Right(params) =>
+              SourceCapabilitiesDto.Available(
+                UISourceParameters(
+                  sourceNodeData.id.value,
+                  sourceNodeData.name.value,
+                  params.map(DefinitionsService.createUIParameter)
+                )
+              )
+            case Left(_) =>
+              SourceCapabilitiesDto.NotAvailable
+          }
         }
       }
   }

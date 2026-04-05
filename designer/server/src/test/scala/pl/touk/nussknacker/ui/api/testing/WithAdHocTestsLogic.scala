@@ -96,7 +96,7 @@ trait WithAdHocTestsLogic {
       .parse(expectedTestParametersJson)
       .toOption
       .flatMap(_.asArray.flatMap(_.headOption))
-      .map(_.spaces2)
+      .map(sourceParams => io.circe.Json.obj("status" -> "AVAILABLE".asJson).deepMerge(sourceParams).spaces2)
       .getOrElse(throw new RuntimeException("Failed to derive expected single source capabilities JSON"))
 
     given()

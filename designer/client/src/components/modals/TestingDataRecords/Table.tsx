@@ -52,8 +52,6 @@ interface TableProps {
     recordsToAddLimitExceeded?: boolean;
 }
 
-export const TABLE_HEIGHT = "100vh";
-export const TABLE_WIDTH = "100%";
 const TRAILING_ROW_HINT = "Add record";
 const COLUMN_SOURCE_ID = "sourceId";
 const COLUMN_VARIABLES_ID = "variables";
@@ -138,23 +136,17 @@ export const Table: React.FC<TableProps> = ({
         (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceParameters),
         [data, sourceOptions, sourceParameters],
     );
-    const buildRowUpdates = useCallback(
-        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
-            buildInputDataRecordUpdates(changes, data, defaultVariables),
-        [data, defaultVariables],
-    );
 
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(
         (changes): void => {
             if (!changes.length) return;
-            const rowUpdates = buildRowUpdates(changes);
+            const rowUpdates = buildInputDataRecordUpdates(changes, data, defaultVariables);
             if (!Object.keys(rowUpdates).length) return;
             Object.entries(rowUpdates).forEach(([rowIndexStr, value]) => {
-                const rowIndex = Number(rowIndexStr);
-                onRowUpdated(rowIndex, value);
+                onRowUpdated(Number(rowIndexStr), value);
             });
         },
-        [buildRowUpdates, onRowUpdated],
+        [data, defaultVariables, onRowUpdated],
     );
 
     const onCellDeleted = useCallback(
@@ -259,13 +251,7 @@ export const Table: React.FC<TableProps> = ({
         }
     }, []);
 
-    const rowsFromSelection = useMemo(() => {
-        if (!selection) return [];
-        const rowsArr = selection.rows && typeof selection.rows.toArray === "function" ? selection.rows.toArray() : [];
-        if (rowsArr.length > 0) return rowsArr.slice().sort((a, b) => a - b);
-
-        return [];
-    }, [selection]);
+    const rowsFromSelection = useMemo(() => selection.rows.toArray().sort((a, b) => a - b), [selection]);
 
     const handleRemoveSelectedRows = useCallback(() => {
         if (!onCellDeleted || rowsFromSelection.length === 0) return;
@@ -275,26 +261,13 @@ export const Table: React.FC<TableProps> = ({
 
     const selectedRowsCount = rowsFromSelection.length;
 
-    const getDeletedColumn = useCallback(({ current }: GridSelection) => {
-        const currentCell = current?.cell;
-        if (!currentCell) {
-            return { removedCellColumnId: undefined, removedCellRowIndex: undefined };
-        }
-        const columnIndex = currentCell[0];
-        const columnRowIndex = currentCell[1];
-
-        const col = tableColumns[columnIndex];
-
-        return { removedCellColumnId: col.id, removedCellRowIndex: columnRowIndex };
-    }, []);
-
     const onDeleteTableRow = useCallback(
-        (selection: GridSelection) => {
-            const { removedCellColumnId, removedCellRowIndex } = getDeletedColumn(selection);
+        ({ current }: GridSelection) => {
+            const currentCell = current?.cell;
 
             // Remove whole row when sourceId column value removed
-            if (removedCellColumnId === "sourceId") {
-                onCellDeleted([removedCellRowIndex]);
+            if (currentCell && tableColumns[currentCell[0]]?.id === COLUMN_SOURCE_ID) {
+                onCellDeleted([currentCell[1]]);
                 return false;
             }
 
@@ -306,7 +279,7 @@ export const Table: React.FC<TableProps> = ({
             // keep native behaviour when no rows selected
             return true;
         },
-        [getDeletedColumn, handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
+        [handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
     );
 
     return (
@@ -340,7 +313,7 @@ export const Table: React.FC<TableProps> = ({
                     smoothScrollX
                     smoothScrollY
                     theme={tableTheme}
-                    width={TABLE_WIDTH}
+                    width="100%"
                     gridSelection={selection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}
