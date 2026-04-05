@@ -752,7 +752,7 @@ export class HttpService {
     }
 
     getSourceTestCapabilities(processName: string, scenarioProperties: PropertiesType, nodeData: NodeType) {
-        const promise = api.post<SourceCapabilities>(`/nodes/${encodeURIComponent(processName)}/sourceCapabilities`, {
+        const promise = api.post<SourceCapabilities>(`/scenarioTesting/${encodeURIComponent(processName)}/sourceCapabilities`, {
             processProperties: scenarioProperties,
             nodeData,
         });

@@ -55,14 +55,14 @@ object Dtos {
       implicit def schema: Schema[ScenarioTestCapabilities]     = Schema.derived
     }
 
-    sealed trait CapabilityStatus[+T <: TestCapabilityDetails]
+    sealed trait CapabilityStatus[+T]
 
     object CapabilityStatus {
-      final case class NotAvailable(reason: NotAvailableReason)       extends CapabilityStatus[Nothing]
-      final case class Available[T <: TestCapabilityDetails](data: T) extends CapabilityStatus[T]
+      final case class NotAvailable(reason: NotAvailableReason) extends CapabilityStatus[Nothing]
+      final case class Available[T](data: T)                    extends CapabilityStatus[T]
       def available: Available[EmptyDetails] = Available(EmptyDetails())
 
-      implicit def codec[DATA <: TestCapabilityDetails: circe.Codec]: circe.Codec[CapabilityStatus[DATA]] =
+      implicit def codec[DATA: circe.Codec]: circe.Codec[CapabilityStatus[DATA]] =
         circe.Codec.from(
           Decoder.instance(c =>
             for {
@@ -91,7 +91,7 @@ object Dtos {
           },
         )
 
-      implicit def schema[T <: TestCapabilityDetails: Schema]: Schema[CapabilityStatus[T]] = Schema.derived
+      implicit def schema[T: Schema]: Schema[CapabilityStatus[T]] = Schema.derived
     }
 
     sealed trait TestCapabilityDetails

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -15,7 +16,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErro
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+  ParametersValidationResultDto,
+  SourceCapabilitiesRequestDto
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.{
   ResultsWithCountsDto,
   ResultsWithCountsDtoCodecs,
@@ -163,6 +167,38 @@ class ScenarioTestingApiHttpService(
                 )
             }
           } yield result
+        }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.sourceCapabilitiesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            sourceNodeData <- EitherT.fromEither[Future](request.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(ErrorResult(s"Expected SourceNodeData but got ${other.getClass.getSimpleName}"): TestingError)
+            })
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            metaData = request.processProperties.toMetaData(scenarioName)
+          } yield scenarioTestService.getSourceTestParameters(metaData, sourceNodeData) match {
+            case Right(params) =>
+              CapabilityStatus.Available(
+                UISourceParameters(
+                  sourceNodeData.id.value,
+                  sourceNodeData.name.value,
+                  params.map(DefinitionsService.createUIParameter)
+                )
+              )
+            case Left(_) =>
+              CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+          }
         }
       }
   }

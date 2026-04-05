@@ -106,7 +106,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(requestBody)
-      .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/sourceCapabilities")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/sourceCapabilities")
       .Then()
       .statusCode(200)
       .equalsJsonBody(expectedJson)
