@@ -117,8 +117,7 @@ export function useTableEditorTypeOptions() {
 type TableProps = Pick<EditorProps, "expressionObj" | "onValueChange" | "className" | "fieldErrors">;
 
 export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: TableProps) => {
-    const tableDateContext = useTableState(expressionObj);
-    const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
+    const [{ rows, columns }, dispatch, rawExpression] = useTableState(expressionObj);
 
     useEffect(() => {
         if (rawExpression !== expressionObj.expression) {
