@@ -1,7 +1,6 @@
 import { recurse } from "cypress-recurse";
 import { defaultsDeep } from "lodash";
 import UAParser from "ua-parser-js";
-
 import JQueryWithSelector = Cypress.JQueryWithSelector;
 
 declare global {
@@ -116,13 +115,12 @@ Cypress.Commands.overwrite<"matchImage", "element">(
     "matchImage",
     (originalFn, $el, { updateSnapshotsOnFail, ...options }: Cypress.MatchImageOptionsExtended = {}) => {
         hideInputCaret($el);
-
         cy.wait(200);
 
         if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
             let path = null;
             const threshold = options?.maxDiffThreshold || Cypress.env("pluginVisualRegressionMaxDiffThreshold");
-            return recurse(
+            recurse(
                 () =>
                     originalFn($el, {
                         ...options,
@@ -149,8 +147,9 @@ Cypress.Commands.overwrite<"matchImage", "element">(
                     },
                 },
             );
+        } else {
+            originalFn($el, options);
         }
-        originalFn($el, options);
         cy.wait(200);
         showInputCaret($el);
         cy.wait(500);
