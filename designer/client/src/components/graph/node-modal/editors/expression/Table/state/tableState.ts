@@ -58,7 +58,8 @@ export function useTableState(expressionObj: ExpressionObj): [TableData, Dispatc
 
         // There are two rerenders on init, with empty state and with the parsed state. Let's skip the first one,
         // Also when we add empty table editor, backend sends empty rows and columns, and we set initial table editor state in the ActionTypes.expand
-        if (expressionAndStateAreEqual || isFirstRender()) {
+        const firstRender = isFirstRender();
+        if (expressionAndStateAreEqual || firstRender) {
             return;
         }
 
