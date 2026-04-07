@@ -33,7 +33,7 @@ import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
 import { NodeDetailsTab, TabsWrapper } from "./NodeContent/TabsWrapper";
 import { TestingContent } from "./NodeContent/TestingContent";
-import { TestCaseSelect } from "./NodeContent/TestingContentElements/TestCaseSelect";
+import { TestCaseSelect } from "./NodeContent/TestingContentElements/TestCaseSelect/TestCaseSelect";
 import { getReadOnly } from "./selectors";
 import { useDialogActions } from "./useDialogActions";
 import { useNodeState } from "./useNodeState";

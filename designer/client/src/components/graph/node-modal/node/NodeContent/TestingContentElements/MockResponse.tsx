@@ -6,13 +6,13 @@ import { useDidMount } from "rooks";
 import { useUserSettings } from "../../../../../../common/useUserSettings";
 import HttpService from "../../../../../../http/HttpService/instance";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
-import { Expandable } from "../../../../../common/Expandable";
 import MockExpressionField from "../../../editors/expression/MockExpressionField";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { getFindAvailableVariables, getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { useGetNodeTestCasesErrors, useIsEditMode, useSetProperty, useValidation } from "../../../useNodeTypeDetailsContentLogic";
 import type { TestingContentProps } from "../TestingContent";
 import { StyledStack } from "./components/Styled";
+import { TestingExpandable } from "./components/TestingExpandable";
 
 const MOCK_EXPRESSION_HINT_TEXT =
     "If you provide this expression, the real service won't be invoked during tests. Instead, the result of the evaluation will be used.";
@@ -53,7 +53,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
 
     return (
         <StyledStack>
-            <Expandable
+            <TestingExpandable
                 componentId={"mock"}
                 expandableTitle={
                     <Box display={"flex"} gap={2} alignItems={"center"}>
@@ -76,7 +76,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                     errors={testCasesErrors.enricherMockErrors}
                     defaultValue={defaultValue}
                 />
-            </Expandable>
+            </TestingExpandable>
         </StyledStack>
     );
 };

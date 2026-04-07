@@ -29,6 +29,9 @@ export const StyledButton = styled(Button)(({ theme }) =>
             height: 35,
             fontWeight: "bold",
             fontSize: 20,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
         },
     ]),
 );

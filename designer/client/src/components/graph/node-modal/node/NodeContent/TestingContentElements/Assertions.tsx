@@ -13,7 +13,6 @@ import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHel
 import type { Edge } from "../../../../../../types/edge";
 import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
-import { Expandable } from "../../../../../common/Expandable";
 import { withUuid } from "../../../appendUuid";
 import { useHelpText } from "../../../editors/expression/helpText";
 import { ExpressionLang } from "../../../editors/expression/types";
@@ -25,6 +24,7 @@ import { OverrideKeys } from "../../../parameterHelpers";
 import { useGetNodeTestCasesErrors, useValidation, useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
 import { AssertionItem } from "./AssertionItem";
 import { StyledStack } from "./components/Styled";
+import { TestingExpandable } from "./components/TestingExpandable";
 
 function AssertionHelpTooltip() {
     return (
@@ -101,7 +101,7 @@ export const Assertions = ({ node, edges }: Props) => {
 
     return (
         <StyledStack>
-            <Expandable
+            <TestingExpandable
                 componentId={"Assertions"}
                 expandableTitle={
                     <Box display={"flex"} gap={2} alignItems={"center"}>
@@ -145,7 +145,7 @@ export const Assertions = ({ node, edges }: Props) => {
                         ))}
                     </NodeRowFieldsProvider>
                 </NodeTable>
-            </Expandable>
+            </TestingExpandable>
         </StyledStack>
     );
 };
