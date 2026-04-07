@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 
 import { displayTestCapabilities } from "../../../actions/nk/process";
 import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
-import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
@@ -10,11 +9,10 @@ import type { NodeType, PropertiesType } from "../../../types/node";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { TestingDataRecords } from "./Table";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
-import { buildDefaultVariables, mapGeneratedTestingDataToTableFormat } from "./utils";
+import { mapGeneratedTestingDataToTableFormat } from "./utils";
 
 export const useDataRecordsActions = (node?: NodeType, processProperties?: PropertiesType) => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
-    const [defaultVariables, setDefaultVariables] = useState<string>("");
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const dispatch = useAppDispatch();
@@ -23,17 +21,6 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
     useEffect(() => {
         dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
     }, [dispatch, scenarioName, scenarioGraph]);
-
-    useEffect(() => {
-        if (!node || !processProperties) return;
-        HttpService.getSourceTestCapabilities(scenarioName, processProperties, node).then(
-            ({ data: { testWithParameters: capabilities } }) => {
-                setDefaultVariables(
-                    capabilities.status === TestCapabilityStatus.AVAILABLE ? buildDefaultVariables(capabilities.parameters) : "",
-                );
-            },
-        );
-    }, [scenarioName, processProperties, node]);
 
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
@@ -180,14 +167,6 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
         [dispatch],
     );
 
-    const addDefaultRecord = useCallback(
-        (sourceId: string) => {
-            if (!validateForCount((currentCount) => currentCount + 1)) return;
-            dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables: defaultVariables }]));
-        },
-        [validateForCount, dispatch, defaultVariables],
-    );
-
     return {
         cellErrors,
         recordsErrors,
@@ -196,7 +175,6 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
         handleRowsDeleted,
         handleGenerateTestData,
         generateTestDataForSingleSource,
-        addDefaultRecord,
         handleRowMoved,
     };
 };

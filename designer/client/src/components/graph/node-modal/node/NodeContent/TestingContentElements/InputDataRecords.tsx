@@ -1,6 +1,8 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { getTestParameters } from "../../../../../../reducers/selectors/graph";
+import { TestCapabilityStatus } from "../../../../../../common/TestResultUtils";
+import type { TestFormParameters } from "../../../../../../common/TestResultUtils";
+import HttpService from "../../../../../../http/HttpService/instance";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
@@ -10,7 +12,8 @@ import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecor
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
-import { getProcessProperties } from "../../../NodeDetailsContent/selectors";
+import { buildDefaultVariables } from "../../../../../modals/TestingDataRecords/utils";
+import { getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { ContentSize } from "../../ContentSize";
 import { StyledStack } from "./components/Styled";
 
@@ -23,21 +26,34 @@ export const InputDataRecords = ({ node }: Props) => {
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
     const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, node.id));
     const scenarioProperties = useAppSelector(getProcessProperties);
+    const scenarioName = useAppSelector(getProcessName);
+
+    const [sourceParameters, setSourceParameters] = useState<TestFormParameters | undefined>(undefined);
+
+    useEffect(() => {
+        HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, node).then(({ data }) => {
+            const capabilities = data.testWithParameters;
+            setSourceParameters(capabilities.status === TestCapabilityStatus.AVAILABLE ? capabilities : undefined);
+        });
+    }, [scenarioName, scenarioProperties, node]);
 
     const {
         cellErrors,
         recordsErrors,
+        handleRowAdded,
         handleRowMoved,
         handleRowsDeleted,
         handleRowUpdated,
-        addDefaultRecord,
         generateTestDataForSingleSource,
     } = useDataRecordsActions(node, scenarioProperties);
 
-    const allSourceParameters = useAppSelector(getTestParameters);
-    const sourceParameters = allSourceParameters.find((sp) => sp.sourceId === node.id);
-
-    const onRowAppended = useCallback(() => addDefaultRecord(node.id), [addDefaultRecord, node.id]);
+    const defaultDataRecord = useMemo(
+        () => ({
+            sourceId: node.id,
+            variables: buildDefaultVariables(sourceParameters?.parameters),
+        }),
+        [node.id, sourceParameters],
+    );
 
     const recordsToAddLimitExceeded = useMemo(
         () => recordsErrors.some((recordsErrors) => recordsErrors.type === "TEST_DATA_LIMIT_EXCEEDED"),
@@ -58,7 +74,8 @@ export const InputDataRecords = ({ node }: Props) => {
                     <Table
                         cellErrors={cellErrors}
                         sourceParameters={sourceParameters}
-                        onRowAppended={onRowAppended}
+                        defaultRecord={defaultDataRecord}
+                        onRowAdded={handleRowAdded}
                         onRowMoved={handleRowMoved}
                         onRowsDeleted={handleRowsDeleted}
                         onRowUpdated={handleRowUpdated}

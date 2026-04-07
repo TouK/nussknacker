@@ -40,10 +40,11 @@ export type { TestingDataRecords } from "./types";
 
 interface TableProps {
     data?: TestingDataRecords[];
+    onRowAdded: (rowIndex: number, row: TestingDataRecords) => void;
     onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
-    onRowAppended: () => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
+    defaultRecord: TestingDataRecords;
     sourceParameters?: TestFormParameters;
     className?: string;
     cellErrors: CellError[];
@@ -70,10 +71,11 @@ type HeaderRenderArgs = { columnIndex: number; theme: Theme; rect: { width: numb
 
 export const Table: React.FC<TableProps> = ({
     data = [],
+    onRowAdded,
     onRowUpdated,
-    onRowAppended,
     onRowsDeleted,
     onRowMoved,
+    defaultRecord,
     sourceParameters,
     className,
     cellErrors,
@@ -305,7 +307,7 @@ export const Table: React.FC<TableProps> = ({
                     customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
-                    onRowAppended={recordsToAddLimitExceeded ? undefined : onRowAppended}
+                    onRowAppended={recordsToAddLimitExceeded ? undefined : () => onRowAdded(data.length, defaultRecord)}
                     rowMarkers="both"
                     rows={data.length}
                     smoothScrollX
