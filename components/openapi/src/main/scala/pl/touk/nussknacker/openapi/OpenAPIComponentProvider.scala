@@ -28,7 +28,8 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
       HttpClientProvider.getBackendProvider(openAPIsConfig.httpClientConfig)
     val openApiDefinitionDiscovery = new CachingOpenApiDefinitionDiscovery(
       new SwaggerOpenApiDefinitionDiscovery(),
-      openAPIsConfig.openApiServicesDiscoveryCacheTtl
+      openAPIsConfig.openApiServicesDiscoveryCacheTtl,
+      openAPIsConfig.cacheFileLocation
     )
     ComponentDefinition(
       name = "openAPI",
