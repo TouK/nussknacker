@@ -16,7 +16,7 @@ import { Box } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
 import { find, head, orderBy } from "lodash";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/getProcessDefinitionData";
@@ -117,25 +117,17 @@ export function useTableEditorTypeOptions() {
 type TableProps = Pick<EditorProps, "expressionObj" | "onValueChange" | "className" | "fieldErrors">;
 
 export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: TableProps) => {
-    const [{ rows, columns }, dispatch, rawExpression] = useTableState(expressionObj);
-
-    useEffect(() => {
-        if (rawExpression !== expressionObj.expression) {
-            onValueChange({ expression: rawExpression, language: editorsParameters[EditorType.TABLE_EDITOR].language });
-        }
-    }, [expressionObj.expression, onValueChange, rawExpression]);
+    const handleChange = useCallback(
+        (expression: string) => {
+            onValueChange({ expression, language: editorsParameters[EditorType.TABLE_EDITOR].language });
+        },
+        [onValueChange],
+    );
 
     const { defaultTypeOption, orderedTypeOptions } = useTableEditorTypeOptions();
     const supportedTypes = useMemo(() => orderedTypeOptions.filter(({ value }) => SUPPORTED_TYPES.includes(value)), [orderedTypeOptions]);
 
-    useEffect(() => {
-        dispatch({
-            type: ActionTypes.expand,
-            rows: rows.length < 1 ? 1 : 0,
-            columns: columns.length < 1 ? 1 : 0,
-            dataType: defaultTypeOption.value,
-        });
-    }, [defaultTypeOption.value, dispatch, columns.length, rows.length]);
+    const [{ rows, columns }, dispatch] = useTableState(expressionObj, handleChange, defaultTypeOption.value);
 
     const tableColumns = useMemo<GridColumn[]>(() => {
         return columns.map<GridColumn>(({ name, type = "", size }, i) => {
