@@ -43,6 +43,11 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = produce((dra
             break;
         }
 
+        case "REMOVE_TEST_CASE": {
+            draft.list = draft.list.filter((tc) => tc.id !== action.testCaseId);
+            break;
+        }
+
         case "DELETE_NODES":
             draft.list = cleanTestCaseState(draft, action.ids);
             break;

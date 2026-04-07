@@ -7,7 +7,6 @@ import { getMaxTestingRecords } from "../../../../../../reducers/selectors/setti
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
-import { Expandable } from "../../../../../common/Expandable";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
@@ -17,6 +16,7 @@ import { buildDefaultVariables } from "../../../../../modals/TestingDataRecords/
 import { getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { ContentSize } from "../../ContentSize";
 import { StyledStack } from "./components/Styled";
+import { TestingExpandable } from "./components/TestingExpandable";
 
 interface Props {
     node: NodeType;
@@ -75,7 +75,12 @@ export const InputDataRecords = ({ node }: Props) => {
 
     return (
         <StyledStack>
-            <Expandable componentId={"inputDataRecords"} expandableTitle={"Test data"} expanded={isExpanded} onChange={setIsExpanded}>
+            <TestingExpandable
+                componentId={"inputDataRecords"}
+                expandableTitle={"Test data"}
+                expanded={isExpanded}
+                onChange={setIsExpanded}
+            >
                 <ContentSize sx={{ padding: 0, maxHeight: "45cqh", mb: 2 }}>
                     <Table
                         data={testingDataRecordsForSource}
@@ -98,7 +103,7 @@ export const InputDataRecords = ({ node }: Props) => {
                     maxTestingRecords={maxTestingRecords}
                     recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                 />
-            </Expandable>
+            </TestingExpandable>
         </StyledStack>
     );
 };

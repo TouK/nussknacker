@@ -1,48 +1,49 @@
-import { EditOutlined } from "@mui/icons-material";
-import { Box, FormHelperText, InputBase, styled, Typography } from "@mui/material";
+import { Box, Divider, FormHelperText, InputBase, styled, Typography } from "@mui/material";
 import React, { useCallback } from "react";
-import { useTranslation } from "react-i18next";
 
-import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
-import { getBorderColor } from "../../../../../../containers/theme/helpers";
-import { getLoggedUser, getSettings } from "../../../../../../reducers/selectors/settings";
-import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
-import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
-import { useWindows } from "../../../../../../windowManager/useWindows";
-import { WindowKind } from "../../../../../../windowManager/WindowKind";
-import { StyledButton } from "../../../../styledButton";
-import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
-import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
-import { useTestCaseNameEdit } from "./useTestCaseNameEdit";
+import { changeActiveTestCase } from "../../../../../../../actions/nk/testingActions";
+import { getBorderColor } from "../../../../../../../containers/theme/helpers";
+import { getLoggedUser, getSettings } from "../../../../../../../reducers/selectors/settings";
+import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../../reducers/selectors/testCases";
+import { useAppDispatch, useAppSelector } from "../../../../../../../store/storeHelpers";
+import { useWindows } from "../../../../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../../../../windowManager/WindowKind";
+import { TypeSelect } from "../../../../fragment-input-definition/TypeSelect";
+import { DeleteButton } from "./DeleteButton";
+import { EditButton } from "./EditButton";
+import { SaveAsButton } from "./SaveAsButton";
+import { useDelete } from "./useDelete";
+import { useNameEdit } from "./useNameEdit";
 
 export const TestCaseSelect = () => {
-    const { t } = useTranslation();
     const settings = useAppSelector(getSettings);
     const loggedUser = useAppSelector(getLoggedUser);
 
     const testCaseOptions = useAppSelector(getTestCaseOptions);
     const activeTestCaseOption = useAppSelector(getActiveTestCaseOption);
 
-    const { isEditing, editValue, editErrorMessage, setEditValue, startEditing, handleBlur, handleKeyDown } = useTestCaseNameEdit(
+    const { isEditing, editValue, editErrorMessage, setEditValue, startEditing, handleBlur, handleKeyDown } = useNameEdit(
         activeTestCaseOption?.label,
     );
 
-    const { open } = useWindows();
-    const onDisplayEnterpriseInfo = useCallback(() => {
-        open({ kind: WindowKind.enterpriseFeatureInfo, layoutData: { width: 500 } });
-    }, [open]);
+    const {
+        isConfirming,
+        isDisabled: isDeleteDisabled,
+        disabledTooltip,
+        startDeleting,
+        cancelDelete,
+        confirmDelete,
+    } = useDelete(activeTestCaseOption?.value, testCaseOptions.length, isEditing);
 
-    const openSaveAsDialog = useCallback(() => {
-        open({ kind: WindowKind.saveAsTestCase, title: "Save as", layoutData: { width: 500 } });
-    }, [open]);
+    const { open } = useWindows();
 
     const handleSaveAsClick = useCallback(() => {
         if (settings.featuresSettings.testCases.multipleEnabled) {
-            openSaveAsDialog();
+            open({ kind: WindowKind.saveAsTestCase, title: "Save as", layoutData: { width: 500 } });
         } else {
-            onDisplayEnterpriseInfo();
+            open({ kind: WindowKind.enterpriseFeatureInfo, layoutData: { width: 500 } });
         }
-    }, [onDisplayEnterpriseInfo, openSaveAsDialog, settings.featuresSettings.testCases.multipleEnabled]);
+    }, [open, settings.featuresSettings.testCases.multipleEnabled]);
 
     return (
         <Box ml={4} pt={1.25} display={"flex"} gap={1} alignItems={"center"}>
@@ -58,25 +59,17 @@ export const TestCaseSelect = () => {
             />
             {loggedUser.isWriter() && (
                 <>
-                    <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
-                        <StyledButton
-                            data-testid="edit-test-case-name"
-                            onClick={startEditing}
-                            disabled={isEditing}
-                            sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-                        >
-                            <EditOutlined fontSize="small" />
-                        </StyledButton>
-                    </InfoTooltip>
-                    <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
-                        <StyledButton
-                            data-testid="save-as-test-case"
-                            title={t("node.row.add.title", "Add test case")}
-                            onClick={handleSaveAsClick}
-                        >
-                            {t("node.row.add.text", "+")}
-                        </StyledButton>
-                    </InfoTooltip>
+                    {!isConfirming && <EditButton isEditing={isEditing} onStartEditing={startEditing} />}
+                    <DeleteButton
+                        isConfirming={isConfirming}
+                        isDisabled={isDeleteDisabled}
+                        disabledTooltip={disabledTooltip}
+                        startDeleting={startDeleting}
+                        cancelDelete={cancelDelete}
+                        confirmDelete={confirmDelete}
+                    />
+                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                    <SaveAsButton onClick={handleSaveAsClick} />
                 </>
             )}
         </Box>
