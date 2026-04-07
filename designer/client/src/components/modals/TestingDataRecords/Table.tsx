@@ -45,7 +45,6 @@ interface TableProps {
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
     sourceParameters?: TestFormParameters;
-    sourceOptions: string[];
     className?: string;
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
@@ -76,7 +75,6 @@ export const Table: React.FC<TableProps> = ({
     onRowsDeleted,
     onRowMoved,
     sourceParameters,
-    sourceOptions,
     className,
     cellErrors,
     recordsToAddLimitExceeded,
@@ -133,12 +131,9 @@ export const Table: React.FC<TableProps> = ({
         [theme, node, processProperties],
     );
 
-    const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters), [sourceParameters]);
+    const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters?.parameters), [sourceParameters]);
 
-    const getCellContent = useCallback(
-        (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceParameters),
-        [data, sourceOptions, sourceParameters],
-    );
+    const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, node.id, node.name), [data, node]);
 
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(
         (changes): void => {

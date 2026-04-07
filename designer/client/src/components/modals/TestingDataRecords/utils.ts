@@ -2,6 +2,7 @@ import type { Item } from "@glideapps/glide-data-grid";
 import { type EditListItem } from "@glideapps/glide-data-grid";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
+import type { UIParameter } from "../../../types/definition";
 import { isSourceSelectCell, isVariablesCell } from "./CellContent";
 import { formatDataRecordsVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
@@ -36,10 +37,10 @@ export function safeParseExpression<T = unknown>(expr: string): T {
     }
 }
 
-export function buildDefaultVariables(sourceParameter?: TestFormParameters): string {
-    if (!sourceParameter) return "";
+export function buildDefaultVariables(parameters?: UIParameter[]): string {
+    if (!parameters) return "";
     let values: unknown = {};
-    for (const param of sourceParameter.parameters ?? []) {
+    for (const param of parameters ?? []) {
         values = safeParseExpression(param?.defaultValue?.expression ?? "");
     }
     try {

@@ -31,7 +31,7 @@ export function useTestingContentRenderer() {
             when: (node) => node.type === "Source",
             render: ({ node, edges }) => (
                 <>
-                    <InputDataRecords sourceId={node.id} node={node} />
+                    <InputDataRecords node={node} />
                     <Assertions node={node} edges={edges} />
                 </>
             ),

@@ -16,14 +16,12 @@ import { StyledStack } from "./components/Styled";
 
 interface Props {
     node: NodeType;
-    sourceId: string;
 }
 
-export const InputDataRecords = ({ node, sourceId }: Props) => {
+export const InputDataRecords = ({ node }: Props) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
-    const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
-
+    const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, node.id));
     const scenarioProperties = useAppSelector(getProcessProperties);
 
     const {
@@ -37,11 +35,11 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
     } = useDataRecordsActions(node, scenarioProperties);
 
     const allSourceParameters = useAppSelector(getTestParameters);
-    const sourceParameters = allSourceParameters.find((sp) => sp.sourceId === sourceId);
+    const sourceParameters = allSourceParameters.find((sp) => sp.sourceId === node.id);
 
     const onRowAppended = useCallback(
-        () => addDefaultRecord(sourceId, node, scenarioProperties),
-        [addDefaultRecord, sourceId, node, scenarioProperties],
+        () => addDefaultRecord(node.id, node, scenarioProperties),
+        [addDefaultRecord, node, scenarioProperties],
     );
 
     const recordsToAddLimitExceeded = useMemo(
@@ -68,7 +66,6 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
                         onRowsDeleted={handleRowsDeleted}
                         onRowUpdated={handleRowUpdated}
                         data={testingDataRecordsForSource}
-                        sourceOptions={[sourceId]}
                         node={node}
                         processProperties={scenarioProperties}
                     />

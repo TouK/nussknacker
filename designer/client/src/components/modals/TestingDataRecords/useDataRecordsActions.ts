@@ -175,7 +175,7 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
             const {
                 data: { testWithParameters: capabilities },
             } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
-            const variables = capabilities.status === TestCapabilityStatus.AVAILABLE ? buildDefaultVariables(capabilities) : "";
+            const variables = capabilities.status === TestCapabilityStatus.AVAILABLE ? buildDefaultVariables(capabilities.parameters) : "";
             dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables }]));
         },
         [validateForCount, scenarioName, dispatch],
