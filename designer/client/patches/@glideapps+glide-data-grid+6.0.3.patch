@@ -1,0 +1,56 @@
+diff --git a/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js b/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js
+index 05c6d7e..d173806 100644
+--- a/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js
++++ b/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js
+@@ -92,6 +92,14 @@ const DataGridDnd = p => {
+                     setDragCol(col);
+                 }
+             }
++            else if (args.kind === "group-header" && col >= lockColumns && canDragCol) {
++                const group = columns[col]?.group;
++                const groupSize = group !== undefined ? columns.filter(c => c.group === group).length : 0;
++                if (groupSize === 1) {
++                    setDragStartX(args.bounds.x);
++                    setDragCol(col);
++                }
++            }
+             else if (args.kind === "cell" &&
+                 lockColumns > 0 &&
+                 col === 0 &&
+diff --git a/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js b/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js
+index 734f50f..8b8103b 100644
+--- a/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js
++++ b/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js
+@@ -64,6 +64,14 @@ const DataGridDnd = p => {
+                     setDragCol(col);
+                 }
+             }
++            else if (args.kind === "group-header" && col >= lockColumns && canDragCol) {
++                const group = columns[col]?.group;
++                const groupSize = group !== undefined ? columns.filter(c => c.group === group).length : 0;
++                if (groupSize === 1) {
++                    setDragStartX(args.bounds.x);
++                    setDragCol(col);
++                }
++            }
+             else if (args.kind === "cell" &&
+                 lockColumns > 0 &&
+                 col === 0 &&
+diff --git a/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx b/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx
+index 56c21ee..fe84d33 100644
+--- a/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx
++++ b/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx
+@@ -165,6 +165,13 @@ const DataGridDnd: React.FunctionComponent<DataGridDndProps> = p => {
+                         setDragStartX(args.bounds.x);
+                         setDragCol(col);
+                     }
++                } else if (args.kind === "group-header" && col >= lockColumns && canDragCol) {
++                    const group = columns[col]?.group;
++                    const groupSize = group !== undefined ? columns.filter(c => c.group === group).length : 0;
++                    if (groupSize === 1) {
++                        setDragStartX(args.bounds.x);
++                        setDragCol(col);
++                    }
+                 } else if (
+                     args.kind === "cell" &&
+                     lockColumns > 0 &&
