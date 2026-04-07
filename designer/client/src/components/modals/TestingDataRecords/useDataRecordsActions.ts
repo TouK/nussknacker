@@ -14,6 +14,7 @@ import { buildDefaultVariables, mapGeneratedTestingDataToTableFormat } from "./u
 
 export const useDataRecordsActions = (node?: NodeType, processProperties?: PropertiesType) => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
+    const [defaultVariables, setDefaultVariables] = useState<string>("");
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const dispatch = useAppDispatch();
@@ -22,6 +23,17 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
     useEffect(() => {
         dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
     }, [dispatch, scenarioName, scenarioGraph]);
+
+    useEffect(() => {
+        if (!node || !processProperties) return;
+        HttpService.getSourceTestCapabilities(scenarioName, processProperties, node).then(
+            ({ data: { testWithParameters: capabilities } }) => {
+                setDefaultVariables(
+                    capabilities.status === TestCapabilityStatus.AVAILABLE ? buildDefaultVariables(capabilities.parameters) : "",
+                );
+            },
+        );
+    }, [scenarioName, processProperties, node]);
 
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
@@ -169,16 +181,11 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
     );
 
     const addDefaultRecord = useCallback(
-        async (sourceId: string, nodeData: NodeType, scenarioProperties: PropertiesType) => {
+        (sourceId: string) => {
             if (!validateForCount((currentCount) => currentCount + 1)) return;
-
-            const {
-                data: { testWithParameters: capabilities },
-            } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
-            const variables = capabilities.status === TestCapabilityStatus.AVAILABLE ? buildDefaultVariables(capabilities.parameters) : "";
-            dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables }]));
+            dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables: defaultVariables }]));
         },
-        [validateForCount, scenarioName, dispatch],
+        [validateForCount, dispatch, defaultVariables],
     );
 
     return {

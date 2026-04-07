@@ -37,10 +37,7 @@ export const InputDataRecords = ({ node }: Props) => {
     const allSourceParameters = useAppSelector(getTestParameters);
     const sourceParameters = allSourceParameters.find((sp) => sp.sourceId === node.id);
 
-    const onRowAppended = useCallback(
-        () => addDefaultRecord(node.id, node, scenarioProperties),
-        [addDefaultRecord, node, scenarioProperties],
-    );
+    const onRowAppended = useCallback(() => addDefaultRecord(node.id), [addDefaultRecord, node.id]);
 
     const recordsToAddLimitExceeded = useMemo(
         () => recordsErrors.some((recordsErrors) => recordsErrors.type === "TEST_DATA_LIMIT_EXCEEDED"),
