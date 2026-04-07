@@ -276,8 +276,8 @@ export function FieldRow({
                 )}
             </Box>
 
-            {/* Expanded editor */}
-            <Collapse in={isSelected}>
+            {/* Expanded editor — skip for record fields in schema mode (nothing to show) */}
+            <Collapse in={isSelected && !(hideFieldControls && field.isRecord)}>
                 <Box
                     sx={{
                         mx: 1.5,
