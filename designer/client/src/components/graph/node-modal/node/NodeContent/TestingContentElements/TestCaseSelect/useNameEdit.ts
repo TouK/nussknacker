@@ -1,11 +1,11 @@
 import type React from "react";
 import { useCallback, useState } from "react";
 
-import { setTestCaseName } from "../../../../../../actions/nk/testCasesActions";
-import { useAppDispatch } from "../../../../../../store/storeHelpers";
-import { useTestCaseNameValidation } from "../../../../../modals/useTestCaseNameValidation";
+import { setTestCaseName } from "../../../../../../../actions/nk/testCasesActions";
+import { useAppDispatch } from "../../../../../../../store/storeHelpers";
+import { useTestCaseNameValidation } from "../../../../../../modals/useTestCaseNameValidation";
 
-export const useTestCaseNameEdit = (currentName: string | undefined) => {
+export const useNameEdit = (currentName: string | undefined) => {
     const dispatch = useAppDispatch();
 
     const [isEditing, setIsEditing] = useState(false);

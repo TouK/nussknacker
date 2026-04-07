@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { removeTestCase } from "../../../../../../actions/nk/testCasesActions";
-import { useAppDispatch } from "../../../../../../store/storeHelpers";
+import { removeTestCase } from "../../../../../../../actions/nk/testCasesActions";
+import { useAppDispatch } from "../../../../../../../store/storeHelpers";
 
-export const useTestCaseDelete = (activeTestCaseId: string | undefined, testCasesCount: number, isEditing: boolean) => {
+export const useDelete = (activeTestCaseId: string | undefined, testCasesCount: number, isEditing: boolean) => {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
 
