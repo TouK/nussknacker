@@ -33,7 +33,7 @@ export const InputDataRecords = ({ node }: Props) => {
     useEffect(() => {
         HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, node).then(({ data }) => {
             const capabilities = data.testWithParameters;
-            setSourceParameters(capabilities.status === TestCapabilityStatus.AVAILABLE ? capabilities : undefined);
+            setSourceParameters(capabilities.status === TestCapabilityStatus.AVAILABLE ? capabilities.sourceParameters : undefined);
         });
     }, [scenarioName, scenarioProperties, node]);
 

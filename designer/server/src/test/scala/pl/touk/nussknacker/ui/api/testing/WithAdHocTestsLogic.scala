@@ -5,6 +5,7 @@ import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
+import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -15,10 +16,13 @@ import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersB
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.SourceCapabilitiesRequestDto
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.{
+  ScenarioTestValidationRequest,
+  SourceTestValidationRequestDto
+}
 
 trait WithAdHocTestsLogic {
-  self: WithSimplifiedConfigScenarioHelper with NuItTest =>
+  self: Suite with WithSimplifiedConfigScenarioHelper with NuItTest =>
 
   def shouldValidateParametersProperly(): Unit = {
     val request = ScenarioTestValidationRequest(
@@ -34,6 +38,31 @@ trait WithAdHocTestsLogic {
       .basicAuthAllPermUser()
       .jsonBody(request)
       .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/validate")
+      .Then()
+      .statusCode(200)
+      .equalsJsonBody(
+        s"""{
+           |    "validationErrors": [],
+           |    "validationPerformed": true
+           |}""".stripMargin
+      )
+  }
+
+  def shouldValidateSourceParametersProperly(): Unit = {
+    val requestBody = SourceTestValidationRequestDto(
+      processProperties = exampleScenario.toScenarioGraph.properties,
+      nodeData = exampleSource,
+      sourceParameters = validParameters,
+    ).asJson.noSpaces
+
+    given()
+      .applicationState {
+        createSavedScenario(exampleScenario)
+      }
+      .when()
+      .basicAuthAllPermUser()
+      .jsonBody(requestBody)
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/sourceValidate")
       .Then()
       .statusCode(200)
       .equalsJsonBody(
@@ -68,7 +97,7 @@ trait WithAdHocTestsLogic {
       )
   }
 
-  def shouldProperlyGetTestParameters(): Unit = {
+  def shouldProperlyGetTestCapabilities(): Unit = {
     val request = exampleScenarioGraph.asJson.noSpaces
 
     given()
@@ -84,18 +113,9 @@ trait WithAdHocTestsLogic {
       .equalsJsonBody(responseWithParameters(expectedTestParametersJson))
   }
 
-  def shouldProperlyGetSourceCapabilities(): Unit = {
-    val sourceNode = exampleScenario.nodes
-      .collectFirst { case FlatNode(s: SourceNodeData) => s }
-      .getOrElse(throw new RuntimeException("No source node found in exampleScenario"))
+  def shouldProperlyGetTestSourceCapabilities(): Unit = {
     val requestBody =
-      SourceCapabilitiesRequestDto(exampleScenario.toScenarioGraph.properties, sourceNode).asJson.noSpaces
-    val expectedJson = parser
-      .parse(expectedTestParametersJson)
-      .toOption
-      .flatMap(_.asArray.flatMap(_.headOption))
-      .map(sourceParams => io.circe.Json.obj("status" -> "AVAILABLE".asJson).deepMerge(sourceParams).spaces2)
-      .getOrElse(throw new RuntimeException("Failed to derive expected single source capabilities JSON"))
+      SourceCapabilitiesRequestDto(exampleScenario.toScenarioGraph.properties, exampleSource).asJson.noSpaces
 
     given()
       .applicationState {
@@ -107,7 +127,14 @@ trait WithAdHocTestsLogic {
       .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/sourceCapabilities")
       .Then()
       .statusCode(200)
-      .equalsJsonBody(expectedJson)
+      .equalsJsonBody(
+        s"""{
+           |    "testWithParameters": {
+           |      "status": "AVAILABLE",
+           |      "sourceParameters": $expectedTestSourceParametersJson
+           |    }
+           |}""".stripMargin
+      )
   }
 
   def responseWithParameters(parametersJson: String): String =
@@ -128,9 +155,23 @@ trait WithAdHocTestsLogic {
 
   protected def exampleScenario: CanonicalProcess
 
+  protected def exampleSource: SourceNodeData =
+    exampleScenario.nodes
+      .collectFirst { case FlatNode(s: SourceNodeData) => s }
+      .getOrElse(fail("No source node found in exampleScenario"))
+
   protected def validParameters: TestSourceParameters
 
   protected def expectedTestParametersJson: String
+
+  protected def expectedTestSourceParametersJson: String =
+    io.circe.parser
+      .parse(expectedTestParametersJson)
+      .getOrElse(fail("Invalid JSON in expectedTestParametersJson"))
+      .asArray
+      .flatMap(_.headOption)
+      .getOrElse(fail("Expected parameters JSON should be an array with at least one element"))
+      .noSpaces
 
   protected def exampleScenarioGraph: ScenarioGraph = exampleScenario.toScenarioGraph
 

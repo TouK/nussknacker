@@ -30,7 +30,10 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   SourceCapabilitiesRequestDto,
   SourceTestCapabilities
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
+  SourceTestWithParametersDetails,
+  TestWithParametersDetails
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   PerformTestRequestJsonBody,
   PerformTestRequestMultiParts,
@@ -190,10 +193,12 @@ class ScenarioTestingApiHttpService(
               testWithParameters = sourceParameters match {
                 case Right(params) =>
                   CapabilityStatus.Available(
-                    UISourceParameters(
-                      sourceNodeData.id.value,
-                      sourceNodeData.name.value,
-                      params.map(DefinitionsService.createUIParameter)
+                    SourceTestWithParametersDetails(
+                      UISourceParameters(
+                        sourceNodeData.id.value,
+                        sourceNodeData.name.value,
+                        params.map(DefinitionsService.createUIParameter)
+                      )
                     )
                   )
                 // TODO

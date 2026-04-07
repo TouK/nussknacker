@@ -24,6 +24,7 @@ export const VariablesEditor = ({ value, onChange, node, processProperties }: Va
     const handleValidateData = useCallback(
         (row: TestingDataRecords) => {
             const validationPromise =
+                // TODO
                 node && processProperties
                     ? HttpService.validateSourceNodeTestData(scenarioName, processProperties, node, row)
                     : HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row);

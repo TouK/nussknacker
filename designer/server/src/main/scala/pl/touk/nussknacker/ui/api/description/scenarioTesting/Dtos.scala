@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
   EmptyDetails,
+  SourceTestWithParametersDetails,
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
@@ -58,17 +59,18 @@ object Dtos {
       implicit def schema: Schema[ScenarioTestCapabilities]     = Schema.derived
     }
 
-    implicit def capabilityStatusSchema[T: Schema]: Schema[CapabilityStatus[T]] = Schema.derived
-    implicit def uiSourceParametersSchema: Schema[UISourceParameters]           = Schema.anyObject
+    implicit def capabilityStatusSchema[T <: TestCapabilityDetails: Schema]: Schema[CapabilityStatus[T]] =
+      Schema.derived
+    implicit def uiSourceParametersSchema: Schema[UISourceParameters] = Schema.anyObject
 
-    sealed trait CapabilityStatus[+T]
+    sealed trait CapabilityStatus[+T <: TestCapabilityDetails]
 
     object CapabilityStatus {
-      final case class NotAvailable(reason: NotAvailableReason) extends CapabilityStatus[Nothing]
-      final case class Available[T](data: T)                    extends CapabilityStatus[T]
+      final case class NotAvailable(reason: NotAvailableReason)       extends CapabilityStatus[Nothing]
+      final case class Available[T <: TestCapabilityDetails](data: T) extends CapabilityStatus[T]
       def available: Available[EmptyDetails] = Available(EmptyDetails())
 
-      implicit def codec[DATA: circe.Codec]: circe.Codec[CapabilityStatus[DATA]] =
+      implicit def codec[DATA <: TestCapabilityDetails: circe.Codec]: circe.Codec[CapabilityStatus[DATA]] =
         circe.Codec.from(
           Decoder.instance(c =>
             for {
@@ -110,6 +112,14 @@ object Dtos {
         implicit def schema: Schema[TestWithParametersDetails]     = Schema.derived
       }
 
+      final case class SourceTestWithParametersDetails(sourceParameters: UISourceParameters)
+          extends TestCapabilityDetails
+
+      object SourceTestWithParametersDetails {
+        implicit def codec: circe.Codec[SourceTestWithParametersDetails] = deriveCodec
+        implicit def schema: Schema[SourceTestWithParametersDetails]     = Schema.derived
+      }
+
       final case class EmptyDetails() extends TestCapabilityDetails
 
       object EmptyDetails {
@@ -143,7 +153,7 @@ object Dtos {
 
     @derive(schema, encoder, decoder)
     final case class SourceTestCapabilities(
-        testWithParameters: CapabilityStatus[UISourceParameters],
+        testWithParameters: CapabilityStatus[SourceTestWithParametersDetails],
     )
 
   }

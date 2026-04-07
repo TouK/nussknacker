@@ -12,7 +12,7 @@ import type { ProcessingType } from "../../actions/nk/processDefinitionData";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";
-import type { SourceTestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
+import type { SourceTestCapabilities } from "../../common/TestResultUtils";
 import type { ChatRequest } from "../../components/aiAssistant/ChatRequest";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";

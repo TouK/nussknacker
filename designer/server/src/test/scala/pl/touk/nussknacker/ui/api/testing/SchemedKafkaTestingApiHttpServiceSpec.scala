@@ -415,7 +415,7 @@ class SchemedKafkaTestingApiHttpServiceSpec
 
   "The endpoint for adhoc test parameters should" - {
     "return test parameters" in {
-      shouldProperlyGetTestParameters()
+      shouldProperlyGetTestCapabilities()
     }
   }
 

@@ -53,7 +53,8 @@ export type SourceTestCapabilitiesTestWithParameters =
 
 type SourceTestCapabilitiesTestWithParametersAvailable = {
     status: TestCapabilityStatus.AVAILABLE;
-} & TestFormParameters;
+    sourceParameters: TestFormParameters;
+};
 
 interface SourceTestCapabilitiesTestWithParametersNotAvailable {
     status: TestCapabilityStatus.NOT_AVAILABLE;
