@@ -218,6 +218,29 @@ export function applyTypeConversion(expr: string, sourceType: NuType | undefined
 }
 
 /** Get the NuType of a value at a dotted path within variableTypes (strips leading # and ? from path). */
+export function getTypingResultAtPath(variableTypes: Record<string, TypingResult>, path: string): TypingResult | undefined {
+    const segments =
+        path
+            .replace(/^#/, "")
+            .replace(/\?/g, "")
+            .match(/[^.[]+|\[\d+\]|\['[^']+'\]/g) ?? [];
+    if (segments.length === 0) return undefined;
+    let current: TypingResult | undefined = variableTypes[segments[0]];
+    if (!current) return undefined;
+    for (let i = 1; i < segments.length; i++) {
+        const seg = segments[i];
+        if (seg.startsWith("[")) {
+            const params = (current as { params?: TypingResult[] }).params;
+            if (!params?.length) return undefined;
+            current = params[0];
+        } else {
+            current = (current as { fields?: Record<string, TypingResult> }).fields?.[seg];
+        }
+        if (!current) return undefined;
+    }
+    return current;
+}
+
 export function getNuTypeAtPath(variableTypes: Record<string, TypingResult>, path: string): NuType | undefined {
     // Tokenize: split by "." and also extract "[N]" / "['key']" index segments
     const segments =

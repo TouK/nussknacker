@@ -19,7 +19,7 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type { VariableTypes } from "../../types/validation";
 import { clearAceSelectionAfterDrop } from "../builderComponents/aceUtils";
@@ -78,6 +78,7 @@ export interface FieldRowProps {
     onDragOverId: (id: number | null) => void;
     onChange: (id: number, key: keyof FieldDef, val: unknown) => void;
     onAddChild: (parentId: number) => void;
+    onAddChildFromDrop: (parentId: number, path: string) => void;
     onRemove: (id: number) => void;
     onMove: (id: number, dir: 1 | -1) => void;
     onDrop: (path: string, fieldId: number) => void;
@@ -98,6 +99,7 @@ export function FieldRow({
     onDragOverId,
     onChange,
     onAddChild,
+    onAddChildFromDrop,
     onRemove,
     onMove,
     onDrop,
@@ -108,6 +110,8 @@ export function FieldRow({
     const isDragOver = dragOverFieldId === field.id;
     const hasSrc = !field.isRecord && !!field.expression;
     const errors = fieldErrors[field.id] ?? [];
+
+    const [childDropActive, setChildDropActive] = useState(false);
 
     const onExpressionChangeRef = useRef<(val: string) => void>(null!);
     const onExpressionChange = useCallback((val: string) => onChange(field.id, "expression", val), [field.id, onChange]);
@@ -411,16 +415,35 @@ export function FieldRow({
             {/* Nested children — sibling of the summary row, so background never stacks */}
             {field.isRecord && (
                 <Box
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setChildDropActive(true);
+                    }}
+                    onDragLeave={() => setChildDropActive(false)}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const path = e.dataTransfer.getData("text/plain");
+                        if (path) onAddChildFromDrop(field.id, path);
+                        setChildDropActive(false);
+                    }}
                     sx={{
                         mt: 0.5,
                         ml: 1,
                         pl: 1.5,
                         pb: 0.5,
-                        borderLeft: `2px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+                        borderLeft: `2px solid ${childDropActive ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.25)}`,
+                        borderRadius: childDropActive ? 1 : 0,
+                        backgroundColor: childDropActive ? alpha(theme.palette.primary.main, 0.06) : "transparent",
+                        transition: "border-color 0.15s, background-color 0.15s",
                     }}
                 >
-                    {field.children.length === 0 && (
+                    {field.children.length === 0 && !childDropActive && (
                         <Typography sx={{ fontSize: 11, color: "text.disabled", py: 0.5 }}>No fields yet — click Add field</Typography>
+                    )}
+                    {childDropActive && field.children.length === 0 && (
+                        <Typography sx={{ fontSize: 11, color: "primary.main", py: 0.5 }}>Drop to add field</Typography>
                     )}
                     {field.children.map((child) => (
                         <FieldRow
@@ -436,6 +459,7 @@ export function FieldRow({
                             onDragOverId={onDragOverId}
                             onChange={onChange}
                             onAddChild={onAddChild}
+                            onAddChildFromDrop={onAddChildFromDrop}
                             onRemove={onRemove}
                             onMove={onMove}
                             onDrop={onDrop}

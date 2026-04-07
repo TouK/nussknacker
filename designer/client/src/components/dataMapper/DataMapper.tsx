@@ -323,6 +323,7 @@ export function DataMapper({
                                         onDragOverId={dm.setDragOverId}
                                         onChange={dm.updateField}
                                         onAddChild={dm.addChildField}
+                                        onAddChildFromDrop={dm.addChildFromDrop}
                                         onRemove={dm.removeField}
                                         onMove={dm.moveField}
                                         onDrop={dm.onDrop}

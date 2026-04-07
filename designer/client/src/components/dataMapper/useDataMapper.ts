@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HttpService from "../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../store/storeHelpers";
+import type { TypingResult } from "../../types/definition";
 import type { VariableTypes } from "../../types/validation";
 import { toNullSafe, typingResultToSample } from "../builderComponents/typeUtils";
 import type { FieldError } from "../graph/node-modal/editors/Validators";
@@ -15,6 +16,7 @@ import {
     fieldsFromSample,
     genSpelFromFields,
     getNuTypeAtPath,
+    getTypingResultAtPath,
     INITIAL_FIELDS,
     makeField,
     nextId,
@@ -41,6 +43,33 @@ function updateInTree(fields: FieldDef[], id: number, updater: (f: FieldDef) => 
         if (f.children.length > 0) return { ...f, children: updateInTree(f.children, id, updater) };
         return f;
     });
+}
+
+/**
+ * Recursively build a FieldDef from the typing result at the given source path.
+ * If the typing result is a Record (has fields), creates an isRecord FieldDef with children.
+ * Otherwise creates a leaf FieldDef with the appropriate expression and type.
+ */
+function buildFieldFromTyping(
+    name: string,
+    sourcePath: string,
+    variableTypes: Record<string, TypingResult> | null | undefined,
+    nullSafe: boolean,
+): FieldDef {
+    const typing = variableTypes ? getTypingResultAtPath(variableTypes, sourcePath) : undefined;
+    const recordFields = (typing as { fields?: Record<string, TypingResult> } | undefined)?.fields;
+    if (recordFields && Object.keys(recordFields).length > 0) {
+        const f = makeField(name, "Map");
+        f.isRecord = true;
+        f.children = Object.keys(recordFields).map((childName) =>
+            buildFieldFromTyping(childName, `${sourcePath}.${childName}`, variableTypes, nullSafe),
+        );
+        return f;
+    }
+    const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, sourcePath) : undefined;
+    const f = makeField(name, sourceType ?? "Any");
+    f.expression = nullSafe ? toNullSafe(`#${sourcePath}`) : `#${sourcePath}`;
+    return f;
 }
 
 function removeFromTree(fields: FieldDef[], id: number): FieldDef[] {
@@ -203,12 +232,21 @@ export function useDataMapper({
             const rawPath = path.replace(/^#/, "").replace(/\?/g, "");
             const bracketMatch = rawPath.match(/\['([^']+)'\]$/);
             const lastSegment = bracketMatch ? bracketMatch[1] : rawPath.split(".").pop() ?? "";
-            const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
-            const field = makeField(lastSegment, sourceType ?? "Any");
-            field.expression = nullSafe ? toNullSafe(`#${rawPath}`) : `#${rawPath}`;
-            setFields((f) => [...f, field]);
+            setFields((f) => [...f, buildFieldFromTyping(lastSegment, rawPath, variableTypes, nullSafe)]);
             setDragOverId(null);
             setDropZoneActive(false);
+        },
+        [nullSafe, variableTypes],
+    );
+
+    const addChildFromDrop = useCallback(
+        (parentId: number, path: string) => {
+            const rawPath = path.replace(/^#/, "").replace(/\?/g, "");
+            const bracketMatch = rawPath.match(/\['([^']+)'\]$/);
+            const lastSegment = bracketMatch ? bracketMatch[1] : rawPath.split(".").pop() ?? "";
+            const newChild = buildFieldFromTyping(lastSegment, rawPath, variableTypes, nullSafe);
+            setFields((fs) => updateInTree(fs, parentId, (f) => ({ ...f, children: [...f.children, newChild] })));
+            setDragOverId(null);
         },
         [nullSafe, variableTypes],
     );
@@ -340,16 +378,30 @@ export function useDataMapper({
             const rawPath = path.replace(/^#/, "").replace(/\?/g, "");
             const bracketMatch = rawPath.match(/\['([^']+)'\]$/);
             const lastSegment = bracketMatch ? bracketMatch[1] : rawPath.split(".").pop() ?? "";
-            const baseExpr = nullSafe ? toNullSafe(`#${rawPath}`) : `#${rawPath}`;
-            const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
-            setFields((prev) => {
-                const targetField = findInTree(prev, fieldId);
-                const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any", targetField?.defaultValue);
-                return updateInTree(prev, fieldId, (x) => {
-                    const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
-                    return { ...splitElvisIntoField(x, expr), ...nameUpdate };
+            const typing = variableTypes ? getTypingResultAtPath(variableTypes, rawPath) : undefined;
+            const recordFields = (typing as { fields?: Record<string, TypingResult> } | undefined)?.fields;
+            if (recordFields && Object.keys(recordFields).length > 0) {
+                // Source is a Record — replace the target field with a nested isRecord structure
+                const built = buildFieldFromTyping(lastSegment, rawPath, variableTypes, nullSafe);
+                setFields((prev) =>
+                    updateInTree(prev, fieldId, (x) => ({
+                        ...built,
+                        id: x.id,
+                        name: x.name?.trim() ? x.name : built.name,
+                    })),
+                );
+            } else {
+                const baseExpr = nullSafe ? toNullSafe(`#${rawPath}`) : `#${rawPath}`;
+                const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
+                setFields((prev) => {
+                    const targetField = findInTree(prev, fieldId);
+                    const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any", targetField?.defaultValue);
+                    return updateInTree(prev, fieldId, (x) => {
+                        const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
+                        return { ...splitElvisIntoField(x, expr), ...nameUpdate };
+                    });
                 });
-            });
+            }
             setDragOverId(null);
         },
         [nullSafe, variableTypes],
@@ -568,6 +620,7 @@ export function useDataMapper({
         updateField,
         moveField,
         addChildField,
+        addChildFromDrop,
         validateExpression,
         clearFieldErrors,
         handleAutoMap,
