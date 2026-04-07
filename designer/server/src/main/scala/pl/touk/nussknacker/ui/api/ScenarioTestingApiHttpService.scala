@@ -207,7 +207,7 @@ class ScenarioTestingApiHttpService(
   }
 
   expose {
-    scenarioTestingApiEndpoints.sourceValidationEndpoint
+    scenarioTestingApiEndpoints.sourceTestValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request) =>

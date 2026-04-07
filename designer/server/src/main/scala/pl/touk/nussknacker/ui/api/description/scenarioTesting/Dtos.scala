@@ -232,7 +232,7 @@ object Dtos {
     )
 
     @derive(schema, encoder, decoder)
-    final case class SourceValidationRequestDto(
+    final case class SourceTestValidationRequestDto(
         processProperties: ProcessProperties,
         nodeData: NodeData,
         sourceParameters: TestSourceParameters,

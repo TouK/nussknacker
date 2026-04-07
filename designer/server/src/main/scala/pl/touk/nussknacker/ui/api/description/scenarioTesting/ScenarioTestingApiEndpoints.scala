@@ -60,7 +60,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.{
   ScenarioTestValidationRequest,
-  SourceValidationRequestDto
+  SourceTestValidationRequestDto
 }
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.capabilities.pekko.PekkoStreams
@@ -210,8 +210,8 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .withSecurity(auth)
   }
 
-  def sourceValidationEndpoint: SecuredEndpoint[
-    (ProcessName, SourceValidationRequestDto),
+  def sourceTestValidationEndpoint: SecuredEndpoint[
+    (ProcessName, SourceTestValidationRequestDto),
     TestingError,
     ParametersValidationResultDto,
     Any
@@ -221,7 +221,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .tag("Testing")
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "sourceValidate")
-      .in(jsonBody[SourceValidationRequestDto])
+      .in(jsonBody[SourceTestValidationRequestDto])
       .out(statusCode(Ok).and(jsonBody[ParametersValidationResultDto]))
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
