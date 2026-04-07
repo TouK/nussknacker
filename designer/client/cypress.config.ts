@@ -17,15 +17,11 @@ export default defineConfig({
         video: true,
         experimentalMemoryManagement: true,
         experimentalRunAllSpecs: true,
-        numTestsKeptInMemory: 2,
-        chromeWebSecurity: false,
+        numTestsKeptInMemory: 10,
         // We've imported your old cypress plugins here.
         // You may want to clean this up later by importing these.
         setupNodeEvents(on, config) {
             on("before:browser:launch", (browser, launchOptions) => {
-                if (browser.family === "chromium") {
-                    launchOptions.args.push("--disable-dev-shm-usage");
-                }
                 const width = 1920;
                 const height = 1200;
                 if (browser.isHeadless) {
