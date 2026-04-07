@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
+import type { NodeType, PropertiesType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { JsonEditor } from "../../graph/node-modal/editors/expression/JsonEditor";
 import { EditorType, ExpressionLang } from "../../graph/node-modal/editors/expression/types";
@@ -12,23 +13,25 @@ import type { TestingDataRecords } from "./types";
 interface VariablesEditorProps {
     value: VariablesCell;
     onChange: (cell: VariablesCell) => void;
-    onValidate?: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
+    node?: NodeType;
+    processProperties?: PropertiesType;
 }
-export const VariablesEditor = ({ value, onChange, onValidate }: VariablesEditorProps) => {
+export const VariablesEditor = ({ value, onChange, node, processProperties }: VariablesEditorProps) => {
     const [validationErrors, setValidationErrors] = useState<NodeValidationError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const handleValidateData = useCallback(
         (row: TestingDataRecords) => {
-            const validationPromise = onValidate
-                ? onValidate(row)
-                : HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row);
+            const validationPromise =
+                node && processProperties
+                    ? HttpService.validateSourceNodeTestData(scenarioName, processProperties, node, row)
+                    : HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row);
             validationPromise.then(({ data }) => {
                 setValidationErrors(data.validationErrors);
             });
         },
-        [onValidate, scenarioGraph, scenarioName],
+        [node, processProperties, scenarioGraph, scenarioName],
     );
 
     useEffect(() => {

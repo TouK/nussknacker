@@ -18,7 +18,7 @@ import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
-import type { NodeValidationError } from "../../../types/validation";
+import type { NodeType, PropertiesType } from "../../../types/node";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -49,7 +49,8 @@ interface TableProps {
     className?: string;
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
-    onValidateVariables?: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
+    node?: NodeType;
+    processProperties?: PropertiesType;
 }
 
 const TRAILING_ROW_HINT = "Add record";
@@ -79,7 +80,8 @@ export const Table: React.FC<TableProps> = ({
     className,
     cellErrors,
     recordsToAddLimitExceeded,
-    onValidateVariables,
+    node,
+    processProperties,
 }) => {
     const [draggingRow, setDraggingRow] = useState<number | null>(null);
     const lastDraggingRowRef = useRef<number | null>(null);
@@ -123,12 +125,12 @@ export const Table: React.FC<TableProps> = ({
                 editor: (props) => {
                     const { onChange, value } = props;
 
-                    return <VariablesEditor value={value} onChange={onChange} onValidate={onValidateVariables} />;
+                    return <VariablesEditor value={value} onChange={onChange} node={node} processProperties={processProperties} />;
                 },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),
         }),
-        [theme, onValidateVariables],
+        [theme, node, processProperties],
     );
 
     const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters), [sourceParameters]);
