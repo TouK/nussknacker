@@ -1,5 +1,5 @@
 import { CheckOutlined, CloseOutlined, DeleteOutlined } from "@mui/icons-material";
-import { Box, ClickAwayListener } from "@mui/material";
+import { Box, ClickAwayListener, useTheme } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -17,11 +17,22 @@ type Props = {
 
 export const DeleteButton = ({ isConfirming, isDisabled, disabledTooltip, startDeleting, cancelDelete, confirmDelete }: Props) => {
     const { t } = useTranslation();
+    const { transitions } = useTheme();
+
+    const slideInFromRight = {
+        "@keyframes slideInFromRight": { from: { transform: "translateX(20px)", opacity: 0 } },
+        animation: `slideInFromRight ${transitions.duration.shorter}ms ${transitions.easing.easeOut}`,
+    };
+
+    const slideInFromLeft = {
+        "@keyframes slideInFromLeft": { from: { transform: "translateX(-20px)", opacity: 0 } },
+        animation: `slideInFromLeft ${transitions.duration.shorter}ms ${transitions.easing.easeOut}`,
+    };
 
     if (isConfirming) {
         return (
             <ClickAwayListener onClickAway={cancelDelete}>
-                <Box display="contents">
+                <Box display="flex" gap={1} sx={slideInFromRight}>
                     <InfoTooltip title={t("testCaseDelete.confirm", "Confirm deletion")} variant={"hover"} enterDelay={500}>
                         <StyledButton data-testid="confirm-delete-test-case" onClick={confirmDelete}>
                             <CheckOutlined fontSize="small" />
@@ -38,12 +49,14 @@ export const DeleteButton = ({ isConfirming, isDisabled, disabledTooltip, startD
     }
 
     return (
-        <InfoTooltip title={disabledTooltip ?? t("testCaseDelete.delete", "Delete test case")} variant={"hover"} enterDelay={500}>
-            <span>
-                <StyledButton data-testid="delete-test-case" onClick={startDeleting} disabled={isDisabled}>
-                    <DeleteOutlined fontSize="small" />
-                </StyledButton>
-            </span>
-        </InfoTooltip>
+        <Box sx={slideInFromLeft}>
+            <InfoTooltip title={disabledTooltip ?? t("testCaseDelete.delete", "Delete test case")} variant={"hover"} enterDelay={500}>
+                <span>
+                    <StyledButton data-testid="delete-test-case" onClick={startDeleting} disabled={isDisabled}>
+                        <DeleteOutlined fontSize="small" />
+                    </StyledButton>
+                </span>
+            </InfoTooltip>
+        </Box>
     );
 };
