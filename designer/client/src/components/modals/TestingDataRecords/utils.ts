@@ -5,7 +5,7 @@ import type { TestFormParameters } from "../../../common/TestResultUtils";
 import { isSourceSelectCell, isVariablesCell } from "./CellContent";
 import { formatDataRecordsVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 export const mapInputDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords) => {
     let parsedVariables: unknown;

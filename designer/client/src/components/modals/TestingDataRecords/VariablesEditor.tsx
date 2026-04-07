@@ -7,7 +7,7 @@ import type { NodeValidationError } from "../../../types/validation";
 import { JsonEditor } from "../../graph/node-modal/editors/expression/JsonEditor";
 import { EditorType, ExpressionLang } from "../../graph/node-modal/editors/expression/types";
 import type { VariablesCell } from "./CellContent";
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 interface VariablesEditorProps {
     value: VariablesCell;

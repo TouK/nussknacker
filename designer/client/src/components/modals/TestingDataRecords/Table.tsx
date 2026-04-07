@@ -30,14 +30,12 @@ import type { SourceSelectCell } from "./SourceEditor";
 import { SourceEditor } from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { TableFooter } from "./TableFooter";
+import type { TestingDataRecords } from "./types";
 import { useTableHeight } from "./useTableHeight";
 import { buildDefaultVariables, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
 
-export interface TestingDataRecords {
-    sourceId: string;
-    variables: string;
-}
+export type { TestingDataRecords } from "./types";
 
 interface TableProps {
     data?: TestingDataRecords[];
