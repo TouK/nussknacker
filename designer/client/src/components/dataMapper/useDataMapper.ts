@@ -70,19 +70,6 @@ function findInTree(fields: FieldDef[], id: number): FieldDef | undefined {
     return undefined;
 }
 
-/** Finds a FieldDef by a dotted path (e.g. "combinedState.tool_record"), traversing children. */
-function findFieldByDottedPath(fields: FieldDef[], path: string): FieldDef | undefined {
-    const segments = path.split(".");
-    let current = fields;
-    let match: FieldDef | undefined;
-    for (const seg of segments) {
-        match = current.find((f) => f.name === seg);
-        if (!match) return undefined;
-        current = match.children;
-    }
-    return match;
-}
-
 /** When expr contains an Elvis fallback (e.g. from applyTypeConversion), split it into expression + defaultValue. */
 function splitElvisIntoField(field: FieldDef, expr: string): FieldDef {
     const elvisIdx = expr.lastIndexOf(" ?: ");
@@ -143,13 +130,12 @@ export function useDataMapper({
         return isEmbedded ? [] : INITIAL_FIELDS.map((f) => ({ ...f, id: nextId() }));
     });
     const [selField, setSelField] = useState<number | null>(null);
-    const [initialScrollFieldId, setInitialScrollFieldId] = useState<number | null>(null);
 
     const initialFocusFieldsRef = useRef(fields);
     useEffect(() => {
         if (!initialFocusFieldName) return;
-        const match = findFieldByDottedPath(initialFocusFieldsRef.current, initialFocusFieldName);
-        if (match) setInitialScrollFieldId(match.id);
+        const match = initialFocusFieldsRef.current.find((f) => f.name === initialFocusFieldName);
+        if (match) setSelField(match.id);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -525,7 +511,6 @@ export function useDataMapper({
         enrichedContext,
         fields,
         selField,
-        initialScrollFieldId,
         selPath,
         dragOverId,
         showTargetSample,
