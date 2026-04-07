@@ -11,7 +11,9 @@ export function DataMapperFieldWrapper({ parameter, parameterDefinitions, ...res
         const paramDef = parameterDefinitions?.find((p) => p.name === parameter.name);
         const fields = paramDef?.typ ? fieldsFromSample(typingResultToSample(paramDef.typ)) : undefined;
         if (fields?.length) return fields;
-        // Fallback: derive from individual field params (avro/json schema dynamic mode)
+        // Fallback: derive schema from individual field params — only for Kafka sinks (avro/json schema dynamic mode).
+        // Other components (HTTP Callback, Webhook etc.) use free-form fields.
+        if (!parameterDefinitions?.some((p) => p.name === "Raw editor")) return undefined;
         const KAFKA_SYSTEM_PARAMS = new Set([
             "Topic",
             "Schema version",
