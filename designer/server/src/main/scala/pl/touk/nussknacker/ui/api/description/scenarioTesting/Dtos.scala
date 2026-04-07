@@ -12,17 +12,20 @@ import io.circe.generic.extras.{Configuration => CirceConfiguration}
 import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId, TestCaseName}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
   EmptyDetails,
   TestWithParametersDetails
@@ -131,6 +134,12 @@ object Dtos {
       implicit def schema: Schema[NotAvailableReason]               = Schema.derived
     }
 
+    @derive(schema, encoder, decoder)
+    final case class SourceCapabilitiesRequestDto(
+        processProperties: ProcessProperties,
+        nodeData: NodeData
+    )
+
   }
 
   object Test {
@@ -214,6 +223,13 @@ object Dtos {
     final case class ScenarioTestValidationRequest(
         scenarioGraph: ScenarioGraph,
         testData: ScenarioTestData,
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class SourceValidationRequestDto(
+        processProperties: ProcessProperties,
+        nodeData: NodeData,
+        sourceParameters: TestSourceParameters,
     )
 
   }

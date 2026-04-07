@@ -2064,19 +2064,6 @@ object NodesApiEndpoints {
         nodeData: NodeData
     )
 
-    @derive(schema, encoder, decoder)
-    final case class SourceCapabilitiesRequestDto(
-        processProperties: ProcessProperties,
-        nodeData: NodeData
-    )
-
-    @derive(schema, encoder, decoder)
-    final case class SourceValidationRequestDto(
-        processProperties: ProcessProperties,
-        nodeData: NodeData,
-        sourceParameters: TestSourceParameters,
-    )
-
   }
 
 }

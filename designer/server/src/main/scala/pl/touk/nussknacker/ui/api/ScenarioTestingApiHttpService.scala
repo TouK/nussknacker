@@ -16,11 +16,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErro
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
-  ParametersValidationResultDto,
-  SourceCapabilitiesRequestDto,
-  SourceValidationRequestDto
-}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.{
   ResultsWithCountsDto,
   ResultsWithCountsDtoCodecs,
@@ -30,7 +26,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ScenarioTest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
-  ScenarioTestCapabilities
+  ScenarioTestCapabilities,
+  SourceCapabilitiesRequestDto
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
