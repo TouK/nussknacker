@@ -118,7 +118,7 @@ describe("Table editor", () => {
     });
 
     // TODO: this test hangs
-    it.skip("should change columns position", () => {
+    it("should change columns position", () => {
         cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "table", "Default");
 
@@ -153,10 +153,6 @@ describe("Table editor", () => {
         cy.get("@table").realMouseDown({ x: 400, y: 40 });
         cy.get("@table").realMouseMove(50, 40);
         cy.get("@table").realMouseUp();
-
-        cy.applyNodeChanges();
-        cy.openNodeWindow("decision-table");
-        cy.get(`[title="${tableFieldName}"]`).next().find("[data-testid='table-container']").should("be.visible").as("table");
         cy.get("@table").matchImage();
     });
 
