@@ -64,7 +64,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.{
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.capabilities.pekko.PekkoStreams
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.model.sse.ServerSentEvent
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody

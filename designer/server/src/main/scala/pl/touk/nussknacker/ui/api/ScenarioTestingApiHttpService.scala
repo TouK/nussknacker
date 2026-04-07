@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.stream.scaladsl.Source
-import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
@@ -54,7 +54,6 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioNodeValidationErrors
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
-import sttp.model.sse.ServerSentEvent
 
 import scala.concurrent.{ExecutionContext, Future}
 
