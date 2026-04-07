@@ -13,6 +13,7 @@ const buildState = (testCaseList: { id: string; name: string }[], multipleEnable
             scenario: {
                 scenarioGraph: {
                     testCases: { list: testCaseList },
+                    nodes: [],
                 },
             },
             testing: {

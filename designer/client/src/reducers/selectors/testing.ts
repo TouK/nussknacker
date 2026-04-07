@@ -7,7 +7,7 @@ import { getGraph, getNodes, getProcessCounts } from "./graph";
 export const getTesting = createSelector(getGraph, (g) => g.testing || ({} as TestingState));
 
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
-const getTestAssertionResults = createSelector(getTesting, (g) => g.testCasesResults || {});
+const getRawTestAssertionResults = createSelector(getTesting, (g) => g.testCasesResults || {});
 export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
 export const getTestData = createSelector(getTesting, (g) => g.testData || ({} as TestData));
 export const getIsTestingMode = createSelector(
@@ -32,8 +32,8 @@ function filterTestCaseResultByExistingNodes(testCaseResult: TestCaseResult, nod
     };
 }
 
-export const getFilteredTestAssertionResults = createSelector(
-    getTestAssertionResults,
+export const getTestAssertionResults = createSelector(
+    getRawTestAssertionResults,
     getNodes,
     (assertionsResults, nodes): TestCasesResults => {
         const nodeIds = new Set(nodes.map((n) => n.id));
@@ -47,7 +47,7 @@ export const getFilteredTestAssertionResults = createSelector(
 );
 
 export const getActiveTestCaseAssertionResult = createSelector(
-    getFilteredTestAssertionResults,
+    getTestAssertionResults,
     getActiveTestCaseId,
     (assertionsResults, testCaseId): TestCaseResult | undefined => (testCaseId ? assertionsResults[testCaseId] : undefined),
 );

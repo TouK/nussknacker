@@ -1,5 +1,5 @@
 import type { MultipleResultsWithCountsDto } from "../src/http/resultsWithCountsDto";
-import { getFilteredTestAssertionResults } from "../src/reducers/selectors/testing";
+import { getTestAssertionResults } from "../src/reducers/selectors/testing";
 
 const completedResult = (assertionsResults = {}): MultipleResultsWithCountsDto => ({
     type: "Completed",
@@ -28,11 +28,11 @@ const buildState = (nodeIds: string[], testCasesResults: Record<string, any>) =>
         },
     } as any);
 
-describe("getFilteredTestAssertionResults", () => {
+describe("getTestAssertionResults", () => {
     it("removes results for nodes not present in scenarioGraph", () => {
         const assertions = { node1: [{ type: "SuccessfulAssertion" as const }], node2: [{ type: "SuccessfulAssertion" as const }] };
         const state = buildState(["node2"], { "tc-1": { status: "loaded", results: completedResult(assertions) } });
-        const result = getFilteredTestAssertionResults(state);
+        const result = getTestAssertionResults(state);
         expect(result["tc-1"]).toMatchObject({
             status: "loaded",
             results: { result: { assertionsResults: { node2: expect.anything() } } },
@@ -43,13 +43,13 @@ describe("getFilteredTestAssertionResults", () => {
     it("keeps results for nodes present in scenarioGraph", () => {
         const assertions = { node1: [{ type: "SuccessfulAssertion" as const }] };
         const state = buildState(["node1"], { "tc-1": { status: "loaded", results: completedResult(assertions) } });
-        const result = getFilteredTestAssertionResults(state);
+        const result = getTestAssertionResults(state);
         expect((result["tc-1"] as any).results.result.assertionsResults).toHaveProperty("node1");
     });
 
     it("passes through loading results unchanged", () => {
         const state = buildState([], { "tc-1": { status: "loading" } });
-        const result = getFilteredTestAssertionResults(state);
+        const result = getTestAssertionResults(state);
         expect(result["tc-1"]).toEqual({ status: "loading" });
     });
 
@@ -61,7 +61,7 @@ describe("getFilteredTestAssertionResults", () => {
             error: "Something went wrong",
         };
         const state = buildState([], { "tc-1": { status: "loaded", results: errorResult } });
-        const result = getFilteredTestAssertionResults(state);
+        const result = getTestAssertionResults(state);
         expect(result["tc-1"]).toEqual({ status: "loaded", results: errorResult });
     });
 
@@ -71,7 +71,7 @@ describe("getFilteredTestAssertionResults", () => {
             "tc-1": { status: "loaded", results: completedResult(assertions) },
             "tc-2": { status: "loaded", results: completedResult(assertions) },
         });
-        const result = getFilteredTestAssertionResults(state);
+        const result = getTestAssertionResults(state);
         for (const tcId of ["tc-1", "tc-2"]) {
             const assertionsResults = (result[tcId] as any).results.result.assertionsResults;
             expect(assertionsResults).toHaveProperty("node1");
@@ -82,7 +82,7 @@ describe("getFilteredTestAssertionResults", () => {
     it("returns empty assertionsResults when all nodes are deleted", () => {
         const assertions = { node1: [{ type: "SuccessfulAssertion" as const }] };
         const state = buildState([], { "tc-1": { status: "loaded", results: completedResult(assertions) } });
-        const result = getFilteredTestAssertionResults(state);
+        const result = getTestAssertionResults(state);
         expect((result["tc-1"] as any).results.result.assertionsResults).toEqual({});
     });
 });
