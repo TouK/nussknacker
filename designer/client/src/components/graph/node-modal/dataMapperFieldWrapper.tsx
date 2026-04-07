@@ -42,6 +42,7 @@ export function DataMapperFieldWrapper({ parameter, parameterDefinitions, ...res
                     onInsert={onInsert}
                     initialExpression={initialExpression}
                     initialFields={initialFields}
+                    hideFieldControls={!!initialFields || parameterDefinitions?.some((p) => p.name === "Schema version")}
                     open={open}
                     onClose={onClose}
                 />
