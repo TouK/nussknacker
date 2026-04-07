@@ -86,7 +86,6 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
     const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
-
     const [generalErrors] = useGetNodeErrors(node);
     const testCase = useAppSelector(getActiveTestCase);
     const hasNodeTestCasesErrors = useAppSelector((state) =>
