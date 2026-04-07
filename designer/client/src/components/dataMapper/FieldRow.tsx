@@ -217,18 +217,21 @@ export function FieldRow({
                     />
                 )}
                 {!field.isRecord && field.expression && (
-                    <Chip
-                        label={field.expression.length > 30 ? field.expression.slice(0, 30) + "…" : field.expression}
-                        size="small"
-                        sx={{
-                            height: 18,
-                            fontSize: 10,
-                            fontFamily: "monospace",
-                            color: theme.palette.primary.light,
-                            backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                            "& .MuiChip-label": { px: "6px" },
-                        }}
-                    />
+                    <Tooltip title={field.expression} placement="top">
+                        <Chip
+                            label={field.expression}
+                            size="small"
+                            sx={{
+                                height: 18,
+                                fontSize: 10,
+                                fontFamily: "monospace",
+                                color: theme.palette.primary.light,
+                                backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                                maxWidth: 300,
+                                "& .MuiChip-label": { px: "6px" },
+                            }}
+                        />
+                    </Tooltip>
                 )}
                 <Box sx={{ flex: 1 }} />
                 {!hideFieldControls && (
@@ -286,59 +289,65 @@ export function FieldRow({
                     }}
                 >
                     {/* Name */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                        <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Name</Typography>
-                        <TextField
-                            value={field.name}
-                            onChange={(e) => onChange(field.id, "name", e.target.value)}
-                            size="small"
-                            variant="outlined"
-                            sx={{ flex: 1, "& .MuiInputBase-input": { fontSize: 12, fontFamily: "monospace", py: "5px" } }}
-                        />
-                    </Box>
+                    {!hideFieldControls && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                            <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Name</Typography>
+                            <TextField
+                                value={field.name}
+                                onChange={(e) => onChange(field.id, "name", e.target.value)}
+                                size="small"
+                                variant="outlined"
+                                sx={{ flex: 1, "& .MuiInputBase-input": { fontSize: 12, fontFamily: "monospace", py: "5px" } }}
+                            />
+                        </Box>
+                    )}
 
                     {/* Type */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                        <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Type</Typography>
-                        {field.isRecord ? (
-                            <>
-                                <Typography sx={{ fontSize: 12, color: "text.secondary", flex: 1 }}>Nested record</Typography>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="inherit"
-                                    onClick={() => onChange(field.id, "isRecord", false)}
-                                    sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
-                                >
-                                    Switch to expression
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Select
-                                    value={field.type === "Map" ? "Any" : field.type}
-                                    onChange={(e) => onChange(field.id, "type", e.target.value as NuType)}
-                                    size="small"
-                                    sx={{ flex: 1, fontSize: 12, "& .MuiSelect-select": { py: "5px" } }}
-                                >
-                                    {NU_TYPES.filter((t) => t !== "Map").map((t) => (
-                                        <MenuItem key={t} value={t} sx={{ fontSize: 12 }}>
-                                            {t}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="inherit"
-                                    onClick={() => onChange(field.id, "isRecord", true)}
-                                    sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
-                                >
-                                    Build Record
-                                </Button>
-                            </>
-                        )}
-                    </Box>
+                    {!hideFieldControls && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                            <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Type</Typography>
+                            {field.isRecord ? (
+                                <>
+                                    <Typography sx={{ fontSize: 12, color: "text.secondary", flex: 1 }}>Nested record</Typography>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        color="inherit"
+                                        onClick={() => onChange(field.id, "isRecord", false)}
+                                        sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
+                                    >
+                                        Switch to expression
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Select
+                                        value={field.type === "Map" ? "Any" : field.type}
+                                        onChange={(e) => onChange(field.id, "type", e.target.value as NuType)}
+                                        size="small"
+                                        sx={{ flex: 1, fontSize: 12, "& .MuiSelect-select": { py: "5px" } }}
+                                    >
+                                        {NU_TYPES.filter((t) => t !== "Map").map((t) => (
+                                            <MenuItem key={t} value={t} sx={{ fontSize: 12 }}>
+                                                {t}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {field.type === "Map" && (
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => onChange(field.id, "isRecord", true)}
+                                            sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
+                                        >
+                                            Build Record
+                                        </Button>
+                                    )}
+                                </>
+                            )}
+                        </Box>
+                    )}
 
                     {/* SpEL expression (leaf only) */}
                     {!field.isRecord && (
@@ -433,14 +442,16 @@ export function FieldRow({
                             onValidateExpression={onValidateExpression}
                         />
                     ))}
-                    <Button
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => onAddChild(field.id)}
-                        sx={{ fontSize: 11, textTransform: "none", mt: 0.5, py: "2px" }}
-                    >
-                        Add field
-                    </Button>
+                    {!hideFieldControls && (
+                        <Button
+                            size="small"
+                            startIcon={<AddIcon />}
+                            onClick={() => onAddChild(field.id)}
+                            sx={{ fontSize: 11, textTransform: "none", mt: 0.5, py: "2px" }}
+                        >
+                            Add field
+                        </Button>
+                    )}
                 </Box>
             )}
         </Box>
