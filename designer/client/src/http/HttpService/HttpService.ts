@@ -988,37 +988,6 @@ export class HttpService {
         return promise;
     }
 
-    validateTestDataWithDataRecords(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, dataRecords: TestingDataRecords) {
-        const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
-
-        const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, {
-            scenarioGraph: sanitizedScenarioGraph,
-            testData: {
-                type: "WITH_PARAMETERS",
-                sourceParameters: {
-                    sourceId: dataRecords.sourceId,
-                    parameterExpressions: {
-                        "Input variables": {
-                            language: "json",
-                            expression: dataRecords.variables,
-                        },
-                    },
-                },
-            },
-        });
-
-        promise.catch((error: AxiosError) =>
-            this.#addError(
-                i18next.t("notification.error.failedValidateTestDataWithEventsData", "Failed to validate due to: {{axiosError}}", {
-                    axiosError: handleAxiosError(error),
-                }),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
     fetchTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
         const promise = api.post<TestingDataRecords[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {

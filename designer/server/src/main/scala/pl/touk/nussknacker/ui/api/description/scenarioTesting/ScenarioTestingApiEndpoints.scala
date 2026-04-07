@@ -145,6 +145,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
+  // This endpoint is unused on FE, can be removed later.
   def scenarioTestValidationEndpoint: SecuredEndpoint[
     (ProcessName, ScenarioTestValidationRequest),
     TestingError,

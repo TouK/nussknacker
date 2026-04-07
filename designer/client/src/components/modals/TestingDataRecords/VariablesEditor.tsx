@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 
 import HttpService from "../../../http/HttpService/instance";
-import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
+import { getProcessName } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, PropertiesType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
@@ -13,26 +13,20 @@ import type { TestingDataRecords } from "./types";
 interface VariablesEditorProps {
     value: VariablesCell;
     onChange: (cell: VariablesCell) => void;
-    node?: NodeType;
-    processProperties?: PropertiesType;
+    node: NodeType;
+    processProperties: PropertiesType;
 }
 export const VariablesEditor = ({ value, onChange, node, processProperties }: VariablesEditorProps) => {
     const [validationErrors, setValidationErrors] = useState<NodeValidationError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
-    const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const handleValidateData = useCallback(
         (row: TestingDataRecords) => {
-            const validationPromise =
-                // TODO
-                node && processProperties
-                    ? HttpService.validateSourceNodeTestData(scenarioName, processProperties, node, row)
-                    : HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row);
-            validationPromise.then(({ data }) => {
+            HttpService.validateSourceNodeTestData(scenarioName, processProperties, node, row).then(({ data }) => {
                 setValidationErrors(data.validationErrors);
             });
         },
-        [node, processProperties, scenarioGraph, scenarioName],
+        [node, processProperties, scenarioName],
     );
 
     useEffect(() => {
