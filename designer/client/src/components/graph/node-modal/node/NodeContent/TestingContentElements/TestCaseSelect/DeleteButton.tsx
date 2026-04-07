@@ -2,6 +2,7 @@ import { CheckOutlined, CloseOutlined, DeleteOutlined } from "@mui/icons-materia
 import { Box, ClickAwayListener } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { usePreviousImmediate } from "rooks";
 
 import { StyledButton } from "../../../../../styledButton";
 import { InfoTooltip } from "../../../../editors/InfoTooltip/InfoTooltip";
@@ -17,6 +18,7 @@ type Props = {
 
 export const DeleteButton = ({ isConfirming, isDisabled, disabledTooltip, startDeleting, cancelDelete, confirmDelete }: Props) => {
     const { t } = useTranslation();
+    const wasConfirming = usePreviousImmediate(isConfirming);
 
     if (isConfirming) {
         return (
@@ -46,10 +48,14 @@ export const DeleteButton = ({ isConfirming, isDisabled, disabledTooltip, startD
 
     return (
         <Box
-            sx={(theme) => ({
-                "@keyframes slideInFromLeft": { from: { transform: "translateX(-20px)", opacity: 0 } },
-                animation: `slideInFromLeft ${theme.transitions.duration.shorter}ms ${theme.transitions.easing.easeOut}`,
-            })}
+            sx={
+                wasConfirming
+                    ? (theme) => ({
+                          "@keyframes slideInFromLeft": { from: { transform: "translateX(-20px)", opacity: 0 } },
+                          animation: `slideInFromLeft ${theme.transitions.duration.shorter}ms ${theme.transitions.easing.easeOut}`,
+                      })
+                    : undefined
+            }
         >
             <InfoTooltip title={disabledTooltip ?? t("testCaseDelete.delete", "Delete test case")} variant={"hover"} enterDelay={500}>
                 <span>
