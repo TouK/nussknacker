@@ -171,8 +171,16 @@ export function useDataMapper({
         for (const [key, typingResult] of Object.entries(variableTypes)) {
             const existing = merged[key];
             const elem0 = Array.isArray(existing) ? existing[0] : undefined;
+            const typingHasFields =
+                typingResult !== null &&
+                typeof typingResult === "object" &&
+                "fields" in typingResult &&
+                typingResult.fields !== null &&
+                typeof typingResult.fields === "object" &&
+                Object.keys(typingResult.fields as object).length > 0;
             const lacksStructure =
                 existing === undefined ||
+                (typingHasFields && (existing === null || typeof existing !== "object")) ||
                 (Array.isArray(existing) && existing.length === 0) ||
                 (Array.isArray(existing) &&
                     existing.length > 0 &&
@@ -293,10 +301,15 @@ export function useDataMapper({
             traverse(val, key, variableTypes?.[key] as { fields?: Record<string, unknown> } | undefined),
         );
 
+        function isTrivialExpression(expr: string): boolean {
+            const t = expr.trim();
+            return !t || t === "null" || t === "''" || t === '""' || t === "false" || t === "true" || /^-?\d+(\.\d+)?$/.test(t);
+        }
+
         function autoMap(fs: FieldDef[]): FieldDef[] {
             return fs.map((f) => {
                 if (f.isRecord) return { ...f, children: autoMap(f.children) };
-                if (f.expression) return f;
+                if (f.expression && !isTrivialExpression(f.expression)) return f;
                 const normalized = f.name.toLowerCase().replace(/[_\s]/g, "");
                 const match = pathMap.get(normalized);
                 const expr = `#${match}`;
