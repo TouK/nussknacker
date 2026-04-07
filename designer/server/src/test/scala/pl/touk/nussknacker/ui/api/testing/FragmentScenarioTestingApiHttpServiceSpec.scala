@@ -147,10 +147,6 @@ class FragmentScenarioTestingApiHttpServiceSpec
              |      "status": "AVAILABLE",
              |      "sourceParameters": $expectedTestParameters
              |    },
-             |    "testWithGeneratedData": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
-             |    },
              |    "testWithLiveData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason":"NOT_SUPPORTED_BY_SOURCES"
@@ -233,10 +229,6 @@ class FragmentScenarioTestingApiHttpServiceSpec
              |    "testWithParameters": {
              |      "status": "AVAILABLE",
              |      "sourceParameters": $expectedTestParameters
-             |    },
-             |    "testWithGeneratedData": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
              |    },
              |    "testWithLiveData": {
              |      "status": "NOT_AVAILABLE",

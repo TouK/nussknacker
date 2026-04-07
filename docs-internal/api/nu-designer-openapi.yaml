@@ -5246,8 +5246,6 @@ paths:
                           changesCanReloadParameters: false
                           nonImportantForExecution: false
                       status: AVAILABLE
-                    testWithGeneratedData:
-                      status: AVAILABLE
                     testWithLiveData:
                       status: AVAILABLE
         '400':
@@ -8337,12 +8335,9 @@ components:
       type: object
       required:
       - testWithParameters
-      - testWithGeneratedData
       - testWithLiveData
       properties:
         testWithParameters:
-          $ref: '#/components/schemas/CapabilityStatus_T'
-        testWithGeneratedData:
           $ref: '#/components/schemas/CapabilityStatus_T'
         testWithLiveData:
           $ref: '#/components/schemas/CapabilityStatus_T'
