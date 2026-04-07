@@ -12,7 +12,7 @@ import type { ProcessingType } from "../../actions/nk/processDefinitionData";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";
-import type { SourceCapabilities, TestFormParameters } from "../../common/TestResultUtils";
+import type { SourceTestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
 import type { ChatRequest } from "../../components/aiAssistant/ChatRequest";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
@@ -752,7 +752,7 @@ export class HttpService {
     }
 
     getSourceTestCapabilities(processName: string, scenarioProperties: PropertiesType, nodeData: NodeType) {
-        const promise = api.post<SourceCapabilities>(`/scenarioTesting/${encodeURIComponent(processName)}/sourceCapabilities`, {
+        const promise = api.post<SourceTestCapabilities>(`/scenarioTesting/${encodeURIComponent(processName)}/sourceCapabilities`, {
             processProperties: scenarioProperties,
             nodeData,
         });

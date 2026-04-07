@@ -58,6 +58,9 @@ object Dtos {
       implicit def schema: Schema[ScenarioTestCapabilities]     = Schema.derived
     }
 
+    implicit def capabilityStatusSchema[T: Schema]: Schema[CapabilityStatus[T]] = Schema.derived
+    implicit def uiSourceParametersSchema: Schema[UISourceParameters]           = Schema.anyObject
+
     sealed trait CapabilityStatus[+T]
 
     object CapabilityStatus {
@@ -94,7 +97,6 @@ object Dtos {
           },
         )
 
-      implicit def schema[T: Schema]: Schema[CapabilityStatus[T]] = Schema.derived
     }
 
     sealed trait TestCapabilityDetails
@@ -104,9 +106,8 @@ object Dtos {
           extends TestCapabilityDetails
 
       object TestWithParametersDetails {
-        implicit def codec: circe.Codec[TestWithParametersDetails]        = deriveCodec
-        implicit def uiSourceParametersSchema: Schema[UISourceParameters] = Schema.anyObject
-        implicit def schema: Schema[TestWithParametersDetails]            = Schema.derived
+        implicit def codec: circe.Codec[TestWithParametersDetails] = deriveCodec
+        implicit def schema: Schema[TestWithParametersDetails]     = Schema.derived
       }
 
       final case class EmptyDetails() extends TestCapabilityDetails
@@ -138,6 +139,11 @@ object Dtos {
     final case class SourceCapabilitiesRequestDto(
         processProperties: ProcessProperties,
         nodeData: NodeData
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class SourceTestCapabilities(
+        testWithParameters: CapabilityStatus[UISourceParameters],
     )
 
   }

@@ -27,7 +27,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   CapabilityStatus,
   NotAvailableReason,
   ScenarioTestCapabilities,
-  SourceCapabilitiesRequestDto
+  SourceCapabilitiesRequestDto,
+  SourceTestCapabilities
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
@@ -183,19 +184,24 @@ class ScenarioTestingApiHttpService(
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            metaData = request.processProperties.toMetaData(scenarioName)
-          } yield scenarioTestService.getSourceTestParameters(metaData, sourceNodeData) match {
-            case Right(params) =>
-              CapabilityStatus.Available(
-                UISourceParameters(
-                  sourceNodeData.id.value,
-                  sourceNodeData.name.value,
-                  params.map(DefinitionsService.createUIParameter)
-                )
-              )
-            case Left(_) =>
-              CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
-          }
+            metaData         = request.processProperties.toMetaData(scenarioName)
+            sourceParameters = scenarioTestService.getSourceTestParameters(metaData, sourceNodeData)
+            result = SourceTestCapabilities(
+              testWithParameters = sourceParameters match {
+                case Right(params) =>
+                  CapabilityStatus.Available(
+                    UISourceParameters(
+                      sourceNodeData.id.value,
+                      sourceNodeData.name.value,
+                      params.map(DefinitionsService.createUIParameter)
+                    )
+                  )
+                // TODO
+                case Left(_) =>
+                  CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+              }
+            )
+          } yield result
         }
       }
   }

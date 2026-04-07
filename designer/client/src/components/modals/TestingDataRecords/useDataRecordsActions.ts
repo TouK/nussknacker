@@ -65,6 +65,7 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
     const validateEditedRow = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
             const validationPromise =
+                // TODO
                 node && processProperties
                     ? HttpService.validateSourceNodeTestData(scenarioName, processProperties, node, row)
                     : HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row);
@@ -171,7 +172,9 @@ export const useDataRecordsActions = (node?: NodeType, processProperties?: Prope
         async (sourceId: string, nodeData: NodeType, scenarioProperties: PropertiesType) => {
             if (!validateForCount((currentCount) => currentCount + 1)) return;
 
-            const { data: capabilities } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
+            const {
+                data: { testWithParameters: capabilities },
+            } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, nodeData);
             const variables = capabilities.status === TestCapabilityStatus.AVAILABLE ? buildDefaultVariables(capabilities) : "";
             dispatch(setTestCaseInputs((prev) => [...prev, { sourceId, variables }]));
         },

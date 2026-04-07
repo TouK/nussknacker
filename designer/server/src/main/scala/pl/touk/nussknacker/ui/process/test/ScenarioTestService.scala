@@ -114,6 +114,7 @@ class ScenarioTestService(
             .fold(
               errors => {
                 logger.warn(s"Failed to get test parameters definition for source node $nodeId: $errors")
+                // TODO
                 Nil
               },
               params =>

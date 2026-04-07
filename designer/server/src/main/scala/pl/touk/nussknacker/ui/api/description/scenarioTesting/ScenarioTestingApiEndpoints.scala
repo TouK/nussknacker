@@ -28,7 +28,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   ScenarioTestCapabilities,
-  SourceCapabilitiesRequestDto
+  SourceCapabilitiesRequestDto,
+  SourceTestCapabilities
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetching.FetchSourcesLiveDataRequest
@@ -131,7 +132,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
   def sourceCapabilitiesEndpoint: SecuredEndpoint[
     (ProcessName, SourceCapabilitiesRequestDto),
     TestingError,
-    CapabilityStatus[UISourceParameters],
+    SourceTestCapabilities,
     Any
   ] =
     baseNuApiEndpoint
@@ -140,7 +141,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "sourceCapabilities")
       .in(jsonBody[SourceCapabilitiesRequestDto])
-      .out(statusCode(Ok).and(jsonBody[CapabilityStatus[UISourceParameters]]))
+      .out(statusCode(Ok).and(jsonBody[SourceTestCapabilities]))
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
