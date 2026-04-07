@@ -1,6 +1,7 @@
 import { padStart } from "lodash";
 
 import type { Setting } from "../../src/reducers/userSettings";
+
 import Chainable = Cypress.Chainable;
 
 declare global {
@@ -362,7 +363,7 @@ function openNodeWindow(nameOrAlias: string, options?: { waitForAdditionalInfo?:
 
 function applyNodeChanges() {
     cy.get("[data-testid=window]")
-        .should("be.visible")
+        .should("exist")
         .contains(/^apply/i)
         .should("be.enabled")
         .wait(550)

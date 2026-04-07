@@ -117,7 +117,6 @@ describe("Table editor", () => {
         cy.wait(500);
     });
 
-    // TODO: this test hangs
     it("should change columns position", () => {
         cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "table", "Default");
