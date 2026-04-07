@@ -12,7 +12,7 @@ import type { TestingDataRecords } from "./Table";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
 import { buildDefaultVariables, mapGeneratedTestingDataToTableFormat } from "./utils";
 
-export const useDataRecordsActions = () => {
+export const useDataRecordsActions = (node?: NodeType, processProperties?: PropertiesType) => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
@@ -64,7 +64,12 @@ export const useDataRecordsActions = () => {
 
     const validateEditedRow = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
-            HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row).then(({ data }) =>
+            const validationPromise =
+                node && processProperties
+                    ? HttpService.validateSourceNodeTestData(scenarioName, processProperties, node, row)
+                    : HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row);
+
+            validationPromise.then(({ data }) =>
                 setCellErrors((prev) => {
                     const withoutRow = prev.filter((e) => e.y !== rowIndex || e.columnName !== "variables");
                     const newErrors: CellError[] = data.validationErrors.map((validationError) => ({
@@ -78,7 +83,7 @@ export const useDataRecordsActions = () => {
                 }),
             );
         },
-        [scenarioName, scenarioGraph],
+        [scenarioName, scenarioGraph, node, processProperties],
     );
 
     const handleRowAdded = React.useCallback(

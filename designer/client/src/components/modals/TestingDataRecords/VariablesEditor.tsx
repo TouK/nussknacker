@@ -12,19 +12,23 @@ import type { TestingDataRecords } from "./types";
 interface VariablesEditorProps {
     value: VariablesCell;
     onChange: (cell: VariablesCell) => void;
+    onValidate?: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
 }
-export const VariablesEditor = ({ value, onChange }: VariablesEditorProps) => {
+export const VariablesEditor = ({ value, onChange, onValidate }: VariablesEditorProps) => {
     const [validationErrors, setValidationErrors] = useState<NodeValidationError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const handleValidateData = useCallback(
         (row: TestingDataRecords) => {
-            HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row).then(({ data }) => {
+            const validationPromise = onValidate
+                ? onValidate(row)
+                : HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row);
+            validationPromise.then(({ data }) => {
                 setValidationErrors(data.validationErrors);
             });
         },
-        [scenarioGraph, scenarioName],
+        [onValidate, scenarioGraph, scenarioName],
     );
 
     useEffect(() => {

@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationResultDto,
   SourceCapabilitiesRequestDto,
+  SourceValidationRequestDto,
   TestSourceParameters
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
@@ -139,6 +140,22 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "sourceCapabilities")
       .in(jsonBody[SourceCapabilitiesRequestDto])
       .out(statusCode(Ok).and(jsonBody[CapabilityStatus[UISourceParameters]]))
+      .errorOut(testingErrorOutput)
+      .withSecurity(auth)
+
+  def sourceValidationEndpoint: SecuredEndpoint[
+    (ProcessName, SourceValidationRequestDto),
+    TestingError,
+    ParametersValidationResultDto,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Validate test parameters for a single source node")
+      .tag("Testing")
+      .post
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "sourceValidate")
+      .in(jsonBody[SourceValidationRequestDto])
+      .out(statusCode(Ok).and(jsonBody[ParametersValidationResultDto]))
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 

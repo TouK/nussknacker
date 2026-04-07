@@ -18,7 +18,8 @@ import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationResultDto,
-  SourceCapabilitiesRequestDto
+  SourceCapabilitiesRequestDto,
+  SourceValidationRequestDto
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.{
   ResultsWithCountsDto,
@@ -198,6 +199,36 @@ class ScenarioTestingApiHttpService(
               )
             case Left(_) =>
               CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+          }
+        }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.sourceValidationEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            sourceNodeData <- EitherT.fromEither[Future](request.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(ErrorResult(s"Expected SourceNodeData but got ${other.getClass.getSimpleName}"): TestingError)
+            })
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+            metaData  = request.processProperties.toMetaData(scenarioName)
+          } yield scenarioTestService.getSourceTestParameters(metaData, sourceNodeData) match {
+            case Right(params) =>
+              ParametersValidationResultDto(
+                validator.validate(request.sourceParameters, Map(sourceNodeData.id -> params))(metaData),
+                validationPerformed = true
+              )
+            case Left(_) =>
+              ParametersValidationResultDto(Nil, validationPerformed = false)
           }
         }
       }

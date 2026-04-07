@@ -18,6 +18,7 @@ import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
+import type { NodeValidationError } from "../../../types/validation";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -48,6 +49,7 @@ interface TableProps {
     className?: string;
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
+    onValidateVariables?: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
 }
 
 const TRAILING_ROW_HINT = "Add record";
@@ -77,6 +79,7 @@ export const Table: React.FC<TableProps> = ({
     className,
     cellErrors,
     recordsToAddLimitExceeded,
+    onValidateVariables,
 }) => {
     const [draggingRow, setDraggingRow] = useState<number | null>(null);
     const lastDraggingRowRef = useRef<number | null>(null);
@@ -120,12 +123,12 @@ export const Table: React.FC<TableProps> = ({
                 editor: (props) => {
                     const { onChange, value } = props;
 
-                    return <VariablesEditor value={value} onChange={onChange} />;
+                    return <VariablesEditor value={value} onChange={onChange} onValidate={onValidateVariables} />;
                 },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),
         }),
-        [theme],
+        [theme, onValidateVariables],
     );
 
     const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters), [sourceParameters]);
