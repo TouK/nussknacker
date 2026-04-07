@@ -1,6 +1,6 @@
 import { partition } from "lodash";
 import type { PropsWithChildren } from "react";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ParameterCategory } from "../../../types/definition";
@@ -50,6 +50,8 @@ export const ParametersListAdvanced = ({
         [advanced, errors],
     );
 
+    const [isExpanded, setIsExpanded] = useState(() => hasAdvancedErrors);
+
     const advancedLabel = t("component.advancedParameters.title", "Advanced parameters");
     const advancedTitle = useMemo(
         () => (hasAdvancedErrors ? <LabelWithErrorIndicator label={advancedLabel} hasError /> : advancedLabel),
@@ -61,7 +63,12 @@ export const ParametersListAdvanced = ({
             <ParametersList {...props} parameters={standard} getListFieldPath={getListFieldPath} />
             {children}
             {advanced.length > 0 && (
-                <Expandable componentId={"advanced-param-section"} expandableTitle={advancedTitle}>
+                <Expandable
+                    componentId={"advanced-param-section"}
+                    expandableTitle={advancedTitle}
+                    expanded={isExpanded}
+                    onChange={setIsExpanded}
+                >
                     <ParametersList {...props} parameters={advanced} getListFieldPath={getListFieldPath} />
                 </Expandable>
             )}
