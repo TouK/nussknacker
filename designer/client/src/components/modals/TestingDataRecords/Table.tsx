@@ -18,7 +18,8 @@ import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
-import type { NodeType, PropertiesType } from "../../../types/node";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -45,12 +46,13 @@ interface TableProps {
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
     defaultRecord: TestingDataRecords;
+    sourceId: string;
+    sourceName: string;
     sourceParameters?: TestFormParameters;
     className?: string;
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
-    node?: NodeType;
-    processProperties?: PropertiesType;
+    onValidateVariables: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
 }
 
 const TRAILING_ROW_HINT = "Add record";
@@ -76,12 +78,13 @@ export const Table: React.FC<TableProps> = ({
     onRowsDeleted,
     onRowMoved,
     defaultRecord,
+    sourceId,
+    sourceName,
     sourceParameters,
     className,
     cellErrors,
     recordsToAddLimitExceeded,
-    node,
-    processProperties,
+    onValidateVariables,
 }) => {
     const [draggingRow, setDraggingRow] = useState<number | null>(null);
     const lastDraggingRowRef = useRef<number | null>(null);
@@ -125,17 +128,20 @@ export const Table: React.FC<TableProps> = ({
                 editor: (props) => {
                     const { onChange, value } = props;
 
-                    return <VariablesEditor value={value} onChange={onChange} node={node} processProperties={processProperties} />;
+                    return <VariablesEditor value={value} onChange={onChange} onValidate={onValidateVariables} />;
                 },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),
         }),
-        [theme, node, processProperties],
+        [theme, onValidateVariables],
     );
 
     const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters?.parameters), [sourceParameters]);
 
-    const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, node.id, node.name), [data, node]);
+    const getCellContent = useCallback(
+        (item: Item): GridCell => getTestingCellContent(item, data, sourceId, sourceName),
+        [data, sourceId, sourceName],
+    );
 
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(
         (changes): void => {

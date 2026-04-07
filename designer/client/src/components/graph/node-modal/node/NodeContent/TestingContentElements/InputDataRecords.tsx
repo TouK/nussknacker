@@ -11,6 +11,7 @@ import { Expandable } from "../../../../../common/Expandable";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../../../../modals/TestingDataRecords/types";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { buildDefaultVariables } from "../../../../../modals/TestingDataRecords/utils";
 import { getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
@@ -55,6 +56,11 @@ export const InputDataRecords = ({ node }: Props) => {
         [node.id, sourceParameters],
     );
 
+    const onValidateVariables = useCallback(
+        (row: TestingDataRecords) => HttpService.validateSourceNodeTestData(scenarioName, scenarioProperties, node, row),
+        [scenarioName, scenarioProperties, node],
+    );
+
     const recordsToAddLimitExceeded = useMemo(
         () => recordsErrors.some((recordsErrors) => recordsErrors.type === "TEST_DATA_LIMIT_EXCEEDED"),
         [recordsErrors],
@@ -72,16 +78,17 @@ export const InputDataRecords = ({ node }: Props) => {
             <Expandable componentId={"inputDataRecords"} expandableTitle={"Test data"} expanded={isExpanded} onChange={setIsExpanded}>
                 <ContentSize sx={{ padding: 0, maxHeight: "45cqh", mb: 2 }}>
                     <Table
-                        cellErrors={cellErrors}
-                        sourceParameters={sourceParameters}
-                        defaultRecord={defaultDataRecord}
-                        onRowAdded={handleRowAdded}
-                        onRowMoved={handleRowMoved}
-                        onRowsDeleted={handleRowsDeleted}
-                        onRowUpdated={handleRowUpdated}
                         data={testingDataRecordsForSource}
-                        node={node}
-                        processProperties={scenarioProperties}
+                        onRowAdded={handleRowAdded}
+                        onRowUpdated={handleRowUpdated}
+                        onRowsDeleted={handleRowsDeleted}
+                        onRowMoved={handleRowMoved}
+                        defaultRecord={defaultDataRecord}
+                        sourceId={node.id}
+                        sourceName={node.name}
+                        sourceParameters={sourceParameters}
+                        cellErrors={cellErrors}
+                        onValidateVariables={onValidateVariables}
                     />
                 </ContentSize>
                 {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}
