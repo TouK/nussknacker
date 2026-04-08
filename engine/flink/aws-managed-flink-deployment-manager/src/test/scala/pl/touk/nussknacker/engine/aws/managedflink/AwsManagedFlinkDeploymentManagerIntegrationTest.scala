@@ -207,7 +207,7 @@ class AwsManagedFlinkDeploymentManagerIntegrationTest
     )
     .build()
 
-  private val scenarioName    = s"test_${System.currentTimeMillis()}"
+  private val scenarioName    = s"test-${System.currentTimeMillis()}"
   private val applicationName = ProcessName(scenarioName).toFlinkApplicationName
 
   test("deploy and cancel application") {
@@ -245,7 +245,7 @@ class AwsManagedFlinkDeploymentManagerIntegrationTest
 
     deploymentManager.processCommand(runCommand).futureValue
 
-    eventually(Timeout(Span(3, Minutes)), Interval(Span(5, Seconds))) {
+    eventually(Timeout(Span(5, Minutes)), Interval(Span(5, Seconds))) {
       fetchApplicationDetail(scenarioName).applicationStatus() shouldBe ApplicationStatus.RUNNING
     }
 

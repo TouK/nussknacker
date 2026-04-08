@@ -64,7 +64,7 @@ class AwsManagedFlinkDeploymentManager(
     secretAccessKey = config.awsSecretAccessKey,
     serviceExecutionRoleArn = config.serviceExecutionRoleArn,
     logStreamArn = config.cloudWatchLogStreamArn,
-    runtimeEnviornment = RuntimeEnvironment.FLINK_1_20
+    runtimeEnviornment = RuntimeEnvironment.FLINK_2_2
   )
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {

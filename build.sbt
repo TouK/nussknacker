@@ -344,7 +344,7 @@ val ujsonV                      = "4.2.1"
 val igniteV                     = "2.10.0"
 val retryV                      = "0.3.6"
 val restAssuredV                = "5.5.0"
-val awsSdkV                     = "2.42.8"
+val awsSdkV                     = "2.42.29"
 val awsSdkCommonsCodecV         = "1.17.1"
 val awsKinesisAnaliticsRuntimeV = "1.2.0"
 
@@ -626,10 +626,9 @@ lazy val awsManagedFlinkDeploymentManager = (project in flink("aws-managed-flink
     },
     libraryDependencies ++= {
       Seq(
-        "software.amazon.awssdk" % "s3"                           % awsSdkV,
-        "software.amazon.awssdk" % "kinesisanalyticsv2"           % awsSdkV,
-        "com.amazonaws"          % "aws-kinesisanalytics-runtime" % awsKinesisAnaliticsRuntimeV,
-        "commons-codec"          % "commons-codec"                % awsSdkCommonsCodecV
+        "software.amazon.awssdk" % "s3"                 % awsSdkV,
+        "software.amazon.awssdk" % "kinesisanalyticsv2" % awsSdkV,
+        "commons-codec"          % "commons-codec"      % awsSdkCommonsCodecV
       )
     }
   )
@@ -648,19 +647,24 @@ lazy val awsManagedFlinkDependencies = (project in flink("aws-managed-flink-depe
   .settings(
     assemblySettings(
       "awsManagedFlinkDependencies.jar",
-      includeScala = true
+      includeScala = true,
+      filterProvidedDeps = false
     ): _*
   )
   .settings(
     name                                             := "nussknacker-aws-managed-flink-dependencies",
     libraryDependencies ++= {
       Seq(
+        "org.apache.flink"       % "flink-streaming-java"     % flinkV % Provided,
         "software.amazon.awssdk" % "s3"                       % awsSdkV,
         "org.apache.flink"       % "flink-metrics-dropwizard" % flinkV,
         "org.scala-lang"         % "scala-reflect"            % scalaVersion.value,
       )
     },
     dependencyOverrides += "com.google.code.findbugs" % "jsr305" % findBugsV,
+  )
+  .dependsOn(
+    flinkExecutor % Provided
   )
 
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
