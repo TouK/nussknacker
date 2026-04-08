@@ -9,6 +9,7 @@ import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import type { ExpressionObj } from "../../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../../editors/expression/types";
+import { UseRecordsPrefixContext, UseValueInsertContext } from "../../../editors/expression/useAceDndTarget";
 import Input from "../../../editors/field/Input";
 import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
@@ -124,18 +125,20 @@ const AssertionItemComponent = ({
                     />
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
-                    <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
-                        <EditableEditor
-                            showSwitch={false}
-                            editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                            expressionObj={actual}
-                            variableTypes={variableTypes}
-                            onValueChange={handleActualChange}
-                            showValidation
-                            fieldErrors={actualErrors}
-                            placeholder="#records.size()"
-                        />
-                    </ParamKeyProvider>
+                    <UseRecordsPrefixContext.Provider value={true}>
+                        <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
+                            <EditableEditor
+                                showSwitch={false}
+                                editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                                expressionObj={actual}
+                                variableTypes={variableTypes}
+                                onValueChange={handleActualChange}
+                                showValidation
+                                fieldErrors={actualErrors}
+                                placeholder="#records.size()"
+                            />
+                        </ParamKeyProvider>
+                    </UseRecordsPrefixContext.Provider>
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
                     <TypeSelect
@@ -145,16 +148,18 @@ const AssertionItemComponent = ({
                     />
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
-                    <EditableEditor
-                        showSwitch={false}
-                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={expected}
-                        variableTypes={variableTypes}
-                        onValueChange={handleExpectedChange}
-                        showValidation
-                        fieldErrors={expectedErrors}
-                        placeholder="true, 12, 'xxxx'"
-                    />
+                    <UseValueInsertContext.Provider value={true}>
+                        <EditableEditor
+                            showSwitch={false}
+                            editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                            expressionObj={expected}
+                            variableTypes={variableTypes}
+                            onValueChange={handleExpectedChange}
+                            showValidation
+                            fieldErrors={expectedErrors}
+                            placeholder="true, 12, 'xxxx'"
+                        />
+                    </UseValueInsertContext.Provider>
                 </RowFieldLabel>
             </FieldsRow>
             {testAssertionResult && (
