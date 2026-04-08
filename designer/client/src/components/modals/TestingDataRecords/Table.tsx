@@ -152,6 +152,12 @@ export const Table: React.FC<TableProps> = ({
         [data, defaultVariables, onRowUpdated],
     );
 
+    const onCellAdded = useCallback((): void => {
+        const newRow: TestingDataRecords = { ...defaultRecord };
+        const rowIndex = data.length;
+        onRowAdded(rowIndex, newRow);
+    }, [data.length, defaultRecord, onRowAdded]);
+
     const onCellDeleted = useCallback(
         (rows: number[]): number[] => {
             if (!rows.length) return [] as number[];
@@ -316,7 +322,7 @@ export const Table: React.FC<TableProps> = ({
                     customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
-                    onRowAppended={recordsToAddLimitExceeded ? undefined : () => onRowAdded(data.length, defaultRecord)}
+                    onRowAppended={recordsToAddLimitExceeded ? undefined : onCellAdded}
                     rowMarkers="both"
                     rows={data.length}
                     smoothScrollX
