@@ -51,6 +51,8 @@ export const getInputDataRecordsForSingleSource = createSelector([getTestData, g
 );
 export const hasTestDataDefined = createSelector(getTestData, (inputDataRecords) => inputDataRecords.length > 0);
 
+export const hasMultipleTestCases = createSelector(getTestCases, (testCases) => testCases.length > 1);
+
 export const getTestCaseNodeValidationData = createSelector(getActiveTestCase, getNodeId, (testCase, nodeId) => {
     if (!testCase) return {};
 

@@ -146,6 +146,20 @@ describe("Test cases", () => {
         cy.get('[data-testid="window"]').contains(newTestCaseName).should("be.visible");
     });
 
+    it("should run all test cases and display results", () => {
+        cy.visitNewProcess(seed, "testCasesWithMultipleAssertions.json", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
+        cy.layoutScenario();
+
+        cy.runAllTestCases();
+
+        cy.get('[data-testid="test-cases-panel"]').within(() => {
+            cy.contains("Passing test case").closest('[id$="-header"]').should("contain.text", "1/1");
+            cy.contains("Failing test case").closest('[id$="-header"]').should("contain.text", "0/1");
+        });
+    });
+
     it("should rename test case", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);

@@ -1,0 +1,145 @@
+{
+    "metaData": {
+        "id": "test",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "maxEvents": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Event Generator",
+            "name": "Event Generator",
+            "ref": {
+                "typ": "event-generator",
+                "parameters": [
+                    {
+                        "name": "schedule",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "jsonTemplate",
+                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                        }
+                    },
+                    {
+                        "name": "Event time",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "#DATE.now"
+                        }
+                    },
+                    {
+                        "name": "Max out-of-orderness",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT10S')"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": "",
+                "layoutData": { "x": -89, "y": -182 }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "Log",
+            "name": "Log",
+            "service": {
+                "id": "log",
+                "parameters": [
+                    {
+                        "name": "logger",
+                        "expression": { "language": "spel", "expression": "" }
+                    },
+                    {
+                        "name": "level",
+                        "expression": { "language": "spel", "expression": "T(org.slf4j.event.Level).DEBUG" }
+                    },
+                    {
+                        "name": "message",
+                        "expression": { "language": "spelTemplate", "expression": "" }
+                    }
+                ]
+            },
+            "isDisabled": null,
+            "additionalFields": {
+                "description": "",
+                "layoutData": { "x": -108, "y": -34 }
+            },
+            "type": "Processor"
+        },
+        {
+            "id": "Dead End",
+            "name": "Dead End",
+            "ref": { "typ": "dead-end", "parameters": [] },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": "",
+                "layoutData": { "x": -117, "y": 132 }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": [],
+    "testCases": {
+        "list": [
+            {
+                "id": "a1b2c3d4-0001-4000-8000-000000000001",
+                "name": "Passing test case",
+                "inputs": "[{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"69db68e3-8676-4a6a-8299-bc37b239fb19\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.265286208Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"}]",
+                "mocks": {},
+                "assertions": {
+                    "Log": [
+                        {
+                            "operator": "equals",
+                            "expected": { "language": "spel", "expression": "1" },
+                            "actual": { "language": "spel", "expression": "1" }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "a1b2c3d4-0002-4000-8000-000000000002",
+                "name": "Failing test case",
+                "inputs": "[{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"97b34a53-c26a-462f-bfdc-81e00cc3bae7\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.279348625Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"}]",
+                "mocks": {},
+                "assertions": {
+                    "Log": [
+                        {
+                            "operator": "equals",
+                            "expected": { "language": "spel", "expression": "'example'" },
+                            "actual": { "language": "spel", "expression": "#records[0].input.sampleField" }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

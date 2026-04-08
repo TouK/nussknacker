@@ -18,6 +18,7 @@ import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyle
 export type ToolbarWrapperProps = PropsWithChildren<{
     id: string;
     title?: string;
+    actions?: React.ReactNode;
     onClose?: () => void;
     onExpand?: () => void;
     onCollapse?: () => void;
@@ -31,7 +32,7 @@ export const TOOLBAR_WRAPPER_CLASSNAME = "toolbar-wrapper";
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
-    const { title, children, id, onClose, onExpand, onCollapse, color, disableCollapse, noDrag, forceTitle } = props;
+    const { title, children, id, actions, onClose, onExpand, onCollapse, color, disableCollapse, noDrag, forceTitle } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useAppDispatch();
@@ -90,6 +91,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                         variant={"overline"}
                         sx={{
                             color: color ? "inherit" : undefined,
+                            flex: 1,
                             "::after": {
                                 // force line height for empty
                                 content: "' '",
@@ -98,6 +100,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                     >
                         {title}
                     </Typography>
+                    {actions}
                     {isCollapsible && (
                         <IconWrapper>
                             <StyledCollapseIcon collapsed={isCollapsedLocal} />

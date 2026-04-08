@@ -1,13 +1,13 @@
 import { isEmpty } from "lodash";
 import { createSelector } from "reselect";
 
-import type { TestData, TestingState } from "../graph/testing";
-import { getGraph, getProcessCounts } from "./graph";
+import type { TestCaseResult, TestCasesResults, TestData, TestingState } from "../graph/testing";
+import { getGraph, getNodes, getProcessCounts } from "./graph";
 
 export const getTesting = createSelector(getGraph, (g) => g.testing || ({} as TestingState));
 
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
-export const getTestAssertionResults = createSelector(getTesting, (g) => g.assertionsResults || {});
+const getRawTestAssertionResults = createSelector(getTesting, (g) => g.testCasesResults || {});
 export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
 export const getTestData = createSelector(getTesting, (g) => g.testData || ({} as TestData));
 export const getIsTestingMode = createSelector(
@@ -17,15 +17,46 @@ export const getIsTestingMode = createSelector(
 );
 export const getActiveTestCaseId = createSelector(getTesting, (g) => g.activeTestCaseId);
 
+function filterTestCaseResultByExistingNodes(testCaseResult: TestCaseResult, nodeIds: Set<string>): TestCaseResult {
+    if (testCaseResult.status !== "loaded" || testCaseResult.results.type !== "Completed") {
+        return testCaseResult;
+    }
+    const { assertionsResults } = testCaseResult.results.result;
+    const filteredAssertionsResults = Object.fromEntries(Object.entries(assertionsResults).filter(([nodeId]) => nodeIds.has(nodeId)));
+    return {
+        ...testCaseResult,
+        results: {
+            ...testCaseResult.results,
+            result: { ...testCaseResult.results.result, assertionsResults: filteredAssertionsResults },
+        },
+    };
+}
+
+export const getTestAssertionResults = createSelector(
+    getRawTestAssertionResults,
+    getNodes,
+    (assertionsResults, nodes): TestCasesResults => {
+        const nodeIds = new Set(nodes.map((n) => n.id));
+        return Object.fromEntries(
+            Object.entries(assertionsResults).map(([testCaseId, testCaseResult]) => [
+                testCaseId,
+                filterTestCaseResultByExistingNodes(testCaseResult, nodeIds),
+            ]),
+        );
+    },
+);
+
 export const getActiveTestCaseAssertionResult = createSelector(
     getTestAssertionResults,
     getActiveTestCaseId,
-    (assertionsResults, testCaseId) => (testCaseId ? assertionsResults[testCaseId] : undefined),
+    (assertionsResults, testCaseId): TestCaseResult | undefined => (testCaseId ? assertionsResults[testCaseId] : undefined),
 );
 
 const getNodeId = (_: unknown, nodeId: string) => nodeId;
 export const getTestAssertionResultsForNode = createSelector(getActiveTestCaseAssertionResult, getNodeId, (testCaseResult, nodeId) =>
-    testCaseResult?.status === "loaded" ? testCaseResult.results[nodeId] : undefined,
+    testCaseResult?.status === "loaded" && testCaseResult.results.type === "Completed"
+        ? testCaseResult.results.result.assertionsResults[nodeId]
+        : undefined,
 );
 
 export const getActiveTestCaseAssertionResultLoading = createSelector(

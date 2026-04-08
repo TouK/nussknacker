@@ -29,7 +29,7 @@ type FileButtonProps = BaseButtonProps & {
 type PresetsButtonProps<Preset = { value: string; label: string; isDisabled?: boolean }> = BaseButtonProps & {
     presets: Array<Preset | OptionHeader>;
     selected: Preset | null;
-    onPresetChange: (value: Preset) => void;
+    onPresetChange: (value: Preset) => Promise<{ keepMenuOpen?: boolean } | void> | { keepMenuOpen?: boolean } | void;
 };
 
 export type ToolbarButtonProps = BaseButtonProps | LoadingButtonProps | FileButtonProps | PresetsButtonProps;
