@@ -97,37 +97,6 @@ class ScenarioTestService(
   private val assertionCompiler                    = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   private val assertionVerifier: AssertionVerifier = new AssertionVerifier(globalVariablesPreparer)
 
-  def getSourceTestParameters(
-      metaData: MetaData,
-      sourceNodeData: SourceNodeData,
-  ): Either[TestingCapabilitiesError, List[Parameter]] = {
-    val jobData = JobData(metaData, ProcessVersion.empty)
-    withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
-      val nodeId            = sourceNodeData.id
-      val compilationResult = commonModelDataInfoProvider.nodeCompiler.compileNode(sourceNodeData)
-      compilationResult.compiledObject
-        .leftMap(errors => TestingCapabilitiesError.SourcesCompilationError(NonEmptyList.one(nodeId -> errors)))
-        .toEither
-        .map { _ =>
-          testDataFormatHandler
-            .getTestParametersDefinition(nodeId, sourceNodeData.name, compilationResult)
-            .fold(
-              errors => {
-                logger.warn(s"Failed to get test parameters definition for source node $nodeId: $errors")
-                // TODO
-                Nil
-              },
-              params =>
-                StandardParameterEnrichment.enrichParameterDefinitions(
-                  original = params,
-                  parametersConfig = Map.empty,
-                  globalParametersConfig = modelData.modelConfig.globalParametersConfig
-                )
-            )
-        }
-    }
-  }
-
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
@@ -199,6 +168,26 @@ class ScenarioTestService(
         .map(_.toMap)
     }
 
+  }
+
+  def getSourceTestParameters(
+      metaData: MetaData,
+      sourceNodeData: SourceNodeData,
+  ): Either[ParametersDefinitionError, List[Parameter]] = {
+    val jobData = JobData(metaData, ProcessVersion.empty)
+    withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
+      val nodeId            = sourceNodeData.id
+      val compilationResult = commonModelDataInfoProvider.nodeCompiler.compileNode(sourceNodeData)
+      testDataFormatHandler
+        .getTestParametersDefinition(nodeId, sourceNodeData.name, compilationResult)
+        .map { params =>
+          StandardParameterEnrichment.enrichParameterDefinitions(
+            original = params,
+            parametersConfig = Map.empty,
+            globalParametersConfig = modelData.modelConfig.globalParametersConfig
+          )
+        }
+    }
   }
 
   def fetchSourcesLiveData(
