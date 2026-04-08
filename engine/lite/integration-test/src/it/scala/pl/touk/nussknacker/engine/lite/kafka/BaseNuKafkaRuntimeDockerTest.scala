@@ -45,7 +45,7 @@ trait BaseNuKafkaRuntimeDockerTest
   protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
 
   protected val kafkaContainer: KafkaContainer = {
-    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1")).configure { self =>
+    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.2")).configure { self =>
       self.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false")
       // can segfault on startup, we need retries - https://issues.apache.org/jira/browse/KAFKA-20314
       self.withStartupAttempts(3)

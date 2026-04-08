@@ -12,10 +12,11 @@ trait WithKafkaContainer { self: Suite with WithDockerContainers =>
   protected val kafkaNetworkAlias = "kafka"
 
   protected val kafkaContainer: KafkaContainer =
-    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1")).configure { self =>
+    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.2")).configure { self =>
       // can segfault on startup, we need retries - https://issues.apache.org/jira/browse/KAFKA-20314
       self.withStartupAttempts(3)
       self.setNetwork(network)
+      self.withLogConsumer(logConsumer(prefix = "kafka"))
       self.setNetworkAliases(asList(kafkaNetworkAlias))
     }
 
