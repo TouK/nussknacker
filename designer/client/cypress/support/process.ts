@@ -363,6 +363,7 @@ function openNodeWindow(nameOrAlias: string, options?: { waitForAdditionalInfo?:
 
 function applyNodeChanges() {
     cy.get("[data-testid=window]")
+        .should("exist")
         .contains(/^apply/i)
         .should("be.enabled")
         .wait(550)

@@ -16,7 +16,7 @@ import { Box } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
 import { find, head, orderBy } from "lodash";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/getProcessDefinitionData";
@@ -117,26 +117,17 @@ export function useTableEditorTypeOptions() {
 type TableProps = Pick<EditorProps, "expressionObj" | "onValueChange" | "className" | "fieldErrors">;
 
 export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: TableProps) => {
-    const tableDateContext = useTableState(expressionObj);
-    const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
-
-    useEffect(() => {
-        if (rawExpression !== expressionObj.expression) {
-            onValueChange({ expression: rawExpression, language: editorsParameters[EditorType.TABLE_EDITOR].language });
-        }
-    }, [expressionObj.expression, onValueChange, rawExpression]);
+    const handleChange = useCallback(
+        (expression: string) => {
+            onValueChange({ expression, language: editorsParameters[EditorType.TABLE_EDITOR].language });
+        },
+        [onValueChange],
+    );
 
     const { defaultTypeOption, orderedTypeOptions } = useTableEditorTypeOptions();
     const supportedTypes = useMemo(() => orderedTypeOptions.filter(({ value }) => SUPPORTED_TYPES.includes(value)), [orderedTypeOptions]);
 
-    useEffect(() => {
-        dispatch({
-            type: ActionTypes.expand,
-            rows: rows.length < 1 ? 1 : 0,
-            columns: columns.length < 1 ? 1 : 0,
-            dataType: defaultTypeOption.value,
-        });
-    }, [defaultTypeOption.value, dispatch, columns.length, rows.length]);
+    const [{ rows, columns }, dispatch] = useTableState(expressionObj, handleChange, defaultTypeOption.value);
 
     const tableColumns = useMemo<GridColumn[]>(() => {
         return columns.map<GridColumn>(({ name, type = "", size }, i) => {
@@ -159,26 +150,28 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
             const value = rows[row]?.[col];
             const column = columns[col];
 
-            if (column.type === "java.time.LocalDateTime" || column.type === "java.time.LocalDate") {
-                return {
-                    kind: GridCellKind.Custom,
-                    allowOverlay: true,
-                    copyData: value ?? "",
-                    data: {
-                        kind: "date-picker-cell",
-                        date: value ?? "",
-                        format: column.type,
-                    },
-                };
+            switch (column?.type) {
+                case "java.time.LocalDateTime":
+                case "java.time.LocalDate":
+                    return {
+                        kind: GridCellKind.Custom,
+                        allowOverlay: true,
+                        copyData: value ?? "",
+                        data: {
+                            kind: "date-picker-cell",
+                            date: value ?? "",
+                            format: column.type,
+                        },
+                    };
+                default:
+                    return {
+                        kind: GridCellKind.Text,
+                        displayData: value ?? "",
+                        data: value ?? "",
+                        allowOverlay: true,
+                        readonly: false,
+                    };
             }
-
-            return {
-                kind: GridCellKind.Text,
-                displayData: value ?? "",
-                data: value ?? "",
-                allowOverlay: true,
-                readonly: false,
-            };
         },
         [columns, rows],
     );

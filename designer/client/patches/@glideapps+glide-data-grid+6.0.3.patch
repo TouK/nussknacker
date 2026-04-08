@@ -1,0 +1,153 @@
+diff --git a/node_modules/@glideapps/glide-data-grid/dist/cjs/data-editor/group-rename.js b/node_modules/@glideapps/glide-data-grid/dist/cjs/data-editor/group-rename.js
+index 00b9311..0dbfa85 100644
+--- a/node_modules/@glideapps/glide-data-grid/dist/cjs/data-editor/group-rename.js
++++ b/node_modules/@glideapps/glide-data-grid/dist/cjs/data-editor/group-rename.js
+@@ -30,6 +30,12 @@ const GroupRename = p => {
+     onFinish
+   } = p;
+   const [value, setValue] = react_1.default.useState(group);
++  const finishedRef = react_1.default.useRef(false);
++  const finish = react_1.default.useCallback(() => {
++    if (finishedRef.current) return;
++    finishedRef.current = true;
++    onFinish(value);
++  }, [onFinish, value]);
+   return react_1.default.createElement(click_outside_container_js_1.default, {
+     style: {
+       position: "absolute",
+@@ -39,12 +45,12 @@ const GroupRename = p => {
+       height: bounds.height
+     },
+     className: "gdg-c1tqibwd",
+-    onClickOutside: onClose
++    onClickOutside: finish
+   }, react_1.default.createElement(RenameInput, {
+     targetHeight: bounds.height,
+     "data-testid": "group-rename-input",
+     value: value,
+-    onBlur: onClose,
++    onBlur: finish,
+     onFocus: e => e.target.setSelectionRange(0, value.length),
+     onChange: e => setValue(e.target.value),
+     onKeyDown: e => {
+diff --git a/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js b/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js
+index 05c6d7e..d173806 100644
+--- a/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js
++++ b/node_modules/@glideapps/glide-data-grid/dist/cjs/internal/data-grid-dnd/data-grid-dnd.js
+@@ -92,6 +92,14 @@ const DataGridDnd = p => {
+                     setDragCol(col);
+                 }
+             }
++            else if (args.kind === "group-header" && col >= lockColumns && canDragCol) {
++                const group = columns[col]?.group;
++                const groupSize = group !== undefined ? columns.filter(c => c.group === group).length : 0;
++                if (groupSize === 1) {
++                    setDragStartX(args.bounds.x);
++                    setDragCol(col);
++                }
++            }
+             else if (args.kind === "cell" &&
+                 lockColumns > 0 &&
+                 col === 0 &&
+diff --git a/node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/group-rename.js b/node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/group-rename.js
+index 9f64a71..ba4fd10 100644
+--- a/node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/group-rename.js
++++ b/node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/group-rename.js
+@@ -19,6 +19,12 @@ export const GroupRename = p => {
+     onFinish
+   } = p;
+   const [value, setValue] = React.useState(group);
++  const finishedRef = React.useRef(false);
++  const finish = React.useCallback(() => {
++    if (finishedRef.current) return;
++    finishedRef.current = true;
++    onFinish(value);
++  }, [onFinish, value]);
+   return React.createElement(ClickOutsideContainer, {
+     style: {
+       position: "absolute",
+@@ -28,12 +34,12 @@ export const GroupRename = p => {
+       height: bounds.height
+     },
+     className: "gdg-c1tqibwd",
+-    onClickOutside: onClose
++    onClickOutside: finish
+   }, React.createElement(RenameInput, {
+     targetHeight: bounds.height,
+     "data-testid": "group-rename-input",
+     value: value,
+-    onBlur: onClose,
++    onBlur: finish,
+     onFocus: e => e.target.setSelectionRange(0, value.length),
+     onChange: e => setValue(e.target.value),
+     onKeyDown: e => {
+diff --git a/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js b/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js
+index 734f50f..8b8103b 100644
+--- a/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js
++++ b/node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid-dnd/data-grid-dnd.js
+@@ -64,6 +64,14 @@ const DataGridDnd = p => {
+                     setDragCol(col);
+                 }
+             }
++            else if (args.kind === "group-header" && col >= lockColumns && canDragCol) {
++                const group = columns[col]?.group;
++                const groupSize = group !== undefined ? columns.filter(c => c.group === group).length : 0;
++                if (groupSize === 1) {
++                    setDragStartX(args.bounds.x);
++                    setDragCol(col);
++                }
++            }
+             else if (args.kind === "cell" &&
+                 lockColumns > 0 &&
+                 col === 0 &&
+diff --git a/node_modules/@glideapps/glide-data-grid/src/data-editor/group-rename.tsx b/node_modules/@glideapps/glide-data-grid/src/data-editor/group-rename.tsx
+index bcc5191..882cbc2 100644
+--- a/node_modules/@glideapps/glide-data-grid/src/data-editor/group-rename.tsx
++++ b/node_modules/@glideapps/glide-data-grid/src/data-editor/group-rename.tsx
+@@ -30,6 +30,13 @@ export const GroupRename: React.VFC<Props> = p => {
+ 
+     const [value, setValue] = React.useState(group);
+ 
++    const finishedRef = React.useRef(false);
++    const finish = React.useCallback(() => {
++        if (finishedRef.current) return;
++        finishedRef.current = true;
++        onFinish(value);
++    }, [onFinish, value]);
++
+     return (
+         <ClickOutsideContainer
+             style={{
+@@ -45,12 +52,12 @@ export const GroupRename: React.VFC<Props> = p => {
+                 align-items: center;
+                 background-color: var(--gdg-bg-header);
+             `}
+-            onClickOutside={onClose}>
++            onClickOutside={finish}>
+             <RenameInput
+                 targetHeight={bounds.height}
+                 data-testid="group-rename-input"
+                 value={value}
+-                onBlur={onClose}
++                onBlur={finish}
+                 onFocus={e => e.target.setSelectionRange(0, value.length)}
+                 onChange={e => setValue(e.target.value)}
+                 onKeyDown={e => {
+diff --git a/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx b/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx
+index 56c21ee..fe84d33 100644
+--- a/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx
++++ b/node_modules/@glideapps/glide-data-grid/src/internal/data-grid-dnd/data-grid-dnd.tsx
+@@ -165,6 +165,13 @@ const DataGridDnd: React.FunctionComponent<DataGridDndProps> = p => {
+                         setDragStartX(args.bounds.x);
+                         setDragCol(col);
+                     }
++                } else if (args.kind === "group-header" && col >= lockColumns && canDragCol) {
++                    const group = columns[col]?.group;
++                    const groupSize = group !== undefined ? columns.filter(c => c.group === group).length : 0;
++                    if (groupSize === 1) {
++                        setDragStartX(args.bounds.x);
++                        setDragCol(col);
++                    }
+                 } else if (
+                     args.kind === "cell" &&
+                     lockColumns > 0 &&

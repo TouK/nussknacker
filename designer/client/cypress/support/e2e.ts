@@ -16,5 +16,6 @@
 // Import commands.js using ES2015 syntax:
 import "./commands";
 
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
+// useRouteLeavingGuard registers a beforeunload handler that prevents navigation
+// when there are unsaved changes. This blocks Cypress from cleaning up between tests.
+Cypress.on("window:before:unload", (e) => e.stopImmediatePropagation());
