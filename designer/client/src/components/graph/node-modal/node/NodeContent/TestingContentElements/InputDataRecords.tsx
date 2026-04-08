@@ -14,6 +14,7 @@ import type { TestingDataRecords } from "../../../../../modals/TestingDataRecord
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { buildDefaultVariables } from "../../../../../modals/TestingDataRecords/utils";
 import { getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
+import { cleanProperties } from "../../../requestSourceAddons";
 import { ContentSize } from "../../ContentSize";
 import { StyledStack } from "./components/Styled";
 import { TestingExpandable } from "./components/TestingExpandable";
@@ -32,7 +33,7 @@ export const InputDataRecords = ({ node }: Props) => {
     const [sourceParameters, setSourceParameters] = useState<TestFormParameters | undefined>(undefined);
 
     useEffect(() => {
-        HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, node).then(({ data }) => {
+        HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, cleanProperties(node)).then(({ data }) => {
             const capabilities = data.testWithParameters;
             setSourceParameters(capabilities.status === TestCapabilityStatus.AVAILABLE ? capabilities.sourceParameters : undefined);
         });
@@ -57,7 +58,7 @@ export const InputDataRecords = ({ node }: Props) => {
     );
 
     const onValidateVariables = useCallback(
-        (row: TestingDataRecords) => HttpService.validateSourceNodeTestData(scenarioName, scenarioProperties, node, row),
+        (row: TestingDataRecords) => HttpService.validateSourceNodeTestData(scenarioName, scenarioProperties, cleanProperties(node), row),
         [scenarioName, scenarioProperties, node],
     );
 
