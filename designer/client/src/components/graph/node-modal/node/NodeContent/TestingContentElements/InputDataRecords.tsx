@@ -52,6 +52,7 @@ export const InputDataRecords = ({ node }: Props) => {
     const defaultDataRecord = useMemo(
         () => ({
             sourceId: node.id,
+            timestamp: undefined,
             variables: buildDefaultVariables(sourceParameters?.parameters),
         }),
         [node.id, sourceParameters],
