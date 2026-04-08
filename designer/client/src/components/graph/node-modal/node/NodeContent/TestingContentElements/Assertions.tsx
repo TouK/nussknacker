@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { omit } from "lodash";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { AssertionOperator } from "../../../../../../actions/nk/testCasesActions";
@@ -13,6 +13,8 @@ import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHel
 import type { Edge } from "../../../../../../types/edge";
 import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
+import type { ContextData } from "../../../../../dataMapper/DataMapper";
+import { useInputOutputContext } from "../../../../../graph/node-modal/io/InputOutputContext";
 import { withUuid } from "../../../appendUuid";
 import { useHelpText } from "../../../editors/expression/helpText";
 import { ExpressionLang } from "../../../editors/expression/types";
@@ -47,6 +49,17 @@ export const Assertions = ({ node, edges }: Props) => {
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
+    const ioContext = useInputOutputContext();
+    const getAvailableContexts = ioContext?.getAvailableContexts;
+    const MAX_RECORDS_CONTEXT = 20;
+    const recordsContextData = useMemo<ContextData | undefined>(() => {
+        const [inputContexts] = getAvailableContexts?.("input") ?? [[]];
+        if (!inputContexts.length) return undefined;
+        const records = inputContexts
+            .slice(0, MAX_RECORDS_CONTEXT)
+            .map((ctx) => Object.fromEntries(Object.keys(ctx.variables).map((k) => [k, ctx.variables[k].pretty])));
+        return { records };
+    }, [getAvailableContexts]);
     const testCasesErrors = useGetNodeTestCasesErrors(node);
 
     useValidation({ node, showValidation: true, edges });
@@ -137,7 +150,9 @@ export const Assertions = ({ node, edges }: Props) => {
                                 expected={expected}
                                 operator={operator}
                                 actual={actual}
+                                node={node}
                                 variableTypes={assertionVariableTypes}
+                                contextData={recordsContextData}
                                 testAssertionResult={testAssertionResults?.[index]}
                                 index={index}
                                 errors={testCasesErrors.assertionsErrors[index.toString()]}
