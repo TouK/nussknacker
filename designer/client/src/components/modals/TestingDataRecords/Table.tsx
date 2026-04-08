@@ -165,6 +165,9 @@ export const Table: React.FC<TableProps> = ({
     );
 
     const clearSelection = useCallback((): void => setSelection({ rows: CompactSelection.empty(), columns: CompactSelection.empty() }), []);
+    const selectAllRows = useCallback((): void => {
+        setSelection({ rows: CompactSelection.fromSingleSelection([0, data.length]), columns: CompactSelection.empty() });
+    }, [data.length]);
     const closeCellMenu = (): void => setCellMenuData((c) => ({ ...c, position: null }));
     const onDataEditorCellContextMenu = useCallback<NonNullable<DataEditorProps["onCellContextMenu"]>>(([, row], e): void => {
         e.preventDefault();
@@ -363,6 +366,7 @@ export const Table: React.FC<TableProps> = ({
                         selectedCount={selectedRowsCount}
                         allRowsNumber={data.length}
                         handleRemoveRows={handleRemoveSelectedRows}
+                        handleSelectAll={selectedRowsCount < data.length ? selectAllRows : undefined}
                     />
                 )}
             </Sizer>

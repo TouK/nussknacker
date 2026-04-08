@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import React, { useCallback, useMemo, useState } from "react";
 import { usePromise } from "rooks";
 
@@ -9,6 +10,7 @@ import { useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
+import { PasteRecordsButton } from "../../../../../modals/TestingDataRecords/PasteRecordsButton";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import type { TestingDataRecords } from "../../../../../modals/TestingDataRecords/types";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
@@ -40,6 +42,7 @@ export const InputDataRecords = ({ node }: Props) => {
         cellErrors,
         recordsErrors,
         handleRowAdded,
+        handleRowsAdded,
         handleRowMoved,
         handleRowsDeleted,
         handleRowUpdated,
@@ -96,11 +99,19 @@ export const InputDataRecords = ({ node }: Props) => {
                 </ContentSize>
                 {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}
 
-                <AppendFromLiveDataButton
-                    handleGenerateTestData={handleGenerateTestDataForSingleSource}
-                    maxTestingRecords={maxTestingRecords}
-                    recordsToAddLimitExceeded={recordsToAddLimitExceeded}
-                />
+                <Box display="flex" alignItems="center">
+                    <PasteRecordsButton
+                        sourceId={sourceId}
+                        onRowsAdded={handleRowsAdded}
+                        defaultVariables={defaultDataRecord?.variables}
+                        disabled={recordsToAddLimitExceeded}
+                    />
+                    <AppendFromLiveDataButton
+                        handleGenerateTestData={handleGenerateTestDataForSingleSource}
+                        maxTestingRecords={maxTestingRecords}
+                        recordsToAddLimitExceeded={recordsToAddLimitExceeded}
+                    />
+                </Box>
             </TestingExpandable>
         </StyledStack>
     );

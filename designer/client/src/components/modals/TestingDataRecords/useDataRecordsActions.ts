@@ -142,6 +142,21 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
         [dispatch, validateForCount],
     );
 
+    const handleRowsAdded = React.useCallback(
+        (rows: TestingDataRecords[]) => {
+            if (!rows.length) return;
+            if (
+                !validateForCount((currentCount) => {
+                    return currentCount + rows.length;
+                })
+            )
+                return;
+
+            dispatch(setTestCaseInputs((prev) => [...prev, ...rows]));
+        },
+        [dispatch, validateForCount],
+    );
+
     const handleRowMoved = React.useCallback(
         (fromIndex: number, toIndex: number) => {
             dispatch(
@@ -161,6 +176,7 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
         cellErrors,
         recordsErrors,
         handleRowAdded,
+        handleRowsAdded,
         handleRowUpdated,
         handleRowsDeleted,
         handleGenerateTestData,

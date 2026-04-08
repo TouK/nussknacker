@@ -1,9 +1,7 @@
 import { Box } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getTestData } from "../../../reducers/selectors/testCases";
-import { useAppSelector } from "../../../store/storeHelpers";
 import { NumericInput } from "../../graph/node-modal/editors/expression/NumericInput";
 import { FormLabel } from "../../graph/node-modal/editors/FormControl";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
@@ -22,15 +20,6 @@ const TOOLTIP_APPEND_LIVE_DATA = "The table will be appended with live data from
 export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRecords, recordsToAddLimitExceeded }: Props) => {
     const { t } = useTranslation();
     const [recordsToAppend, setRecordsToAppend] = useState<number>(DEFAULT_APPEND_COUNT);
-    const allTestingDataRecords = useAppSelector(getTestData);
-    const currentRecordsNumber = allTestingDataRecords.length;
-    const maxLiveDataToAppend = maxTestingRecords - currentRecordsNumber;
-
-    useEffect(() => {
-        if (maxLiveDataToAppend <= DEFAULT_APPEND_COUNT) {
-            setRecordsToAppend(maxLiveDataToAppend > 0 ? maxLiveDataToAppend : APPEND_MIN);
-        }
-    }, [maxLiveDataToAppend]);
 
     return (
         <Box display={"flex"} justifyContent={"flex-start"}>
@@ -45,10 +34,8 @@ export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRec
             <NumericInput
                 onChange={(_, value: unknown) => {
                     const num = typeof value === "number" ? value : Number(value);
-                    if (!Number.isFinite(num)) return; // ignore non-numeric input
-
-                    const clamped = Math.max(APPEND_MIN, Math.min(maxLiveDataToAppend, num));
-                    setRecordsToAppend(clamped);
+                    if (!Number.isFinite(num)) return;
+                    setRecordsToAppend(Math.max(APPEND_MIN, Math.min(maxTestingRecords, num)));
                 }}
                 value={recordsToAppend}
                 data-testid={"numberOfRecords"}

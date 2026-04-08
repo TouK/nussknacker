@@ -1,5 +1,5 @@
 import { alpha, Box, Button, Typography } from "@mui/material";
-import React, { useCallback } from "react";
+import React from "react";
 import { Trans, useTranslation } from "react-i18next";
 
 import Remove from "../../../assets/img/toolbarButtons/archive.svg";
@@ -9,9 +9,10 @@ interface TableFooterProps {
     selectedCount: number;
     allRowsNumber: number;
     handleRemoveRows: () => void;
+    handleSelectAll?: () => void;
 }
 
-export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRowsNumber, handleRemoveRows }) => {
+export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRowsNumber, handleRemoveRows, handleSelectAll }) => {
     const { t } = useTranslation();
 
     return (
@@ -35,24 +36,53 @@ export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRows
             })}
             data-testid="table-footer"
         >
-            <Typography variant="body2" color="textPrimary">
-                <Trans
-                    i18nKey="tableFooter.selected"
-                    defaults="<strong>{{selectedCount}}</strong> of <strong>{{allRowsNumber}}</strong> selected"
-                    values={{ selectedCount, allRowsNumber }}
-                    components={{ strong: <strong /> }}
-                />
-            </Typography>
-            <Button
-                variant={"text"}
-                sx={(theme) => ({ color: theme.palette.text.primary, textTransform: "capitalize" })}
-                onClick={handleRemoveRows}
-            >
-                <Box width={"24px"} height={"24px"}>
-                    <Remove />
-                </Box>
-                {t("testingDataRecords.tableFooter.remove", "Remove")}
-            </Button>
+            <Box display="flex" alignItems="center" gap={1} sx={{ flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+                <Typography variant="body2" color="textPrimary">
+                    <Trans
+                        i18nKey="tableFooter.selected"
+                        defaults="<strong>{{selectedCount}}</strong> of <strong>{{allRowsNumber}}</strong> selected"
+                        values={{ selectedCount, allRowsNumber }}
+                        components={{ strong: <strong /> }}
+                    />
+                </Typography>
+                {handleSelectAll && (
+                    <>
+                        <Typography variant="body2" color="textSecondary" sx={{ opacity: 0.4 }}>
+                            ·
+                        </Typography>
+                        <Button
+                            variant="text"
+                            size="small"
+                            onClick={handleSelectAll}
+                            sx={{
+                                p: 0,
+                                minWidth: 0,
+                                fontSize: "inherit",
+                                textTransform: "none",
+                                color: "text.primary",
+                                textDecoration: "underline",
+                            }}
+                        >
+                            {t("tableFooter.selectAll", "Select all")}
+                        </Button>
+                    </>
+                )}
+                <Typography variant="body2" color="textSecondary" sx={{ opacity: 0.4 }}>
+                    ·
+                </Typography>
+            </Box>
+            <Box display="flex" alignItems="center">
+                <Button
+                    variant={"text"}
+                    sx={(theme) => ({ color: theme.palette.text.primary, textTransform: "capitalize" })}
+                    onClick={handleRemoveRows}
+                >
+                    <Box width={"24px"} height={"24px"}>
+                        <Remove />
+                    </Box>
+                    {t("testingDataRecords.tableFooter.remove", "Remove")}
+                </Button>
+            </Box>
         </Box>
     );
 };
