@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { cleanProperties } from "src/components/graph/node-modal/requestSourceAddons";
+
 
 import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
 import HttpService from "../../../http/HttpService/instance";
@@ -7,6 +7,7 @@ import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/gr
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, PropertiesType } from "../../../types/node";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
+import { cleanProperties } from "../../graph/node-modal/requestSourceAddons";
 import type { TestingDataRecords } from "./types";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
