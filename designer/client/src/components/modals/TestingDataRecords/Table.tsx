@@ -294,7 +294,7 @@ export const Table: React.FC<TableProps> = ({
             const { removedCellColumnId, removedCellRowIndex } = getDeletedColumn(selection);
 
             // Remove whole row when sourceId column value removed
-            if (removedCellColumnId === "sourceId") {
+            if (removedCellColumnId === COLUMN_SOURCE_ID) {
                 onCellDeleted([removedCellRowIndex]);
                 return false;
             }
