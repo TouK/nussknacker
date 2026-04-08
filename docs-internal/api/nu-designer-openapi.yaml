@@ -5836,6 +5836,224 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/sourceCapabilities:
+    post:
+      tags:
+      - Testing
+      summary: Returns test parameters definition for a single source node
+      operationId: postApiScenariotestingScenarionameSourcecapabilities
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SourceCapabilitiesRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceTestCapabilities'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
+                Example1:
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Bad expression
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with live data fetching support available
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/sourceValidate:
+    post:
+      tags:
+      - Testing
+      summary: Validate test parameters for a single source node
+      operationId: postApiScenariotestingScenarionameSourcevalidate
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SourceTestValidationRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParametersValidationResultDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
+                Example1:
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Bad expression
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with live data fetching support available
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
 components:
   schemas:
     AdditionalField:
@@ -8405,6 +8623,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
+    SourceCapabilitiesRequestDto:
+      title: SourceCapabilitiesRequestDto
+      type: object
+      required:
+      - processProperties
+      - nodeData
+      properties:
+        nodeData:
+          $ref: '#/components/schemas/NodeData'
     SourceRef:
       title: SourceRef
       type: object
@@ -8417,6 +8644,34 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
+    SourceTestCapabilities:
+      title: SourceTestCapabilities
+      type: object
+      required:
+      - testWithParameters
+      properties:
+        testWithParameters:
+          $ref: '#/components/schemas/CapabilityStatus_T'
+    SourceTestValidationRequestDto:
+      title: SourceTestValidationRequestDto
+      type: object
+      required:
+      - processProperties
+      - nodeData
+      - sourceParameters
+      properties:
+        nodeData:
+          $ref: '#/components/schemas/NodeData'
+        sourceParameters:
+          $ref: '#/components/schemas/TestSourceParameters'
+    SourceTestWithParametersDetails:
+      title: SourceTestWithParametersDetails
+      type: object
+      required:
+      - sourceParameters
+      properties:
+        sourceParameters:
+          type: object
     SpelParameterEditor:
       title: SpelParameterEditor
       type: object
