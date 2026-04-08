@@ -1,6 +1,7 @@
 import type { CustomCell, EditableGridCell, ProvideEditorComponent } from "@glideapps/glide-data-grid";
+import type { Moment } from "moment";
 import moment from "moment";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { useWindowSize } from "rooks";
 
 import { DTPicker } from "../../../../../../common/DTPicker";
@@ -8,60 +9,72 @@ import type { SupportedType } from "../TableEditor";
 
 export type DatePickerCellData = { date: string; kind: "date-picker-cell"; format: SupportedType };
 export type DatePickerCell = CustomCell<DatePickerCellData>;
-export const isDatePickerCell = (cell: DatePickerCell | EditableGridCell): cell is DatePickerCell =>
-    (cell.data as DatePickerCellData).kind === "date-picker-cell";
+export const isDatePickerCell = (cell: DatePickerCell | EditableGridCell): cell is DatePickerCell => {
+    const { data } = cell;
+    if (typeof data === "object" && "kind" in data) {
+        return data.kind === "date-picker-cell";
+    }
+    return false;
+};
 
 const DATE_FORMAT = "YYYY-MM-DD";
 const TIME_FORMAT = "HH:mm:ss";
-const MOMENT_FORMAT = `${DATE_FORMAT} ${TIME_FORMAT}`;
-const DATE_TIME_DISPLAY_FORMAT = `${DATE_FORMAT}T${TIME_FORMAT}`;
+const DATE_TIME_FORMAT = `${DATE_FORMAT}T${TIME_FORMAT}`;
+
+export function toDisplayFormat(date: string): string {
+    return date.replace("T", " ");
+}
+
+function toValueFormat(date: string | Moment, format: SupportedType): string {
+    if (typeof date === "string") return date;
+    return date.format(format === "java.time.LocalDateTime" ? DATE_TIME_FORMAT : DATE_FORMAT);
+}
 
 export const DatePicker: ProvideEditorComponent<DatePickerCell> = (props) => {
     const { innerHeight } = useWindowSize();
     const { value, onChange, target } = props;
 
-    const formattedValue = useMemo(() => (value.data?.date ? moment(value.data?.date, MOMENT_FORMAT) : null), [value.data?.date]);
+    const formattedValue = useMemo(() => (value.data?.date ? moment(value.data?.date, DATE_TIME_FORMAT) : null), [value.data?.date]);
 
-    const datePickerTopPosition = useMemo(() => {
-        const datePickerHeight = 245.5;
-        const dateTimePickerHeight = 275.5;
-        const pickerHeight = value.data.format === "java.time.LocalDateTime" ? dateTimePickerHeight : datePickerHeight;
-        const pickerPadding = 10;
-
-        const availablePositions = {
-            bottom: target.y + target.height + pickerPadding,
-            top: target.y - target.height + pickerPadding - pickerHeight,
-        };
-
-        return innerHeight <= target.y + pickerHeight + target.height + pickerPadding * 2
-            ? availablePositions.top
-            : availablePositions.bottom;
-    }, [innerHeight, target.height, target.y, value.data.format]);
+    const ref = useRef<HTMLInputElement>(null);
+    const datePickerTopPosition = useCallback(() => {
+        const rect = ref.current?.parentElement.querySelector(".rdtPicker").getBoundingClientRect();
+        const pickerHeight = rect?.height || 0;
+        const pickerPadding = 3;
+        const position = target.height + pickerPadding;
+        if (innerHeight <= target.y + target.height + pickerHeight + pickerPadding * 2) {
+            return { bottom: position };
+        } else {
+            return { top: position };
+        }
+    }, [innerHeight, target.height, target.y]);
 
     return (
         <DTPicker
+            closeOnClickOutside
+            closeOnSelect
             inputProps={{
-                style: { minWidth: target.width, minHeight: target.height, padding: 0, outline: 0 },
-                value: value.data.date,
+                value: toDisplayFormat(value.data.date),
                 autoFocus: true,
-                onFocus: (event) => {
-                    event.target.select();
-                },
+                ref,
             }}
-            sx={{ ".rdtPicker": { top: datePickerTopPosition } }}
+            sx={{
+                ".form-control": {
+                    background: "transparent",
+                    border: 0,
+                    outline: 0,
+                },
+                ".rdtPicker": datePickerTopPosition(),
+            }}
             timeFormat={value.data.format === "java.time.LocalDateTime" ? TIME_FORMAT : null}
             dateFormat={DATE_FORMAT}
-            open={true}
             value={formattedValue}
             onChange={(data) => {
                 onChange({
                     ...value,
                     data: {
                         ...value.data,
-                        date:
-                            typeof data === "string"
-                                ? data || ""
-                                : data.format(value.data.format === "java.time.LocalDateTime" ? DATE_TIME_DISPLAY_FORMAT : DATE_FORMAT),
+                        date: toValueFormat(data, value.data.format),
                     },
                 });
             }}

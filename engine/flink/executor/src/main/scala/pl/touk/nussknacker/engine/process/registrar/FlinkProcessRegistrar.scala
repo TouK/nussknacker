@@ -388,16 +388,18 @@ class FlinkProcessRegistrar(
           .uid(node.id.value + "-$async")
       } else {
         val ti = InterpretationResultTypeInformation.create(outputContexts)
-        stream.flatMap(
-          new SyncInterpretationFunction(
-            compilerDataForProcessPart(Some(part)),
-            node,
-            validationContext,
-            nodeComponentInfo,
-            useIOMonad
-          ),
-          ti
-        )
+        stream
+          .flatMap(
+            new SyncInterpretationFunction(
+              compilerDataForProcessPart(Some(part)),
+              node,
+              validationContext,
+              nodeComponentInfo,
+              useIOMonad
+            ),
+            ti
+          )
+          .uid(node.id.value + "-$sync")
       }
 
       resultStream.getTransformation.setName(

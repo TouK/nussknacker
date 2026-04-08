@@ -23,7 +23,6 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import org.apache.avro.JsonSchemaFormatter;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
-import org.apache.avro.SchemaFormatter;
 import org.apache.avro.reflect.Nullable;
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema;
 
@@ -33,8 +32,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * This is copy of Flinks class with changed visibility.
- *
+ * Based on Flink's SerializableAvroSchema.
  * A wrapper for Avro {@link Schema}, that is Java serializable.
  */
 public final class NkSerializableParsedSchema<T extends ParsedSchema> implements Serializable {
@@ -42,11 +40,10 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
     private static final long serialVersionUID = 2;
     private static final byte avroSchemaType = 1;
     private static final byte jsonSchemaType = 2;
-    // TODO: remove it after state will be fully migrated
-    private static final byte legacyAvroSchemaWithJsonPayloadType = 3;
 
     private transient @Nullable T schema;
 
+    @SuppressWarnings("unused")
     public NkSerializableParsedSchema() {
     }
 
@@ -80,7 +77,6 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
         if (ois.readBoolean()) {
             byte schemaType = ois.readByte();
             switch (schemaType) {
-                case legacyAvroSchemaWithJsonPayloadType:
                 case avroSchemaType:
                     String avroSchemaStr = (String) ois.readObject();
                     this.schema = (T) new AvroSchema(new Parser().parse(avroSchemaStr));
