@@ -42,7 +42,7 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
   def start()(implicit ec: ExecutionContext): Unit = if (k8s.getOption[Pod](kafkaPodName).futureValue.isEmpty) {
     val kafkaContainer = Container(
       name = kafkaPodName,
-      image = "apache/kafka-native:4.1.1",
+      image = "apache/kafka-native:4.1.2",
       ports = List(
         Container.Port(9092, Protocol.TCP, "kafka-internal"),
         Container.Port(kafkaPodExposedPort, Protocol.TCP, "kafka-localhost"),
