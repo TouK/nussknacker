@@ -254,7 +254,13 @@ export const Table: React.FC<TableProps> = ({
         }
     }, []);
 
-    const rowsFromSelection = useMemo(() => selection.rows.toArray().sort((a, b) => a - b), [selection]);
+    const rowsFromSelection = useMemo(() => {
+        if (!selection) return [];
+        const rowsArr = selection.rows && typeof selection.rows.toArray === "function" ? selection.rows.toArray() : [];
+        if (rowsArr.length > 0) return rowsArr.slice().sort((a, b) => a - b);
+
+        return [];
+    }, [selection]);
 
     const handleRemoveSelectedRows = useCallback(() => {
         if (!onCellDeleted || rowsFromSelection.length === 0) return;
