@@ -123,23 +123,16 @@ class AwsManagedFlinkDeploymentManagerIntegrationTest
 
   import FlinkApplicationName.ScenarioNameOps
 
-  private val awsAccessKeyId = Option(System.getenv("AWS_ACCESS_KEY_ID"))
-    .getOrElse(throw new RuntimeException("AWS_ACCESS_KEY_ID environment variable is required"))
-  private val awsSecretAccessKey = Option(System.getenv("AWS_SECRET_ACCESS_KEY"))
-    .getOrElse(throw new RuntimeException("AWS_SECRET_ACCESS_KEY environment variable is required"))
-  private val awsRegion = Option(System.getenv("AWS_REGION"))
-    .getOrElse(throw new RuntimeException("AWS_REGION environment variable is required"))
-  private val awsS3Bucket = Option(System.getenv("AWS_S3_BUCKET"))
-    .getOrElse(throw new RuntimeException("AWS_S3_BUCKET environment variable is required"))
+  private def getEnv(name: String): String =
+    Option(System.getenv(name))
+      .getOrElse(throw new RuntimeException(s"$name environment variable is required"))
 
-  private val awsManagedFlinkServiceExecutionRoleArn =
-    Option(System.getenv("AWS_MANAGED_FLINK_SERVICE_EXECUTION_ROLE_ARN")).getOrElse(
-      throw new RuntimeException("AWS_MANAGED_FLINK_SERVICE_EXECUTION_ROLE_ARN environment variable is required")
-    )
-
-  private val awsManagedFlinkLogStreamArn =
-    Option(System.getenv("AWS_CLOUDWATCH_LOG_STREAM_ARN"))
-      .getOrElse(throw new RuntimeException("AWS_CLOUDWATCH_LOG_STREAM_ARN environment variable is required"))
+  private val awsAccessKeyId                         = getEnv("AWS_ACCESS_KEY_ID")
+  private val awsSecretAccessKey                     = getEnv("AWS_SECRET_ACCESS_KEY")
+  private val awsRegion                              = getEnv("AWS_REGION")
+  private val awsS3Bucket                            = getEnv("AWS_S3_BUCKET")
+  private val awsManagedFlinkServiceExecutionRoleArn = getEnv("AWS_MANAGED_FLINK_SERVICE_EXECUTION_ROLE_ARN")
+  private val awsManagedFlinkLogStreamArn            = getEnv("AWS_CLOUDWATCH_LOG_STREAM_ARN")
 
   private val (deploymentManagersClassLoader, releaseDeploymentManagerClassLoader) =
     DeploymentManagersClassLoaderFactory.create(List.empty).allocated.unsafeRunSync()(IORuntime.global)
@@ -163,7 +156,7 @@ class AwsManagedFlinkDeploymentManagerIntegrationTest
         |    "./defaultModel/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/defaultModel.jar"
         |    "./engine/flink/components/base/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkBase.jar",
         |    "./engine/flink/components/base-unbounded/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkBaseUnbounded.jar",
-        |    "./engine/flink/aws-managed-flink-dependencies/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/awsManagedFlinkDependencies.jar"
+        |    "./engine/flink/aws-managed-flink-dependencies/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/awsManagedFlinkExecutorPlugin.jar"
         |  ]
         |}
         |category: "Default"
@@ -245,7 +238,7 @@ class AwsManagedFlinkDeploymentManagerIntegrationTest
 
     deploymentManager.processCommand(runCommand).futureValue
 
-    eventually(Timeout(Span(5, Minutes)), Interval(Span(5, Seconds))) {
+    eventually(Timeout(Span(3, Minutes)), Interval(Span(5, Seconds))) {
       fetchApplicationDetail(scenarioName).applicationStatus() shouldBe ApplicationStatus.RUNNING
     }
 

@@ -86,7 +86,7 @@ class AwsManagedFlinkClient(
       .propertyGroups(
         PropertyGroup
           .builder()
-          .propertyGroupId(EngineSharedProperties.InternalPropertyGroupId)
+          .propertyGroupId(ExecutorProperties.InternalPropertyGroupId)
           .propertyMap(
             Map(
               "deploymentPropertiesLocationUri" -> deploymentPropertiesLocation.uri,
@@ -104,7 +104,7 @@ class AwsManagedFlinkClient(
       .propertyGroups(
         PropertyGroup
           .builder()
-          .propertyGroupId(EngineSharedProperties.InternalPropertyGroupId)
+          .propertyGroupId(ExecutorProperties.InternalPropertyGroupId)
           .propertyMap(
             Map(
               "deploymentPropertiesLocationUri" -> deploymentPropertiesLocation.uri,

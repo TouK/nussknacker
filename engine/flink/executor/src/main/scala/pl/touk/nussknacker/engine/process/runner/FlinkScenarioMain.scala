@@ -1,22 +1,17 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import com.amazonaws.services.kinesisanalytics.runtime.KinesisAnalyticsRuntime
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe
-import io.circe.Json
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
-import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
 
 import java.io.File
-import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.util.ServiceLoader
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 import scala.util.control.NonFatal
@@ -26,48 +21,20 @@ object FlinkStandaloneScenarioMain extends FlinkScenarioMain(identity)
 // This class is used by external project only
 object FlinkK8sScenarioMain extends FlinkScenarioMain(FlinkK8sArgsDecodeHack.prepareProgramArgs)
 
-object AwsManagedFlinkScenarioMain
-    extends FlinkScenarioMain({ _ =>
-      {
-        val appProperties = KinesisAnalyticsRuntime.getApplicationProperties()
+object CustomArgsFlinkScenarioMain {
 
-        val deploymentPropertiesUri = Option(appProperties.get("nussknacker-internal"))
-          .map(_.asScala)
-          .flatMap(_.get("deploymentPropertiesLocationUri"))
-          .getOrElse(
-            throw new IllegalArgumentException(
-              "Missing 'deploymentPropertiesLocationUri' in 'nussknacker-internal' group"
-            )
-          )
+  def main(args: Array[String]): Unit = {
+    val providers = ServiceLoader.load(classOf[FlinkMainArgsProvider]).iterator().asScala.toList
+    val preprocessArgs: Array[String] => Array[String] = providers match {
+      case List(one) => one.provideArgs
+      case Nil       => throw new IllegalStateException(s"No FlinkScenarioArgsProvider implementations found")
+      case multiple =>
+        throw new IllegalStateException(s"Multiple FlinkScenarioArgsProvider implementations found: $multiple")
+    }
+    new FlinkScenarioMain(preprocessArgs).main(args)
+  }
 
-        Using(S3Client.builder().build()) { s3Client =>
-          val s3Uri  = s3Client.utilities().parseUri(URI.create(deploymentPropertiesUri))
-          val bucket = s3Uri.bucket().get()
-          val key    = s3Uri.key().get()
-
-          val request                         = GetObjectRequest.builder().bucket(bucket).key(key).build()
-          val deploymentPropertiesInputStream = s3Client.getObject(request)
-
-          val deploymentPropertiesString =
-            new String(deploymentPropertiesInputStream.readAllBytes(), StandardCharsets.UTF_8)
-
-          circe.parser.decode[Map[String, Json]](deploymentPropertiesString) match {
-            case Right(propertiesWithJsonValues) => {
-              val properties = propertiesWithJsonValues.view.mapValues(_.spaces2).toMap
-              Array(
-                properties.getOrElse("scenario", throw new NoSuchElementException("Missing 'scenario' property")),
-                properties.getOrElse("version", throw new NoSuchElementException("Missing 'version' property")),
-                properties
-                  .getOrElse("deploymentData", throw new NoSuchElementException("Missing 'deploymentData' property")),
-                properties
-                  .getOrElse("modelConfig", throw new NoSuchElementException("Missing 'modelConfig' property"))
-              )
-            }
-            case Left(err) => throw new RuntimeException(s"Failed to decode: $err")
-          }
-        }.get
-      }
-    })
+}
 
 class FlinkScenarioMain(preprocessArgs: Array[String] => Array[String]) extends LazyLogging {
 

@@ -47,7 +47,7 @@ class AwsManagedFlinkDeploymentManager(
   private val modelJarProvider = new UberJarProvider(
     modelUrls = modelDataProvider.modelClassLoader.urls ++ additionalModelUrls,
     mergeRules = config.applicationJarMergeRules,
-    mainClass = EngineSharedProperties.MainClassName,
+    mainClass = ExecutorProperties.MainClassName,
     uberJarPrefix = "nussknacker-application-code"
   )
 

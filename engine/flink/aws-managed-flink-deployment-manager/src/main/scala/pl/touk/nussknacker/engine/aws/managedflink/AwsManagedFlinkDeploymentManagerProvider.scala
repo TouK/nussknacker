@@ -94,7 +94,7 @@ object AwsManagedFlinkDeploymentManagerConfig {
     val additionalJarPaths = List(
       "flink-dropwizard-metrics-deps/flink-metrics-dropwizard.jar",
       "flink-dropwizard-metrics-deps/dropwizard-metrics-core.jar",
-      "model/awsManagedFlinkDependencies.jar"
+      "model/awsManagedFlinkExecutorPlugin.jar"
     )
     val additionalJarUrls = additionalJarPaths
       .map(filename => new File(filename))

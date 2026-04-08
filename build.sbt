@@ -309,7 +309,7 @@ val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.13.0"
 val testContainersScalaV    = "0.44.1"
 val testContainersJavaV     = "2.0.3"
-val nettyV                  = "4.1.130.Final"
+val nettyV                  = "4.1.132.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
 val pekkoV                      = "1.0.3" // 1.1 uses Slf4j 2.x
@@ -483,9 +483,9 @@ lazy val distribution: Project = sbt
     },
     modelArtifacts                           := {
       List(
-        (defaultModel / assembly).value                -> "model/defaultModel.jar",
-        (flinkExecutor / assembly).value               -> "model/flinkExecutor.jar",
-        (awsManagedFlinkDependencies / assembly).value -> "model/awsManagedFlinkDependencies.jar",
+        (defaultModel / assembly).value                  -> "model/defaultModel.jar",
+        (flinkExecutor / assembly).value                 -> "model/flinkExecutor.jar",
+        (awsManagedFlinkExecutorPlugin / assembly).value -> "model/awsManagedFlinkExecutorPlugin.jar",
       )
     },
     devArtifacts                             := {
@@ -642,23 +642,25 @@ lazy val awsManagedFlinkDeploymentManager = (project in flink("aws-managed-flink
     scenarioCompiler     % Test
   )
 
-lazy val awsManagedFlinkDependencies = (project in flink("aws-managed-flink-dependencies"))
+lazy val awsManagedFlinkExecutorPlugin = (project in flink("aws-managed-flink-executor-plugin"))
   .settings(commonSettings)
   .settings(
     assemblySettings(
-      "awsManagedFlinkDependencies.jar",
+      "awsManagedFlinkExecutorPlugin.jar",
       includeScala = true,
       filterProvidedDeps = false
     ): _*
   )
   .settings(
-    name                                             := "nussknacker-aws-managed-flink-dependencies",
+    name                                             := "nussknacker-aws-managed-flink-executor-plugin",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink"       % "flink-streaming-java"     % flinkV % Provided,
-        "software.amazon.awssdk" % "s3"                       % awsSdkV,
-        "org.apache.flink"       % "flink-metrics-dropwizard" % flinkV,
-        "org.scala-lang"         % "scala-reflect"            % scalaVersion.value,
+        "org.apache.flink"       % "flink-streaming-java"         % flinkV                      % Provided,
+        // Provided by AWS Managed Flink environment
+        "com.amazonaws"          % "aws-kinesisanalytics-runtime" % awsKinesisAnaliticsRuntimeV % Provided,
+        "software.amazon.awssdk" % "s3"                           % awsSdkV,
+        "org.apache.flink"       % "flink-metrics-dropwizard"     % flinkV,
+        "org.scala-lang"         % "scala-reflect"                % scalaVersion.value,
       )
     },
     dependencyOverrides += "com.google.code.findbugs" % "jsr305" % findBugsV,
@@ -788,25 +790,15 @@ lazy val flinkExecutor = (project in flink("executor"))
     libraryDependencies ++= {
       Seq(
         // Must be loaded before flink-streaming-java or custom serializers won't be loaded
-        "pl.touk"               %% "flink-scala"                  % flinkScalaV                 % Provided,
+        "pl.touk"         %% "flink-scala"                % flinkScalaV % Provided,
         // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
-        "org.apache.flink"       % "flink-streaming-java"         % flinkV                      % Provided,
-        "org.apache.flink"       % "flink-statebackend-rocksdb"   % flinkV                      % Provided,
+        "org.apache.flink" % "flink-streaming-java"       % flinkV      % Provided,
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV      % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
-        "org.apache.flink"       % "flink-metrics-dropwizard"     % flinkV                      % Provided,
+        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV      % Provided,
         // This is needed when flink minicluster is used for deployment
-        "org.apache.flink"       % "flink-metrics-influxdb"       % flinkV                      % Provided,
-        "org.apache.flink"       % "flink-metrics-prometheus"     % flinkV                      % Provided,
-        // Provided by AWS Managed Flink environment
-        "com.amazonaws"          % "aws-kinesisanalytics-runtime" % awsKinesisAnaliticsRuntimeV % Provided,
-        // S3 is needed for reading a deployment-properties file containing scenario json and modelConfig. Alternatively
-        // we could store this deployment-properties file in the application code jar, but then we would have to upload
-        // this jar every deploy. Without this, we send just one application code jar for configured classpath and reuse
-        // it every time.
-        "software.amazon.awssdk" % "s3"                           % awsSdkV                     %
-          // commons-logging must be in flinkExecutor jar. Excluding it here is necessary, because otherwise it is
-          // classified as Provided and filtered out during assembly
-          Provided exclude ("commons-logging", "commons-logging")
+        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV      % Provided,
+        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV      % Provided,
       )
     },
     prepareItLibs               := {
@@ -2270,7 +2262,7 @@ lazy val modules = List[ProjectReference](
   liteEngineRuntimeApp,
   flinkDeploymentManager,
   awsManagedFlinkDeploymentManager,
-  awsManagedFlinkDependencies,
+  awsManagedFlinkExecutorPlugin,
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
