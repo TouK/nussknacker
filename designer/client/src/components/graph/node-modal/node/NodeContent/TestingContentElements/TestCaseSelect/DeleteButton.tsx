@@ -32,7 +32,7 @@ export const DeleteButton = ({ isConfirming, isDisabled, disabledTooltip, startD
                     })}
                 >
                     <InfoTooltip title={t("testCaseDelete.confirm", "Confirm deletion")} variant={"hover"} enterDelay={500}>
-                        <StyledButton data-testid="confirm-delete-test-case" onClick={confirmDelete}>
+                        <StyledButton data-testid="confirm-delete-test-case" onClick={confirmDelete} variant="error">
                             <CheckOutlined fontSize="small" />
                         </StyledButton>
                     </InfoTooltip>
