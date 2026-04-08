@@ -9,7 +9,7 @@ import { AssertionResultsBadge } from "./AssertionResultsBadge";
 
 interface Props {
     title: string;
-    assertionResults: TestAssertionResult[];
+    assertionResults: TestAssertionResult[] | undefined;
     action: ReactNode;
     node?: NodeType;
 }

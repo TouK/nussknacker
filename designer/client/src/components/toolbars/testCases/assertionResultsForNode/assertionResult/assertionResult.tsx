@@ -36,7 +36,7 @@ export const AssertionResult = ({ assertionResult, testCaseAssertion }: Props) =
             alignItems={"center"}
             sx={{ cursor: displayTooltip ? "pointer" : "default" }}
         >
-            <AssertionStatusIcon isSuccess={assertionResult.type === "SuccessfulAssertion"} />
+            <AssertionStatusIcon status={assertionResult.type === "SuccessfulAssertion" ? "success" : "error"} />
             {testCaseAssertion.description ? (
                 <Typography variant={"caption"}>{testCaseAssertion.description}</Typography>
             ) : (

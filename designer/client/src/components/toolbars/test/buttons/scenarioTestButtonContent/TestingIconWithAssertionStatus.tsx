@@ -2,14 +2,14 @@ import { Box } from "@mui/material";
 import React from "react";
 
 import TestingIcon from "../../../../../assets/img/toolbarButtons/test.svg";
+import type { AssertionStatus } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
 import { AssertionStatusIcon } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
 
 interface Props {
-    hasResult: boolean;
-    assertionsIsSuccess: boolean;
+    status: AssertionStatus | null;
 }
 
-export const TestingIconWithAssertionStatus = ({ hasResult, assertionsIsSuccess }: Props) => (
+export const TestingIconWithAssertionStatus = ({ status }: Props) => (
     <Box
         component="span"
         sx={{
@@ -20,7 +20,7 @@ export const TestingIconWithAssertionStatus = ({ hasResult, assertionsIsSuccess 
         }}
     >
         <TestingIcon />
-        {hasResult && (
+        {status && status !== "loading" && (
             <Box
                 component="span"
                 sx={{
@@ -33,7 +33,7 @@ export const TestingIconWithAssertionStatus = ({ hasResult, assertionsIsSuccess 
                     pointerEvents: "none",
                 }}
             >
-                <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"dark"} />
+                <AssertionStatusIcon status={status} variant={"dark"} />
             </Box>
         )}
     </Box>

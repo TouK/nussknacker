@@ -16,6 +16,7 @@ module.exports = {
         uuid: require.resolve("uuid"),
         "@fontsource/roboto-mono": "<rootDir>/node_modules/jest-css-modules",
         "color-alpha": "<rootDir>/__mocks__/color-alpha.ts",
+        "eventsource-parser/stream": "<rootDir>/__mocks__/eventsource-parser-stream.js",
     },
     testMatch: ["**/*[.-]test.[tj]s?(x)"],
     snapshotSerializers: ["@emotion/jest/serializer"],

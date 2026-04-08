@@ -1,20 +1,23 @@
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, CircularProgress, Typography, useTheme } from "@mui/material";
 import React from "react";
 
 import { calculateAssertionResultsSummary } from "../../../../containers/assertions/assertionResultsUtils";
 import type { TestAssertionResult } from "../../../../http/resultsWithCountsDto";
 
 interface AssertionResultsBadgeProps {
-    assertionResults: TestAssertionResult[];
+    assertionResults: TestAssertionResult[] | undefined;
+    isLoading?: boolean;
 }
 
-export const AssertionResultsBadge = ({ assertionResults }: AssertionResultsBadgeProps) => {
+export const AssertionResultsBadge = ({ assertionResults, isLoading }: AssertionResultsBadgeProps) => {
     const { passedCount, total, failedCount, hasResult } = calculateAssertionResultsSummary(assertionResults);
     const theme = useTheme();
     const fillColor = failedCount > 0 ? theme.palette.error.dark : theme.palette.success.dark;
     const textColor = theme.palette.text.secondary;
 
-    if (!hasResult) return null;
+    if (isLoading) return <CircularProgress size={14} />;
+
+    if (assertionResults === undefined) return null;
 
     return (
         <Box
@@ -24,7 +27,7 @@ export const AssertionResultsBadge = ({ assertionResults }: AssertionResultsBadg
                 justifyContent: "center",
                 height: "18px",
                 px: 0.75,
-                backgroundColor: fillColor,
+                backgroundColor: hasResult ? fillColor : theme.palette.action.disabled,
                 borderRadius: 1,
             }}
         >
@@ -36,7 +39,7 @@ export const AssertionResultsBadge = ({ assertionResults }: AssertionResultsBadg
                     fontSize: 11,
                 }}
             >
-                {passedCount}/{total}
+                {hasResult ? `${passedCount}/${total}` : "N/A"}
             </Typography>
         </Box>
     );

@@ -49,8 +49,6 @@ object Dtos {
 
     final case class ScenarioTestCapabilities(
         testWithParameters: CapabilityStatus[TestWithParametersDetails],
-        // TODO: legacy: to be removed
-        testWithGeneratedData: CapabilityStatus[EmptyDetails],
         testWithLiveData: CapabilityStatus[EmptyDetails],
     )
 
@@ -264,9 +262,6 @@ object Dtos {
 
   object ScenarioTestData {
 
-    // TODO: legacy: to be removed
-    private val legacyLiveDataType = "WITH_GENERATED_DATA"
-
     final case class WithParameters(
         sourceParameters: TestSourceParameters,
     ) extends ScenarioTestData
@@ -282,7 +277,7 @@ object Dtos {
           testData <- typeStr match {
             case "WITH_PARAMETERS" =>
               c.downField("sourceParameters").as[TestSourceParameters].map(WithParameters.apply)
-            case `legacyLiveDataType` | "WITH_LIVE_DATA" =>
+            case "WITH_LIVE_DATA" =>
               c.downField("numberOfSamples").as[Int].map(WithLiveData.apply)
           }
         } yield testData

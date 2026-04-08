@@ -4,9 +4,17 @@ declare global {
         interface Chainable {
             addTestRecord: typeof addTestRecord;
             runCurrentTestCase: typeof runCurrentTestCase;
+            runAllTestCases: typeof runAllTestCases;
         }
     }
 }
+
+const runAllTestCases = () => {
+    cy.intercept("POST", "/api/scenarioTesting/*/performMultipleTestCases").as("scenarioTestAll");
+    cy.get('[data-selector="SCENARIO_TEST"]').parent().find(".toolbarButton-MenuExpand").click();
+    cy.contains('[role="menuitem"]', /run all/i).click();
+    cy.wait("@scenarioTestAll");
+};
 
 const addTestRecord = (callback?: () => void) => {
     cy.get('[data-testid="data-grid-canvas"]').should("exist");
@@ -32,5 +40,6 @@ const runCurrentTestCase = () => {
 
 Cypress.Commands.add("addTestRecord", addTestRecord);
 Cypress.Commands.add("runCurrentTestCase", runCurrentTestCase);
+Cypress.Commands.add("runAllTestCases", runAllTestCases);
 
 export default {};

@@ -113,10 +113,10 @@ class ScenarioTestingApiHttpService(
             result = capabilities match {
               case Left(TestingCapabilitiesError.NoSourcesError) =>
                 val noSourcesStatus = CapabilityStatus.NotAvailable(NotAvailableReason.NoSources)
-                ScenarioTestCapabilities(noSourcesStatus, noSourcesStatus, noSourcesStatus)
+                ScenarioTestCapabilities(noSourcesStatus, noSourcesStatus)
               case Left(TestingCapabilitiesError.SourcesCompilationError(_)) =>
                 val invalidScenarioStatus = CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
-                ScenarioTestCapabilities(invalidScenarioStatus, invalidScenarioStatus, invalidScenarioStatus)
+                ScenarioTestCapabilities(invalidScenarioStatus, invalidScenarioStatus)
               case Right(capabilities) =>
                 val testWithLiveDataResult =
                   (canDeploy, capabilities.canBeTested && capabilities.canFetchLiveData) match {
@@ -163,7 +163,6 @@ class ScenarioTestingApiHttpService(
                         }
                     }
                   },
-                  testWithGeneratedData = testWithLiveDataResult,
                   testWithLiveData = testWithLiveDataResult,
                 )
             }
