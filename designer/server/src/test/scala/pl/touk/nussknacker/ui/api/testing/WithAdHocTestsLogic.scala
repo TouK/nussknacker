@@ -50,7 +50,7 @@ trait WithAdHocTestsLogic {
 
   def shouldValidateSourceParametersProperly(): Unit = {
     val requestBody = SourceTestValidationRequestDto(
-      processProperties = exampleScenario.toScenarioGraph.properties,
+      scenarioProperties = exampleScenario.toScenarioGraph.properties,
       nodeData = exampleSource,
       sourceParameters = validParameters,
     ).asJson.noSpaces

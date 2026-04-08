@@ -145,7 +145,7 @@ object Dtos {
 
     @derive(schema, encoder, decoder)
     final case class SourceCapabilitiesRequestDto(
-        processProperties: ProcessProperties,
+        scenarioProperties: ProcessProperties,
         nodeData: NodeData
     )
 
@@ -241,7 +241,7 @@ object Dtos {
 
     @derive(schema, encoder, decoder)
     final case class SourceTestValidationRequestDto(
-        processProperties: ProcessProperties,
+        scenarioProperties: ProcessProperties,
         nodeData: NodeData,
         sourceParameters: TestSourceParameters,
     )

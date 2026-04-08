@@ -8622,7 +8622,7 @@ components:
       title: SourceCapabilitiesRequestDto
       type: object
       required:
-      - processProperties
+      - scenarioProperties
       - nodeData
       properties:
         nodeData:
@@ -8651,7 +8651,7 @@ components:
       title: SourceTestValidationRequestDto
       type: object
       required:
-      - processProperties
+      - scenarioProperties
       - nodeData
       - sourceParameters
       properties:

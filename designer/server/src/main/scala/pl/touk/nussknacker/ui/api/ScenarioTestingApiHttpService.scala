@@ -186,7 +186,7 @@ class ScenarioTestingApiHttpService(
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            metaData         = request.processProperties.toMetaData(scenarioName)
+            metaData         = request.scenarioProperties.toMetaData(scenarioName)
             sourceParameters = scenarioTestService.getSourceTestParameters(metaData, sourceNodeData)
             result = SourceTestCapabilities(
               testWithParameters = sourceParameters match {
@@ -226,7 +226,7 @@ class ScenarioTestingApiHttpService(
               scenarioWithDetails.processingType
             )
             validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
-            metaData  = request.processProperties.toMetaData(scenarioName)
+            metaData  = request.scenarioProperties.toMetaData(scenarioName)
           } yield scenarioTestService.getSourceTestParameters(metaData, sourceNodeData) match {
             case Right(params) =>
               ParametersValidationResultDto(

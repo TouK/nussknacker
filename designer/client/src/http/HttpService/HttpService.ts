@@ -753,7 +753,7 @@ export class HttpService {
 
     getSourceTestCapabilities(processName: string, scenarioProperties: PropertiesType, nodeData: NodeType) {
         const promise = api.post<SourceTestCapabilities>(`/scenarioTesting/${encodeURIComponent(processName)}/sourceCapabilities`, {
-            processProperties: scenarioProperties,
+            scenarioProperties,
             nodeData,
         });
         promise.catch((error) =>
@@ -1002,7 +1002,7 @@ export class HttpService {
         dataRecords: TestingDataRecords,
     ) {
         const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/sourceValidate`, {
-            processProperties: scenarioProperties,
+            scenarioProperties,
             nodeData,
             sourceParameters: {
                 sourceId: dataRecords.sourceId,
