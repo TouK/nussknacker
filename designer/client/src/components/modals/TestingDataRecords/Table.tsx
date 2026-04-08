@@ -276,13 +276,26 @@ export const Table: React.FC<TableProps> = ({
 
     const selectedRowsCount = rowsFromSelection.length;
 
+    const getDeletedColumn = useCallback(({ current }: GridSelection) => {
+        const currentCell = current?.cell;
+        if (!currentCell) {
+            return { removedCellColumnId: undefined, removedCellRowIndex: undefined };
+        }
+        const columnIndex = currentCell[0];
+        const columnRowIndex = currentCell[1];
+
+        const col = tableColumns[columnIndex];
+
+        return { removedCellColumnId: col.id, removedCellRowIndex: columnRowIndex };
+    }, []);
+
     const onDeleteTableRow = useCallback(
-        ({ current }: GridSelection) => {
-            const currentCell = current?.cell;
+        (selection: GridSelection) => {
+            const { removedCellColumnId, removedCellRowIndex } = getDeletedColumn(selection);
 
             // Remove whole row when sourceId column value removed
-            if (currentCell && tableColumns[currentCell[0]]?.id === COLUMN_SOURCE_ID) {
-                onCellDeleted([currentCell[1]]);
+            if (removedCellColumnId === "sourceId") {
+                onCellDeleted([removedCellRowIndex]);
                 return false;
             }
 
@@ -294,7 +307,7 @@ export const Table: React.FC<TableProps> = ({
             // keep native behaviour when no rows selected
             return true;
         },
-        [handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
+        [getDeletedColumn, handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
     );
 
     return (
