@@ -15,7 +15,8 @@ import sttp.model.Uri
 
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.{AtomicMoveNotSupportedException, Files, Path, StandardCopyOption, StandardOpenOption}
+import java.nio.file.{AtomicMoveNotSupportedException, Files, Path, StandardCopyOption}
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.control.NonFatal
@@ -91,6 +92,10 @@ class CachingOpenApiDefinitionDiscovery(
     expireAfterWrite = None
   )
 
+  @transient private lazy val lastRefreshFailedMarker = new AtomicBoolean(false)
+
+  private[discovery] def lastRefreshFailed: Boolean = lastRefreshFailedMarker.get()
+
   override def getServices(
       openAPIsConfig: OpenAPIServicesConfig
   ): Services = {
@@ -103,27 +108,23 @@ class CachingOpenApiDefinitionDiscovery(
     try {
       val refreshedServices = discovery.getServices(openAPIsConfig)
       servicesCache.put(refreshedServices)
+      lastRefreshFailedMarker.set(false)
       putLastValidDefinition(refreshedServices)
       persistLastValidDefinition(refreshedServices)
       refreshedServices
     } catch {
       case NonFatal(ex) =>
         getCachedServicesFallback match {
-          case Some(CachedServices(cachedServices, FallbackSource.MemoryCache)) =>
+          case Some(CachedServices(cachedServices, fallbackSource)) =>
             logger.warn(
-              s"Could not refresh OpenAPI definitions from [${openAPIsConfig.url}], using cache",
+              s"Could not refresh OpenAPI definitions from [${openAPIsConfig.url}], using ${fallbackSource.cacheName}",
               ex
             )
             servicesCache.put(cachedServices)
-            cachedServices
-          case Some(CachedServices(cachedServices, FallbackSource.FileCache)) =>
-            logger.warn(
-              s"Could not refresh OpenAPI definitions from [${openAPIsConfig.url}], using file cache",
-              ex
-            )
-            servicesCache.put(cachedServices)
+            lastRefreshFailedMarker.set(true)
             cachedServices
           case None =>
+            lastRefreshFailedMarker.set(true)
             throw ex
         }
     }
@@ -160,8 +161,7 @@ class CachingOpenApiDefinitionDiscovery(
             Files.writeString(
               temporaryPath,
               validServicesToPersist.asJson.noSpaces,
-              StandardCharsets.UTF_8,
-              StandardOpenOption.TRUNCATE_EXISTING
+              StandardCharsets.UTF_8
             )
             moveAtomicallyOrReplace(temporaryPath, targetPath)
           } finally {
@@ -216,11 +216,20 @@ object CachingOpenApiDefinitionDiscovery {
       source: FallbackSource
   )
 
-  private sealed trait FallbackSource
+  private sealed trait FallbackSource {
+    def cacheName: String
+  }
 
   private object FallbackSource {
-    case object MemoryCache extends FallbackSource
-    case object FileCache   extends FallbackSource
+
+    case object MemoryCache extends FallbackSource {
+      override val cacheName: String = "cache"
+    }
+
+    case object FileCache extends FallbackSource {
+      override val cacheName: String = "file cache"
+    }
+
   }
 
 }

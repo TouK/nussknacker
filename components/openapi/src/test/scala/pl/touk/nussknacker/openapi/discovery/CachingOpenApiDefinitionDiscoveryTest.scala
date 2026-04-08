@@ -2,8 +2,10 @@ package pl.touk.nussknacker.openapi.discovery
 
 import cats.data.Validated
 import cats.data.Validated.Valid
+import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, PlainPart, ServiceName, SwaggerService}
 import pl.touk.nussknacker.openapi.parser.ServiceParseError
 
@@ -11,7 +13,7 @@ import java.net.URL
 import java.nio.file.Files
 import scala.concurrent.duration.DurationInt
 
-class CachingOpenApiDefinitionDiscoveryTest extends AnyFunSuite with Matchers {
+class CachingOpenApiDefinitionDiscoveryTest extends AnyFunSuite with Matchers with Eventually {
 
   private val testConfig = OpenAPIServicesConfig(new URL("http://example.com/openapi.json"))
 
@@ -30,9 +32,11 @@ class CachingOpenApiDefinitionDiscoveryTest extends AnyFunSuite with Matchers {
     )
 
     cachingDiscovery.getValidServices(testConfig) shouldBe List(service)
-    Thread.sleep(20)
-    cachingDiscovery.getValidServices(testConfig) shouldBe List(service)
-    discovery.calls shouldBe 2
+    eventually(timeout(Span(1, Seconds)), interval(Span(10, Millis))) {
+      cachingDiscovery.getValidServices(testConfig) shouldBe List(service)
+      cachingDiscovery.lastRefreshFailed shouldBe true
+      discovery.calls shouldBe 2
+    }
   }
 
   test("should load stale definitions from file cache when refresh fails") {

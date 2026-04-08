@@ -217,12 +217,12 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
 
   test("should parse definition cache settings") {
     val config = ConfigFactory.parseString("""url: "http://foo"
-                                             |openApiServicesDiscoveryCacheTtl: "5 minutes"
+                                             |discoveryCacheTtl: "5 minutes"
                                              |cacheFileLocation: "/cache/openapi-services.json"
                                              |""".stripMargin)
 
     val parsedConfig = OpenAPIServicesConfig.parse(config)
-    parsedConfig.openApiServicesDiscoveryCacheTtl shouldBe 5.minutes
+    parsedConfig.discoveryCacheTtl shouldBe 5.minutes
     parsedConfig.cacheFileLocation shouldBe Some("/cache/openapi-services.json")
   }
 

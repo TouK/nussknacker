@@ -22,7 +22,7 @@ final case class OpenAPIServicesConfig(
     private val secrets: List[Secret] = List.empty,
     componentPrefix: Option[String] = None,
     httpClientConfig: HttpClientConfig = DefaultHttpClientConfig(),
-    openApiServicesDiscoveryCacheTtl: FiniteDuration = 30 seconds,
+    discoveryCacheTtl: FiniteDuration = 30 seconds,
     cacheFileLocation: Option[String] = None
 ) {
 
