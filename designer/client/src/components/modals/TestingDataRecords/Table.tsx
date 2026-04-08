@@ -42,7 +42,7 @@ interface TableProps {
     onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
-    defaultRecord: TestingDataRecords;
+    defaultDataRecord: TestingDataRecords;
     sourceId: string;
     sourceName: string;
     sourceParameters?: TestFormParameters;
@@ -74,7 +74,7 @@ export const Table: React.FC<TableProps> = ({
     onRowUpdated,
     onRowsDeleted,
     onRowMoved,
-    defaultRecord,
+    defaultDataRecord,
     sourceId,
     sourceName,
     sourceParameters,
@@ -153,10 +153,10 @@ export const Table: React.FC<TableProps> = ({
     );
 
     const onCellAdded = useCallback((): void => {
-        const newRow: TestingDataRecords = { ...defaultRecord };
+        const newRow: TestingDataRecords = { ...defaultDataRecord };
         const rowIndex = data.length;
         onRowAdded(rowIndex, newRow);
-    }, [data.length, defaultRecord, onRowAdded]);
+    }, [data.length, defaultDataRecord, onRowAdded]);
 
     const onCellDeleted = useCallback(
         (rows: number[]): number[] => {

@@ -89,7 +89,7 @@ export const InputDataRecords = ({ node }: Props) => {
                         onRowUpdated={handleRowUpdated}
                         onRowsDeleted={handleRowsDeleted}
                         onRowMoved={handleRowMoved}
-                        defaultRecord={defaultDataRecord}
+                        defaultDataRecord={defaultDataRecord}
                         sourceId={node.id}
                         sourceName={node.name}
                         sourceParameters={sourceParameters}
