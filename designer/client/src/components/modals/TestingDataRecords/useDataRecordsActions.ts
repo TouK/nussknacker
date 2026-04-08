@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { cleanProperties } from "src/components/graph/node-modal/requestSourceAddons";
 
 import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
