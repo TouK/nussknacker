@@ -84,9 +84,6 @@ trait ScenarioTestingApiHttpServiceGenericSpec
              |      "status": "AVAILABLE",
              |      "sourceParameters": $expectedTestParametersJson
              |    },
-             |    "testWithGeneratedData": {
-             |      "status": "AVAILABLE"
-             |    },
              |    "testWithLiveData": {
              |      "status": "AVAILABLE"
              |    }
@@ -107,10 +104,6 @@ trait ScenarioTestingApiHttpServiceGenericSpec
         .equalsJsonBody(
           s"""{
              |    "testWithParameters": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
-             |    },
-             |    "testWithGeneratedData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
              |    },

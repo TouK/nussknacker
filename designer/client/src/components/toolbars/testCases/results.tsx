@@ -2,8 +2,10 @@ import { Box, Button, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodeAssertionResults, TestCaseAssertionResult } from "../../../http/resultsWithCountsDto";
+import type { NodeAssertionResults } from "../../../http/resultsWithCountsDto";
 import type { TestCase } from "../../../reducers/graph/testCase";
+import { getNodeAssertionResults } from "../../../reducers/graph/testing";
+import type { TestCaseResult } from "../../../reducers/graph/testing";
 import type { NodeType } from "../../../types/node";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
@@ -16,18 +18,18 @@ import { useScenarioNodeOrder } from "./useScenarioNodeOrder";
 
 interface Props {
     testCase: TestCase;
-    testCaseAssertionResult: TestCaseAssertionResult | undefined;
+    testCaseResult: TestCaseResult | undefined;
 }
 
-export const Results = ({ testCaseAssertionResult, testCase }: Props) => {
+export const Results = ({ testCaseResult, testCase }: Props) => {
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: false });
 
     const { runTest } = useRunTestScenario();
 
     const { nodes, sortByScenarioOrder } = useScenarioNodeOrder();
 
-    const isLoading = testCaseAssertionResult?.status === "loading";
-    const nodeAssertionResults = testCaseAssertionResult?.status === "loaded" ? testCaseAssertionResult.results : null;
+    const isLoading = testCaseResult?.status === "loading";
+    const nodeAssertionResults = getNodeAssertionResults(testCaseResult) ?? null;
 
     const sortedNodeIds = useMemo(
         () => sortByScenarioOrder(Object.keys(nodeAssertionResults ?? {})),
@@ -113,7 +115,7 @@ const ResultsContent = ({ sortedNodeIds, nodeAssertionResults, scenarioGraphNode
                         key={nodeId}
                         expandableTitle={
                             <AssertionResultsForNodeTitle
-                                title={node.name}
+                                title={node?.name}
                                 assertionResults={nodeAssertionResults[nodeId]}
                                 action={
                                     node ? (

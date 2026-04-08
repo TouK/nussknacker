@@ -21,7 +21,7 @@ const buttonBase = (theme: Theme) =>
         },
     });
 
-export const StyledButton = styled(Button)(({ theme }) =>
+export const StyledButton = styled(Button)<{ variant?: "default" | "error" }>(({ theme, variant = "default" }) =>
     css([
         buttonBase(theme),
         {
@@ -32,6 +32,11 @@ export const StyledButton = styled(Button)(({ theme }) =>
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+        },
+        variant === "error" && {
+            color: theme.palette.error.main,
+            outline: `1px solid ${theme.palette.error.main}`,
+            "&:focus": { border: `1px solid ${theme.palette.error.main}` },
         },
     ]),
 );

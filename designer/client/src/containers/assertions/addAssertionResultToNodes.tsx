@@ -6,6 +6,7 @@ import { getStringWidth } from "../../components/graph/EspNode/element";
 import { RECT_HEIGHT, RECT_WIDTH } from "../../components/graph/EspNode/esp";
 import { useGraph } from "../../components/graph/GraphContext";
 import { isModelElement } from "../../components/graph/GraphPartialsInTS/cellUtils";
+import { getNodeAssertionResults } from "../../reducers/graph/testing";
 import { getActiveTestCaseAssertionResult } from "../../reducers/selectors/testing";
 import { useAppSelector } from "../../store/storeHelpers";
 import { calculateAssertionResultsSummary } from "./assertionResultsUtils";
@@ -21,9 +22,11 @@ export const AddAssertionResultToNodes = () => {
 
         if (!model) return;
 
+        const nodeAssertionResults = getNodeAssertionResults(testCaseAssertionResult);
+
         const nodes = model.getElements().filter(isModelElement);
         nodes.forEach((element) => {
-            const nodeResults = testCaseAssertionResult?.status === "loaded" ? testCaseAssertionResult.results[element.id] : undefined;
+            const nodeResults = nodeAssertionResults?.[element.id];
             const { hasResult, failedCount, passedCount, total } = calculateAssertionResultsSummary(nodeResults ?? []);
 
             const text = hasResult ? `${passedCount}/${total}` : "";

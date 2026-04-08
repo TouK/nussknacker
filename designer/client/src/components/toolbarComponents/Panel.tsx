@@ -5,6 +5,7 @@ import { blendDarken, blendLighten } from "../../containers/theme/helpers";
 
 export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) => ({
     display: "flex",
+    alignItems: "center",
     background: getLuminance(color) > 0.5 ? blendDarken(color, 0.15) : blendLighten(color, 0.15),
     color: theme.palette.getContrastText(color),
     justifyContent: "space-between",

@@ -86,9 +86,6 @@ trait WithAdHocTestsLogic {
        |      "status": "AVAILABLE",
        |      "sourceParameters": $parametersJson
        |    },
-       |    "testWithGeneratedData": {
-       |      "status": "AVAILABLE"
-       |    },
        |    "testWithLiveData": {
        |      "status": "AVAILABLE"
        |    }

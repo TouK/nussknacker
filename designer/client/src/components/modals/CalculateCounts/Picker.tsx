@@ -3,7 +3,6 @@ import { styled } from "@mui/material";
 import type { Moment } from "moment";
 import moment from "moment/moment";
 import React, { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
 import { DTPicker } from "../../common/DTPicker";
 import { nodeInput, nodeInputWithError } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
@@ -20,9 +19,8 @@ const DTPickerWrapper = styled("div")`
 `;
 
 export function Picker({ label, onChange, value }: PickerProps): React.JSX.Element {
-    const { i18n } = useTranslation();
     const isValid = useMemo(() => moment(value).isValid(), [value]);
-    const datePickerStyle = useMemo(
+    const datePickerStyle = useMemo<React.HTMLProps<HTMLInputElement>>(
         () => ({
             // TODO: styled
             className: cx({ [nodeInputWithError]: !isValid, [nodeInput]: true }),
@@ -34,14 +32,7 @@ export function Picker({ label, onChange, value }: PickerProps): React.JSX.Eleme
         <>
             <p>{label}</p>
             <DTPickerWrapper>
-                <DTPicker
-                    dateFormat={dateFormat}
-                    timeFormat={timeFormat}
-                    inputProps={datePickerStyle}
-                    onChange={onChange}
-                    value={value}
-                    locale={i18n.language}
-                />
+                <DTPicker dateFormat={dateFormat} timeFormat={timeFormat} inputProps={datePickerStyle} onChange={onChange} value={value} />
             </DTPickerWrapper>
         </>
     );
