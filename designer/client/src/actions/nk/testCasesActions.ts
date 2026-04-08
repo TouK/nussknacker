@@ -1,6 +1,6 @@
 import type { WithUuid } from "../../components/graph/node-modal/appendUuid";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import type { TestCase } from "../../reducers/graph/testCase";
 import {
     getTestCaseAssertions,

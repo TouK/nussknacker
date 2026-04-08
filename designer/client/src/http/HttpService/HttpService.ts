@@ -20,7 +20,7 @@ import type { ExpressionSuggestion } from "../../components/graph/node-modal/edi
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import { mapInputDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";

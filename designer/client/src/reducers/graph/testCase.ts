@@ -2,7 +2,7 @@ import { produce } from "immer";
 
 import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import type { Reducer } from "../../actions/reduxTypes";
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import { omit } from "./lodashWrappers";

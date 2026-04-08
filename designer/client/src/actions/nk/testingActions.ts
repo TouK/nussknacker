@@ -1,6 +1,6 @@
 import type { ProcessName } from "src/components/Process/types";
 
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { NodeAssertionResults, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";

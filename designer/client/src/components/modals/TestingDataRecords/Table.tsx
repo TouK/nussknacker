@@ -18,7 +18,6 @@ import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
-import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -36,8 +35,6 @@ import type { TestingDataRecords } from "./types";
 import { useTableHeight } from "./useTableHeight";
 import { buildDefaultVariables, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
-
-export type { TestingDataRecords } from "./types";
 
 interface TableProps {
     data?: TestingDataRecords[];

@@ -3,7 +3,7 @@ import { createSelector } from "reselect";
 import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import { withUuid } from "../../components/graph/node-modal/appendUuid";
 import { MockExpressionParameter } from "../../components/graph/node-modal/editors/expression/MockExpressionField";
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import { getScenarioGraph } from "./graph";
 import { getSettings } from "./settings";

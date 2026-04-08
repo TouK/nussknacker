@@ -1,7 +1,7 @@
 import type { CustomCell, GridCell, Item } from "@glideapps/glide-data-grid";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 type SourceSelectCellData = {
     kind: "source-select-cell";
