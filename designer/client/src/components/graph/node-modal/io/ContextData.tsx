@@ -7,6 +7,7 @@ import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextDataDisplay } from "./ContextDataDisplay";
+import { RecordIndexContext } from "./ContextTree";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 
 export const ContextData = memo(function Data({
@@ -81,8 +82,10 @@ export const ContextData = memo(function Data({
                             locked={index >= availableContexts}
                             showNodes={showNodes}
                         >
-                            {direction === "output" ? <>{r.error}</> : null}
-                            <ContextDataDisplay direction={direction} context={r} inputVariables={inputVariables} />
+                            <RecordIndexContext.Provider value={index}>
+                                {direction === "output" ? <>{r.error}</> : null}
+                                <ContextDataDisplay direction={direction} context={r} inputVariables={inputVariables} />
+                            </RecordIndexContext.Provider>
                         </ContextAccordion>
                     </Slide>
                 ))}
