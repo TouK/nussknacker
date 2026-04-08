@@ -294,9 +294,39 @@ export function inferNuType(val: unknown): NuType {
     return "Any";
 }
 
+/**
+ * Convert a flat object with dotted keys (e.g. `{"a.b": null, "a.c": {d: null}}`)
+ * into a nested object (`{a: {b: null, c: {d: null}}}`).
+ * Keys without dots and nested object values are preserved as-is.
+ */
+function expandDottedKeys(obj: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+        const parts = key.split(".");
+        let current = result;
+        for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (typeof current[part] !== "object" || current[part] === null) current[part] = {};
+            current = current[part] as Record<string, unknown>;
+        }
+        const last = parts[parts.length - 1];
+        if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+            if (typeof current[last] === "object" && current[last] !== null) {
+                Object.assign(current[last] as object, value);
+            } else {
+                current[last] = value;
+            }
+        } else {
+            current[last] = value;
+        }
+    }
+    return result;
+}
+
 export function fieldsFromSample(obj: unknown): FieldDef[] {
     if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return [];
-    return Object.entries(obj as Record<string, unknown>).map(([k, v]) => {
+    const expanded = expandDottedKeys(obj as Record<string, unknown>);
+    return Object.entries(expanded).map(([k, v]) => {
         if (typeof v === "object" && v !== null && !Array.isArray(v)) {
             const children = fieldsFromSample(v);
             return { ...makeField(k, "Map"), isRecord: true, children };
