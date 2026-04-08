@@ -45,17 +45,17 @@ export const ParametersListAdvanced = ({
         [getParamCategory, parameters],
     );
 
-    const hasAdvancedErrors = useMemo(
-        () => advanced.some(({ param }) => errors?.some((e) => e.fieldName === param.name)),
+    const advancedErrorCount = useMemo(
+        () => advanced.filter(({ param }) => errors?.some((e) => e.fieldName === param.name)).length,
         [advanced, errors],
     );
 
-    const [isExpanded, setIsExpanded] = useState(() => hasAdvancedErrors);
+    const [isExpanded, setIsExpanded] = useState(() => advancedErrorCount > 0);
 
     const advancedLabel = t("component.advancedParameters.title", "Advanced parameters");
     const advancedTitle = useMemo(
-        () => (hasAdvancedErrors ? <LabelWithErrorIndicator label={advancedLabel} hasError /> : advancedLabel),
-        [advancedLabel, hasAdvancedErrors],
+        () => <LabelWithErrorIndicator label={advancedLabel} errorCount={advancedErrorCount} />,
+        [advancedLabel, advancedErrorCount],
     );
 
     return (

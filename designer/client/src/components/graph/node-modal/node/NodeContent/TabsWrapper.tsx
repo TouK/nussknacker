@@ -18,7 +18,7 @@ export interface TabDef {
     content: React.ReactNode;
     disabled?: boolean;
     additionalTabContent?: React.ReactNode;
-    showErrorIndicator?: boolean;
+    errorCount?: number;
 }
 
 interface Props {
@@ -78,7 +78,7 @@ export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
                             label={
                                 <LabelWithErrorIndicator
                                     label={t.label}
-                                    hasError={t.showErrorIndicator}
+                                    errorCount={t.errorCount}
                                     errorTooltip={`There are errors in a ${t.label} data`}
                                 />
                             }

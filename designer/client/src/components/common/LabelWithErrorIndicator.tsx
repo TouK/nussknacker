@@ -5,24 +5,25 @@ import { InfoTooltip } from "../graph/node-modal/editors/InfoTooltip/InfoTooltip
 
 interface Props {
     label: string;
-    hasError?: boolean;
+    errorCount?: number;
     errorTooltip?: string;
 }
 
-export function LabelWithErrorIndicator({ label, hasError, errorTooltip }: Readonly<Props>) {
-    if (!hasError) {
-        return <>{label}</>;
+export function LabelWithErrorIndicator({ label, errorCount, errorTooltip }: Readonly<Props>) {
+    if (!errorCount) {
+        return <Typography variant="body2">{label}</Typography>;
     }
 
     return (
-        <span style={{ position: "relative", display: "inline-block", paddingRight: "8px" }}>
-            <Typography sx={{ typography: "body2", color: "text.secondary" }}>{label}</Typography>
-            <InfoTooltip title={errorTooltip} variant="hover">
-                <Badge color="error" variant="dot" overlap="rectangular" sx={{ position: "absolute", top: 0, right: 0 }}>
-                    {/* empty anchor for the badge so tooltip triggers only on the dot */}
-                    <span style={{ display: "inline-block", width: 0, height: 0 }} />
-                </Badge>
-            </InfoTooltip>
-        </span>
+        <InfoTooltip title={errorTooltip} variant="hover">
+            <Badge
+                color="error"
+                variant="standard"
+                badgeContent={errorCount}
+                sx={{ "& .MuiBadge-badge": { fontSize: 9, minWidth: 14, height: 14, padding: "0 3px", right: -8 } }}
+            >
+                <Typography variant="body2">{label}</Typography>
+            </Badge>
+        </InfoTooltip>
     );
 }
