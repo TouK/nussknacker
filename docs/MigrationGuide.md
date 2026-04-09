@@ -51,6 +51,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * renamed from `flinkTableOps` to `flinkBatchOps`
     * is no longer loaded by default - no need to disable it for streaming configurations, and for batch configurations,
       it can be enabled by `components.flinkBatchOps.disabled: false` config under `modelConfig`
+* [#9231](https://github.com/TouK/nussknacker/pull/9231) OpenAPI component supports new optional cache configuration:
+  * `cacheFileLocation` - path to persisted cache with last valid OpenAPI definitions.
+  * Discovery refresh now uses stale-on-error fallback. If refresh fails, cached definitions are used from memory and, when configured, from file cache.
+  * Configuration key `openApiServicesDiscoveryCacheTtl` was renamed to `discoveryCacheTtl`.
 
 ### REST API changes
 
