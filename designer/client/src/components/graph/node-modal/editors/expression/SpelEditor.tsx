@@ -17,6 +17,7 @@ import { EditorMode, EditorType, ExpressionLang } from "./types";
 export type SpelEditorProps = {
     isMarked?: boolean;
     rows?: number;
+    maxLines?: number;
     cols?: number;
     variableTypes: VariableTypes;
     validationLabelInfo?: ReactNode;
@@ -49,6 +50,7 @@ export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
             fieldErrors,
             isMarked,
             language = editorsParameters[EditorType.SPEL_PARAMETER_EDITOR].language,
+            maxLines,
             onValueChange,
             placeholder,
             readOnly,
@@ -72,6 +74,7 @@ export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
         const inputProps = useMemo(
             () => ({
                 rows,
+                maxLines,
                 cols,
                 value,
                 language,
@@ -91,6 +94,7 @@ export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
                 forwardedRef,
                 handleChange,
                 language,
+                maxLines,
                 placeholder,
                 placeholderText,
                 readOnly,

@@ -11,9 +11,9 @@ import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import AceWithSettings from "./AceWithSettings";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import { ResetToDefault } from "./ResetToDefaultButton";
 import type { ExpressionObj } from "./types";
 import { EditorType, ExpressionLang } from "./types";
+import { useAceEditorAdornment } from "./useAceEditorAdornment";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type JsonEditorProps = {
@@ -43,25 +43,19 @@ export const JsonEditor = prepareEditor<JsonEditorProps>(
             [onValueChange],
         );
 
-        const InputAdornmentEnd = useMemo(() => {
-            if (!defaultValue) return;
-            if (readOnly) return;
-            return (
-                <ResetToDefault
-                    value={value}
-                    defaultValue={
-                        // defaultValue can be a string in case of Properties
-                        typeof defaultValue === "string"
-                            ? {
-                                  expression: defaultValue,
-                                  language: ExpressionLang.JSON,
-                              }
-                            : defaultValue
-                    }
-                    handleChange={({ expression }) => onChange(expression)}
-                />
-            );
-        }, [defaultValue, onChange, readOnly, value]);
+        const { editorRef, maxLines, resetToDefaultButton, fullscreenButton } = useAceEditorAdornment({
+            value,
+            defaultValue,
+            readOnly,
+            onChange,
+        });
+        const InputAdornmentEnd =
+            resetToDefaultButton || fullscreenButton ? (
+                <>
+                    {resetToDefaultButton}
+                    {fullscreenButton}
+                </>
+            ) : undefined;
 
         return (
             <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -72,11 +66,10 @@ export const JsonEditor = prepareEditor<JsonEditorProps>(
                         isMarked && "marked",
                         readOnly && "read-only",
                     ])}
-                    sx={{
-                        position: "relative",
-                    }}
+                    sx={{ position: "relative" }}
                 >
                     <AceWithSettings
+                        ref={editorRef}
                         onLoad={(editor) => {
                             setupAceEditorSnippets(editor);
                         }}
@@ -87,6 +80,7 @@ export const JsonEditor = prepareEditor<JsonEditorProps>(
                             readOnly,
                             InputAdornmentEnd,
                             rows: 5,
+                            maxLines,
                         }}
                         enableLiveAutocompletion={false}
                         annotations={annotations}
