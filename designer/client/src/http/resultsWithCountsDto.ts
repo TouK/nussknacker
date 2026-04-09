@@ -58,7 +58,6 @@ export interface TestResultsDto {
     nodeTransitionResults?: NodeTransitionResult[] | null;
     expressionEvaluationResults: Record<NodeId, ExpressionEvaluationResultJson[]>;
     externalServiceInvocationResults: Record<NodeId, ExternalServiceInvocationResultJson[]>;
-    nodeNamesByContextKey?: Record<string, string>;
     /** @deprecated Use exceptionsByNodeId instead */
     exceptions: ExceptionResultJson[];
     exceptionsByNodeId: Record<NodeId, ExceptionResultJson[]>;

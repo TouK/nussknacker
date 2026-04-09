@@ -92,11 +92,7 @@ class ScenarioLiveDataApiHttpService(
             }
           }
         } yield {
-          ResultsWithCountsDto.from(
-            liveData,
-            computeCounts(scenarioWithDetails, liveData),
-            extractNodeNamesById(scenarioWithDetails),
-          )
+          ResultsWithCountsDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
         }
       }
   }
@@ -137,9 +133,6 @@ class ScenarioLiveDataApiHttpService(
 
     processCounter.computeCounts(canonical, scenarioWithDetails.isFragment, getCount)
   }
-
-  private def extractNodeNamesById(scenarioWithDetails: ScenarioWithDetails): Map[NodeId, String] =
-    scenarioWithDetails.scenarioGraphUnsafe.nodes.map(node => node.id -> node.name.value).toMap
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(
       implicit loggedUser: LoggedUser

@@ -5,7 +5,6 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
-import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExternalServiceInvocationResult,
@@ -48,7 +47,6 @@ class ResultsWithCountsDtoSpec extends AnyFunSuite with Matchers with OptionValu
         ResultsWithCounts(Instant.parse("2026-03-25T12:00:00Z"), JsonTestResults.from(testResults), counts = Map.empty),
       skipResultsPerNode = SkipResultsPerNode(value = false),
       skipResultsPerTransition = SkipResultsPerTransition(value = false),
-      nodeNamesById = Map.empty,
     )
 
     val sinkTransition = dto.results.nodeTransitionResults.value.find(result =>
@@ -86,36 +84,11 @@ class ResultsWithCountsDtoSpec extends AnyFunSuite with Matchers with OptionValu
         ResultsWithCounts(Instant.parse("2026-03-25T12:00:00Z"), JsonTestResults.from(testResults), counts = Map.empty),
       skipResultsPerNode = SkipResultsPerNode(value = false),
       skipResultsPerTransition = SkipResultsPerTransition(value = false),
-      nodeNamesById = Map.empty,
     )
 
     val transitionsFromProcessor = dto.results.nodeTransitionResults.value.filter(_.sourceNodeId == processorNode)
     transitionsFromProcessor should have size 1
     transitionsFromProcessor.head.destinationNodeId shouldBe Some(sinkNode)
-  }
-
-  test("should include mapping from raw and sanitized node ids to node names") {
-    val nodeId = NodeId("02a25071-6a8f-4928-ab67-08452e25a167")
-    val testResults = TestResults[Json](
-      nodeResults = Map.empty,
-      nodeTransitionResults = Map.empty,
-      expressionEvaluationResults = Map.empty,
-      externalServiceInvocationResults = Map.empty,
-      exceptions = List.empty,
-      originalNodeResults = Map.empty,
-    )
-    val dto = ResultsWithCountsDto.from(
-      resultsWithCounts =
-        ResultsWithCounts(Instant.parse("2026-03-25T12:00:00Z"), JsonTestResults.from(testResults), counts = Map.empty),
-      skipResultsPerNode = SkipResultsPerNode(value = false),
-      skipResultsPerTransition = SkipResultsPerTransition(value = false),
-      nodeNamesById = Map(nodeId -> "Event Generator"),
-    )
-
-    val sanitizedNodeId = ContextTransformation.sanitizeBranchName(nodeId.value)
-
-    dto.results.nodeNamesByContextKey(nodeId.value) shouldBe "Event Generator"
-    dto.results.nodeNamesByContextKey(sanitizedNodeId) shouldBe "Event Generator"
   }
 
 }
