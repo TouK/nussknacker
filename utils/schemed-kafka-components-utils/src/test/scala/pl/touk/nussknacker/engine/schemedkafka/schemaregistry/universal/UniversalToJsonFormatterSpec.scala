@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json.{fromString, obj}
-import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.OptionValues
@@ -14,7 +13,6 @@ import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaRecordUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
-import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
@@ -25,7 +23,6 @@ class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with Option
     .empty()
     .withValue("kafkaProperties.\"bootstrap.servers\"", fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue("kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema_registry_should_not_be_used:8081"))
-    .withValue("optimizedGenericRecordSerialization.enabled", fromAnyRef(false))
 
   private val kafkaComponentsConfig = KafkaComponentsConfig.parseConfig(rawKafkaConfig)
 

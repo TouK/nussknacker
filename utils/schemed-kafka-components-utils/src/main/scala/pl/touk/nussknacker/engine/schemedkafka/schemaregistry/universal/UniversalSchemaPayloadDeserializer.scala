@@ -8,7 +8,6 @@ import org.apache.avro.io.DecoderFactory
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
@@ -28,15 +27,10 @@ trait UniversalSchemaPayloadDeserializer {
 
 }
 
-object AvroPayloadDeserializer {
-  def apply(config: KafkaComponentsConfig) =
-    new AvroPayloadDeserializer(GenericRecordSchemaIdSerializationSupport(config), DecoderFactory.get())
-}
-
-// This implementation is based on Confluent's one but currently deosn't use any Confluent specific things
+// This implementation is based on Confluent's one but currently doesn't use any Confluent specific things
 class AvroPayloadDeserializer(
     genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport,
-    decoderFactory: DecoderFactory
+    decoderFactory: DecoderFactory = DecoderFactory.get()
 ) extends DatumReaderWriterMixin
     with UniversalSchemaPayloadDeserializer {
 
@@ -52,7 +46,7 @@ class AvroPayloadDeserializer(
     val readerSchemaData       = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
     val reader = createDatumReader(avroWriterSchemaData.schema.rawSchema(), readerSchemaData.schema.rawSchema())
     val result = recordDeserializer.deserializeRecord(readerSchemaData.schema.rawSchema(), reader, buffer)
-    genericRecordSchemaIdSerializationSupport.wrapWithRecordWithSchemaIdIfNeeded(result, readerSchemaData)
+    genericRecordSchemaIdSerializationSupport.wrapRecordIfNeeded(result, readerSchemaData)
   }
 
 }

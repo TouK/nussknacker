@@ -25,6 +25,8 @@ trait KafkaSpec extends BeforeAndAfterAll with WithModelConfig { self: Suite =>
         KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "auto.offset.reset"),
         fromAnyRef("earliest")
       )
+      // Use explicit schemaRegistryId (meaningful only in Flink tests)
+      .withValue(s"$kafkaComponentsConfigPrefix.optimizedGenericRecordSerialization.schemaRegistryId", fromAnyRef(55))
 
   protected final lazy val kafkaComponentsConfig: KafkaComponentsConfig =
     KafkaComponentsConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))

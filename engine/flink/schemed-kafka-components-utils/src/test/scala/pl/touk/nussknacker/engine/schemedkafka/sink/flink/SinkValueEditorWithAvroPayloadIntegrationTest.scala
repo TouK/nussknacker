@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
-import com.typesafe.config.{Config, ConfigFactory}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.avro.generic.GenericRecord
-import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
@@ -29,7 +27,6 @@ import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroEnum, TestSchema, TestSchemaWithRecord}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.flink.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -57,18 +54,7 @@ class SinkValueEditorWithAvroPayloadIntegrationTest
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(components)
-      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
-        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerialization(
-          schemaRegistryClientFactory,
-          kafkaComponentsConfig
-        )
-      }))
       .build()
-  }
-
-  override protected def afterAll(): Unit = {
-    AvroSerializersRegistrar.clearRegistrations()
-    super.afterAll()
   }
 
   test("should pass through record") {

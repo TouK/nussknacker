@@ -21,7 +21,7 @@ case class KafkaComponentsConfig(
     kafkaEspProperties: Option[Map[String, String]] = None,
     consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
     optimizedGenericRecordSerialization: RawOptimizedGenericRecordSerializationConfig =
-      RawOptimizedGenericRecordSerializationConfig(enabled = true),
+      RawOptimizedGenericRecordSerializationConfig(),
     topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = true),
     // By default we want to handle keys as ordinary String. For specific scenario,
     // when complex key with its own schema is provided, this flag is false
@@ -102,7 +102,7 @@ object KafkaComponentsConfig {
 }
 
 case class RawOptimizedGenericRecordSerializationConfig(
-    enabled: Boolean,
+    enabled: Boolean = true,
     schemaRegistryId: Option[Int] = None,
 ) {
 

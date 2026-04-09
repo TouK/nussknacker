@@ -1,96 +1,147 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.flink
 
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.{Schema, SchemaBuilder}
-import org.apache.flink.api.common.serialization.SerializerConfigImpl
-import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
+import org.apache.avro.SchemaBuilder
+import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.core.memory.{DataInputDeserializer, DataOutputSerializer}
-import org.scalatest.BeforeAndAfterAll
+import org.apache.flink.util.InstantiationUtil
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 
-class GenericRecordWithSchemaIdSerializerSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll {
+class GenericRecordWithSchemaIdSerializerSpec extends AnyFunSuite with Matchers {
 
-  private lazy val schema1: Schema = SchemaBuilder
-    .record("schema1")
-    .fields()
-    .requiredString("f1")
-    .endRecord()
-
-  private lazy val schema2: Schema = SchemaBuilder
-    .record("schema2")
-    .fields()
-    .requiredInt("f2")
-    .endRecord()
-
-  // we put it in object to avoid serialization problems
-  private lazy val (schemaRegistryClient1, schemaId1) = {
-    val client = new MockSchemaRegistryClient
-    val id     = client.register("t1", new AvroSchema(schema1))
-    (client, SchemaId.fromInt(id))
+  private lazy val testRecord1: GenericRecordWithSchemaId = {
+    val schema = SchemaBuilder.record("schema1").fields().requiredString("f1").endRecord()
+    val record = new GenericRecordWithSchemaId(schema, 6, SchemaId.fromInt(11))
+    record.put("f1", "str1")
+    record
   }
 
-  private lazy val (schemaRegistryClient2, schemaId2) = {
-    val client = new MockSchemaRegistryClient
-    val id     = client.register("t1", new AvroSchema(schema2))
-    (client, SchemaId.fromInt(id))
+  private lazy val testRecord2: GenericRecordWithSchemaId = {
+    val schema = SchemaBuilder.record("schema2").fields().requiredInt("f2").endRecord()
+    val record = new GenericRecordWithSchemaId(schema, 6, SchemaId.fromInt(22))
+    record.put("f2", 5)
+    record
   }
 
-  private val schemaRegistry1Id = 6
-  private val schemaRegistry2Id = 0
-
-  override protected def afterAll(): Unit = {
-    GenericRecordWithSchemaIdSerializer.clearRegistrations()
+  private lazy val testRecord3: GenericRecordWithSchemaId = {
+    val schema = SchemaBuilder.record("schema3").fields().requiredBoolean("f3").endRecord()
+    val record = new GenericRecordWithSchemaId(schema, 9, SchemaId.fromString("schema-for-record3"))
+    record.put("f3", true)
+    record
   }
 
-  test("should be able to serialize/deserialize") {
-    val config = KafkaComponentsConfig(Map("bootstrap.servers" -> "dummy:9092"), None, None)
+  test("serialize/deserialize") {
+    testRoundTrips(List(testRecord1, testRecord2, testRecord3))
+  }
 
-    val serializerConfig = new SerializerConfigImpl()
-    serializerConfig.registerTypeWithKryoSerializer(
-      classOf[GenericRecordWithSchemaId],
-      classOf[GenericRecordWithSchemaIdSerializer]
+  test("can be duplicated") {
+    testRoundTrips(List(testRecord1, testRecord2, testRecord3), _.duplicate())
+  }
+
+  test("can be serialized and deserialized") {
+    testRoundTrips(
+      List(testRecord1, testRecord2, testRecord3),
+      { s =>
+        val serializedSerializer = InstantiationUtil.serializeObject(s)
+        InstantiationUtil.deserializeObject[GenericRecordWithSchemaIdSerializer](
+          serializedSerializer,
+          Thread.currentThread().getContextClassLoader
+        )
+      }
     )
-
-    GenericRecordWithSchemaIdSerializer.register(
-      schemaRegistry1Id,
-      MockSchemaRegistryClientFactory
-        .confluentBased(schemaRegistryClient1)
-        .create(config.schemaRegistryClientKafkaConfig)
-    )
-    GenericRecordWithSchemaIdSerializer.register(
-      schemaRegistry2Id,
-      MockSchemaRegistryClientFactory
-        .confluentBased(schemaRegistryClient2)
-        .create(config.schemaRegistryClientKafkaConfig)
-    )
-
-    val record1 = new GenericRecordWithSchemaId(schema1, schemaRegistry1Id, schemaId1)
-    record1.put("f1", "str1")
-    val record2 = new GenericRecordWithSchemaId(schema2, schemaRegistry2Id, schemaId2)
-    record2.put("f2", 5)
-
-    val serializer = new KryoSerializer(classOf[GenericRecordWithSchemaId], serializerConfig)
-    checkSerializationRoundTrip(serializer, record1)
-    checkSerializationRoundTrip(serializer, record2)
-
-    // check if SchemaIdBasedAvroGenericRecordSerializer can *really* be duplicated and that it still works
-    checkSerializationRoundTrip(serializer.duplicate(), record1)
-    checkSerializationRoundTrip(serializer.duplicate(), record2)
   }
 
-  private def checkSerializationRoundTrip(
-      serializer: KryoSerializer[GenericRecordWithSchemaId],
+  test("can be recreated from serializer snapshot") {
+    testRoundTrips(
+      List(testRecord1, testRecord2, testRecord3),
+      { s =>
+        val snapshotData = new DataOutputSerializer(100)
+        s.snapshotConfiguration().writeSnapshot(snapshotData)
+
+        val snapshot = new GenericRecordWithSchemaIdSerializerSnapshot()
+        snapshot.readSnapshot(
+          1,
+          new DataInputDeserializer(snapshotData.getCopyOfBuffer),
+          Thread.currentThread().getContextClassLoader
+        )
+        snapshot.restoreSerializer()
+      }
+    )
+  }
+
+  test("can be reconfigured from old snapshot") {
+    testRoundTrips(
+      List(testRecord1, testRecord2, testRecord3),
+      { s =>
+        val snapshot = s.snapshotConfiguration()
+        val compatibility =
+          new GenericRecordWithSchemaIdSerializer().snapshotConfiguration().resolveSchemaCompatibility(snapshot)
+        compatibility.isCompatibleWithReconfiguredSerializer shouldBe true
+        compatibility.getReconfiguredSerializer
+      }
+    )
+  }
+
+  test("can be reconfigured when empty snapshot is used") {
+    testRoundTrips(
+      List(testRecord1, testRecord2, testRecord3),
+      { s =>
+        val compatibility =
+          s.snapshotConfiguration().resolveSchemaCompatibility(new GenericRecordWithSchemaIdSerializerSnapshot())
+        compatibility.isCompatibleWithReconfiguredSerializer shouldBe true
+        compatibility.getReconfiguredSerializer
+      }
+    )
+  }
+
+  private def testRoundTrips(
+      records: Iterable[GenericRecordWithSchemaId],
+      copy: GenericRecordWithSchemaIdSerializer => TypeSerializer[GenericRecordWithSchemaId] = { s => s }
+  ): Unit = {
+    records.zipWithIndex.foreach { case (record, index) =>
+      withClue(s"record #$index") {
+        val serializer = new GenericRecordWithSchemaIdSerializer()
+        serializeAndDeserialize(serializer, record, copy)
+      }
+    }
+
+    val serializer = new GenericRecordWithSchemaIdSerializer()
+    records.zipWithIndex.foreach { case (record, index) =>
+      withClue(s"already seen records: $index") {
+        serializeAndDeserialize(serializer, record, copy)
+      }
+    }
+  }
+
+  private def serialize(
+      serializer: TypeSerializer[GenericRecordWithSchemaId],
       record: GenericRecordWithSchemaId
-  ) = {
+  ): Array[Byte] = {
     val output = new DataOutputSerializer(100)
     serializer.serialize(record, output)
-    val afterRoundTrip = serializer.deserialize(new DataInputDeserializer(output.getCopyOfBuffer))
-    afterRoundTrip shouldBe record
+    output.getCopyOfBuffer
+  }
+
+  private def deserialize(
+      serializer: TypeSerializer[GenericRecordWithSchemaId],
+      data: Array[Byte]
+  ): GenericRecordWithSchemaId = {
+    serializer.deserialize(new DataInputDeserializer(data))
+  }
+
+  private def serializeAndDeserialize(
+      serializer: GenericRecordWithSchemaIdSerializer,
+      record: GenericRecordWithSchemaId,
+      copySerializer: GenericRecordWithSchemaIdSerializer => TypeSerializer[GenericRecordWithSchemaId]
+  ): Unit = {
+    val recordBytes = serialize(serializer, record)
+
+    val deserializer = copySerializer(serializer)
+    serializer shouldBe deserializer
+    System.identityHashCode(serializer) !== System.identityHashCode(deserializer)
+
+    deserialize(deserializer, recordBytes) shouldBe record
   }
 
 }

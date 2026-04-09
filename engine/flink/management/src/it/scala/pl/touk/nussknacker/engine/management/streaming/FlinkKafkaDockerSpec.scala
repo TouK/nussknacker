@@ -49,9 +49,10 @@ trait FlinkKafkaDockerSpec
 
   protected def useMiniClusterForDeployment: Boolean
 
-  override lazy val container: Container = MultipleContainers(
-    (kafkaContainer: LazyContainer[_]) :: (if (useMiniClusterForDeployment) Nil else flinkContainers): _*
-  )
+  protected def containers: List[LazyContainer[_]] =
+    kafkaContainer :: (if (useMiniClusterForDeployment) Nil else flinkContainers)
+
+  override lazy val container: Container = MultipleContainers(containers: _*)
 
   private var savepointDirInitialized: Boolean = false
 

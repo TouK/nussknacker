@@ -27,7 +27,7 @@ class SerializationBenchmarkSetup[T](
   {
     FlinkTypeInfoRegistrar.validateKryoTypeRegistrations()
     serializer.serialize(record, new DataOutputViewStreamWrapper(data))
-    logger.debug(s"Size: ${data.size()}")
+    logger.debug(s"Size for ${serializer.getClass.getSimpleName}: ${data.size()}")
   }
 
   def roundTripSerialization(): (T, Long) = {
