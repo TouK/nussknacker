@@ -218,6 +218,29 @@ export function applyTypeConversion(expr: string, sourceType: NuType | undefined
 }
 
 /** Get the NuType of a value at a dotted path within variableTypes (strips leading # and ? from path). */
+export function getTypingResultAtPath(variableTypes: Record<string, TypingResult>, path: string): TypingResult | undefined {
+    const segments =
+        path
+            .replace(/^#/, "")
+            .replace(/\?/g, "")
+            .match(/[^.[]+|\[\d+\]|\['[^']+'\]/g) ?? [];
+    if (segments.length === 0) return undefined;
+    let current: TypingResult | undefined = variableTypes[segments[0]];
+    if (!current) return undefined;
+    for (let i = 1; i < segments.length; i++) {
+        const seg = segments[i];
+        if (seg.startsWith("[")) {
+            const params = (current as { params?: TypingResult[] }).params;
+            if (!params?.length) return undefined;
+            current = params[0];
+        } else {
+            current = (current as { fields?: Record<string, TypingResult> }).fields?.[seg];
+        }
+        if (!current) return undefined;
+    }
+    return current;
+}
+
 export function getNuTypeAtPath(variableTypes: Record<string, TypingResult>, path: string): NuType | undefined {
     // Tokenize: split by "." and also extract "[N]" / "['key']" index segments
     const segments =
@@ -271,9 +294,39 @@ export function inferNuType(val: unknown): NuType {
     return "Any";
 }
 
+/**
+ * Convert a flat object with dotted keys (e.g. `{"a.b": null, "a.c": {d: null}}`)
+ * into a nested object (`{a: {b: null, c: {d: null}}}`).
+ * Keys without dots and nested object values are preserved as-is.
+ */
+function expandDottedKeys(obj: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+        const parts = key.split(".");
+        let current = result;
+        for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (typeof current[part] !== "object" || current[part] === null) current[part] = {};
+            current = current[part] as Record<string, unknown>;
+        }
+        const last = parts[parts.length - 1];
+        if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+            if (typeof current[last] === "object" && current[last] !== null) {
+                Object.assign(current[last] as object, value);
+            } else {
+                current[last] = value;
+            }
+        } else {
+            current[last] = value;
+        }
+    }
+    return result;
+}
+
 export function fieldsFromSample(obj: unknown): FieldDef[] {
     if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return [];
-    return Object.entries(obj as Record<string, unknown>).map(([k, v]) => {
+    const expanded = expandDottedKeys(obj as Record<string, unknown>);
+    return Object.entries(expanded).map(([k, v]) => {
         if (typeof v === "object" && v !== null && !Array.isArray(v)) {
             const children = fieldsFromSample(v);
             return { ...makeField(k, "Map"), isRecord: true, children };

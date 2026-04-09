@@ -19,7 +19,7 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type { VariableTypes } from "../../types/validation";
 import { clearAceSelectionAfterDrop } from "../builderComponents/aceUtils";
@@ -78,6 +78,7 @@ export interface FieldRowProps {
     onDragOverId: (id: number | null) => void;
     onChange: (id: number, key: keyof FieldDef, val: unknown) => void;
     onAddChild: (parentId: number) => void;
+    onAddChildFromDrop: (parentId: number, path: string) => void;
     onRemove: (id: number) => void;
     onMove: (id: number, dir: 1 | -1) => void;
     onDrop: (path: string, fieldId: number) => void;
@@ -98,6 +99,7 @@ export function FieldRow({
     onDragOverId,
     onChange,
     onAddChild,
+    onAddChildFromDrop,
     onRemove,
     onMove,
     onDrop,
@@ -108,6 +110,8 @@ export function FieldRow({
     const isDragOver = dragOverFieldId === field.id;
     const hasSrc = !field.isRecord && !!field.expression;
     const errors = fieldErrors[field.id] ?? [];
+
+    const [childDropActive, setChildDropActive] = useState(false);
 
     const onExpressionChangeRef = useRef<(val: string) => void>(null!);
     const onExpressionChange = useCallback((val: string) => onChange(field.id, "expression", val), [field.id, onChange]);
@@ -217,18 +221,21 @@ export function FieldRow({
                     />
                 )}
                 {!field.isRecord && field.expression && (
-                    <Chip
-                        label={field.expression.length > 30 ? field.expression.slice(0, 30) + "…" : field.expression}
-                        size="small"
-                        sx={{
-                            height: 18,
-                            fontSize: 10,
-                            fontFamily: "monospace",
-                            color: theme.palette.primary.light,
-                            backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                            "& .MuiChip-label": { px: "6px" },
-                        }}
-                    />
+                    <Tooltip title={field.expression} placement="top">
+                        <Chip
+                            label={field.expression}
+                            size="small"
+                            sx={{
+                                height: 18,
+                                fontSize: 10,
+                                fontFamily: "monospace",
+                                color: theme.palette.primary.light,
+                                backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                                maxWidth: 300,
+                                "& .MuiChip-label": { px: "6px" },
+                            }}
+                        />
+                    </Tooltip>
                 )}
                 <Box sx={{ flex: 1 }} />
                 {!hideFieldControls && (
@@ -273,8 +280,8 @@ export function FieldRow({
                 )}
             </Box>
 
-            {/* Expanded editor */}
-            <Collapse in={isSelected}>
+            {/* Expanded editor — skip for record fields in schema mode (nothing to show) */}
+            <Collapse in={isSelected && !(hideFieldControls && field.isRecord)}>
                 <Box
                     sx={{
                         mx: 1.5,
@@ -286,59 +293,65 @@ export function FieldRow({
                     }}
                 >
                     {/* Name */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                        <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Name</Typography>
-                        <TextField
-                            value={field.name}
-                            onChange={(e) => onChange(field.id, "name", e.target.value)}
-                            size="small"
-                            variant="outlined"
-                            sx={{ flex: 1, "& .MuiInputBase-input": { fontSize: 12, fontFamily: "monospace", py: "5px" } }}
-                        />
-                    </Box>
+                    {!hideFieldControls && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                            <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Name</Typography>
+                            <TextField
+                                value={field.name}
+                                onChange={(e) => onChange(field.id, "name", e.target.value)}
+                                size="small"
+                                variant="outlined"
+                                sx={{ flex: 1, "& .MuiInputBase-input": { fontSize: 12, fontFamily: "monospace", py: "5px" } }}
+                            />
+                        </Box>
+                    )}
 
                     {/* Type */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                        <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Type</Typography>
-                        {field.isRecord ? (
-                            <>
-                                <Typography sx={{ fontSize: 12, color: "text.secondary", flex: 1 }}>Nested record</Typography>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="inherit"
-                                    onClick={() => onChange(field.id, "isRecord", false)}
-                                    sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
-                                >
-                                    Switch to expression
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Select
-                                    value={field.type === "Map" ? "Any" : field.type}
-                                    onChange={(e) => onChange(field.id, "type", e.target.value as NuType)}
-                                    size="small"
-                                    sx={{ flex: 1, fontSize: 12, "& .MuiSelect-select": { py: "5px" } }}
-                                >
-                                    {NU_TYPES.filter((t) => t !== "Map").map((t) => (
-                                        <MenuItem key={t} value={t} sx={{ fontSize: 12 }}>
-                                            {t}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="inherit"
-                                    onClick={() => onChange(field.id, "isRecord", true)}
-                                    sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
-                                >
-                                    Build Record
-                                </Button>
-                            </>
-                        )}
-                    </Box>
+                    {!hideFieldControls && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                            <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>Type</Typography>
+                            {field.isRecord ? (
+                                <>
+                                    <Typography sx={{ fontSize: 12, color: "text.secondary", flex: 1 }}>Nested record</Typography>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        color="inherit"
+                                        onClick={() => onChange(field.id, "isRecord", false)}
+                                        sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
+                                    >
+                                        Switch to expression
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Select
+                                        value={field.type === "Map" ? "Any" : field.type}
+                                        onChange={(e) => onChange(field.id, "type", e.target.value as NuType)}
+                                        size="small"
+                                        sx={{ flex: 1, fontSize: 12, "& .MuiSelect-select": { py: "5px" } }}
+                                    >
+                                        {NU_TYPES.filter((t) => t !== "Map").map((t) => (
+                                            <MenuItem key={t} value={t} sx={{ fontSize: 12 }}>
+                                                {t}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {field.type === "Map" && (
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => onChange(field.id, "isRecord", true)}
+                                            sx={{ fontSize: 11, py: "2px", textTransform: "none", flexShrink: 0 }}
+                                        >
+                                            Build Record
+                                        </Button>
+                                    )}
+                                </>
+                            )}
+                        </Box>
+                    )}
 
                     {/* SpEL expression (leaf only) */}
                     {!field.isRecord && (
@@ -402,16 +415,35 @@ export function FieldRow({
             {/* Nested children — sibling of the summary row, so background never stacks */}
             {field.isRecord && (
                 <Box
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setChildDropActive(true);
+                    }}
+                    onDragLeave={() => setChildDropActive(false)}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const path = e.dataTransfer.getData("text/plain");
+                        if (path) onAddChildFromDrop(field.id, path);
+                        setChildDropActive(false);
+                    }}
                     sx={{
                         mt: 0.5,
                         ml: 1,
                         pl: 1.5,
                         pb: 0.5,
-                        borderLeft: `2px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+                        borderLeft: `2px solid ${childDropActive ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.25)}`,
+                        borderRadius: childDropActive ? 1 : 0,
+                        backgroundColor: childDropActive ? alpha(theme.palette.primary.main, 0.06) : "transparent",
+                        transition: "border-color 0.15s, background-color 0.15s",
                     }}
                 >
-                    {field.children.length === 0 && (
+                    {field.children.length === 0 && !childDropActive && (
                         <Typography sx={{ fontSize: 11, color: "text.disabled", py: 0.5 }}>No fields yet — click Add field</Typography>
+                    )}
+                    {childDropActive && field.children.length === 0 && (
+                        <Typography sx={{ fontSize: 11, color: "primary.main", py: 0.5 }}>Drop to add field</Typography>
                     )}
                     {field.children.map((child) => (
                         <FieldRow
@@ -427,20 +459,23 @@ export function FieldRow({
                             onDragOverId={onDragOverId}
                             onChange={onChange}
                             onAddChild={onAddChild}
+                            onAddChildFromDrop={onAddChildFromDrop}
                             onRemove={onRemove}
                             onMove={onMove}
                             onDrop={onDrop}
                             onValidateExpression={onValidateExpression}
                         />
                     ))}
-                    <Button
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => onAddChild(field.id)}
-                        sx={{ fontSize: 11, textTransform: "none", mt: 0.5, py: "2px" }}
-                    >
-                        Add field
-                    </Button>
+                    {!hideFieldControls && (
+                        <Button
+                            size="small"
+                            startIcon={<AddIcon />}
+                            onClick={() => onAddChild(field.id)}
+                            sx={{ fontSize: 11, textTransform: "none", mt: 0.5, py: "2px" }}
+                        >
+                            Add field
+                        </Button>
+                    )}
                 </Box>
             )}
         </Box>
