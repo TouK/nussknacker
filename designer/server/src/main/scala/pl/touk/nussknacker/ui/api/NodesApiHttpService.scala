@@ -167,10 +167,11 @@ class NodesApiHttpService(
     nodesApiEndpoints.testCaseAdditionalVariablesEndpoint
       .serverSecurityLogic(authorizeKnownUser[NodesError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (processingType, request) =>
+        { case (scenarioName, request) =>
           for {
-            modelData <- getModelData(processingType)
-            variableTypes <- EitherT
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            modelData           <- getModelData(scenarioWithDetails.processingType)
+            inputVariableTypes <- EitherT
               .fromEither[Future](
                 decodeVariableTypes(
                   request.variableTypes,
@@ -178,7 +179,13 @@ class NodesApiHttpService(
                 )
               )
               .leftMap[NodesError](identity)
-            additionalVariables = prepareTestCaseAdditionalVariables(variableTypes)
+            nodeValidator  = processingTypeToNodeValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+            processVersion = scenarioWithDetails.processVersionUnsafe
+            jobData        = JobData(request.processProperties.toMetaData(processVersion.processName), processVersion)
+            outputVariableTypes = nodeValidator
+              .getOutputVariableTypes(inputVariableTypes, request.nodeData, jobData)
+              .getOrElse(Map.empty)
+            additionalVariables = prepareTestCaseAdditionalVariables(inputVariableTypes, outputVariableTypes)
           } yield additionalVariables
         }
       }
@@ -389,10 +396,11 @@ class NodesApiHttpService(
   }
 
   private def prepareTestCaseAdditionalVariables(
-      variableTypes: Map[String, TypingResult]
+      inputVariableTypes: Map[String, TypingResult],
+      outputVariableTypes: Map[String, TypingResult]
   ): TestCaseAdditionalVariablesResponseDto =
     TestCaseAdditionalVariablesResponseDto(
-      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
+      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(inputVariableTypes, outputVariableTypes)
     )
 
   private def parametersValidationRequestFromDto(

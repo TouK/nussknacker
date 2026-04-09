@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -51,6 +52,16 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       implicit loggedUser: LoggedUser
   ): ValidationResult = {
     beforeUiResolvingValidator.validate(scenarioGraph, processName, isFragment, labels)
+  }
+
+  def validateBeforeUiResolvingWithRawTyping(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(
+      implicit loggedUser: LoggedUser
+  ): (ValidationResult, Map[String, NodeTypingInfo]) = {
+    beforeUiResolvingValidator.validateWithRawTyping(scenarioGraph, processVersion, isFragment)
   }
 
   def resolveExpressions(

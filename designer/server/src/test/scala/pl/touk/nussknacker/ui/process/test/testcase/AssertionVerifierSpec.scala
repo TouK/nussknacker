@@ -5,10 +5,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData, NodeId, NodeName, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -16,10 +17,9 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
+import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
 import java.time.Instant
 import java.util
@@ -55,18 +55,21 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private val nodeId = NodeId("someNode")
 
-  private val scenarioTyping: Map[String, NodeTypingData] = Map(
-    nodeId.value -> NodeTypingData(
-      variableTypes = Map(
-        "someVariable"   -> Typed.fromInstance("bar"),
-        "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),
-        "someArray"      -> Typed.fromInstance(new Array[String](1)),
-        "someBigDecimal" -> Typed[java.math.BigDecimal],
-        "someNumber"     -> Typed[java.lang.Integer],
-        "someCollection" -> Typed.fromInstance(new util.ArrayList[String]()),
-      ),
+  private val inputVariableTypes = Map(
+    "someVariable"   -> Typed.fromInstance("bar"),
+    "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),
+    "someArray"      -> Typed.fromInstance(new Array[String](1)),
+    "someBigDecimal" -> Typed[java.math.BigDecimal],
+    "someNumber"     -> Typed[java.lang.Integer],
+    "someCollection" -> Typed.fromInstance(new util.ArrayList[String]()),
+  )
+
+  private val scenarioTyping: Map[String, NodeTypingInfo] = Map(
+    nodeId.value -> NodeTypingInfo(
+      inputValidationContext = ValidationContext(localVariables = inputVariableTypes),
+      expressionsTypingInfo = Map.empty,
       parameters = None,
-      typingInfo = Map.empty
+      outputValidationContext = None,
     )
   )
 
@@ -345,17 +348,62 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("should populate #outgoingRecords from originalNodeTransitionResults") {
+    val outgoingNodeId = NodeId("enricherNode")
+    val typingWithOutput = Map(
+      outgoingNodeId.value -> NodeTypingInfo(
+        inputValidationContext = ValidationContext(localVariables = Map("input" -> Typed[String])),
+        expressionsTypingInfo = Map.empty,
+        parameters = None,
+        outputValidationContext =
+          Some(ValidationContext(localVariables = Map("input" -> Typed[String], "enricherOutput" -> Typed[String]))),
+      )
+    )
+    val testCase = TestCase(
+      id = UUID.randomUUID(),
+      name = "dummy",
+      inputs = "dummy",
+      mocks = Map.empty,
+      assertions = Map(
+        outgoingNodeId -> List(
+          PredicateAssertion(AssertionOperator.Equals, "1".spel, "#outgoingRecords.size".spel)
+        )
+      )
+    )
+    val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
+    val compiledTestCase = assertionsCompiler
+      .compile(testCase, typingWithOutput, jobData, Map(outgoingNodeId -> NodeName(outgoingNodeId.value)))
+      .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), compiled => compiled)
+
+    val outgoingContext =
+      ResultContext[Any](ContextId.dummy, Instant.now(), Map("input" -> "x", "enricherOutput" -> "y"))
+    val testResults = AssertionVerifier.TestResults(
+      originalNodeResults = Map(outgoingNodeId -> List(outgoingContext)),
+      originalNodeTransitionResults = Map(
+        NodeTransition(outgoingNodeId, Some(NodeId("sink"))) -> List(outgoingContext)
+      ),
+    )
+
+    val results = assertionVerifier.verify(compiledTestCase, testResults, jobData)
+    results(outgoingNodeId) shouldBe List(SuccessfulAssertion)
+  }
+
   private def verifyForTestCase(
       testCase: TestCase,
-      nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]
+      nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]],
+      nodeTransitionResultsAfterTestRun: Map[NodeTransition, List[ResultContext[Any]]] = Map.empty,
   ): List[AssertionResult] = {
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
     val compiledTestCase = assertionsCompiler
       .compile(testCase, scenarioTyping, jobData, Map(nodeId -> NodeName(nodeId.value)))
       .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), compiled => compiled)
+    val testResults = AssertionVerifier.TestResults(
+      originalNodeResults = nodesResultsAfterTestRun,
+      originalNodeTransitionResults = nodeTransitionResultsAfterTestRun,
+    )
     val results = assertionVerifier.verify(
       compiledTestCase,
-      nodesResultsAfterTestRun,
+      testResults,
       jobData
     )
     results(nodeId)

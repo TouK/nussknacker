@@ -13,9 +13,8 @@ object TestProcess {
       expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[T]]],
       externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]],
-      originalNodeResults: Map[NodeId, List[
-        ResultContext[Any]
-      ]],
+      originalNodeResults: Map[NodeId, List[ResultContext[Any]]],
+      originalNodeTransitionResults: Map[NodeTransition, List[ResultContext[Any]]],
   ) {
 
     def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] = {
@@ -35,11 +34,15 @@ object TestProcess {
         context: Context,
         variableEncoder: Any => T
     ): TestResults[T] = {
-      copy(nodeTransitionResults =
-        nodeTransitionResults + (NodeTransition(nodeId, nextNodeIdOpt) ->
-          (nodeTransitionResults
-            .getOrElse(NodeTransition(nodeId, nextNodeIdOpt), List()) :+ ResultContext
-            .fromContext(context, Instant.now(), variableEncoder)))
+      val transition = NodeTransition(nodeId, nextNodeIdOpt)
+      val instantNow = Instant.now()
+      copy(
+        nodeTransitionResults = nodeTransitionResults + (transition ->
+          (nodeTransitionResults.getOrElse(transition, List()) :+ ResultContext
+            .fromContext(context, instantNow, variableEncoder))),
+        originalNodeTransitionResults = originalNodeTransitionResults + (transition ->
+          (originalNodeTransitionResults.getOrElse(transition, List()) :+ ResultContext
+            .fromContext(context, instantNow, identity))),
       )
     }
 
@@ -95,7 +98,7 @@ object TestProcess {
   object TestResults {
 
     def empty[T]: TestResults[T] =
-      TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty)
+      TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty, Map.empty)
 
     def aggregate[T](testResults: Iterable[TestResults[T]]): TestResults[T] = {
       TestResults[T](
@@ -105,6 +108,7 @@ object TestProcess {
         externalServiceInvocationResults = mergeMaps(testResults.map(_.externalServiceInvocationResults)),
         exceptions = testResults.flatMap(_.exceptions).toList,
         originalNodeResults = mergeMaps(testResults.map(_.originalNodeResults)),
+        originalNodeTransitionResults = mergeMaps(testResults.map(_.originalNodeTransitionResults)),
       )
     }
 

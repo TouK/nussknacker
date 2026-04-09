@@ -147,6 +147,12 @@ class ScenarioTestingApiHttpServiceSpec
               "'ala'".spel,
               "#records[0].input[0]".spel,
             ),
+            // The output variable produced by the messagesuffix node is visible in #outgoingRecords at that node.
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'message'".spel,
+              "#outgoingRecords[0].output.message".spel,
+            ),
           )
         )
       )
@@ -169,6 +175,7 @@ class ScenarioTestingApiHttpServiceSpec
         )
         .body("assertionsResults.endsuffix[2].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
         .body("assertionsResults.messagesuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.messagesuffix[1].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
 
     "run a test case with mocked enricher service" in {

@@ -17,12 +17,14 @@ private class AssertionValidator(
   def validateForNode(
       assertions: List[Assertion],
       inputVariableTypes: Map[String, TypingResult],
+      outputVariableTypes: Map[String, TypingResult],
       jobData: JobData
   )(
       implicit nodeId: NodeId,
       nodeName: NodeName
   ): Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] = {
-    val compilationResults = assertionsCompiler.compileForNode(assertions, inputVariableTypes, jobData)
+    val compilationResults =
+      assertionsCompiler.compileForNode(assertions, inputVariableTypes, outputVariableTypes, jobData)
     val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(errors), index) =>
       index -> convertToAssertionErrors(errors)
     }.toMap

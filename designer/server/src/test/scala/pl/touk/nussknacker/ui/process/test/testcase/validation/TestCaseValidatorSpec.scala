@@ -75,7 +75,12 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
             "'expected'".spel,
             "#records[0].input".spel,
           ),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'expected'".spel,
+            "#outgoingRecords[0].enricherOutput".spel,
+          ),
         )
       )
     )
@@ -85,7 +90,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
       nodeTestCases,
       NodeTyping(
         inputVariables = inputVariableTypes,
-        outputVariables = inputVariableTypes
+        outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
     )
 
@@ -379,7 +384,13 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
         mocks = Map(enricher.id -> EnricherMock("'valid mock'".spel)),
         assertions = Map(
           enricher.id -> List(
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None),
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'valid mock'".spel,
+              "#outgoingRecords[0].enricherOutput".spel,
+              description = None
+            ),
           ),
           filter.id -> List(
             PredicateAssertion(

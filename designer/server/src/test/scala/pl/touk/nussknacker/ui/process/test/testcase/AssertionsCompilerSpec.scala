@@ -28,9 +28,7 @@ import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.PredicateAssertionCompilationError
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledPredicateAssertion
@@ -294,6 +292,30 @@ class AssertionsCompilerSpec
     }
   }
 
+  test("should allow #outgoingRecords in assertions for enricher node") {
+    val test = prepareTestCase(
+      Map(
+        NodeId("enricher1") -> List(
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#outgoingRecords.size".spel)
+        )
+      )
+    )
+    val result = compileScenarioWithAssertions(scenario, test)
+    result.isValid shouldBe true
+  }
+
+  test("should allow #outgoingRecords in assertions for sink node (typed as input vars since sink output = input)") {
+    val test = prepareTestCase(
+      Map(
+        NodeId("sink1") -> List(
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#outgoingRecords.size".spel)
+        )
+      )
+    )
+    val result = compileScenarioWithAssertions(scenario, test)
+    result.isValid shouldBe true
+  }
+
   private def compileScenarioWithAssertions(scenario: CanonicalProcess, test: TestCase) = {
     val typing  = compileScenarioForTyping(scenario)
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
@@ -307,7 +329,7 @@ class AssertionsCompilerSpec
     assertionCompilationResult
   }
 
-  private def compileScenarioForTyping(scenario: CanonicalProcess): Map[String, NodeTypingData] = {
+  private def compileScenarioForTyping(scenario: CanonicalProcess): Map[String, NodeTypingInfo] = {
     val jobData: JobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
       new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
@@ -322,17 +344,11 @@ class AssertionsCompilerSpec
       .compile(scenario)
 
     compilationResult.result match {
-      case Validated.Valid(_) => compilationResult.typing.mapValuesNow(nodeInfoToResult).toMap
+      case Validated.Valid(_) => compilationResult.typing.toMap
       case Validated.Invalid(errors) =>
         throw new IllegalStateException(s"Process compilation ended with errors: $errors")
     }
   }
-
-  private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
-    typingInfo.inputValidationContext.localVariables,
-    typingInfo.parameters.map(_.map(DefinitionsService.createUIParameter)),
-    typingInfo.expressionsTypingInfo
-  )
 
   private def prepareTestCase(assertions: Map[NodeId, List[Assertion]]): TestCase = {
     TestCase(

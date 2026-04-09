@@ -141,6 +141,7 @@ class TestCaseValidator(
     val assertionsErrors = assertionValidator.validateForNode(
       nodeTestCase.assertions,
       nodeTyping.inputVariables,
+      nodeTyping.outputVariables,
       scenarioCompilationDependencies.jobData
     )(nodeData.id, nodeData.name)
 

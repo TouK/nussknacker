@@ -3,7 +3,7 @@ import type { AxiosError } from "axios";
 import type { CaretPosition2d } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import type { ProcessStateType, Scenario } from "../../components/Process/types";
 import type { Instant } from "../../types/common";
-import type { Expression, NodeId } from "../../types/node";
+import type { Expression, NodeId, NodeType, PropertiesType } from "../../types/node";
 import type { ProcessAdditionalFields, ScenarioGraph } from "../../types/scenarioGraph";
 import type { VariableTypes } from "../../types/validation";
 
@@ -160,6 +160,8 @@ export type ResponseStatus = { status: "success"; data?: any } | { status: "erro
 
 export type TestCaseNodeAdditionalVariablesRequest = {
     variableTypes: VariableTypes;
+    nodeData: NodeType;
+    processProperties: PropertiesType;
 };
 
 export type TestCaseNodeAdditionalVariablesResponse = {

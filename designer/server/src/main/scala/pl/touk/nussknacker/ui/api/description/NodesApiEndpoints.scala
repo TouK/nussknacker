@@ -753,7 +753,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
   }
 
   lazy val testCaseAdditionalVariablesEndpoint: SecuredEndpoint[
-    (ProcessingType, TestCaseAdditionalVariablesRequestDto),
+    (ProcessName, TestCaseAdditionalVariablesRequestDto),
     NodesError,
     TestCaseAdditionalVariablesResponseDto,
     Any
@@ -762,14 +762,14 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Additional variables for a test case at node")
       .tag("Nodes")
       .post
-      .in("parameters" / path[ProcessingType]("processingType") / "testCase" / "additionalVariables")
+      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "additionalVariables")
       .in(
         jsonBody[TestCaseAdditionalVariablesRequestDto]
           .example(
             Example.of(
               summary = Some("Node variables"),
               value = TestCaseAdditionalVariablesRequestDto(
-                Map(
+                variableTypes = Map(
                   "amount" -> TypingResultInJson(
                     encoder.apply(
                       TypedObjectWithValue.apply(
@@ -786,7 +786,17 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                       )
                     )
                   ),
-                )
+                ),
+                nodeData = Filter(
+                  NodeId("filterId"),
+                  NodeName("filterId"),
+                  Expression(Language.Spel, "#amount > 0"),
+                  isDisabled = None,
+                  additionalFields = None
+                ),
+                processProperties = ProcessProperties.apply(
+                  ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "StreamMetaData")
+                ),
               )
             )
           )
@@ -1822,10 +1832,27 @@ object NodesApiEndpoints {
         name: ProcessName
     )
 
-    @derive(schema, encoder, decoder)
     final case class TestCaseAdditionalVariablesRequestDto(
         variableTypes: Map[String, TypingResultInJson],
+        nodeData: NodeData,
+        processProperties: ProcessProperties,
     )
+
+    object TestCaseAdditionalVariablesRequestDto {
+      import io.circe.generic.semiauto._
+
+      implicit lazy val requestDtoEncoder: Encoder[TestCaseAdditionalVariablesRequestDto] =
+        deriveEncoder[TestCaseAdditionalVariablesRequestDto]
+
+      implicit lazy val requestDtoDecoder: Decoder[TestCaseAdditionalVariablesRequestDto] =
+        deriveDecoder[TestCaseAdditionalVariablesRequestDto]
+
+      implicit lazy val requestDtoSchema: Schema[TestCaseAdditionalVariablesRequestDto] = {
+        import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas._
+        Schema.derived[TestCaseAdditionalVariablesRequestDto]
+      }
+
+    }
 
     @derive(schema, encoder, decoder)
     final case class TestCaseAdditionalVariablesResponseDto(
