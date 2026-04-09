@@ -39,6 +39,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("debug.lightTheme"),
         createFlag("debug.mockAssistant"),
         createFlag("debug.nodesAsJson"),
+        createFlag("debug.scenario.enableDraftHack"),
         createFlag("debug.scenario.showNodeAlignToolbar"),
         createFlag("editor.allowForceSwitch"),
         createFlag("editor.json.showLines", true),
