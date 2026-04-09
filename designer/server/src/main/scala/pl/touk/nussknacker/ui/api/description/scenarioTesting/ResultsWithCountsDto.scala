@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import io.circe._
 import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
+import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
@@ -16,7 +17,6 @@ import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
 
 import java.time.Instant
-import scala.collection.compat._
 import scala.collection.mutable
 
 final case class ResultsWithCountsDto(
@@ -31,7 +31,8 @@ object ResultsWithCountsDto {
   def from(
       resultsWithCounts: ResultsWithCounts,
       skipResultsPerNode: SkipResultsPerNode,
-      skipResultsPerTransition: SkipResultsPerTransition
+      skipResultsPerTransition: SkipResultsPerTransition,
+      nodeNamesById: Map[NodeId, String],
   ): ResultsWithCountsDto = {
     lazy val externalServiceInvocationResults = resultsWithCounts.results.externalServiceInvocationResults
     lazy val rawNodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
@@ -57,6 +58,7 @@ object ResultsWithCountsDto {
         nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
         expressionEvaluationResults = resultsWithCounts.results.expressionEvaluationResults,
         externalServiceInvocationResults = externalServiceInvocationResults,
+        nodeNamesByContextKey = buildNodeNamesByContextKey(nodeNamesById),
         exceptions = resultsWithCounts.results.exceptions,
         exceptionsByNodeId = exceptionsByNodeId,
       ),
@@ -65,7 +67,11 @@ object ResultsWithCountsDto {
     )
   }
 
-  def from(liveData: CollectedLiveData, counts: Map[NodeId, NodeCount]): ResultsWithCountsDto = {
+  def from(
+      liveData: CollectedLiveData,
+      counts: Map[NodeId, NodeCount],
+      nodeNamesById: Map[NodeId, String],
+  ): ResultsWithCountsDto = {
     lazy val externalServiceInvocationResults = liveData.externalServiceInvocationResults.map {
       case (nodeId, results) =>
         nodeId -> results.map(r => ExternalServiceInvocationResult(r.contextId, r.timestamp, r.name, r.value))
@@ -99,6 +105,7 @@ object ResultsWithCountsDto {
           nodeId -> results.map(r => ExpressionEvaluationResult(r.contextId, r.timestamp, r.name, r.value))
         },
         externalServiceInvocationResults = externalServiceInvocationResults,
+        nodeNamesByContextKey = buildNodeNamesByContextKey(nodeNamesById),
         exceptions = exceptionsByNodeId.values.toList.flatten,
         exceptionsByNodeId = exceptionsByNodeId,
       ),
@@ -168,6 +175,23 @@ object ResultsWithCountsDto {
     )
   }
 
+  private def buildNodeNamesByContextKey(nodeNamesById: Map[NodeId, String]): Map[String, String] = {
+    val namesByRawNodeId = nodeNamesById.map { case (nodeId, nodeName) =>
+      nodeId.value -> nodeName
+    }
+
+    val namesBySanitizedNodeId = nodeNamesById
+      .groupBy { case (nodeId, _) =>
+        ContextTransformation.sanitizeBranchName(nodeId.value)
+      }
+      .collect {
+        case (sanitizedNodeId, entries) if entries.size == 1 =>
+          sanitizedNodeId -> entries.head._2
+      }
+
+    namesByRawNodeId ++ namesBySanitizedNodeId
+  }
+
   import sttp.tapir.json.circe._
 
   implicit def nodeIdSchema: Schema[NodeId]                             = Schema.derived
@@ -193,6 +217,7 @@ final case class TestResultsDto(
     nodeTransitionResults: Option[List[NodeTransitionResult]],
     expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[Json]]],
     externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Json]]],
+    nodeNamesByContextKey: Map[String, String] = Map.empty,
     exceptions: List[JsonExceptionResult],
     exceptionsByNodeId: Map[NodeId, List[JsonExceptionResult]],
 )

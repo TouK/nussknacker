@@ -171,6 +171,10 @@ class ScenarioTestingApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request, skipResultsPerNode, skipResultsPerTransition) =>
+          val requestScenarioGraph = request match {
+            case PerformTestRequestJsonBody(scenarioGraph, _)   => scenarioGraph
+            case PerformTestRequestMultiParts(scenarioGraph, _) => scenarioGraph
+          }
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             processId <- EitherT
@@ -205,6 +209,7 @@ class ScenarioTestingApiHttpService(
               resultWithCounts,
               skipResultsPerNode,
               skipResultsPerTransition,
+              extractNodeNamesById(requestScenarioGraph),
             )
           }
         }
@@ -384,6 +389,7 @@ class ScenarioTestingApiHttpService(
               resultWithCounts,
               skipResultsPerNode,
               skipResultsPerTransition,
+              extractNodeNamesById(request.scenarioGraph),
             )
           }
         }
@@ -432,7 +438,12 @@ class ScenarioTestingApiHttpService(
             TestCaseResultEvent.Completed(
               testCase.id,
               testCase.name,
-              ResultsWithCountsDto.from(resultsWithCounts, skipResultsPerNode, skipResultsPerTransition)
+              ResultsWithCountsDto.from(
+                resultsWithCounts,
+                skipResultsPerNode,
+                skipResultsPerTransition,
+                extractNodeNamesById(scenarioGraph),
+              )
             )
           case Left(error) =>
             TestCaseResultEvent.Error(testCase.id, testCase.name, TestingApiErrorMessages.from(error))

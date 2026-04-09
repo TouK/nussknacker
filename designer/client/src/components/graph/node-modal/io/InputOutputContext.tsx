@@ -10,17 +10,17 @@ import { useAppSelector } from "../../../../store/storeHelpers";
 import NodeUtils from "../../NodeUtils";
 import type { VariableContextType } from "./VariableContextTree";
 
-function mapNodeIdKeysToNames(value: unknown, nodeNameById: Record<string, string>): unknown {
+function mapNodeIdKeysToNames(value: unknown, nodeNameByContextKey: Record<string, string>): unknown {
     if (Array.isArray(value)) {
-        return value.map((entry) => mapNodeIdKeysToNames(entry, nodeNameById));
+        return value.map((entry) => mapNodeIdKeysToNames(entry, nodeNameByContextKey));
     }
     if (!isPlainObject(value)) {
         return value;
     }
 
     return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [key, nestedValue]) => {
-        const normalizedKey = nodeNameById[key] || key;
-        acc[normalizedKey] = mapNodeIdKeysToNames(nestedValue, nodeNameById);
+        const normalizedKey = nodeNameByContextKey[key] || key;
+        acc[normalizedKey] = mapNodeIdKeysToNames(nestedValue, nodeNameByContextKey);
         return acc;
     }, {});
 }
@@ -89,9 +89,12 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
 }>) {
     const scenario = useAppSelector(getScenarioGraph);
     const testResults = useAppSelector(getTestResults);
-    const nodeNameById = useMemo<Record<string, string>>(
-        () => Object.fromEntries((scenario.nodes || []).map((graphNode) => [graphNode.id, graphNode.name])),
-        [scenario.nodes],
+    const nodeNameByContextKey = useMemo<Record<string, string>>(
+        () => ({
+            ...Object.fromEntries((scenario.nodes || []).map((graphNode) => [graphNode.id, graphNode.name])),
+            ...(testResults?.nodeNamesByContextKey || {}),
+        }),
+        [scenario.nodes, testResults?.nodeNamesByContextKey],
     );
 
     const [state, dispatch] = useReducer(reducer, initialState);
@@ -169,7 +172,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                         }
                         const variablesWithMappedNodeNames = mapValues(variables, (entry) => ({
                             ...entry,
-                            pretty: mapNodeIdKeysToNames(entry?.pretty, nodeNameById),
+                            pretty: mapNodeIdKeysToNames(entry?.pretty, nodeNameByContextKey),
                         }));
 
                         const error = direction === "input" && getError(destinationNodeId, id);
@@ -187,7 +190,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
             const count = transitionResults.reduce((sum, { totalCount = 0 }) => sum + totalCount, 0);
             return [contexts, count];
         },
-        [inputs, nodeNameById, outputs, getError, isContextDisabled],
+        [inputs, nodeNameByContextKey, outputs, getError, isContextDisabled],
     );
 
     const value = useMemo<ContextType>(

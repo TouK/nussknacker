@@ -79,6 +79,7 @@ object ResultsWithCountsDtoCodecs {
             nodeTransitionResults,
             expressionEvaluationResults,
             externalServiceInvocationResults,
+            nodeNamesByContextKey,
             exceptions,
             exceptionsByNodeId,
           ) =>
@@ -95,7 +96,8 @@ object ResultsWithCountsDtoCodecs {
           "externalServiceInvocationResults" -> externalServiceInvocationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId.legacyString)
           }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id.legacyString).asJson,
+          "nodeNamesByContextKey" -> nodeNamesByContextKey.asJson,
+          "exceptions"            -> exceptions.sortBy(_.context.id.legacyString).asJson,
           "exceptionsByNodeId" -> exceptionsByNodeId.map { case (nodeId, exs) =>
             nodeId -> exs.sortBy(_.context.id.legacyString)
           }.asJson,
