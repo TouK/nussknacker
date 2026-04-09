@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
-import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockConfluentSchemaRegistryClientBuilder,
   MockSchemaRegistryClient
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.flink.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
@@ -45,18 +43,7 @@ class KafkaAvroNamespacedSpec extends AnyFunSuite with FlinkKafkaAvroSpecMixin w
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(components)
-      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
-        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerialization(
-          schemaRegistryClientFactory,
-          kafkaComponentsConfig
-        )
-      }))
       .build()
-  }
-
-  override protected def afterAll(): Unit = {
-    AvroSerializersRegistrar.clearRegistrations()
-    super.afterAll()
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

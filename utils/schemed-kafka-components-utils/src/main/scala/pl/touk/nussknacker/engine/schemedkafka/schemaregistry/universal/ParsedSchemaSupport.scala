@@ -37,8 +37,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.JsonSchemaSupport.defaultJsonTemplateFor
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.NoSchemaJsonSupport.jsonSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.schemedkafka.typed.{
   AvroSchemaTypeDefinitionExtractor,
   AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
@@ -59,11 +58,15 @@ sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupp
 
 class AvroSchemaSupport(kafkaComponentsConfig: KafkaComponentsConfig) extends ParsedSchemaSupport[AvroSchema] {
 
+  private val genericRecordSchemaIdSerializationSupport = GenericRecordSchemaIdSerializationSupport(
+    kafkaComponentsConfig
+  )
+
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = {
     if (kafkaComponentsConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadDeserializer
     } else {
-      AvroPayloadDeserializer(kafkaComponentsConfig)
+      new AvroPayloadDeserializer(genericRecordSchemaIdSerializationSupport)
     }
   }
 
@@ -95,8 +98,15 @@ class AvroSchemaSupport(kafkaComponentsConfig: KafkaComponentsConfig) extends Pa
 
   }
 
-  override def typeDefinition(schema: ParsedSchema): TypingResult =
-    AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
+  override def typeDefinition(schema: ParsedSchema): TypingResult = {
+    if (kafkaComponentsConfig.avroAsJsonSerialization.contains(true)) {
+      AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
+    } else {
+      genericRecordSchemaIdSerializationSupport.wrapRecordTypeIfNeeded(
+        AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
+      )
+    }
+  }
 
   override def formValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = {
     val encoder = ToAvroSchemaBasedEncoder(validationMode)

@@ -1,71 +1,101 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.flink
 
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
-import org.apache.avro.generic.GenericData
-import org.apache.avro.io.{DecoderFactory, EncoderFactory}
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.avro.Schema
+import org.apache.avro.generic.{GenericData, GenericDatumWriter}
+import org.apache.avro.io.{BinaryDecoder, BinaryEncoder, DatumReader, DecoderFactory, EncoderFactory}
+import org.apache.flink.annotation.VisibleForTesting
+import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
+import org.apache.flink.api.java.typeutils.runtime.{DataInputViewStream, DataOutputViewStream}
+import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   GenericRecordWithSchemaId,
   IntSchemaId,
   SchemaId,
-  SchemaRegistryClient,
   StringSchemaId
 }
 
-import java.io.ByteArrayOutputStream
 import java.util
 
 /**
- * Flink-compatible serializer with default constructor.
+ * A specialized serializer for [[GenericRecordWithSchemaId]], uses an optimized binary format that writes records
+ * together with schema identifiers, unlike Flink's default Avro serializer that writes entire schemas.
  *
- * During deserialization uses Schema Registry clients registered in [[GenericRecordWithSchemaIdSerializer]] object.
+ * Works under the assumption that:
+ * <ul>
+ *   <li>every schema registry is assigned a distinct identifier, a `schemaRegistryId`
+ *   <li>schemas are immutable - a single `schemaId` value will always map to the same schema
+ * </ul>
+ *
+ * State is additive, old schemas are never expired. Serializer state compaction would be possible if we tracked usage
+ * between [[snapshotConfiguration]] and restorations from [[GenericRecordWithSchemaIdSerializerSnapshot]].
  */
-@SerialVersionUID(42553325228495L)
-class GenericRecordWithSchemaIdSerializer
-    extends Serializer[GenericRecordWithSchemaId](false, false)
-    with DatumReaderWriterMixin
-    with Serializable {
+@SerialVersionUID(1L)
+class GenericRecordWithSchemaIdSerializer(
+    private var schemas: util.Map[Int, util.Map[SchemaId, Schema]]
+) extends TypeSerializer[GenericRecordWithSchemaId]
+    with DatumReaderWriterMixin {
 
-  import GenericRecordWithSchemaIdSerializer._
+  def this() = this(null)
 
-  private val stringSchemaMarker: Int = -1
+  @transient private var writers: util.Map[Int, util.Map[SchemaId, GenericDatumWriter[Any]]] = _
+  @transient private var readers: util.Map[Int, util.Map[SchemaId, DatumReader[AnyRef]]]     = _
+  // Specialized Avro encoder/decoder that handles compact number encoding
+  // - Flink's DataOutputEncoder/DataInputDecoder doesn't optimize its output for size
+  @transient private var encoder: BinaryEncoder = _
+  @transient private var decoder: BinaryDecoder = _
 
-  override def write(kryo: Kryo, output: Output, record: GenericRecordWithSchemaId): Unit = {
-    // typically identifiers should be manually assigned, i.e. they should be small positive integers
-    output.writeVarInt(record.getSchemaRegistryId, true)
+  override def isImmutableType: Boolean = false
+
+  override def getLength: Int = -1
+
+  override def createInstance(): GenericRecordWithSchemaId =
+    new GenericRecordWithSchemaId(Schema.create(Schema.Type.RECORD), 0, SchemaId.fromInt(0))
+
+  override def serialize(record: GenericRecordWithSchemaId, target: DataOutputView): Unit = {
+    encoder = EncoderFactory.get().directBinaryEncoder(new DataOutputViewStream(target), encoder)
+
+    encoder.writeInt(record.getSchemaRegistryId)
     record.getSchemaId match {
       case IntSchemaId(value) =>
-        output.writeVarInt(value, true)
+        encoder.writeInt(value)
       case StringSchemaId(value) =>
-        output.writeVarInt(stringSchemaMarker, true)
-        output.writeString(value)
+        encoder.writeInt(GenericRecordWithSchemaIdSerializer.stringSchemaMarker)
+        encoder.writeString(value)
     }
 
-    val bos = new ByteArrayOutputStream()
-    serializeRecord(record, bos)
-    output.writeVarInt(bos.size(), true)
-    output.writeBytes(bos.toByteArray)
-  }
+    if (writers == null) {
+      writers = new util.HashMap()
+    }
+    val writer = writers
+      .computeIfAbsent(record.getSchemaRegistryId, _ => new util.HashMap())
+      .computeIfAbsent(
+        record.getSchemaId,
+        { schemaId =>
+          if (schemas == null) {
+            schemas = new util.HashMap()
+          }
+          schemas
+            .computeIfAbsent(record.getSchemaRegistryId, _ => new util.HashMap())
+            .put(schemaId, record.getSchema)
+          createDatumWriter(record.getSchema)
+        }
+      )
 
-  private def serializeRecord(record: GenericRecordWithSchemaId, bos: ByteArrayOutputStream): Unit = {
-    val writer  = createDatumWriter(record.getSchema)
-    val encoder = EncoderFactory.get().directBinaryEncoder(bos, null)
     writer.write(record, encoder)
   }
 
-  override def read(
-      kryo: Kryo,
-      input: Input,
-      `type`: Class[_ <: GenericRecordWithSchemaId]
-  ): GenericRecordWithSchemaId = {
-    val schemaRegistryId = input.readVarInt(true)
-    val schemaIdInt      = input.readVarInt(true)
+  override def deserialize(source: DataInputView): GenericRecordWithSchemaId = {
+    decoder = DecoderFactory.get().directBinaryDecoder(new DataInputViewStream(source), decoder)
+
+    val schemaRegistryId = decoder.readInt()
+    val schemaIdInt      = decoder.readInt()
     val schemaId = if (schemaIdInt >= 0) {
       SchemaId.fromInt(schemaIdInt)
-    } else if (schemaIdInt == stringSchemaMarker) {
-      val schemaIdString = input.readString()
+    } else if (schemaIdInt == GenericRecordWithSchemaIdSerializer.stringSchemaMarker) {
+      val schemaIdString = decoder.readString()
       SchemaId.fromString(schemaIdString)
     } else {
       throw new IllegalArgumentException(
@@ -73,45 +103,79 @@ class GenericRecordWithSchemaIdSerializer
       )
     }
 
-    val lengthOfData          = input.readVarInt(true)
-    val recordBytes           = input.readBytes(lengthOfData)
-    val recordWithoutSchemaId = deserializeRecord(lengthOfData, schemaRegistryId, schemaId, recordBytes)
-    new GenericRecordWithSchemaId(recordWithoutSchemaId, schemaRegistryId, schemaId, false)
+    if (readers == null) {
+      readers = new util.HashMap()
+    }
+    val reader = readers
+      .computeIfAbsent(schemaRegistryId, _ => new util.HashMap())
+      .computeIfAbsent(
+        schemaId,
+        { schemaId =>
+          if (schemas == null) {
+            throw new IllegalStateException(
+              s"Serializer has not been initialized, cannot deserialize object schemaRegistryId/schemaId pair: $schemaRegistryId/$schemaId"
+            )
+          }
+          val srSchemas = schemas.get(schemaRegistryId)
+          if (srSchemas == null) {
+            throw new IllegalStateException(s"Unknown schemaRegistryId: $schemaRegistryId")
+          }
+          val schema = srSchemas.get(schemaId)
+          if (schema == null) {
+            throw new IllegalStateException(s"Unknown schemaRegistryId/schemaId pair: $schemaRegistryId/$schemaId")
+          }
+          createDatumReader(schema, schema)
+        }
+      )
+
+    val record = reader.read(null, decoder).asInstanceOf[GenericData.Record]
+
+    new GenericRecordWithSchemaId(record, schemaRegistryId, schemaId, false)
   }
 
-  private def deserializeRecord(
-      lengthOfData: Int,
-      schemaRegistryId: Int,
-      schemaId: SchemaId,
-      recordBytes: Array[Byte]
-  ): GenericData.Record = {
-    val parsedSchema  = getSchemaRegistryClientClient(schemaRegistryId).getSchemaById(schemaId).schema
-    val writerSchema  = AvroUtils.extractSchema(parsedSchema)
-    val reader        = createDatumReader(writerSchema, writerSchema)
-    val binaryDecoder = DecoderFactory.get().binaryDecoder(recordBytes, 0, lengthOfData, null)
-    reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
+  override def deserialize(reuse: GenericRecordWithSchemaId, source: DataInputView): GenericRecordWithSchemaId =
+    deserialize(source)
+
+  override def copy(from: GenericRecordWithSchemaId): GenericRecordWithSchemaId =
+    AvroUtils.genericData.deepCopy(from.getSchema, from)
+
+  override def copy(from: GenericRecordWithSchemaId, reuse: GenericRecordWithSchemaId): GenericRecordWithSchemaId =
+    copy(from)
+
+  override def copy(source: DataInputView, target: DataOutputView): Unit = serialize(deserialize(source), target)
+
+  override def snapshotConfiguration(): TypeSerializerSnapshot[GenericRecordWithSchemaId] =
+    new GenericRecordWithSchemaIdSerializerSnapshot(schemas)
+
+  override def duplicate(): TypeSerializer[GenericRecordWithSchemaId] =
+    new GenericRecordWithSchemaIdSerializer(GenericRecordWithSchemaIdSerializer.cloneSchemas(schemas))
+
+  override def equals(obj: Any): Boolean = obj match {
+    case other: GenericRecordWithSchemaIdSerializer => schemas == other.schemas
+    case _                                          => false
   }
 
-  override def copy(kryo: Kryo, original: GenericRecordWithSchemaId): GenericRecordWithSchemaId =
-    AvroUtils.genericData.deepCopy(original.getSchema, original)
+  // noinspection HashCodeUsesVar
+  override def hashCode(): Int = if (schemas == null) 0 else schemas.hashCode()
+
+  @VisibleForTesting
+  private[flink] def getSchemas: util.Map[Int, util.Map[SchemaId, Schema]] = schemas
 
 }
 
 object GenericRecordWithSchemaIdSerializer {
-  // job initialization in single-threaded, it's safe to have an unsynchronized map here
-  private val schemaRegistries = new util.HashMap[Int, SchemaRegistryClient]()
+  private val stringSchemaMarker: Int = -1
 
-  def register(
-      schemaRegistryId: Int,
-      schemaRegistryClient: SchemaRegistryClient
-  ): Unit = schemaRegistries.put(schemaRegistryId, schemaRegistryClient)
-
-  private def getSchemaRegistryClientClient(schemaRegistryId: Int): SchemaRegistryClient =
-    Option(schemaRegistries.get(schemaRegistryId))
-      .getOrElse(throw new IllegalStateException(s"Unknown schemaRegistryId: $schemaRegistryId"))
-
-  def clearRegistrations(): Unit = {
-    schemaRegistries.clear()
+  private[flink] def cloneSchemas(
+      schemas: util.Map[Int, util.Map[SchemaId, Schema]]
+  ): util.Map[Int, util.Map[SchemaId, Schema]] = {
+    if (schemas == null) {
+      null
+    } else {
+      val copy = new util.HashMap[Int, util.Map[SchemaId, Schema]]()
+      schemas.forEach((k, v) => copy.put(k, new util.HashMap(v)))
+      copy
+    }
   }
 
 }

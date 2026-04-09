@@ -597,16 +597,17 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     dependencyOverrides += "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
   )
   .dependsOn(
-    deploymentManagerApi % Provided,
-    liveDataCollector    % Provided,
+    deploymentManagerApi             % Provided,
+    liveDataCollector                % Provided,
     scenarioCompilerFlinkDeps,
     flinkMiniCluster,
-    commonUtils          % Provided,
-    utilsInternal        % Provided,
-    httpUtils            % Provided,
-    flinkExecutor        % Test,
-    flinkTestUtils       % "it,test",
-    kafkaTestUtils       % "it,test"
+    commonUtils                      % Provided,
+    utilsInternal                    % Provided,
+    httpUtils                        % Provided,
+    flinkExecutor                    % Test,
+    flinkTestUtils                   % "it,test",
+    kafkaTestUtils                   % "it,test",
+    flinkSchemedKafkaComponentsUtils % "it",
   )
 
 lazy val awsManagedFlinkDeploymentManager = (project in flink("aws-managed-flink-deployment-manager"))

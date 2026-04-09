@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import java.util
 
@@ -28,20 +29,17 @@ case object StatefulTransformer extends CustomStreamTransformer with LazyLogging
     FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       start
         .groupBy(groupBy, groupByParameterName)(ctx)
-        .mapWithState[ValueWithContext[AnyRef], util.List[String]] {
-          case (StringFromIr(ir, sr), oldState) =>
-            logger.info(s"received: $sr, current state: $oldState")
-            val nList = oldState.getOrElse(new util.ArrayList[String]())
-            nList.add(sr)
+        .mapWithState[ValueWithContext[AnyRef], util.List[AnyRef]] { (valueWithContext, oldState) =>
+          val input = valueWithContext.context.apply[AnyRef]("input")
+          logger.info(s"received: $input, current state: $oldState")
+          val nList = oldState.getOrElse(new util.ArrayList[AnyRef]())
+          nList.add(input)
 
-            (ValueWithContext(nList, ir.context), Some(nList))
-          case _ => throw new IllegalStateException()
-        }(ctx.valueWithContextInfo.forUnknown, Types.LIST(Types.STRING))
+          (ValueWithContext(nList, valueWithContext.context), Some(nList))
+        }(
+          ctx.valueWithContextInfo.forUnknown,
+          Types.LIST(TypeInformationDetection.instance.forType(ctx.asOneOutputContext("input")))
+        )
     })
-
-  object StringFromIr {
-    def unapply(ir: ValueWithContext[_]): Option[(ValueWithContext[_], String)] =
-      Some(ir, ir.context.apply[String]("input"))
-  }
 
 }

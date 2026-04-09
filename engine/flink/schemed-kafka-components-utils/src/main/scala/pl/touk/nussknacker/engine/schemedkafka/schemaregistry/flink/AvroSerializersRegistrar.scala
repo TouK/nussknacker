@@ -1,20 +1,17 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.flink
 
 import com.esotericsoftware.kryo.serializers.FieldSerializer
-import com.google.common.annotations.VisibleForTesting
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.serialization.SerializerConfigImpl
-import org.apache.flink.api.java.typeutils.AvroUtils
-import pl.touk.nussknacker.engine.api.component.ComponentProviderConfig
+import org.apache.flink.api.java.typeutils.{AvroUtils, TypeExtractor}
+import org.apache.flink.configuration.{Configuration, PipelineOptions}
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
-import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
+
+import java.util.Collections
 
 class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
 
@@ -22,7 +19,7 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
     logger.debug("Registering Avro serializers")
     val serializerImpl = executionConfig.getSerializerConfig.asInstanceOf[SerializerConfigImpl]
     registerGenericSerializer(serializerImpl)
-    registerOptimizedSerializers(serializerImpl, modelConfig)
+    registerOptimizedSerializers(serializerImpl)
   }
 
   /**
@@ -41,91 +38,40 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
   }
 
   /**
-   * Registers optimized [[GenericRecordWithSchemaId]] serializers for `kafka` components.
-   *
-   * If you want to register a serializer for other Kafka components you need to invoke
-   * [[AvroSerializersRegistrar#registerGenericRecordSchemaIdSerialization]] directly.
+   * Registers an optimized [[GenericRecordWithSchemaId]] serializer
    */
-  private def registerOptimizedSerializers(serializerConfig: SerializerConfigImpl, modelConfig: Config): Unit = {
-    serializerConfig.registerTypeWithKryoSerializer(
-      classOf[GenericRecordWithSchemaId],
-      classOf[GenericRecordWithSchemaIdSerializer]
+  private def registerOptimizedSerializers(serializerConfig: SerializerConfigImpl): Unit = {
+    // MiniCluster tests load Flink classes reuse the same ClassLoader which means that registration in static TypeExtractor
+    // must happen only once, or it will throw an IllegalArgumentException.
+    val registeredClass                = classOf[GenericRecordWithSchemaId]
+    val registeredTypeInfoFactoryClass = classOf[GenericRecordWithSchemaIdTypeInfoFactory]
+
+    // TODO: test this on real Flink, aren't we leaking classladers via TypeExtractor?
+    logger.info(
+      s"Registering AvroSerializer\nCL=${this.getClass.getClassLoader}\nCTX=${Thread.currentThread.getContextClassLoader}\nTECL=${classOf[TypeExtractor].getClassLoader}"
     )
 
-    resolveKafkaComponentsConfigs(modelConfig).foreach { case (componentName, resolvedKafkaConfig) =>
-      val autoRegister = resolvedKafkaConfig.kafkaEspProperties
-        .flatMap(_.get(AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty).map(_.toBoolean))
-        .getOrElse(true)
-      if (autoRegister) {
-        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerialization(
-          UniversalSchemaRegistryClientFactory,
-          resolvedKafkaConfig,
-          Some(componentName)
-        )
-      } else {
-        logger.debug(
-          s"Auto registration of ${classOf[GenericRecordWithSchemaIdSerializer].getSimpleName} for $componentName " +
-            s"is disabled by ${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty} configuration property"
-        )
+    if (Option(TypeExtractor.getTypeInfoFactory(registeredClass))
+        .map(_.getClass)
+        .contains(registeredTypeInfoFactoryClass)) {
+      if (serializerConfig.getRegisteredTypeInfoFactories.containsKey(registeredClass)) {
+        // throw en error early, double registration in real environment must never happen
+        throw new IllegalStateException("An optimized TypeInfoFactory is already registered")
       }
+      serializerConfig.getRegisteredTypeInfoFactories.put(registeredClass, registeredTypeInfoFactoryClass)
+      return
     }
-  }
 
-  private def resolveKafkaComponentsConfigs(modelConfig: Config): List[(String, KafkaComponentsConfig)] = {
-    modelConfig
-      .getAs[Map[String, ComponentProviderConfig]]("components")
-      .getOrElse(Map.empty)
-      .toList
-      .filter { case (name, config) =>
-        val providerName = config.providerType.getOrElse(name)
-        providerName == "kafka" && !config.disabled
-      }
-      .map { case (name, config) =>
-        name -> KafkaComponentsConfig.parseConfigNestedAtConfigKey(config.config)
-      }
-      .filter { case (_, config) =>
-        GenericRecordSchemaIdSerializationSupport.isEnabledForComponent(config)
-      }
-  }
-
-}
-
-object AvroSerializersRegistrar extends LazyLogging {
-
-  // Used for disabling of automatic registration in tests
-  val autoRegisterRecordSchemaIdSerializationProperty = "autoRegisterRecordSchemaIdSerialization"
-
-  def registerGenericRecordSchemaIdSerialization(
-      schemaRegistryClientFactory: SchemaRegistryClientFactory,
-      kafkaComponentsConfig: KafkaComponentsConfig,
-      componentName: Option[String] = None
-  ): Unit = {
-    val schemaRegistryId = kafkaComponentsConfig.optimizedGenericRecordSerialization
-      .toValidConfig(kafkaComponentsConfig.kafkaProperties("schema.registry.url"))
-      .schemaRegistryId
-    val componentIdentifier = componentName.getOrElse(
-      s"Kafka component with boostrap.servers [${kafkaComponentsConfig.kafkaBootstrapServers}]" +
-        s"and schema.registry.url [${kafkaComponentsConfig.kafkaProperties.getOrElse("schema.registry.url", "-")}]"
+    // Reconfigure SerializerConfig instance - this is safe to call, configuration is additive
+    val configuration = new Configuration()
+    configuration.set(
+      PipelineOptions.SERIALIZATION_CONFIG,
+      Collections.singletonList(
+        // YAML
+        s"${classOf[GenericRecordWithSchemaId].getName}: {type: typeinfo, class: ${classOf[GenericRecordWithSchemaIdTypeInfoFactory].getName}}"
+      )
     )
-    logger.debug(
-      s"Registering ${classOf[GenericRecordWithSchemaIdSerializer].getSimpleName}[$schemaRegistryId] " +
-        s"using Schema Registry client factory [$schemaRegistryClientFactory] for $componentIdentifier"
-    )
-    GenericRecordWithSchemaIdSerializer.register(
-      schemaRegistryId,
-      schemaRegistryClientFactory.create(kafkaComponentsConfig.schemaRegistryClientKafkaConfig),
-    )
-  }
-
-  /**
-   * Registrations do not need to be cleared as [[GenericRecordWithSchemaIdSerializer]] lifetime
-   * is the same as the model it's in.
-   * This method is meant to be used in tests, to prevent us from cross-test contamination. It should be used
-   * in all test classes that call [[registerGenericRecordSchemaIdSerialization]].
-   */
-  @VisibleForTesting
-  def clearRegistrations(): Unit = {
-    GenericRecordWithSchemaIdSerializer.clearRegistrations()
+    serializerConfig.configure(configuration, Thread.currentThread.getContextClassLoader)
   }
 
 }
