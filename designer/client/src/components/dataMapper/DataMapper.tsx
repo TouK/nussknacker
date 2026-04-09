@@ -94,15 +94,17 @@ export function DataMapper({
         prevFieldsLengthRef.current = dm.fields.length;
     }, [dm.fields.length]);
     useEffect(() => {
-        if (dm.selField == null || !fieldsScrollRef.current) return;
+        const id = dm.selField ?? dm.initialScrollFieldId;
+        if (id == null || !fieldsScrollRef.current) return;
         const container = fieldsScrollRef.current;
-        const id = dm.selField;
-        // Wait for MUI Collapse animation to finish before scrolling
+        // When selField changes, wait for MUI Collapse animation before scrolling.
+        // When only scrolling without expanding (initialScrollFieldId), a short delay suffices.
+        const delay = dm.selField != null ? 320 : 50;
         const timer = setTimeout(() => {
             container.querySelector(`[data-field-id="${id}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-        }, 320);
+        }, delay);
         return () => clearTimeout(timer);
-    }, [dm.selField]);
+    }, [dm.selField, dm.initialScrollFieldId]);
 
     return (
         <RootBox embedded={!!onInsert}>
@@ -321,6 +323,7 @@ export function DataMapper({
                                         onDragOverId={dm.setDragOverId}
                                         onChange={dm.updateField}
                                         onAddChild={dm.addChildField}
+                                        onAddChildFromDrop={dm.addChildFromDrop}
                                         onRemove={dm.removeField}
                                         onMove={dm.moveField}
                                         onDrop={dm.onDrop}

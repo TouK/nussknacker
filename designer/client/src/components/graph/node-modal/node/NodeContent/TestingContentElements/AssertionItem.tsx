@@ -1,21 +1,33 @@
 import { css } from "@emotion/css";
-import { Box } from "@mui/material";
-import React, { useCallback, useMemo, memo } from "react";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import { Box, IconButton } from "@mui/material";
+import React, { useCallback, useMemo, useState, memo } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { AssertionOperator } from "../../../../../../actions/nk/testCasesActions";
+import { useUserSettings } from "../../../../../../common/useUserSettings";
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
+import type { NodeType } from "../../../../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
+import type { ContextData } from "../../../../../dataMapper/DataMapper";
+import { SpelExpressionBuilderComponent } from "../../../../../spelExpressionBuilder/SpelExpressionBuilderComponent";
 import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import type { ExpressionObj } from "../../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../../editors/expression/types";
+import { UseRecordsPrefixContext, UseValueInsertContext } from "../../../editors/expression/useAceDndTarget";
 import Input from "../../../editors/field/Input";
+import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 import type { Option } from "../../../fragment-input-definition/TypeSelect";
 import { OverrideKeys } from "../../../parameterHelpers";
 import { AssertionStatus } from "./AssertionStatus";
+
+const RECORDS_HINT_KEY = "editors.spelEditor.additionalInfoText.assertionActual";
+const RECORDS_HINT_DEFAULT =
+    "Use **#records** to access all events that passed through this node.\n\ncount `#records.size()`  \nfield access `#records[0].status`  \nfilter `#records.?[#this.amount > 100].size()`";
 
 export const ASSERTION_SYMBOLS: Record<AssertionOperator, string> = {
     equals: "==",
@@ -45,7 +57,9 @@ interface Props {
     expected: ExpressionObj;
     operator: AssertionOperator;
     actual: ExpressionObj;
+    node: NodeType;
     variableTypes: VariableTypes;
+    contextData?: ContextData;
     onChange: (
         uuid: string,
         updated: Partial<{ description: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj }>,
@@ -61,13 +75,18 @@ const AssertionItemComponent = ({
     expected,
     operator,
     actual,
+    node,
+    contextData,
     onChange,
     index,
     testAssertionResult,
     variableTypes,
     errors = [],
 }: Props) => {
+    const { t } = useTranslation();
     const isFirstRow = index === 0;
+    const [showFieldExpressionBuilder] = useUserSettings("node.showAssertionExpressionBuilder");
+    const [builderOpen, setBuilderOpen] = useState(false);
 
     const handleDescriptionChange = useCallback(
         (event) => {
@@ -111,6 +130,20 @@ const AssertionItemComponent = ({
         return errors.filter((error) => error.fieldName === "description") || [];
     }, [errors]);
 
+    const recordsHint = t(RECORDS_HINT_KEY, RECORDS_HINT_DEFAULT);
+
+    const handleOpenBuilder = useCallback(() => setBuilderOpen(true), []);
+    const handleCloseBuilder = useCallback(() => setBuilderOpen(false), []);
+    const handleBuilderInsert = useCallback((spel: string) => handleActualChange({ expression: spel }), [handleActualChange]);
+
+    const actualAdornment = showFieldExpressionBuilder ? (
+        <InfoTooltip variant="hover" title={recordsHint}>
+            <IconButton onClick={handleOpenBuilder} color="primary" sx={{ padding: 0 }}>
+                <AutoFixHighIcon sx={{ width: "1rem", height: "1rem" }} />
+            </IconButton>
+        </InfoTooltip>
+    ) : undefined;
+
     return (
         <Box display={"flex"} alignItems={"flex-start"} data-assertion-uuid={uuid}>
             <FieldsRow key={uuid} index={index} uuid={uuid} className={gridContainerStyle}>
@@ -124,18 +157,21 @@ const AssertionItemComponent = ({
                     />
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
-                    <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
-                        <EditableEditor
-                            showSwitch={false}
-                            editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                            expressionObj={actual}
-                            variableTypes={variableTypes}
-                            onValueChange={handleActualChange}
-                            showValidation
-                            fieldErrors={actualErrors}
-                            placeholder="#records.size()"
-                        />
-                    </ParamKeyProvider>
+                    <UseRecordsPrefixContext.Provider value={true}>
+                        <ParamKeyProvider custom={OverrideKeys.AssertionActual}>
+                            <EditableEditor
+                                showSwitch={false}
+                                editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                                expressionObj={actual}
+                                variableTypes={variableTypes}
+                                onValueChange={handleActualChange}
+                                showValidation
+                                fieldErrors={actualErrors}
+                                placeholder="#records.size()"
+                                inputAdornmentEnd={actualAdornment}
+                            />
+                        </ParamKeyProvider>
+                    </UseRecordsPrefixContext.Provider>
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
                     <TypeSelect
@@ -145,18 +181,31 @@ const AssertionItemComponent = ({
                     />
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
-                    <EditableEditor
-                        showSwitch={false}
-                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={expected}
-                        variableTypes={variableTypes}
-                        onValueChange={handleExpectedChange}
-                        showValidation
-                        fieldErrors={expectedErrors}
-                        placeholder="true, 12, 'xxxx'"
-                    />
+                    <UseValueInsertContext.Provider value={true}>
+                        <EditableEditor
+                            showSwitch={false}
+                            editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                            expressionObj={expected}
+                            variableTypes={variableTypes}
+                            onValueChange={handleExpectedChange}
+                            showValidation
+                            fieldErrors={expectedErrors}
+                            placeholder="true, 12, 'xxxx'"
+                        />
+                    </UseValueInsertContext.Provider>
                 </RowFieldLabel>
             </FieldsRow>
+            {showFieldExpressionBuilder && (
+                <SpelExpressionBuilderComponent
+                    node={node}
+                    variableTypes={variableTypes}
+                    contextData={contextData}
+                    initialExpression={actual.expression}
+                    onInsert={handleBuilderInsert}
+                    open={builderOpen}
+                    onClose={handleCloseBuilder}
+                />
+            )}
             {testAssertionResult && (
                 <Box ml={1} mt={0.5}>
                     <AssertionStatus

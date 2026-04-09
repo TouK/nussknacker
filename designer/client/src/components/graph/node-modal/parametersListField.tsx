@@ -44,7 +44,17 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
 
     const listFieldPath = useMemo(() => getListFieldPath(index), [getListFieldPath, index]);
 
-    const FieldWrapper = useMemo(() => pickFieldWrapper(paramKey) || NamedParamsMapperFieldWrapper, [paramKey]);
+    const isKafkaValueParam = useMemo(
+        () =>
+            param.name === "Value" &&
+            props.parameterDefinitions?.some((p) => p.name === "Raw editor") &&
+            props.parameterDefinitions?.some((p) => p.name === "Schema version"),
+        [param.name, props.parameterDefinitions],
+    );
+    const FieldWrapper = useMemo(
+        () => pickFieldWrapper(paramKey) || (isKafkaValueParam ? DataMapperFieldWrapper : NamedParamsMapperFieldWrapper),
+        [isKafkaValueParam, paramKey],
+    );
 
     const endAdornment = useMemo(() => {
         switch (paramKey) {

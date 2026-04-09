@@ -181,7 +181,7 @@ export function ContextTreeNode({
                     </Typography>
                 )}
             </Box>
-            <Collapse in={forceOpen || open}>
+            <Collapse in={forceOpen || open} unmountOnExit>
                 {isExpandable &&
                     visibleChildren.map(([k, v]) => {
                         const childPath = isArr

@@ -22,10 +22,13 @@ function normalizePath(keyPath: KeyPath | (string | number)[]) {
     return [...keyPath].reverse();
 }
 
+export const RecordIndexContext = React.createContext<number | undefined>(undefined);
+
 export type SpelDndContext = {
     value: any;
     path: KeyPath;
     type: "key" | "value";
+    recordIndex?: number;
 };
 
 function DraggableValue({
@@ -40,13 +43,17 @@ function DraggableValue({
     value: unknown;
     type?: SpelDndContext["type"];
 }>) {
-    const [{ isActive }, drag, preview] = useDrag<SpelDndContext, void, { isActive: boolean }>(() => ({
-        type: DndTypes.VALUE,
-        item: { path, type, value },
-        options: { dropEffect: "copy" },
-        canDrag: !disabled,
-        collect: (monitor) => ({ isActive: monitor.isDragging() }),
-    }));
+    const recordIndex = React.useContext(RecordIndexContext);
+    const [{ isActive }, drag, preview] = useDrag<SpelDndContext, void, { isActive: boolean }>(
+        () => ({
+            type: DndTypes.VALUE,
+            item: { path, type, value, recordIndex },
+            options: { dropEffect: "copy" },
+            canDrag: !disabled,
+            collect: (monitor) => ({ isActive: monitor.isDragging() }),
+        }),
+        [path, type, value, recordIndex, disabled],
+    );
 
     useEffect(() => {
         preview(getEmptyImage());
