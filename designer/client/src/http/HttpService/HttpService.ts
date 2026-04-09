@@ -757,7 +757,11 @@ export class HttpService {
             nodeData,
         });
         promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true),
+            this.#addError(
+                i18next.t("notification.error.failedToGetSourceTestCapabilities", "Failed to get source test capabilities"),
+                error,
+                true,
+            ),
         );
         return promise;
     }

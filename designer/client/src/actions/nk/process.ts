@@ -70,7 +70,7 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
 
 const getTestCapabilities = memoizeByArgsWithTTL((processName: ProcessName, scenarioGraph: ScenarioGraph) => {
     return HttpService.getTestCapabilities(processName, scenarioGraph);
-});
+}, 1000);
 
 export type UpdateTestCapabilitiesAction = { type: "UPDATE_TEST_CAPABILITIES"; capabilities: TestCapabilities };
 

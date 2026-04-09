@@ -17,7 +17,6 @@ import { Box, useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
-import type { TestFormParameters } from "../../../common/TestResultUtils";
 import type { NodeValidationError } from "../../../types/validation";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -33,7 +32,7 @@ import "@glideapps/glide-data-grid/dist/index.css";
 import { TableFooter } from "./TableFooter";
 import type { TestingDataRecords } from "./types";
 import { useTableHeight } from "./useTableHeight";
-import { buildDefaultVariables, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
+import { buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
 
 interface TableProps {
@@ -45,13 +44,13 @@ interface TableProps {
     defaultDataRecord: TestingDataRecords;
     sourceId: string;
     sourceName: string;
-    sourceParameters?: TestFormParameters;
     className?: string;
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
     onValidateVariables: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
 }
 
+const TABLE_WIDTH = "100%";
 const TRAILING_ROW_HINT = "Add record";
 const COLUMN_SOURCE_ID = "sourceId";
 const COLUMN_VARIABLES_ID = "variables";
@@ -77,7 +76,6 @@ export const Table: React.FC<TableProps> = ({
     defaultDataRecord,
     sourceId,
     sourceName,
-    sourceParameters,
     className,
     cellErrors,
     recordsToAddLimitExceeded,
@@ -133,8 +131,6 @@ export const Table: React.FC<TableProps> = ({
         [theme, onValidateVariables],
     );
 
-    const defaultVariables = useMemo(() => buildDefaultVariables(sourceParameters?.parameters), [sourceParameters]);
-
     const getCellContent = useCallback(
         (item: Item): GridCell => getTestingCellContent(item, data, sourceId, sourceName),
         [data, sourceId, sourceName],
@@ -143,13 +139,13 @@ export const Table: React.FC<TableProps> = ({
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(
         (changes): void => {
             if (!changes.length) return;
-            const rowUpdates = buildInputDataRecordUpdates(changes, data, defaultVariables);
+            const rowUpdates = buildInputDataRecordUpdates(changes, data, defaultDataRecord.variables);
             if (!Object.keys(rowUpdates).length) return;
             Object.entries(rowUpdates).forEach(([rowIndexStr, value]) => {
                 onRowUpdated(Number(rowIndexStr), value);
             });
         },
-        [data, defaultVariables, onRowUpdated],
+        [data, defaultDataRecord.variables, onRowUpdated],
     );
 
     const onCellAdded = useCallback((): void => {
@@ -341,7 +337,7 @@ export const Table: React.FC<TableProps> = ({
                     smoothScrollX
                     smoothScrollY
                     theme={tableTheme}
-                    width="100%"
+                    width={TABLE_WIDTH}
                     gridSelection={selection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}

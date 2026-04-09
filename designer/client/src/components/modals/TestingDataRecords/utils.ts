@@ -38,13 +38,11 @@ export function safeParseExpression<T = unknown>(expr: string): T {
 }
 
 export function buildDefaultVariables(parameters?: UIParameter[]): string {
-    if (!parameters) return "";
-    let values: unknown = {};
-    for (const param of parameters ?? []) {
-        values = safeParseExpression(param?.defaultValue?.expression ?? "");
-    }
+    // Source test parameters always contain a single "Input variables"
+    const expression = parameters?.[0]?.defaultValue?.expression ?? "";
+    const values = safeParseExpression(expression);
     try {
-        return JSON.stringify(values, null, 2);
+        return values ? JSON.stringify(values, null, 2) : "";
     } catch {
         return "";
     }

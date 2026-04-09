@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
+import { usePromise } from "rooks";
 
 import { TestCapabilityStatus } from "../../../../../../common/TestResultUtils";
-import type { TestFormParameters } from "../../../../../../common/TestResultUtils";
 import HttpService from "../../../../../../http/HttpService/instance";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
@@ -30,13 +30,10 @@ export const InputDataRecords = ({ node }: Props) => {
     const scenarioProperties = useAppSelector(getProcessProperties);
     const scenarioName = useAppSelector(getProcessName);
 
-    const [sourceParameters, setSourceParameters] = useState<TestFormParameters | undefined>(undefined);
-
-    useEffect(() => {
-        HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, cleanProperties(node)).then(({ data }) => {
-            const capabilities = data.testWithParameters;
-            setSourceParameters(capabilities.status === TestCapabilityStatus.AVAILABLE ? capabilities.sourceParameters : undefined);
-        });
+    const { data: sourceParameters } = usePromise(async () => {
+        const { data } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, cleanProperties(node));
+        const capabilities = data.testWithParameters;
+        return capabilities.status === TestCapabilityStatus.AVAILABLE ? capabilities.sourceParameters : null;
     }, [scenarioName, scenarioProperties, node]);
 
     const {
@@ -93,7 +90,6 @@ export const InputDataRecords = ({ node }: Props) => {
                         defaultDataRecord={defaultDataRecord}
                         sourceId={node.id}
                         sourceName={node.name}
-                        sourceParameters={sourceParameters}
                         cellErrors={cellErrors}
                         onValidateVariables={onValidateVariables}
                     />
