@@ -69,6 +69,14 @@ jobs:
           artifact: SlowTests-results-${{ matrix.scalaVersion }}
           path: '**/*.xml'
           reporter: java-junit
+      - name: LiveTests Report
+        continue-on-error: true
+        uses: dorny/test-reporter@v2
+        with:
+          name: REPORT-LiveTests-${{ matrix.scalaVersion }}
+          artifact: LiveTests-results-${{ matrix.scalaVersion }}
+          path: '**/*.xml'
+          reporter: java-junit
   report-fe:
     runs-on: ubuntu-latest
     steps:
