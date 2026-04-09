@@ -9,25 +9,22 @@ import type {
     GridMouseCellEventArgs,
     GridSelection,
     Item,
-    ProvideEditorComponent,
     Theme,
 } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, type CustomRenderer, drawTextCell, GridCellKind } from "@glideapps/glide-data-grid";
 import { Box, useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { NodeValidationError } from "../../../types/validation";
+import { useSize } from "../../../containers/hooks/useSize";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
 import type { VariablesCell } from "./CellContent";
-import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./CellContent";
+import { getTestingCellContent, isVariablesCell } from "./CellContent";
 import { DEFAULT_ROW_HEADER_HEIGHT, drawFieldForDisplay } from "./drawText";
-import type { SourceSelectCell } from "./SourceEditor";
-import { SourceEditor } from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { TableFooter } from "./TableFooter";
 import type { TestingDataRecords } from "./types";
@@ -37,49 +34,34 @@ import { VariablesEditor } from "./VariablesEditor";
 
 interface TableProps {
     data?: TestingDataRecords[];
-    onRowAdded: (rowIndex: number, row: TestingDataRecords) => void;
     onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
     defaultDataRecord: TestingDataRecords;
-    sourceId: string;
-    sourceName: string;
     className?: string;
     cellErrors: CellError[];
-    recordsToAddLimitExceeded?: boolean;
-    onValidateVariables: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
+    toolbar?: React.ReactNode;
 }
 
-const TABLE_WIDTH = "100%";
-const TRAILING_ROW_HINT = "Add record";
-const COLUMN_SOURCE_ID = "sourceId";
+export const TABLE_HEIGHT = "100vh";
+export const TABLE_WIDTH = "100%";
 const COLUMN_VARIABLES_ID = "variables";
-const COLUMN_SOURCE_TITLE = "Source";
 const COLUMN_VARIABLES_TITLE = "Input variables";
-const COLUMN_SOURCE_WIDTH = 150;
-const COLUMN_VARIABLES_WIDTH = 300;
 
 const emptySelection: GridSelection = { columns: CompactSelection.empty(), rows: CompactSelection.empty() };
-const tableColumns: GridColumn[] = [
-    { id: COLUMN_SOURCE_ID, title: COLUMN_SOURCE_TITLE, width: COLUMN_SOURCE_WIDTH, hasMenu: false },
-    { id: COLUMN_VARIABLES_ID, title: COLUMN_VARIABLES_TITLE, width: COLUMN_VARIABLES_WIDTH, grow: 1, hasMenu: false },
-];
+const tableColumns: GridColumn[] = [{ id: COLUMN_VARIABLES_ID, title: COLUMN_VARIABLES_TITLE, grow: 1, hasMenu: false }];
 
 type HeaderRenderArgs = { columnIndex: number; theme: Theme; rect: { width: number } };
 
 export const Table: React.FC<TableProps> = ({
     data = [],
-    onRowAdded,
     onRowUpdated,
     onRowsDeleted,
     onRowMoved,
-    defaultDataRecord,
-    sourceId,
-    sourceName,
     className,
+    defaultDataRecord,
     cellErrors,
-    recordsToAddLimitExceeded,
-    onValidateVariables,
+    toolbar,
 }) => {
     const [draggingRow, setDraggingRow] = useState<number | null>(null);
     const lastDraggingRowRef = useRef<number | null>(null);
@@ -89,27 +71,32 @@ export const Table: React.FC<TableProps> = ({
     const ref = useRef<DataEditorRef | null>(null);
     const [cellMenuData, setCellMenuData] = useState<{ position: PopoverPosition | null; row?: number }>({ position: null });
 
-    const { toggleTooltip, highlightRegions, drawCell, tooltipElement } = useErrorHighlights(cellErrors, ref);
+    // Scroll to the last row when a new record is added
+    const prevDataLengthRef = useRef(data.length);
+    useEffect(() => {
+        if (data.length > prevDataLengthRef.current) {
+            ref.current?.scrollTo(0, data.length - 1, "vertical");
+        }
+        prevDataLengthRef.current = data.length;
+    }, [data.length]);
 
-    const sourceSelectRenderer = useMemo<CustomRenderer<SourceSelectCell>>(
-        () => ({
-            kind: GridCellKind.Custom,
-            isMatch: isSourceSelectCell,
-            draw: (drawArgs, cell) => {
-                drawTextCell(drawArgs, cell.data.displayValue || cell.data.value, cell.contentAlign);
-                return true;
-            },
-            provideEditor: () => ({
-                editor: SourceEditor as ProvideEditorComponent<SourceSelectCell>,
-                deletedValue: (sourceSelectCell) => ({
-                    ...sourceSelectCell,
-                    copyData: "",
-                    data: { ...(sourceSelectCell as unknown as SourceSelectCell).data, value: "", displayValue: "" },
-                }),
-            }),
-        }),
-        [],
-    );
+    // Observe the modal section ancestor to compute available height for DataEditor
+    const { observe: observeSection, height: sectionHeight } = useSize();
+    const outerBoxRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        let el: HTMLElement | null = outerBoxRef.current;
+        while (el) {
+            if (el.tagName === "SECTION" && el.closest('[data-testid="window"]')) {
+                observeSection(el);
+                return;
+            }
+            el = el.parentElement;
+        }
+    }, [observeSection]);
+    const SECTION_CUTOUT = 220; // toolbar (inside table) + accordion header + GENERAL/TESTING tabs + test case row + padding
+    const dataEditorHeight = sectionHeight > 0 ? Math.max(100, sectionHeight - SECTION_CUTOUT) : undefined;
+
+    const { toggleTooltip, highlightRegions, drawCell, tooltipElement } = useErrorHighlights(cellErrors, ref);
 
     const variablesRenderer = useMemo<CustomRenderer<VariablesCell>>(
         () => ({
@@ -123,36 +110,32 @@ export const Table: React.FC<TableProps> = ({
                 editor: (props) => {
                     const { onChange, value } = props;
 
-                    return <VariablesEditor value={value} onChange={onChange} onValidate={onValidateVariables} />;
+                    return <VariablesEditor value={value} onChange={onChange} />;
                 },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),
         }),
-        [theme, onValidateVariables],
+        [theme],
     );
 
-    const getCellContent = useCallback(
-        (item: Item): GridCell => getTestingCellContent(item, data, sourceId, sourceName),
-        [data, sourceId, sourceName],
+    const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data), [data]);
+    const buildRowUpdates = useCallback(
+        (changes: readonly EditListItem[]): Record<number, TestingDataRecords> => buildInputDataRecordUpdates(changes, data),
+        [data],
     );
 
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(
         (changes): void => {
             if (!changes.length) return;
-            const rowUpdates = buildInputDataRecordUpdates(changes, data, defaultDataRecord.variables);
+            const rowUpdates = buildRowUpdates(changes);
             if (!Object.keys(rowUpdates).length) return;
             Object.entries(rowUpdates).forEach(([rowIndexStr, value]) => {
-                onRowUpdated(Number(rowIndexStr), value);
+                const rowIndex = Number(rowIndexStr);
+                onRowUpdated(rowIndex, value);
             });
         },
-        [data, defaultDataRecord.variables, onRowUpdated],
+        [buildRowUpdates, onRowUpdated],
     );
-
-    const onCellAdded = useCallback((): void => {
-        const newRow: TestingDataRecords = { ...defaultDataRecord };
-        const rowIndex = data.length;
-        onRowAdded(rowIndex, newRow);
-    }, [data.length, defaultDataRecord, onRowAdded]);
 
     const onCellDeleted = useCallback(
         (rows: number[]): number[] => {
@@ -206,8 +189,7 @@ export const Table: React.FC<TableProps> = ({
         [data, variablesColumnWidth],
     );
 
-    const customRenderers = useMemo(() => [sourceSelectRenderer, variablesRenderer], [sourceSelectRenderer, variablesRenderer]);
-    const trailingRowOptions = useMemo(() => ({ sticky: true, hint: TRAILING_ROW_HINT }), []);
+    const customRenderers = useMemo(() => [variablesRenderer], [variablesRenderer]);
     const highlightedRegions = useMemo(() => highlightRegions(), [highlightRegions]);
     const handleGridSelectionChange = useCallback(
         (selection: GridSelection): void => {
@@ -219,7 +201,7 @@ export const Table: React.FC<TableProps> = ({
     const renderHeaderCell = useCallback((args: HeaderRenderArgs & { [key: string]: unknown }): void => {
         const { columnIndex, theme } = args;
         dataEditorThemeRef.current = theme;
-        if (columnIndex === 1) {
+        if (columnIndex === 0) {
             setVariablesColumnWidth(args.rect.width);
         }
         const col = tableColumns[columnIndex];
@@ -227,7 +209,7 @@ export const Table: React.FC<TableProps> = ({
         drawTextCell(args as unknown as BaseDrawArgs, col.title);
     }, []);
     const { tableHeight } = useTableHeight(data, getRowHeight);
-    const sizerSx = useMemo(() => ({ border: "1px solid", borderColor: tableTheme.borderColor }), [tableTheme.borderColor]);
+
     const deleteMenuIndexes = useMemo<number[]>(() => {
         if (selection.rows.toArray().length > 0) return selection.rows.toArray();
         if (selection.current?.range) {
@@ -275,29 +257,8 @@ export const Table: React.FC<TableProps> = ({
 
     const selectedRowsCount = rowsFromSelection.length;
 
-    const getDeletedColumn = useCallback(({ current }: GridSelection) => {
-        const currentCell = current?.cell;
-        if (!currentCell) {
-            return { removedCellColumnId: undefined, removedCellRowIndex: undefined };
-        }
-        const columnIndex = currentCell[0];
-        const columnRowIndex = currentCell[1];
-
-        const col = tableColumns[columnIndex];
-
-        return { removedCellColumnId: col.id, removedCellRowIndex: columnRowIndex };
-    }, []);
-
     const onDeleteTableRow = useCallback(
         (selection: GridSelection) => {
-            const { removedCellColumnId, removedCellRowIndex } = getDeletedColumn(selection);
-
-            // Remove whole row when sourceId column value removed
-            if (removedCellColumnId === COLUMN_SOURCE_ID) {
-                onCellDeleted([removedCellRowIndex]);
-                return false;
-            }
-
             if (selectedRowsCount > 0) {
                 handleRemoveSelectedRows();
                 return false;
@@ -306,22 +267,25 @@ export const Table: React.FC<TableProps> = ({
             // keep native behaviour when no rows selected
             return true;
         },
-        [getDeletedColumn, handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
+        [handleRemoveSelectedRows, selectedRowsCount],
     );
 
     return (
         <Box
+            ref={outerBoxRef}
             sx={{
-                "--sizer-height-cutout": "140px",
                 display: "flex",
+                flexDirection: "column",
+                border: "1px solid",
+                borderColor: tableTheme.borderColor,
             }}
         >
+            {toolbar}
             <Sizer
                 offsetParent={`[data-testid="window"] section`}
                 overflowY={false}
                 data-testid="data-records-table-container"
                 className={className}
-                sx={sizerSx}
                 onBlur={(e) => {
                     if (e.currentTarget.contains(e.relatedTarget)) return;
                 }}
@@ -334,7 +298,6 @@ export const Table: React.FC<TableProps> = ({
                     customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
-                    onRowAppended={recordsToAddLimitExceeded ? undefined : onCellAdded}
                     rowMarkers="both"
                     rows={data.length}
                     smoothScrollX
@@ -344,13 +307,12 @@ export const Table: React.FC<TableProps> = ({
                     gridSelection={selection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}
-                    trailingRowOptions={trailingRowOptions}
                     highlightRegions={highlightedRegions}
                     onGridSelectionChange={handleGridSelectionChange}
                     onItemHovered={toggleTooltip}
                     drawCell={drawCell}
                     drawHeader={renderHeaderCell}
-                    height={tableHeight}
+                    height={dataEditorHeight ?? tableHeight}
                     rowHeight={getRowHeight}
                     onRowMoved={handleRowReorder}
                     rowSelectionMode="multi"
@@ -361,15 +323,15 @@ export const Table: React.FC<TableProps> = ({
                         <DeleteRowMenuItem indexes={deleteMenuIndexes} onClick={handleDeleteRows} />
                     )}
                 </CellMenu>
-                {selection.rows.length > 0 && (
-                    <TableFooter
-                        selectedCount={selectedRowsCount}
-                        allRowsNumber={data.length}
-                        handleRemoveRows={handleRemoveSelectedRows}
-                        handleSelectAll={selectedRowsCount < data.length ? selectAllRows : undefined}
-                    />
-                )}
             </Sizer>
+            {selection.rows.length > 0 && (
+                <TableFooter
+                    selectedCount={selectedRowsCount}
+                    allRowsNumber={data.length}
+                    handleRemoveRows={handleRemoveSelectedRows}
+                    handleSelectAll={selectedRowsCount < data.length ? selectAllRows : undefined}
+                />
+            )}
             {tooltipElement}
         </Box>
     );

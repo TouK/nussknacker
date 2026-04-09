@@ -1,9 +1,7 @@
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { alpha, Box, Button, Typography } from "@mui/material";
 import React from "react";
 import { Trans, useTranslation } from "react-i18next";
-
-import Remove from "../../../assets/img/toolbarButtons/archive.svg";
-import { getBorderColor } from "../../../containers/theme/helpers";
 
 interface TableFooterProps {
     selectedCount: number;
@@ -18,21 +16,13 @@ export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRows
     return (
         <Box
             sx={(theme) => ({
-                position: "absolute",
-                bottom: "20px",
-                left: 0,
-                right: 0,
-                margin: "0 auto",
-                width: "320px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
                 px: 2,
-                py: 1,
-                background: alpha(theme.palette.primary.main, 0.25),
-                border: `1px solid ${getBorderColor(theme)}`,
-                boxShadow: "0 0 2px rgba(0,0,0,0.8),0 0 20px rgba(0,0,0,0.8)",
-                backdropFilter: "blur(20px)",
+                py: 0.5,
+                flexShrink: 0,
+                background: alpha(theme.palette.primary.main, 0.12),
+                borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
             })}
             data-testid="table-footer"
         >
@@ -67,22 +57,18 @@ export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRows
                         </Button>
                     </>
                 )}
-                <Typography variant="body2" color="textSecondary" sx={{ opacity: 0.4 }}>
-                    ·
-                </Typography>
             </Box>
-            <Box display="flex" alignItems="center">
-                <Button
-                    variant={"text"}
-                    sx={(theme) => ({ color: theme.palette.text.primary, textTransform: "capitalize" })}
-                    onClick={handleRemoveRows}
-                >
-                    <Box width={"24px"} height={"24px"}>
-                        <Remove />
-                    </Box>
-                    {t("testingDataRecords.tableFooter.remove", "Remove")}
-                </Button>
-            </Box>
+            <Box flex={1} />
+            <Button
+                variant="text"
+                size="small"
+                color="error"
+                startIcon={<DeleteOutlineIcon fontSize="small" />}
+                onClick={handleRemoveRows}
+                sx={{ textTransform: "none" }}
+            >
+                {t("testingDataRecords.tableFooter.remove", "Remove selected")}
+            </Button>
         </Box>
     );
 };

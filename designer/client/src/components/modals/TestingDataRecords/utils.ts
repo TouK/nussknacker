@@ -1,11 +1,9 @@
 import type { Item } from "@glideapps/glide-data-grid";
 import { type EditListItem } from "@glideapps/glide-data-grid";
 
-import type { TestFormParameters } from "../../../common/TestResultUtils";
 import type { UIParameter } from "../../../types/definition";
-import { isSourceSelectCell, isVariablesCell } from "./CellContent";
+import { isVariablesCell } from "./CellContent";
 import { formatDataRecordsVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
-import type { SourceSelectCell } from "./SourceEditor";
 import type { TestingDataRecords } from "./types";
 
 export const mapInputDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords) => {
@@ -56,9 +54,8 @@ export function computeVariablesRowHeight(variables: string, columnInnerWidth: n
 }
 
 export function buildInputDataRecordUpdates(
-    changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[],
+    changes: readonly EditListItem[],
     data: TestingDataRecords[],
-    defaultVariables: string,
 ): Record<number, TestingDataRecords> {
     const rowUpdates: Record<number, TestingDataRecords> = {};
     changes.forEach(({ location, value }) => {
@@ -67,9 +64,7 @@ export function buildInputDataRecordUpdates(
         const base = rowUpdates[row] || { ...(prevRow || { sourceId: "", timestamp: "", variables: "" }) };
 
         let cellValue: string;
-        if (isSourceSelectCell(value)) {
-            cellValue = value.data.value;
-        } else if (isVariablesCell(value as any)) {
+        if (isVariablesCell(value as any)) {
             cellValue = (value as any).data?.value ?? "";
         } else {
             const maybeData = (value as unknown as { data?: unknown }).data;
@@ -79,12 +74,6 @@ export function buildInputDataRecordUpdates(
         }
 
         if (col === 0) {
-            if (prevRow?.sourceId !== cellValue) {
-                rowUpdates[row] = { ...base, sourceId: cellValue, variables: cellValue ? defaultVariables : "" };
-            } else {
-                rowUpdates[row] = { ...base, sourceId: cellValue };
-            }
-        } else if (col === 1) {
             rowUpdates[row] = { ...base, variables: cellValue };
         }
     });

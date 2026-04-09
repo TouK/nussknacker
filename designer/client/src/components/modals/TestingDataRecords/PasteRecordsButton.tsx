@@ -1,3 +1,4 @@
+import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from "@mui/material";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,6 +10,7 @@ interface Props {
     onRowsAdded: (rows: TestingDataRecords[]) => void;
     defaultVariables?: string;
     disabled?: boolean;
+    variant?: "text" | "outlined";
 }
 
 function isNkFormat(obj: unknown): obj is { input: unknown; inputMeta: unknown } {
@@ -71,7 +73,7 @@ function parseRecords(text: string, sourceId: string, defaultVariables?: string)
     return { rows, errorCount };
 }
 
-export const PasteRecordsButton = ({ sourceId, onRowsAdded, defaultVariables, disabled }: Props) => {
+export const PasteRecordsButton = ({ sourceId, onRowsAdded, defaultVariables, disabled, variant = "text" }: Props) => {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [text, setText] = useState("");
@@ -126,10 +128,11 @@ export const PasteRecordsButton = ({ sourceId, onRowsAdded, defaultVariables, di
         <>
             <Button
                 size="small"
-                variant="text"
+                variant={variant}
+                startIcon={<ContentPasteIcon fontSize="small" />}
                 onClick={handleOpen}
                 disabled={disabled}
-                sx={{ fontSize: "14px", mr: 2, textTransform: "none" }}
+                sx={{ textTransform: "none" }}
             >
                 {t("pasteRecords.button", "Paste JSON lines")}
             </Button>
