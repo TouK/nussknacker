@@ -2,9 +2,10 @@ import "ace-builds/src-noconflict/ace";
 import { isEmpty, isEqual } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
 
+import { createNodeNameByContextKey } from "../../../../../common/sanitizeBranchName";
 import HttpService from "../../../../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/getProcessDefinitionData";
-import { getProcessingType } from "../../../../../reducers/selectors/graph";
+import { getProcessingType, getScenarioGraph } from "../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { VariableTypes } from "../../../../../types/validation";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
@@ -38,6 +39,8 @@ export function ExpressionSuggest(props: ExpressionSuggestProps): React.JSX.Elem
     const definitionData = useAppSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
     const processingType = useAppSelector(getProcessingType);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
+    const nodeNameByContextKey = useDeepMemo(() => createNodeNameByContextKey(scenarioGraph.nodes || []), [scenarioGraph.nodes]);
 
     const { language } = inputProps;
 
@@ -49,8 +52,12 @@ export function ExpressionSuggest(props: ExpressionSuggestProps): React.JSX.Elem
     const [isLoading, setIsLoading] = useState(false);
     useEffect(() => expressionSuggester.on("stateChange", setIsLoading), [expressionSuggester]);
 
-    const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
+    const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester, nodeNameByContextKey));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);
+    useEffect(
+        () => customAceEditorCompleter.setNodeNameByContextKey(nodeNameByContextKey),
+        [customAceEditorCompleter, nodeNameByContextKey],
+    );
 
     return dataResolved ? (
         <CustomCompleterAceEditor

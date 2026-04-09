@@ -2,6 +2,7 @@ import { isPlainObject, mapValues } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
 
+import { createNodeNameByContextKey } from "../../../../common/sanitizeBranchName";
 import TestResultUtils from "../../../../common/TestResultUtils";
 import type { NodeTransitionResult } from "../../../../http/resultsWithCountsDto";
 import { getScenarioGraph } from "../../../../reducers/selectors/graph";
@@ -89,10 +90,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
 }>) {
     const scenario = useAppSelector(getScenarioGraph);
     const testResults = useAppSelector(getTestResults);
-    const nodeNameById = useMemo<Record<string, string>>(
-        () => Object.fromEntries((scenario.nodes || []).map((graphNode) => [graphNode.id, graphNode.name])),
-        [scenario.nodes],
-    );
+    const nodeNameById = useMemo<Record<string, string>>(() => createNodeNameByContextKey(scenario.nodes || []), [scenario.nodes]);
 
     const [state, dispatch] = useReducer(reducer, initialState);
 

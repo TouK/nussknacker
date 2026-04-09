@@ -96,9 +96,13 @@ const getNormalizedValue = (suggestion: ExpressionSuggestion): string => {
     return suggestion.methodName;
 };
 
-const suggestionToCompletion = (completer: Ace.Completer, suggestion: ExpressionSuggestion): Completion => ({
+const suggestionToCompletion = (
+    completer: Ace.Completer,
+    suggestion: ExpressionSuggestion,
+    nodeNameByContextKey: Record<string, string>,
+): Completion => ({
     value: getNormalizedValue(suggestion),
-    caption: suggestion.methodName,
+    caption: nodeNameByContextKey[suggestion.methodName] || suggestion.methodName,
     score: suggestion.fromClass ? 1 : 1000,
     meta: ProcessUtils.humanReadableType(suggestion.refClazz),
     docHTML: ReactDOMServer.renderToStaticMarkup(<DocHTML {...suggestion} />),
@@ -113,8 +117,11 @@ export class CustomAceEditorCompleter implements Ace.Completer {
     // This is necessary to make live auto complete works after dot
     public triggerCharacters = ["."];
     private revertCompleterOverrides: (() => void) | null;
+    private nodeNameByContextKey: Record<string, string> = {};
 
-    constructor(private expressionSuggester: ExpressionSuggester) {}
+    constructor(private expressionSuggester: ExpressionSuggester, nodeNameByContextKey: Record<string, string> = {}) {
+        this.nodeNameByContextKey = nodeNameByContextKey;
+    }
 
     onInsert = (editor: Ace.Editor, { value }: Completion) => {
         // correct wrong dict value after insert by removing dot.
@@ -125,6 +132,10 @@ export class CustomAceEditorCompleter implements Ace.Completer {
 
     replaceSuggester(expressionSuggester: ExpressionSuggester) {
         this.expressionSuggester = expressionSuggester;
+    }
+
+    setNodeNameByContextKey(nodeNameByContextKey: Record<string, string>) {
+        this.nodeNameByContextKey = nodeNameByContextKey;
     }
 
     getCompletions(
@@ -146,7 +157,7 @@ export class CustomAceEditorCompleter implements Ace.Completer {
         this.expressionSuggester.suggestionsFor(value, caretPosition2d).then((suggestions) => {
             callback(
                 null,
-                suggestions.map((s) => suggestionToCompletion(this, s)),
+                suggestions.map((s) => suggestionToCompletion(this, s, this.nodeNameByContextKey)),
             );
         });
     }
