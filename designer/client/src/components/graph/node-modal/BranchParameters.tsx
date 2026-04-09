@@ -59,6 +59,7 @@ export default function BranchParameters({
                             <StyledFieldControl className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {
                                     const branchId = branchParameter.branchId;
+                                    const canonicalBranchId = nodeNameById[branchId] || branchId;
                                     //here we assume the parameters are correct wrt branch definition. If this is not the case,
                                     //differences should be handled on other level, e.g. using reducers etc.
                                     const paramIndex = branchParameter.parameters.findIndex(
@@ -67,9 +68,9 @@ export default function BranchParameters({
                                     const paramValue = branchParameter.parameters[paramIndex];
                                     const expressionPath = `branchParameters[${branchIndex}].parameters[${paramIndex}].expression`;
 
-                                    const contextId = ProcessUtils.findContextForBranch(node, branchId);
+                                    const contextId = ProcessUtils.findContextForBranch(node, canonicalBranchId);
                                     const variables = findAvailableVariables(contextId, param);
-                                    const fieldName = `${paramName} for branch ${branchId}`;
+                                    const fieldName = `${paramName} for branch ${canonicalBranchId}`;
                                     const fieldLabel = nodeNameById[branchId] || branchId;
                                     const fieldErrors = getValidationErrorsForField(errors, fieldName).map((error) => {
                                         if (fieldLabel === branchId) {
