@@ -214,7 +214,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("legacy-union"))
 
     canonical.collectAllNodes.collect { case b: BranchEndData => b.definition } should contain only
-      BranchEndDefinition(sourceUuid, unionUuid)
+      BranchEndDefinition("source1", unionUuid)
   }
 
   test("handle large union scenario fixture with legacy name-based edge references") {
@@ -244,7 +244,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
 
     val unionBranchEnd = converted.collectAllNodes
       .collectFirst {
-        case b: BranchEndData if b.definition.id == splitId.value => b
+        case b: BranchEndData if b.definition.id == "Split" => b
       }
       .getOrElse(fail("Missing BranchEndData for Split branch after conversion"))
 

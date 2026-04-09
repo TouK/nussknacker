@@ -71,10 +71,7 @@ class UnionWithMemoTransformer(
             val mapTypeInfo = typeInfoDetector
               .forType(
                 Typed.record(
-                  valueByBranchId
-                    .map { case (branchId, valueParam) =>
-                      ContextTransformation.sanitizeBranchName(branchId) -> valueParam.returnType
-                    },
+                  valueByBranchId.mapValuesNow(_.returnType),
                   Typed.typedClass[java.util.Map[_, _]]
                 )
               )
@@ -105,9 +102,7 @@ class UnionWithMemoTransformer(
                   valueWithCtx
                     .map(keyedValue =>
                       keyedValue
-                        .mapValue(v =>
-                          util.Collections.singletonMap(ContextTransformation.sanitizeBranchName(branchId), v)
-                        )
+                        .mapValue(v => util.Collections.singletonMap(branchId, v))
                     )
                 )
                 .returns(processedTypeInfo)
@@ -146,7 +141,7 @@ class UnionWithMemoTransformer(
     val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       val newType = Typed.record(
         inputContexts.map { case (branchId, _) =>
-          ContextTransformation.sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
+          branchId -> valueByBranchId(branchId).returnType
         } + (KeyField -> Typed[String])
       )
       ValidationContext(Map(variableName -> newType), Map.empty, parent)

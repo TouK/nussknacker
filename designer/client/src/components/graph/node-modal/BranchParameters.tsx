@@ -59,6 +59,7 @@ export default function BranchParameters({
                             <StyledFieldControl className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {
                                     const branchId = branchParameter.branchId;
+                                    const branchContextId = nodeNameById[branchId] || branchId;
                                     //here we assume the parameters are correct wrt branch definition. If this is not the case,
                                     //differences should be handled on other level, e.g. using reducers etc.
                                     const paramIndex = branchParameter.parameters.findIndex(
@@ -67,21 +68,11 @@ export default function BranchParameters({
                                     const paramValue = branchParameter.parameters[paramIndex];
                                     const expressionPath = `branchParameters[${branchIndex}].parameters[${paramIndex}].expression`;
 
-                                    const contextId = ProcessUtils.findContextForBranch(node, branchId);
+                                    const contextId = ProcessUtils.findContextForBranch(node, branchContextId);
                                     const variables = findAvailableVariables(contextId, param);
-                                    const fieldName = `${paramName} for branch ${branchId}`;
-                                    const fieldLabel = nodeNameById[branchId] || branchId;
-                                    const fieldErrors = getValidationErrorsForField(errors, fieldName).map((error) => {
-                                        if (fieldLabel === branchId) {
-                                            return error;
-                                        }
-                                        const replaceBranchId = (text: string): string => text.split(branchId).join(fieldLabel);
-                                        return {
-                                            ...error,
-                                            message: replaceBranchId(error.message),
-                                            description: replaceBranchId(error.description),
-                                        };
-                                    });
+                                    const fieldName = `${paramName} for branch ${branchContextId}`;
+                                    const fieldLabel = branchContextId;
+                                    const fieldErrors = getValidationErrorsForField(errors, fieldName);
 
                                     if (!paramValue) {
                                         return null;
