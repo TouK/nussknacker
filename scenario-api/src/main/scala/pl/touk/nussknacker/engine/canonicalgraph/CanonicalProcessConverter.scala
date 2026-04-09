@@ -88,17 +88,34 @@ object CanonicalProcessConverter {
   }
 
   def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {
-    val nodesMap = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
+    val rawNodesMap = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
     val nodeIdAliasesByName = graph.nodes.foldLeft(Map.empty[NodeId, NodeId]) { case (acc, node) =>
       val alias = NodeId(node.name.value)
-      if (nodesMap.contains(alias)) acc else acc + (alias -> node.id)
+      if (rawNodesMap.contains(alias)) acc else acc + (alias -> node.id)
     }
     def normalizeNodeId(nodeId: NodeId): NodeId = nodeIdAliasesByName.getOrElse(nodeId, nodeId)
+
+    def normalizeJoinBranchId(branchId: String): String = {
+      val normalizedBranchNodeId = normalizeNodeId(NodeId(branchId))
+      rawNodesMap.get(normalizedBranchNodeId).map(_.name.value).getOrElse(branchId)
+    }
+
+    val nodesMap = graph.nodes
+      .map {
+        case join: Join =>
+          join.copy(
+            branchParameters = join.branchParameters.map(bp => bp.copy(branchId = normalizeJoinBranchId(bp.branchId)))
+          )
+        case other => other
+      }
+      .groupBy(_.id)
+      .mapValuesNow(_.head)
+
     val normalizedEdges =
       graph.edges.map(edge => edge.copy(from = normalizeNodeId(edge.from), to = normalizeNodeId(edge.to)))
     val edgesFromMapStart = normalizedEdges.groupBy(_.from)
     val rootsUnflattened =
-      findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
+      findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(nodesMap(headNode.id), edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
     CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches, graph.stickyNotes, graph.testCases)
@@ -160,10 +177,8 @@ object CanonicalProcessConverter {
           .toMap
         canonicalnode.Fragment(data, nexts) :: Nil
       case (data: Join, Some(edgeConnectedToJoin)) =>
-        // We are using "from" node's id as a branchId because for now branchExpressions are inside Join nodes and it is convenient
-        // way to connect both two things.
-        val joinId = edgeConnectedToJoin.from
-        canonicalnode.FlatNode(BranchEndData(BranchEndDefinition(joinId.value, data.id.value))) :: Nil
+        val branchId = nodeOrThrow(edgeConnectedToJoin.from).name.value
+        canonicalnode.FlatNode(BranchEndData(BranchEndDefinition(branchId, data.id.value))) :: Nil
 
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>

@@ -1,8 +1,9 @@
 import { getProcessName, getProcessProperties } from "../../components/graph/node-modal/NodeDetailsContent/selectors";
 import { appendNodeDataToProperties, cleanProperties, isRequestSource } from "../../components/graph/node-modal/requestSourceAddons";
 import HttpService from "../../http/HttpService/instance";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
 import type { NodeType, PropertiesType } from "../../types/node";
-import type { NodeValidationError } from "../../types/validation";
+import type { NodeValidationError, VariableTypes } from "../../types/validation";
 import type { ThunkAction } from "../reduxTypes";
 import type { ValidationData, ValidationRequest } from "./nodeDetails";
 import { nodeValidationDataUpdated } from "./nodeDetails";
@@ -24,6 +25,29 @@ export function validateScenarioProperties({ name, additionalFields }: Propertie
     };
 }
 
+function normalizeBranchVariableTypesForValidation(
+    nodeData: NodeType,
+    allBranchVariableTypes: Record<string, VariableTypes>,
+    scenarioNodes: NodeType[],
+): Record<string, VariableTypes> {
+    if (!nodeData.branchParameters?.length) {
+        return allBranchVariableTypes || {};
+    }
+
+    const nodeNameById = Object.fromEntries((scenarioNodes || []).map((graphNode) => [graphNode.id, graphNode.name]));
+    const nodeIdByName = Object.fromEntries((scenarioNodes || []).map((graphNode) => [graphNode.name, graphNode.id]));
+
+    return nodeData.branchParameters.reduce<Record<string, VariableTypes>>((acc, branchParameter) => {
+        const branchId = branchParameter.branchId;
+        acc[branchId] =
+            allBranchVariableTypes?.[branchId] ||
+            allBranchVariableTypes?.[nodeIdByName[branchId]] ||
+            allBranchVariableTypes?.[nodeNameById[branchId]] ||
+            {};
+        return acc;
+    }, {});
+}
+
 export function validateNode({
     nodeData,
     ...validationRequestData
@@ -38,9 +62,16 @@ export function validateNode({
         }
 
         const scenarioName = getProcessName(getState());
+        const scenarioGraph = getScenarioGraph(getState());
+        const branchVariableTypes = normalizeBranchVariableTypesForValidation(
+            nodeData,
+            validationRequestData.branchVariableTypes || {},
+            scenarioGraph.nodes || [],
+        );
 
         const data = await HttpService.validateNode(scenarioName, {
             ...validationRequestData,
+            branchVariableTypes,
             nodeData,
             processProperties,
         });
