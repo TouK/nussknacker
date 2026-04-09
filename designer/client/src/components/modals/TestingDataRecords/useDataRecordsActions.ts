@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
 
-
 import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
@@ -49,7 +48,7 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
                 const { data } = await HttpService.fetchTestDataForSingleSource(
                     scenarioName,
                     scenarioProperties,
-                    nodeData,
+                    cleanProperties(nodeData),
                     numberOfSamples,
                 );
                 dispatch(setTestCaseInputs((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
