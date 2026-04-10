@@ -36,7 +36,25 @@ object TestCases {
     assertions: Map[NodeId, List[Assertion]],
 )
 
-@JsonCodec final case class EnricherMock(expression: Expression)
+@JsonCodec final case class EnricherMock(
+    expression: Expression,
+    enabled: Boolean = true,
+)
+
+object EnricherMock {
+
+  object EnabledExpression {
+
+    def unapply(mock: EnricherMock): Option[Expression] = {
+      mock match {
+        case EnricherMock(expression, true) if !expression.expression.isBlank => Some(expression)
+        case _                                                                => None
+      }
+    }
+
+  }
+
+}
 
 sealed trait Assertion
 
