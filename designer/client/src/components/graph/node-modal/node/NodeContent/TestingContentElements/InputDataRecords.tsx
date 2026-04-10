@@ -32,8 +32,8 @@ export const InputDataRecords = ({ node }: Props) => {
 
     const { data: sourceParameters } = usePromise(async () => {
         const { data } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, cleanProperties(node));
-        const capabilities = data.testWithParameters;
-        return capabilities.status === TestCapabilityStatus.AVAILABLE ? capabilities.sourceParameters : null;
+        const capabilities = data?.testWithParameters;
+        return capabilities?.status === TestCapabilityStatus.AVAILABLE ? capabilities?.sourceParameters : null;
     }, [scenarioName, scenarioProperties, node]);
 
     const {
