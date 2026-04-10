@@ -36,12 +36,19 @@ object TestCases {
     assertions: Map[NodeId, List[Assertion]],
 )
 
-@JsonCodec final case class EnricherMock(
+@JsonCodec(encodeOnly = true) final case class EnricherMock(
     expression: Expression,
     enabled: Boolean = true,
 )
 
 object EnricherMock {
+
+  implicit val decoder: Decoder[EnricherMock] = Decoder.instance { cursor =>
+    for {
+      expression <- cursor.downField("expression").as[Expression]
+      enabled    <- cursor.downField("enabled").as[Option[Boolean]].map(_.getOrElse(true))
+    } yield EnricherMock(expression, enabled)
+  }
 
   object EnabledExpression {
 
