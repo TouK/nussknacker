@@ -103,6 +103,45 @@
             "name": "Enricher"
         },
         {
+            "id": "Log",
+            "service": {
+                "id": "log",
+                "parameters": [
+                    {
+                        "name": "logger",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "level",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(org.slf4j.event.Level).DEBUG"
+                        }
+                    },
+                    {
+                        "name": "message",
+                        "expression": {
+                            "language": "spelTemplate",
+                            "expression": ""
+                        }
+                    }
+                ]
+            },
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -155,
+                    "y": 60
+                }
+            },
+            "type": "Processor",
+            "name": "Log"
+        },
+        {
             "id": "Dead End",
             "ref": {
                 "typ": "dead-end",
@@ -114,7 +153,7 @@
                 "description": null,
                 "layoutData": {
                     "x": -166,
-                    "y": 129
+                    "y": 200
                 }
             },
             "type": "Sink",
