@@ -180,7 +180,7 @@ class ScenarioTestingApiHttpServiceSpec
         id = UUID.randomUUID(),
         name = "dummy",
         inputs = testDataContent,
-        mocks = Map(NodeId("someEnricher") -> EnricherMock("'b'".spel)),
+        mocks = Map(NodeId("someEnricher1") -> EnricherMock("'b'".spel)),
         assertions = Map(
           NodeId("endsuffix") -> List(
             PredicateAssertion(AssertionOperator.Equals, "'b'".spel, "#records[0].out1".spel),
@@ -201,7 +201,7 @@ class ScenarioTestingApiHttpServiceSpec
         .body("assertionsResults.endsuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
 
-    "ignore enricher mock with empty expression and use the actual service result" in {
+    "ignore enricher mocks with empty expression or disabled and use the actual service result" in {
       val testDataContent =
         """[
           |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
@@ -210,10 +210,14 @@ class ScenarioTestingApiHttpServiceSpec
         id = UUID.randomUUID(),
         name = "dummy",
         inputs = testDataContent,
-        mocks = Map(NodeId("someEnricher") -> EnricherMock(Expression.spel(""))),
+        mocks = Map(
+          NodeId("someEnricher1") -> EnricherMock(Expression.spel("")),
+          NodeId("someEnricher2") -> EnricherMock(Expression.spel("invalid expression"), enabled = false),
+        ),
         assertions = Map(
           NodeId("endsuffix") -> List(
             PredicateAssertion(AssertionOperator.Equals, "'a'".spel, "#records[0].out1".spel),
+            PredicateAssertion(AssertionOperator.Equals, "'a'".spel, "#records[0].out2".spel),
           )
         )
       )
@@ -667,7 +671,8 @@ class ScenarioTestingApiHttpServiceSpec
     .parallelism(1)
     .additionalFields(properties = Map("environment" -> "test"))
     .source("startProcess", "csv-source")
-    .enricher("someEnricher", "out1", "paramService", "param" -> "'a'".spel)
+    .enricher("someEnricher1", "out1", "paramService", "param" -> "'a'".spel)
+    .enricher("someEnricher2", "out2", "paramService", "param" -> "'a'".spel)
     .filter("input", "#input != null".spel)
     .to(
       GraphBuilder

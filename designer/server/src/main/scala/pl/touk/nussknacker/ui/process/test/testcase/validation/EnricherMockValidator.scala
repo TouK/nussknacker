@@ -31,18 +31,16 @@ private class EnricherMockValidator(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Option[NonEmptyList[EnricherMockValidationError]] = {
-    enricherMock match {
-      case Some(mock) if !mock.expression.expression.isBlank =>
-        nodeData match {
-          case enricher: Enricher =>
-            validateEnricherMockType(enricher, mock.expression, nodeTyping) match {
-              case Invalid(errors) => Some(errors)
-              case Valid(_)        => None
-            }
-          case _ =>
-            Some(NonEmptyList.one(errors.enricherMockForNonEnricherNode(nodeData)))
+    (enricherMock, nodeData) match {
+      case (Some(EnricherMock.EnabledExpression(mockExpression)), enricher: Enricher) =>
+        validateEnricherMockType(enricher, mockExpression, nodeTyping) match {
+          case Invalid(errors) => Some(errors)
+          case Valid(_)        => None
         }
-      case _ => None
+      case (_, _: Enricher) | (None, _) =>
+        None
+      case (Some(_), _) =>
+        Some(NonEmptyList.one(errors.enricherMockForNonEnricherNode(nodeData)))
     }
   }
 
