@@ -27,5 +27,6 @@ export enum WindowKind {
     aiAssistant,
     enterpriseFeatureInfo,
     saveAsTestCase,
+    editCepMeasures,
     pasteRecords,
 }
