@@ -229,6 +229,27 @@ describe("Test cases", () => {
         cy.get('[data-testid="delete-test-case"]').should("be.disabled");
     });
 
+    it("should not use enricher mock when it is disabled", () => {
+        cy.visitNewProcess(seed, "testCasesWithEnricherMockInTestCase.json", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
+        cy.layoutScenario();
+
+        cy.runCurrentTestCase();
+        cy.get('[role="alert"]')
+            .contains(/Failed to test/i)
+            .should("be.visible");
+
+        cy.openNodeWindow("Unionreturnobjectservice");
+        cy.openNodeDetailsTestingTab();
+        disableEnricherMock();
+        cy.applyNodeChanges();
+
+        cy.runCurrentTestCase();
+        cy.get('[data-testid="test-cases-panel"]').contains("Test case 1").closest('[id$="-header"]').should("contain.text", "1/1");
+    });
+
     it("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
@@ -346,4 +367,8 @@ const openTestingDetails = (nodeId: string) => {
 const showAssertionDetails = (assertionNumber: number) => {
     cy.get('[data-testid="assertionResult"').eq(assertionNumber).click();
     cy.get('[role="tooltip"]').should("be.visible");
+};
+
+const disableEnricherMock = () => {
+    cy.get('[data-testid="mock-enabled-switch"]').find('input[type="checkbox"]').uncheck({ force: true });
 };

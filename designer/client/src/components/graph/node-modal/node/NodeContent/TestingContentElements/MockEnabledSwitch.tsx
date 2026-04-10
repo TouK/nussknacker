@@ -15,6 +15,7 @@ export const MockEnabledSwitch = ({ scenarioName, nodeId }: Props) => {
 
     return (
         <FormControlLabel
+            data-testid="mock-enabled-switch"
             control={<Switch size="small" checked={isEnabled} onChange={(_, checked) => setEnabled(checked)} />}
             label={t("testingDialog.label.mockEnabled", "Enabled")}
             slotProps={{ typography: { variant: "body2", color: "text.secondary" } }}

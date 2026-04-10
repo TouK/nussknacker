@@ -61,7 +61,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                         <Typography variant={"body2"} color={"text.secondary"}>
                             {t("testingDialog.label.mock", "Mock")}
                         </Typography>
-                        <InfoTooltip title={t("testingDialog.mock.hint", MOCK_EXPRESSION_HINT_TEXT)} />
+                        <InfoTooltip title={t("testingDialog.mock.hint", MOCK_EXPRESSION_HINT_TEXT)} variant={"hover"} />
                         <MockEnabledSwitch scenarioName={scenarioName} nodeId={node.id} />
                     </Box>
                 }
