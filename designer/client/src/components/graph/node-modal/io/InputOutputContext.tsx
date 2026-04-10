@@ -133,7 +133,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
     const getAvailableContexts = useCallback(
         (direction: "input" | "output" = "input", filter: string[] = []): [VariableContextType[], number] => {
             const transitionResults = direction === "input" ? inputs : outputs;
-            const contexts: VariableContextType[] = [];
+            const contextMap = new Map<string, VariableContextType>();
             transitionResults
                 .filter(({ sourceNodeId, destinationNodeId }) => {
                     if (!filter.length) return true;
@@ -142,15 +142,16 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                 })
                 .forEach(({ id: contextNodeId, destinationNodeId, results }) => {
                     results?.forEach(({ id, variables, timestamp }) => {
-                        const foundContext = contexts.find((context) => context.id === id && context.timestamp === timestamp);
-                        if (foundContext) {
-                            foundContext.nodeIds.push(contextNodeId);
+                        const key = `${id}_${timestamp}`;
+                        const existing = contextMap.get(key);
+                        if (existing) {
+                            existing.nodeIds.push(contextNodeId);
                             return;
                         }
 
                         const error = direction === "input" && getError(destinationNodeId, id);
 
-                        contexts.push({
+                        contextMap.set(key, {
                             id,
                             variables,
                             disabled: isContextDisabled(id, direction),
@@ -161,7 +162,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                     });
                 });
             const count = transitionResults.reduce((sum, { totalCount = 0 }) => sum + totalCount, 0);
-            return [contexts, count];
+            return [Array.from(contextMap.values()), count];
         },
         [inputs, outputs, getError, isContextDisabled],
     );

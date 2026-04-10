@@ -1,9 +1,9 @@
-import { Collapse, Tab, Tabs, Badge } from "@mui/material";
+import { Collapse, Tab, Tabs } from "@mui/material";
 import { omit } from "lodash";
 import React, { useEffect, useState } from "react";
 
 import { replaceSearchQuery } from "../../../../../containers/hooks/useSearchQuery";
-import { InfoTooltip } from "../../editors/InfoTooltip/InfoTooltip";
+import { LabelWithErrorIndicator } from "../../../../common/LabelWithErrorIndicator";
 
 export const ACTIVE_TAB_QUERY_KEY = "activeTab";
 
@@ -18,7 +18,7 @@ export interface TabDef {
     content: React.ReactNode;
     disabled?: boolean;
     additionalTabContent?: React.ReactNode;
-    showErrorIndicator?: boolean;
+    errorCount?: number;
 }
 
 interface Props {
@@ -76,24 +76,11 @@ export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
                             aria-controls={`tabpanel-${i}`}
                             disabled={t.disabled}
                             label={
-                                t.showErrorIndicator ? (
-                                    <span style={{ position: "relative", display: "inline-block", paddingRight: "8px" }}>
-                                        <span>{t.label}</span>
-                                        <InfoTooltip title={`There are errors in a ${t.label} data`} variant="hover">
-                                            <Badge
-                                                color="error"
-                                                variant="dot"
-                                                overlap="rectangular"
-                                                sx={{ position: "absolute", top: 0, right: 0 }}
-                                            >
-                                                {/* empty anchor for the badge so tooltip triggers only on the dot */}
-                                                <span style={{ display: "inline-block", width: 0, height: 0 }} />
-                                            </Badge>
-                                        </InfoTooltip>
-                                    </span>
-                                ) : (
-                                    t.label
-                                )
+                                <LabelWithErrorIndicator
+                                    label={t.label}
+                                    errorCount={t.errorCount}
+                                    errorTooltip={`There are errors in a ${t.label} data`}
+                                />
                             }
                         />
                     ))}

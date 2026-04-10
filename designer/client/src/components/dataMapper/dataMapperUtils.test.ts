@@ -337,4 +337,32 @@ describe("fieldsFromSample", () => {
         expect(result[0].children[0]).toMatchObject({ name: "city", type: "String" });
         expect(result[0].children[1]).toMatchObject({ name: "zip", type: "String" });
     });
+
+    it("expands flat dotted keys into nested record fields", () => {
+        const result = fieldsFromSample({
+            "state.key": null,
+            "state.value": "abc",
+            other: 1,
+        });
+        expect(result).toHaveLength(2);
+        const state = result.find((f) => f.name === "state");
+        expect(state).toMatchObject({ name: "state", type: "Map", isRecord: true });
+        expect(state?.children).toHaveLength(2);
+        expect(state?.children[0]).toMatchObject({ name: "key" });
+        expect(state?.children[1]).toMatchObject({ name: "value", type: "String" });
+        expect(result.find((f) => f.name === "other")).toMatchObject({ type: "Integer" });
+    });
+
+    it("merges dotted key leaf with sibling nested object under same prefix", () => {
+        // schema: { "a.b": null, "a.c": { d: null } }  →  a: { b: null, c: { d: null } }
+        const result = fieldsFromSample({ "a.b": null, "a.c": { d: null } });
+        expect(result).toHaveLength(1);
+        const a = result[0];
+        expect(a).toMatchObject({ name: "a", isRecord: true });
+        expect(a.children).toHaveLength(2);
+        expect(a.children.find((c) => c.name === "b")).toBeDefined();
+        const c = a.children.find((ch) => ch.name === "c");
+        expect(c).toMatchObject({ isRecord: true });
+        expect(c?.children[0]).toMatchObject({ name: "d" });
+    });
 });

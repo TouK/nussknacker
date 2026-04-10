@@ -1,5 +1,4 @@
-import type React from "react";
-import { useCallback, useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import type { XYCoord } from "react-dnd";
 import { useDragLayer, useDrop } from "react-dnd";
@@ -11,7 +10,10 @@ import { AcceptedLangCtx } from "../../../../ValueDragPreview";
 import type { SpelDndContext } from "../../io/ContextTree";
 import { ExpressionLang } from "./types";
 
-function jsonToSpelString(value: any): string {
+export const UseRecordsPrefixContext = React.createContext(false);
+export const UseValueInsertContext = React.createContext(false);
+
+export function jsonToSpelString(value: any): string {
     if (value === null) return "null";
     if (typeof value === "string") return `"${value.replace(/"/g, '\\"')}"`;
     if (typeof value === "number" || typeof value === "boolean") return String(value);
@@ -69,6 +71,20 @@ const getTextToInsert = memoizeByArgsWithTTL((item: SpelDndContext, language: Ex
     return JSON.stringify(item?.value);
 });
 
+export function getInsertText(
+    item: SpelDndContext,
+    language: ExpressionLang,
+    { recordsPrefix, valueInsert }: { recordsPrefix: boolean; valueInsert: boolean },
+): string {
+    if (recordsPrefix && item.recordIndex !== undefined) {
+        return `#records[${item.recordIndex}].${getPathString(item.path)}`;
+    }
+    if (valueInsert) {
+        return jsonToSpelString(item.value);
+    }
+    return getTextToInsert(item, language);
+}
+
 export function useAceDndTarget(editorRef: React.MutableRefObject<ReactAce>, language: ExpressionLang) {
     const getEditor = useCallback(() => editorRef?.current?.editor, [editorRef]);
 
@@ -76,7 +92,13 @@ export function useAceDndTarget(editorRef: React.MutableRefObject<ReactAce>, lan
         getEditor()?.removeGhostText();
     }, [getEditor]);
 
-    const getText = useCallback((item: SpelDndContext) => getTextToInsert(item, language), [language]);
+    const useRecordsPrefix = useContext(UseRecordsPrefixContext);
+    const useValueInsert = useContext(UseValueInsertContext);
+
+    const getText = useCallback(
+        (item: SpelDndContext) => getInsertText(item, language, { recordsPrefix: useRecordsPrefix, valueInsert: useValueInsert }),
+        [language, useRecordsPrefix, useValueInsert],
+    );
 
     const addPlaceholder = useCallback(
         (clientOffset: XYCoord, item: SpelDndContext) => {

@@ -1,11 +1,12 @@
 import { partition } from "lodash";
 import type { PropsWithChildren } from "react";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ParameterCategory } from "../../../types/definition";
 import type { Parameter } from "../../../types/node";
 import { Expandable } from "../../common/Expandable";
+import { LabelWithErrorIndicator } from "../../common/LabelWithErrorIndicator";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";
 import { ParametersList } from "./parametersList";
 
@@ -33,6 +34,8 @@ export const ParametersListAdvanced = ({
         [parameterDefinitions],
     );
 
+    const { errors } = props;
+
     const [standard, advanced] = useMemo(
         () =>
             partition(
@@ -42,6 +45,19 @@ export const ParametersListAdvanced = ({
         [getParamCategory, parameters],
     );
 
+    const advancedErrorCount = useMemo(
+        () => advanced.filter(({ param }) => errors?.some((e) => e.fieldName === param.name)).length,
+        [advanced, errors],
+    );
+
+    const [isExpanded, setIsExpanded] = useState(() => advancedErrorCount > 0);
+
+    const advancedLabel = t("component.advancedParameters.title", "Advanced parameters");
+    const advancedTitle = useMemo(
+        () => <LabelWithErrorIndicator label={advancedLabel} errorCount={advancedErrorCount} />,
+        [advancedLabel, advancedErrorCount],
+    );
+
     return (
         <>
             <ParametersList {...props} parameters={standard} getListFieldPath={getListFieldPath} />
@@ -49,7 +65,9 @@ export const ParametersListAdvanced = ({
             {advanced.length > 0 && (
                 <Expandable
                     componentId={"advanced-param-section"}
-                    expandableTitle={t("component.advancedParameters.title", "Advanced parameters")}
+                    expandableTitle={advancedTitle}
+                    expanded={isExpanded}
+                    onChange={setIsExpanded}
                 >
                     <ParametersList {...props} parameters={advanced} getListFieldPath={getListFieldPath} />
                 </Expandable>
