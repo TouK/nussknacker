@@ -253,7 +253,13 @@ describe("Test cases", () => {
 });
 
 const addEmptyAssertion = () => {
-    cy.get('[data-testid="add-field-button"]').scrollIntoView().click();
+    cy.get("[data-testid=window]")
+        .find("#Assertions-content")
+        .should("exist")
+        .scrollIntoView()
+        .find('[data-testid="add-field-button"]')
+        .should("be.visible")
+        .click();
 };
 
 const fillAssertion = (assertionNumber: number, expected: string, actual: string, operator?: "==" | "!=") => {
@@ -267,9 +273,11 @@ const fillAssertion = (assertionNumber: number, expected: string, actual: string
 };
 
 const appendFromLiveDataClick = () => {
+    cy.intercept("POST", /\/nodes\/.*\/records\?limit=.*/).as("appendFromLiveData");
     cy.get("[data-testid=window]")
         .contains("button", /Append from live data/i)
         .click();
+    cy.wait("@appendFromLiveData").its("response.statusCode").should("eq", 200);
 };
 
 const checkAssertionResult = (assertionNumber: number, message: string) => {
