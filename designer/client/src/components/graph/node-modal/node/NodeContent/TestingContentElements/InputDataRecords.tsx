@@ -1,6 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { Box, Button, Divider, Typography } from "@mui/material";
+import { Box, Button, Divider, Tooltip, Typography } from "@mui/material";
 import React, { useCallback, useMemo, useState } from "react";
 import { usePromise } from "rooks";
 import { useTranslation } from "react-i18next";
@@ -115,40 +115,64 @@ export const InputDataRecords = ({ node }: Props) => {
                                 })}
                             >
                                 <Box display="flex" alignItems="center" gap={1.5}>
+                                    <Tooltip title={t("testRecords.addRecord.hint", "Add a new empty record to edit manually")}>
+                                        <span>
+                                            <Button
+                                                size="small"
+                                                variant="text"
+                                                startIcon={<AddIcon />}
+                                                onClick={handleAddRecord}
+                                                disabled={addRecordDisabled}
+                                                sx={{ textTransform: "none" }}
+                                            >
+                                                {t("testRecords.addRecord", "Add record")}
+                                            </Button>
+                                        </span>
+                                    </Tooltip>
+                                    <Tooltip
+                                        title={t(
+                                            "testRecords.pasteRecords.hint",
+                                            "Paste one or more records as JSON (single object, array, or one object per line)",
+                                        )}
+                                    >
+                                        <span>
+                                            <PasteRecordsButton
+                                                sourceId={node.id}
+                                                onRowsAdded={handleRowsAdded}
+                                                defaultVariables={defaultDataRecord?.variables}
+                                                disabled={recordsToAddLimitExceeded}
+                                            />
+                                        </span>
+                                    </Tooltip>
+                                </Box>
+                                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                                <Tooltip
+                                    title={t(
+                                        "testRecords.appendFromLiveData.hint",
+                                        "Capture records from a live topic and append them to the list",
+                                    )}
+                                >
+                                    <span>
+                                        <AppendFromLiveDataButton
+                                            handleGenerateTestData={handleGenerateTestDataForSingleSource}
+                                            maxTestingRecords={maxTestingRecords}
+                                            recordsToAddLimitExceeded={recordsToAddLimitExceeded}
+                                        />
+                                    </span>
+                                </Tooltip>
+                                <Box flex={1} />
+                                <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: "text.disabled" }} />
+                                <Tooltip title={t("testRecords.clearAll.hint", "Remove all test records")}>
                                     <Button
                                         size="small"
                                         variant="text"
-                                        startIcon={<AddIcon />}
-                                        onClick={handleAddRecord}
-                                        disabled={addRecordDisabled}
-                                        sx={{ textTransform: "none" }}
+                                        startIcon={<DeleteOutlineIcon />}
+                                        onClick={handleClearAll}
+                                        sx={{ textTransform: "none", color: "text.disabled" }}
                                     >
-                                        {t("testRecords.addRecord", "Add record")}
+                                        {t("testRecords.clearAll", "Clear all")}
                                     </Button>
-                                    <PasteRecordsButton
-                                        sourceId={node.id}
-                                        onRowsAdded={handleRowsAdded}
-                                        defaultVariables={defaultDataRecord?.variables}
-                                        disabled={recordsToAddLimitExceeded}
-                                    />
-                                </Box>
-                                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                                <AppendFromLiveDataButton
-                                    handleGenerateTestData={handleGenerateTestDataForSingleSource}
-                                    maxTestingRecords={maxTestingRecords}
-                                    recordsToAddLimitExceeded={recordsToAddLimitExceeded}
-                                />
-                                <Box flex={1} />
-                                <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: "text.disabled" }} />
-                                <Button
-                                    size="small"
-                                    variant="text"
-                                    startIcon={<DeleteOutlineIcon />}
-                                    onClick={handleClearAll}
-                                    sx={{ textTransform: "none", color: "text.disabled" }}
-                                >
-                                    {t("testRecords.clearAll", "Clear all")}
-                                </Button>
+                                </Tooltip>
                             </Box>
                         }
                     />
