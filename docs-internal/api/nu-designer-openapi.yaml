@@ -1631,6 +1631,7 @@ paths:
                         expression:
                           language: spel
                           expression: '42'
+                        enabled: true
                       assertions:
                       - operator: equals
                         expected:
@@ -1645,6 +1646,7 @@ paths:
                         expression:
                           language: spel
                           expression: '''sample value'''
+                        enabled: true
                       assertions:
                       - operator: equals
                         expected:
@@ -6417,9 +6419,12 @@ components:
       type: object
       required:
       - expression
+      - enabled
       properties:
         expression:
           $ref: '#/components/schemas/Expression'
+        enabled:
+          type: boolean
     EnricherMockValidationError:
       title: EnricherMockValidationError
       type: object
