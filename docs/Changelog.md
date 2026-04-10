@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9231](https://github.com/TouK/nussknacker/pull/9231) OpenAPI enricher: improved discovery cache resilience.
+    * Added optional `cacheFileLocation` configuration for persisting last valid OpenAPI definitions.
+    * Added stale-on-error behavior for discovery refresh: on refresh failure, cached definitions are used from memory and (if configured) from file cache.
+    * Renamed OpenAPI discovery cache TTL key from `openApiServicesDiscoveryCacheTtl` to `discoveryCacheTtl`.
 * [#9167](https://github.com/TouK/nussknacker/pull/9167) OpenAPI enricher: added OAuth2 Client Credentials authentication support.
   * New security type: `oauth2ClientCredentials` (alias: `oauth2`) with `clientId` and `clientSecret`.
   * `tokenUrl` and scopes are resolved from OpenAPI `securitySchemes` and operation `security` requirements.

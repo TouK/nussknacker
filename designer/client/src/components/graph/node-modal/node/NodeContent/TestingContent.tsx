@@ -29,12 +29,7 @@ export function useTestingContentRenderer() {
     const CONFIG: { when: (node: TestingContentProps["node"]) => boolean; render: (props: TestingContentProps) => React.JSX.Element }[] = [
         {
             when: (node) => node.type === "Source",
-            render: ({ node, edges }) => (
-                <>
-                    <InputDataRecords node={node} />
-                    <Assertions node={node} edges={edges} />
-                </>
-            ),
+            render: ({ node }) => <InputDataRecords node={node} />,
         },
         {
             when: (node) => showMockFieldOnEnrichers && node.type === "Enricher" && node.service.id !== "decision-table",
