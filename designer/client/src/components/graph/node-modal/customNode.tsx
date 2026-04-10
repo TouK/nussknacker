@@ -42,11 +42,12 @@ export function CustomNode({
         (): boolean => !!ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.returnType || !!node.outputVar,
         [node, processDefinitionData.components],
     );
+    const isFlinkSqlNode = useMemo(() => findParameters(node).some((p) => p.name === "flinkSqlQuery"), [node]);
 
     return (
         <>
             <NameField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
-            {hasOutputVar && (
+            {hasOutputVar && !isFlinkSqlNode && (
                 <NodeField
                     node={node}
                     isEditMode={isEditMode}

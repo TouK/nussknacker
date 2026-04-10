@@ -44,6 +44,7 @@ export type FeaturesSettings = {
     surveySettings: SurveySettings;
     stickyNotesSettings: StickyNotesSettings;
     testCases: { multipleEnabled: boolean };
+    flinkSqlTemplateEditor?: boolean;
 };
 
 export type StickyNotesSettings = {

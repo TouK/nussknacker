@@ -51,6 +51,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("node.shortCounts"),
         createFlag("node.showAssertionExpressionBuilder"),
         createFlag("node.showFieldExpressionBuilder"),
+        createFlag("node.showFlinkSqlTemplateEditor"),
         createFlag("node.showAggregateSwitcher"),
         createFlag("node.showFragmentCreator"),
         createFlag("node.showGenerateEndpointButton"),

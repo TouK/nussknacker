@@ -6,6 +6,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { DialogErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import { DialogWithChildren } from "../components/DialogWithChildren";
 import FrameDialog from "../components/FrameDialog";
+import { MeasuresDialogContent } from "../components/graph/node-modal/editors/expression/FlinkSqlTemplateEditor/cep/MeasuresDialogContent";
 import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
 import RemoteModuleDialog from "../components/RemoteModuleDialog";
 import LoaderSpinner from "../components/spinner/Spinner";
@@ -139,6 +140,8 @@ const contentGetter = (props: WindowContentProps<WindowKind>) => {
             return <EnterpriseFeatureInfo {...props} />;
         case WindowKind.saveAsTestCase:
             return <SaveAsTestCaseDialog {...props} />;
+        case WindowKind.editCepMeasures:
+            return <MeasuresDialogContent {...props} />;
         default:
             return (
                 <WindowContent {...props}>
