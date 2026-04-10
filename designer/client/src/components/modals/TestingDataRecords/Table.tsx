@@ -46,7 +46,7 @@ interface TableProps {
 export const TABLE_HEIGHT = "100vh";
 export const TABLE_WIDTH = "100%";
 const COLUMN_VARIABLES_ID = "variables";
-const COLUMN_VARIABLES_TITLE = "Input variables";
+const COLUMN_VARIABLES_TITLE = "Records";
 
 const emptySelection: GridSelection = { columns: CompactSelection.empty(), rows: CompactSelection.empty() };
 const tableColumns: GridColumn[] = [{ id: COLUMN_VARIABLES_ID, title: COLUMN_VARIABLES_TITLE, grow: 1, hasMenu: false }];
