@@ -25,7 +25,7 @@ import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
-import { hasValidationTestCasesErrors } from "../NodeDetailsContent/selectors";
+import { getValidationTestCasesErrorCount } from "../NodeDetailsContent/selectors";
 import { TestResultsWrapper } from "../TestResultsWrapper";
 import { useGetNodeErrors } from "../useNodeTypeDetailsContentLogic";
 import { EditStateFeedback } from "./EditStateFeedback";
@@ -88,8 +88,8 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
     const [generalErrors] = useGetNodeErrors(node);
     const testCase = useAppSelector(getActiveTestCase);
-    const hasNodeTestCasesErrors = useAppSelector((state) =>
-        hasValidationTestCasesErrors(state, { nodeId: node.id, testCaseName: testCase?.name }),
+    const nodeTestCasesErrorCount = useAppSelector((state) =>
+        getValidationTestCasesErrorCount(state, { nodeId: node.id, testCaseName: testCase?.name }),
     );
 
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
@@ -164,7 +164,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
                 id: NodeDetailsTab.general,
                 label: t("nodeDetails.tabs.general.name", "General"),
                 content: generalContent,
-                showErrorIndicator: generalErrors.length > 0,
+                errorCount: generalErrors.length,
             },
             {
                 id: NodeDetailsTab.testing,
@@ -172,10 +172,10 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
                 content: testingContent,
                 disabled: !testingTabVisible,
                 additionalTabContent: <TestCaseSelect />,
-                showErrorIndicator: hasNodeTestCasesErrors,
+                errorCount: nodeTestCasesErrorCount,
             },
         ],
-        [generalContent, generalErrors.length, hasNodeTestCasesErrors, t, testingContent, testingTabVisible],
+        [generalContent, generalErrors.length, nodeTestCasesErrorCount, t, testingContent, testingTabVisible],
     );
 
     return (
