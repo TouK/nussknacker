@@ -165,7 +165,12 @@ export function useDataMapper({
                     (elem0 === null || typeof elem0 !== "object" || Object.keys(elem0 as object).length === 0));
             if (lacksStructure) {
                 const sample = typingResultToSample(typingResult);
-                if (sample !== null) merged[key] = sample;
+                if (sample !== null) {
+                    merged[key] = sample;
+                } else if (!(key in merged)) {
+                    // Variable has Unknown type and no live data yet — add as empty object so it appears in the context tree
+                    merged[key] = {};
+                }
             }
         }
         return merged;
