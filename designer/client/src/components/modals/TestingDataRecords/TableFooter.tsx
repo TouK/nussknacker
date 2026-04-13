@@ -43,6 +43,7 @@ export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRows
                         <Button
                             variant="text"
                             size="small"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={handleSelectAll}
                             sx={{
                                 p: 0,
@@ -64,6 +65,7 @@ export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRows
                 size="small"
                 color="error"
                 startIcon={<DeleteOutlineIcon fontSize="small" />}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleRemoveRows}
                 sx={{ textTransform: "none" }}
             >
