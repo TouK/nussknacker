@@ -132,7 +132,11 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
                 classname: LoadingButtonTypes.secondaryButton,
             },
             {
-                title: t("pasteRecords.confirm", "Add {{count}} record(s)", { count: recordCount }),
+                title: t("pasteRecords.confirm", {
+                    count: recordCount,
+                    defaultValue_one: "Add {{count}} record",
+                    defaultValue_other: "Add {{count}} records",
+                }),
                 action: handleConfirm,
                 disabled: !text.trim() || limitExceeded,
             },
@@ -162,7 +166,13 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
                 />
                 <Box mt={1} display="flex" justifyContent="space-between" alignItems="center">
                     <Typography variant="caption" color="text.secondary">
-                        {recordCount > 0 ? t("pasteRecords.recordCount", "{{count}} line(s) detected", { count: recordCount }) : ""}
+                        {recordCount > 0
+                            ? t("pasteRecords.recordCount", {
+                                  count: recordCount,
+                                  defaultValue_one: "{{count}} line detected",
+                                  defaultValue_other: "{{count}} lines detected",
+                              })
+                            : ""}
                     </Typography>
                     {limitExceeded ? (
                         <Typography variant="caption" color="error.main">
