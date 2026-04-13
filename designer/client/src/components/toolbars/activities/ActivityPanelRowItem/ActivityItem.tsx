@@ -1,10 +1,15 @@
-import { Box, styled, Typography } from "@mui/material";
+import { Box, Button, styled, Typography } from "@mui/material";
 import { lowerCase, upperFirst } from "lodash";
 import type { ForwardedRef } from "react";
-import React, { forwardRef } from "react";
+import React, { forwardRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
 
+import { displayScenarioVersion } from "../../../../actions/nk/process";
 import { formatDateTime } from "../../../../common/DateUtils";
+import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
+import { draftKey, scenarioDraftClear } from "../../../../reducers/scenarioDraft";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import type { ItemActivity } from "../ActivitiesPanel";
 import { getItemColors } from "../helpers/activityItemColors";
@@ -30,6 +35,44 @@ const StyledActivityBody = styled("div")(({ theme }) => ({
     padding: theme.spacing(1, 0, 1, 0.5),
     gap: theme.spacing(0.5),
 }));
+
+const LocalDraftNotice = ({ versionId }: { versionId: number | null }) => {
+    const { t } = useTranslation();
+    const dispatch = useAppDispatch();
+    const processName = useAppSelector(getProcessName);
+    const currentVersionId = useAppSelector(getProcessVersionId);
+    const draft = useAppSelector((state) => (processName ? state.scenarioDraft[draftKey(processName, versionId)] : undefined));
+
+    const hasUndoHistory = useAppSelector((state) => state.graphReducer.past.length > 0);
+
+    const onDiscard = useCallback(() => {
+        if (!processName) return;
+        dispatch(scenarioDraftClear(processName, versionId));
+        if (hasUndoHistory) {
+            // Jump to the very first undo entry — the clean server scenario captured when the
+            // draft was applied on load. The current (draft + any follow-up edits) states are
+            // pushed onto the redo stack, so the user can step forward if they regret discarding.
+            dispatch(UndoActionCreators.jumpToPast(0) as never);
+        } else {
+            dispatch(displayScenarioVersion(processName, versionId));
+        }
+    }, [dispatch, processName, versionId, hasUndoHistory]);
+
+    if (!draft) return null;
+
+    return (
+        <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
+            <Typography variant="overline" color="warning.main">
+                {t("activityItem.localDraftExists", "Local draft exists for this version")}
+            </Typography>
+            {currentVersionId === versionId && (
+                <Button size="small" variant="text" onClick={onDiscard}>
+                    {t("activityItem.discardDraft", "Discard draft")}
+                </Button>
+            )}
+        </Box>
+    );
+};
 
 export const ActivityItem = forwardRef(
     (
@@ -92,6 +135,8 @@ export const ActivityItem = forwardRef(
 
                             {version && <Typography variant={"overline"}>{version}</Typography>}
                         </Box>
+
+                        {activity.scenarioVersionId != null && <LocalDraftNotice versionId={activity.scenarioVersionId} />}
 
                         {activity?.comment?.content.status === "AVAILABLE" && (
                             <ActivityItemComment
