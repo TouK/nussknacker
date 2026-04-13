@@ -5,6 +5,7 @@ import type { RootState } from "../reducers";
 import type { CloudDataActions } from "../reducers/cloudData";
 import type { SquashHistoryActions } from "../reducers/graph/historySquash";
 import type { ProcessActivityActions } from "../reducers/processActivity";
+import type { ScenarioDraftActions } from "../reducers/scenarioDraft";
 import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
 import type { AssistantActions } from "./assistantActions";
@@ -39,6 +40,7 @@ export type TypedAction =
     | ProcessActivityActions
     | PropertiesActions
     | ScenarioActions
+    | ScenarioDraftActions
     | ScenariosActions
     | SelectionActions
     | SettingsActions
