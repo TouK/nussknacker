@@ -188,9 +188,11 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
         case "Variable":
             return (
                 <Variable
+                    addElement={addElement}
                     errors={errors}
                     isEditMode={isEditMode}
                     node={node}
+                    removeElement={removeElement}
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}

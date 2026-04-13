@@ -299,7 +299,9 @@ class NodeCompiler(
         case a: Enricher       => compileEnricher(a, validationContext)
         case a: Processor      => compileProcessor(a, validationContext)
         case a: Filter         => compileFilter(a, validationContext)
-        case a: Variable       => compileVariable(a, validationContext)
+        case a: Variable if a.operation == VariableOperation.Unset =>
+          compileUnsetVariable(a, validationContext).map(_ => BuiltInNodeCompiler.unusedCompiledExpression)
+        case a: Variable => compileVariable(a, validationContext)
         case a: VariableBuilder =>
           implicit val nodeId: NodeId = a.id
           compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName)))
@@ -573,6 +575,14 @@ class NodeCompiler(
   ): NodeCompilationResult[CompiledExpression] = {
     implicit val nodeId: NodeId = variable.id
     builtInNodeCompiler.compileVariable(variable, inputContext)
+  }
+
+  private[compile] def compileUnsetVariable(
+      variable: Variable,
+      inputContext: SingleInputNodeInputValidationContext
+  ): NodeCompilationResult[List[String]] = {
+    implicit val nodeId: NodeId = variable.id
+    builtInNodeCompiler.compileVariableUnset(variable, inputContext)
   }
 
   private[compile] def compileFragmentOutputDefinition(

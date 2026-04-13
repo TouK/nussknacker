@@ -229,9 +229,36 @@ object node {
       name: NodeName,
       varName: String,
       value: Expression,
-      additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+      additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
+      operation: VariableOperation = VariableOperation.Set,
+      fields: List[Field] = List.empty
   ) extends OneOutputSubsequentNodeData
       with CompilableNodeData
+
+  sealed trait VariableOperation
+
+  object VariableOperation {
+
+    case object Set   extends VariableOperation
+    case object Unset extends VariableOperation
+
+    private val operationByName: Map[String, VariableOperation] = Map(
+      "SET"   -> Set,
+      "UNSET" -> Unset
+    )
+
+    implicit val variableOperationEncoder: Encoder[VariableOperation] = Encoder.encodeString.contramap {
+      case Set   => "SET"
+      case Unset => "UNSET"
+    }
+
+    implicit val variableOperationDecoder: Decoder[VariableOperation] = Decoder.decodeString.emap { operationName =>
+      operationByName
+        .get(operationName)
+        .toRight(s"Unexpected Variable operation: $operationName")
+    }
+
+  }
 
   case class Split(
       id: NodeId,
