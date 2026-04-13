@@ -61,6 +61,13 @@ function splitTopLevelJsonObjects(text: string): string[] {
     return chunks;
 }
 
+function splitNdjsonLines(text: string): string[] {
+    return text
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean);
+}
+
 function parseRecords(text: string, sourceId: string, defaultVariables?: string): { rows: TestingDataRecords[]; errorCount: number } {
     let defaultTemplate: Record<string, unknown> | null = null;
     if (defaultVariables) {
@@ -111,10 +118,7 @@ function parseRecords(text: string, sourceId: string, defaultVariables?: string)
     }
 
     // Fallback: NDJSON (one compact JSON object per line)
-    const lines = trimmed
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
+    const lines = splitNdjsonLines(trimmed);
     let errorCount = 0;
     const rows: TestingDataRecords[] = [];
     for (const line of lines) {
@@ -147,10 +151,7 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
         } catch {
             const topLevel = splitTopLevelJsonObjects(trimmed);
             if (topLevel.length > 1) return topLevel.length;
-            return trimmed
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean).length;
+            return splitNdjsonLines(trimmed).length;
         }
     }, [text]);
 
