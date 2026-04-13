@@ -10,6 +10,9 @@ import {
     getProcessVersionId,
     getScenarioGraph,
 } from "../reducers/selectors/graph";
+import { getUserSettings } from "../reducers/selectors/userSettings";
+
+const isDraftEnabled = (state: RootState) => !!getUserSettings(state)["scenario.enableDraft"];
 
 type AppDispatch = ThunkDispatch<RootState, undefined, Action>;
 
@@ -35,6 +38,7 @@ draftAutoSaveListener.startListening({
     predicate: (_action, current, previous) => {
         const prev = previous as RootState;
         return (
+            isDraftEnabled(current) &&
             getProcessName(current) !== null &&
             getProcessName(current) === getProcessName(prev) &&
             getProcessVersionId(current) === getProcessVersionId(prev) &&
@@ -56,6 +60,7 @@ draftAutoSaveListener.startListening({
 // server state as an undoable action — so the user can always undo back to the loaded scenario.
 draftAutoSaveListener.startListening({
     predicate: (_action, current, previous) => {
+        if (!isDraftEnabled(current)) return false;
         const prev = previous as RootState;
         const name = getProcessName(current);
         if (!name) return false;
