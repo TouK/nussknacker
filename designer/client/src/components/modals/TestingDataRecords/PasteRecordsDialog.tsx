@@ -3,6 +3,9 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
+import { getTestData } from "../../../reducers/selectors/testCases";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../windowManager/WindowKind";
@@ -76,6 +79,9 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
     const { t } = useTranslation();
     const { sourceId, onRowsAdded, defaultVariables } = props.data.meta;
 
+    const maxTestingRecords = useAppSelector(getMaxTestingRecords);
+    const currentRecordsCount = useAppSelector(getTestData).length;
+
     const [text, setText] = useState("");
     const [parseError, setParseError] = useState<string | null>(null);
 
@@ -116,6 +122,8 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
         }
     }, [text, sourceId, defaultVariables, onRowsAdded, props, t]);
 
+    const limitExceeded = currentRecordsCount + recordCount > maxTestingRecords;
+
     const buttons = useMemo<WindowButtonProps[]>(
         () => [
             {
@@ -126,10 +134,10 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
             {
                 title: t("pasteRecords.confirm", "Add {{count}} record(s)", { count: recordCount }),
                 action: handleConfirm,
-                disabled: !text.trim(),
+                disabled: !text.trim() || limitExceeded,
             },
         ],
-        [t, props, recordCount, handleConfirm, text],
+        [t, props, recordCount, handleConfirm, text, limitExceeded],
     );
 
     return (
@@ -156,10 +164,16 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
                     <Typography variant="caption" color="text.secondary">
                         {recordCount > 0 ? t("pasteRecords.recordCount", "{{count}} line(s) detected", { count: recordCount }) : ""}
                     </Typography>
-                    {parseError && (
-                        <Typography variant="caption" color="warning.main">
-                            {parseError}
+                    {limitExceeded ? (
+                        <Typography variant="caption" color="error.main">
+                            {t("pasteRecords.limitExceeded", "Limit of {{max}} records would be exceeded.", { max: maxTestingRecords })}
                         </Typography>
+                    ) : (
+                        parseError && (
+                            <Typography variant="caption" color="warning.main">
+                                {parseError}
+                            </Typography>
+                        )
                     )}
                 </Box>
             </Box>
