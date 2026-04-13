@@ -20,7 +20,7 @@ import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import type { TestingDataRecords } from "../../../../../modals/TestingDataRecords/types";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { buildDefaultVariables } from "../../../../../modals/TestingDataRecords/utils";
-import { InfoTooltip } from "../../../../editors/InfoTooltip/InfoTooltip";
+import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { cleanProperties } from "../../../requestSourceAddons";
 import { StyledStack } from "./components/Styled";
