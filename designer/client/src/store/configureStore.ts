@@ -47,6 +47,8 @@ export const setupStore = () => {
                             "TOGGLE_ALL_TOOLBARS",
                             "TOGGLE_PANEL",
                             "TOGGLE_COMPONENT_GROUP_TOOLBOX",
+                            "SCENARIO_DRAFT_SET",
+                            "SCENARIO_DRAFT_CLEAR",
                         ],
                     }),
                     scenarioValidationMiddleware([
