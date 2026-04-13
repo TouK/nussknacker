@@ -181,7 +181,7 @@ class NodesApiHttpService(
               .leftMap[NodesError](identity)
             nodeValidator  = processingTypeToNodeValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
             processVersion = scenarioWithDetails.processVersionUnsafe
-            jobData        = JobData(request.processProperties.toMetaData(processVersion.processName), processVersion)
+            jobData        = JobData(request.scenarioProperties.toMetaData(processVersion.processName), processVersion)
             outputVariableTypes = nodeValidator
               .getOutputVariableTypes(inputVariableTypes, request.nodeData, jobData)
               .getOrElse(Map.empty)

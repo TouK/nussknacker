@@ -161,7 +161,7 @@ export type ResponseStatus = { status: "success"; data?: any } | { status: "erro
 export type TestCaseNodeAdditionalVariablesRequest = {
     variableTypes: VariableTypes;
     nodeData: NodeType;
-    processProperties: PropertiesType;
+    scenarioProperties: PropertiesType;
 };
 
 export type TestCaseNodeAdditionalVariablesResponse = {

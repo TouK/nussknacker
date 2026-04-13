@@ -794,7 +794,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   isDisabled = None,
                   additionalFields = None
                 ),
-                processProperties = ProcessProperties.apply(
+                scenarioProperties = ProcessProperties.apply(
                   ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "StreamMetaData")
                 ),
               )
@@ -1835,7 +1835,7 @@ object NodesApiEndpoints {
     final case class TestCaseAdditionalVariablesRequestDto(
         variableTypes: Map[String, TypingResultInJson],
         nodeData: NodeData,
-        processProperties: ProcessProperties,
+        scenarioProperties: ProcessProperties,
     )
 
     object TestCaseAdditionalVariablesRequestDto {

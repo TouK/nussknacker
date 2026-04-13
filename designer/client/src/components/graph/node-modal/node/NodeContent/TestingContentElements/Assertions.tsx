@@ -73,7 +73,7 @@ export const Assertions = ({ node, edges }: Props) => {
             const response = await httpService.fetchTestCaseNodeAdditionalVariables(scenarioName, {
                 variableTypes: nodeVariableTypes,
                 nodeData: node,
-                processProperties,
+                scenarioProperties: processProperties,
             });
             setAssertionVariableTypes(omit(response.assertionsAdditionalVariables, "TESTS") || {});
         };
