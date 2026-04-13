@@ -1832,27 +1832,12 @@ object NodesApiEndpoints {
         name: ProcessName
     )
 
+    @derive(schema, encoder, decoder)
     final case class TestCaseAdditionalVariablesRequestDto(
         variableTypes: Map[String, TypingResultInJson],
         nodeData: NodeData,
         scenarioProperties: ProcessProperties,
     )
-
-    object TestCaseAdditionalVariablesRequestDto {
-      import io.circe.generic.semiauto._
-
-      implicit lazy val requestDtoEncoder: Encoder[TestCaseAdditionalVariablesRequestDto] =
-        deriveEncoder[TestCaseAdditionalVariablesRequestDto]
-
-      implicit lazy val requestDtoDecoder: Decoder[TestCaseAdditionalVariablesRequestDto] =
-        deriveDecoder[TestCaseAdditionalVariablesRequestDto]
-
-      implicit lazy val requestDtoSchema: Schema[TestCaseAdditionalVariablesRequestDto] = {
-        import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas._
-        Schema.derived[TestCaseAdditionalVariablesRequestDto]
-      }
-
-    }
 
     @derive(schema, encoder, decoder)
     final case class TestCaseAdditionalVariablesResponseDto(
