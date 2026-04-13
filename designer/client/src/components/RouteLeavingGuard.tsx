@@ -3,8 +3,8 @@ import { useBlocker } from "react-router-dom";
 
 import { unsavedProcessChanges } from "../common/DialogMessages";
 import { getUserSettings } from "../reducers/selectors/userSettings";
-import { useAppSelector } from "../store/storeHelpers";
 import { flushDraftSave } from "../store/draftAutoSaveListener";
+import { useAppSelector } from "../store/storeHelpers";
 import { useWindows } from "../windowManager/useWindows";
 
 export function useRouteLeavingGuard(when: boolean) {

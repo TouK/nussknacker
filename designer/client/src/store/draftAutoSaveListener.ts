@@ -4,7 +4,7 @@ import { debounce, isEqual } from "lodash";
 
 import type { Action } from "../actions/reduxTypes";
 import type { RootState } from "../reducers";
-import { applyScenarioDraft, scenarioDraftClear, scenarioDraftSet } from "../reducers/scenarioDraft";
+import { applyScenarioDraft, draftKey, scenarioDraftClear, scenarioDraftSet } from "../reducers/scenarioDraft";
 import {
     getProcessName,
     getProcessVersionId,
@@ -49,9 +49,14 @@ draftAutoSaveListener.startListening({
     },
     effect: (_action, api) => {
         const state = api.getState();
+        const processName = getProcessName(state);
+        const baseVersionId = getProcessVersionId(state);
+        if (!processName) return;
         if (state.graphReducer.past.length === 0) {
             debouncedPersist.cancel();
-            if (state.scenarioDraft) api.dispatch(scenarioDraftClear());
+            if (state.scenarioDraft[draftKey(processName, baseVersionId)]) {
+                api.dispatch(scenarioDraftClear(processName, baseVersionId));
+            }
             return;
         }
         debouncedPersist(api.dispatch, state);
@@ -71,15 +76,13 @@ draftAutoSaveListener.startListening({
     effect: (_action, api) => {
         const state = api.getState();
         const processName = getProcessName(state);
-        const draft = state.scenarioDraft;
-        if (!processName || !draft || draft.processName !== processName) return;
+        if (!processName) return;
+        const baseVersionId = getProcessVersionId(state);
+        const draft = state.scenarioDraft[draftKey(processName, baseVersionId)];
+        if (!draft) return;
 
-        if (draft.baseVersionId !== getProcessVersionId(state)) {
-            api.dispatch(scenarioDraftClear());
-            return;
-        }
         if (isEqual(draft.scenarioGraph, getScenarioGraph(state))) {
-            api.dispatch(scenarioDraftClear());
+            api.dispatch(scenarioDraftClear(processName, baseVersionId));
             return;
         }
 
