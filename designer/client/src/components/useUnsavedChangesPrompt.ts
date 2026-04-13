@@ -6,14 +6,16 @@ import { unsavedProcessChanges } from "../common/DialogMessages";
 import { useUserSettings } from "../common/useUserSettings";
 import { draftKey } from "../reducers/scenarioDraft";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../reducers/selectors/graph";
-import { flushDraftSave } from "../store/draftListener";
+import { flushDraftSave, isDraftWritePending } from "../store/draftListener";
 import type { AppState } from "../store/storeHelpers";
 import { useWindows } from "../windowManager/useWindows";
 
 const isDraftInSync = (state: AppState) => {
     const processName = getProcessName(state);
     if (!processName) return true;
-    const draft = state.scenarioDraft[draftKey(processName, getProcessVersionId(state))];
+    const versionId = getProcessVersionId(state);
+    if (isDraftWritePending(processName, versionId)) return false; // backend write still in flight or failed
+    const draft = state.scenarioDraft[draftKey(processName, versionId)];
     if (!draft) return true; // no draft means autosave decided current graph matches the loaded scenario
     return isEqual(draft.scenarioGraph, getScenarioGraph(state));
 };

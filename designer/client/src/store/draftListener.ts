@@ -45,6 +45,15 @@ const debouncedPersist = debounce((dispatch: AppDispatch, state: RootState) => {
 
 export const flushDraftSave = () => debouncedPersist.flush();
 
+// Tracks draft mutations whose backend write is in-flight or has failed. While a key is in
+// this set the in-memory draft has not been safely persisted, so the unsaved-changes prompt /
+// beforeunload alert must remain active.
+const pendingBackendWrites = new Set<string>();
+
+export const hasUnpersistedDraftWrites = () => pendingBackendWrites.size > 0;
+export const isDraftWritePending = (processName: ProcessName, versionId: number | null) =>
+    pendingBackendWrites.has(draftKey(processName, versionId));
+
 // ---- autosave: local edits -> redux slice ---------------------------------------------------
 // When undo history is empty (user returned to the clean loaded scenario), clear the draft so
 // that "no undoable changes" strictly implies "no stored draft".
@@ -82,10 +91,13 @@ draftListener.startListening({
     predicate: (action) => action.type === "SCENARIO_DRAFT_SET" && !wasSyncedFromOtherTab(action),
     effect: (action) => {
         const payload = (action as unknown as { payload: ScenarioDraft }).payload;
+        const key = draftKey(payload.processName, payload.baseVersionId);
+        pendingBackendWrites.add(key);
         getScenarioDraftBackend()
             .set(payload.processName, payload.baseVersionId, JSON.stringify(payload))
+            .then(() => pendingBackendWrites.delete(key))
             .catch(() => {
-                // best-effort
+                // keep key in the pending set — the prompt / beforeunload alert will warn the user
             });
     },
 });
@@ -97,10 +109,13 @@ draftListener.startListening({
             processName: ProcessName;
             baseVersionId: number | null;
         };
+        const key = draftKey(processName, baseVersionId);
+        pendingBackendWrites.add(key);
         getScenarioDraftBackend()
             .remove(processName, baseVersionId)
+            .then(() => pendingBackendWrites.delete(key))
             .catch(() => {
-                // best-effort
+                // keep key in the pending set
             });
     },
 });
