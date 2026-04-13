@@ -141,6 +141,12 @@ export type TestsActions =
     | {
           type: "CLEAR_TEST_ASSERTIONS_RESULTS";
       }
+    | {
+          type: "CLEAR_TEST_CASE_NODE_ASSERTION_RESULTS";
+          testCaseId: string;
+          nodeId: string;
+          assertionIndex: number;
+      }
     | { type: "CHANGE_ACTIVE_TEST_CASE"; testCaseId: string };
 
 type TestFn = (

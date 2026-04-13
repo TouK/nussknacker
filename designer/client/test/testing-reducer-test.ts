@@ -80,6 +80,26 @@ describe("testingReducer", () => {
         expect(state.testCasesResults).toBeNull();
     });
 
+    it("clears result for single assertion of a node on CLEAR_TEST_CASE_NODE_ASSERTION_RESULTS", () => {
+        const nodeId = "node1";
+        const testCaseId = "tc-other";
+
+        const assertions = { [nodeId]: [{ type: "SuccessfulAssertion" as const }] };
+        const existing = completedResult(assertions);
+        const initial = { ...initialTestingState, testCasesResults: { [testCaseId]: { status: "loaded" as const, results: existing } } };
+
+        const newResults = completedResult({ [nodeId]: [] });
+
+        const state = testingReducer(initial, {
+            type: "CLEAR_TEST_CASE_NODE_ASSERTION_RESULTS",
+            testCaseId,
+            assertionIndex: 0,
+            nodeId: nodeId,
+        });
+
+        expect(state.testCasesResults[testCaseId]).toEqual({ status: "loaded", results: newResults });
+    });
+
     describe("DELETE_NODES", () => {
         it("removes deleted node from loaded assertionsResults", () => {
             const assertions = { node1: [{ type: "SuccessfulAssertion" as const }], node2: [{ type: "SuccessfulAssertion" as const }] };
