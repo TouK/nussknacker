@@ -35,7 +35,7 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
             const parsed = JSON.parse(trimmed);
             return Array.isArray(parsed) ? parsed.length : 1;
         } catch {
-            return splitNdjsonLines(trimmed).length;
+            return trimmed.split("\n").filter((l) => l.trim()).length;
         }
     }, [text]);
 
