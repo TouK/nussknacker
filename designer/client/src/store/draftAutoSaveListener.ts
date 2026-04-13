@@ -2,7 +2,12 @@ import type { ThunkDispatch } from "@reduxjs/toolkit";
 import { createListenerMiddleware } from "@reduxjs/toolkit";
 import { debounce, isEqual } from "lodash";
 
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import React from "react";
+import Notifications from "react-notification-system-redux";
+
 import type { Action } from "../actions/reduxTypes";
+import Notification from "../components/notifications/Notification";
 import type { RootState } from "../reducers";
 import { applyScenarioDraft, draftKey, scenarioDraftClear, scenarioDraftSet } from "../reducers/scenarioDraft";
 import {
@@ -17,6 +22,8 @@ const isDraftEnabled = (state: RootState) => !!getUserSettings(state)["scenario.
 type AppDispatch = ThunkDispatch<RootState, undefined, Action>;
 
 export const draftAutoSaveListener = createListenerMiddleware<RootState, AppDispatch>();
+
+const DRAFT_OVERWRITTEN_UID = "scenario-draft-overwritten";
 
 const debouncedPersist = debounce((dispatch: AppDispatch, state: RootState) => {
     const processName = getProcessName(state);
@@ -52,6 +59,7 @@ draftAutoSaveListener.startListening({
         const processName = getProcessName(state);
         const baseVersionId = getProcessVersionId(state);
         if (!processName) return;
+        api.dispatch(Notifications.hide(DRAFT_OVERWRITTEN_UID));
         if (state.graphReducer.past.length === 0) {
             debouncedPersist.cancel();
             if (state.scenarioDraft[draftKey(processName, baseVersionId)]) {
@@ -87,5 +95,28 @@ draftAutoSaveListener.startListening({
         }
 
         api.dispatch(applyScenarioDraft(draft.scenarioGraph));
+    },
+});
+
+// Warn the user when another tab updates the draft for the scenario/version they are looking at —
+// their in-memory graph no longer matches the persisted draft.
+draftAutoSaveListener.startListening({
+    predicate: (action) => action.type === "SCENARIO_DRAFT_SET" && (action as { $isSync?: boolean }).$isSync === true,
+    effect: (action, api) => {
+        const payload = (action as unknown as { payload: { processName: string; baseVersionId: number | null } }).payload;
+        const state = api.getState();
+        if (payload.processName !== getProcessName(state) || payload.baseVersionId !== getProcessVersionId(state)) return;
+        api.dispatch(
+            Notifications.warning({
+                uid: DRAFT_OVERWRITTEN_UID,
+                autoDismiss: 0,
+                dismissible: "button",
+                children: React.createElement(Notification, {
+                    type: "warning",
+                    icon: React.createElement(WarningAmberOutlinedIcon),
+                    message: "Draft for this version was updated in another session — refresh to see the latest changes.",
+                }),
+            }),
+        );
     },
 });
