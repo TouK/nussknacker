@@ -9,6 +9,8 @@ import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService/instance";
 import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
+import { flushDraftSave } from "../../../../store/draftAutoSaveListener";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 
@@ -17,6 +19,7 @@ export const useArchiveHelper = (processName: string) => {
     const navigate = useNavigate();
     const { confirm } = useWindows();
     const nothingToSave = useAppSelector(isPristine);
+    const draftEnabled = useAppSelector((state) => !!getUserSettings(state)["scenario.enableDraft"]);
     const { redirectAfterArchive } = useAppSelector(getFeatureSettings);
 
     const archive = useCallback(async () => {
@@ -42,6 +45,11 @@ export const useArchiveHelper = (processName: string) => {
                 return archive();
             }
 
+            if (draftEnabled) {
+                flushDraftSave();
+                return archive();
+            }
+
             return confirm({
                 text: unsavedProcessChanges(),
                 onConfirmCallback: async (discardChangesConfirmed) => {
@@ -53,7 +61,7 @@ export const useArchiveHelper = (processName: string) => {
                 denyText: "CANCEL",
             });
         },
-        [archive, confirm, nothingToSave],
+        [archive, confirm, draftEnabled, nothingToSave],
     );
 
     return { confirmArchiveCallback };
