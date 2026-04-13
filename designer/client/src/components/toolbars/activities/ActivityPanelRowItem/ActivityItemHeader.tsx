@@ -13,11 +13,10 @@ import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getProcessVersionId, getScenario, isPristine } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { flushDraftSave } from "../../../../store/draftListener";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { InfoTooltip } from "../../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
+import { useUnsavedChangesPrompt } from "../../../useUnsavedChangesPrompt";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 import UrlIcon from "../../../UrlIcon";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
@@ -193,11 +192,10 @@ const WithOpenVersion = ({
     activityType: ActivityType;
 }>) => {
     const nothingToSave = useAppSelector(isPristine);
-    const draftEnabled = useAppSelector((state) => !!getUserSettings(state)["scenario.enableDraft"]);
     const scenario = useAppSelector(getScenario);
     const { name } = scenario || {};
     const dispatch = useAppDispatch();
-    const { confirm } = useWindows();
+    const { promptOrProceed } = useUnsavedChangesPrompt();
 
     const doChangeVersion = useCallback(
         (scenarioId: number) => {
@@ -209,18 +207,9 @@ const WithOpenVersion = ({
     const changeVersion = useCallback(
         (scenarioId: number) => {
             if (nothingToSave) return doChangeVersion(scenarioId);
-            if (draftEnabled) {
-                flushDraftSave();
-                return doChangeVersion(scenarioId);
-            }
-            return confirm({
-                text: DialogMessages.unsavedProcessChanges(),
-                onConfirmCallback: (confirmed) => confirmed && doChangeVersion(scenarioId),
-                confirmText: "DISCARD",
-                denyText: "CANCEL",
-            });
+            promptOrProceed(() => doChangeVersion(scenarioId));
         },
-        [confirm, doChangeVersion, draftEnabled, nothingToSave],
+        [doChangeVersion, nothingToSave, promptOrProceed],
     );
 
     return (

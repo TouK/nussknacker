@@ -1,15 +1,11 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useBlocker } from "react-router-dom";
 
-import { unsavedProcessChanges } from "../common/DialogMessages";
-import { getUserSettings } from "../reducers/selectors/userSettings";
 import { flushDraftSave } from "../store/draftListener";
-import { useAppSelector } from "../store/storeHelpers";
-import { useWindows } from "../windowManager/useWindows";
+import { useUnsavedChangesPrompt } from "./useUnsavedChangesPrompt";
 
 export function useRouteLeavingGuard(when: boolean) {
-    const { confirm } = useWindows();
-    const draftEnabled = useAppSelector((state) => !!getUserSettings(state)["scenario.enableDraft"]);
+    const { draftEnabled, promptOrProceed } = useUnsavedChangesPrompt();
 
     // When drafts are enabled, unsaved edits are auto-persisted — no need to block navigation,
     // but we must flush any pending debounced save before the route actually changes.
@@ -17,17 +13,6 @@ export function useRouteLeavingGuard(when: boolean) {
 
     const { proceed, reset, state } = useBlocker(
         ({ currentLocation, nextLocation }) => shouldBlock && currentLocation.pathname !== nextLocation.pathname,
-    );
-
-    const showModal = useCallback(
-        () =>
-            confirm({
-                text: unsavedProcessChanges(),
-                onConfirmCallback: (confirmed) => (confirmed ? proceed() : reset()),
-                confirmText: "DISCARD",
-                denyText: "CANCEL",
-            }),
-        [confirm, proceed, reset],
     );
 
     // fallback for navigation outside router
@@ -55,9 +40,9 @@ export function useRouteLeavingGuard(when: boolean) {
 
     useEffect(() => {
         if (state === "blocked") {
-            showModal();
+            promptOrProceed(proceed, reset);
         }
-    }, [showModal, state]);
+    }, [promptOrProceed, proceed, reset, state]);
 }
 
 export function RouteLeavingGuard({ when }: { when?: boolean }): React.JSX.Element {

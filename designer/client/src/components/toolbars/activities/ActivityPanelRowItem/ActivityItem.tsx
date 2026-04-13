@@ -7,6 +7,7 @@ import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import { displayScenarioVersion } from "../../../../actions/nk/process";
 import { formatDateTime } from "../../../../common/DateUtils";
+import { useUserSettings } from "../../../../common/useUserSettings";
 import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { draftKey, scenarioDraftClear } from "../../../../reducers/scenarioDraft";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
@@ -41,6 +42,7 @@ const LocalDraftNotice = ({ versionId }: { versionId: number | null }) => {
     const dispatch = useAppDispatch();
     const processName = useAppSelector(getProcessName);
     const currentVersionId = useAppSelector(getProcessVersionId);
+    const [draftEnabled] = useUserSettings("scenario.enableDraft");
     const draft = useAppSelector((state) => (processName ? state.scenarioDraft[draftKey(processName, versionId)] : undefined));
 
     const hasUndoHistory = useAppSelector((state) => state.graphReducer.past.length > 0);
@@ -58,7 +60,7 @@ const LocalDraftNotice = ({ versionId }: { versionId: number | null }) => {
         }
     }, [dispatch, processName, versionId, hasUndoHistory]);
 
-    if (!draft) return null;
+    if (!draftEnabled || !draft) return null;
 
     return (
         <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">

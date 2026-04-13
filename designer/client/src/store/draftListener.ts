@@ -1,6 +1,6 @@
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import type { ThunkDispatch } from "@reduxjs/toolkit";
-import { createListenerMiddleware } from "@reduxjs/toolkit";
+import { createListenerMiddleware, createSelector } from "@reduxjs/toolkit";
 import { debounce, isEqual } from "lodash";
 import React from "react";
 import Notifications from "react-notification-system-redux";
@@ -23,7 +23,7 @@ import { getUserSettings } from "../reducers/selectors/userSettings";
 
 type AppDispatch = ThunkDispatch<RootState, undefined, Action>;
 
-const isDraftEnabled = (state: RootState) => !!getUserSettings(state)["scenario.enableDraft"];
+const isDraftEnabled = createSelector(getUserSettings, (settings) => !!settings["scenario.enableDraft"]);
 const wasSyncedFromOtherTab = (action: unknown) => (action as { $isSync?: boolean }).$isSync === true;
 
 const DRAFT_OVERWRITTEN_UID = "scenario-draft-overwritten";
