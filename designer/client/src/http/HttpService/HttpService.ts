@@ -37,7 +37,6 @@ import { API_URL } from "../../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import type { BackendNotification } from "../../containers/Notifications";
 import { handleAxiosError } from "../../devHelpers";
-import { isDraftHackEnabled, packDraftIntoStickyNote, unpackDraftFromStickyNote } from "../../draftHack";
 import type { TestCase } from "../../reducers/graph/testCase";
 import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
@@ -181,20 +180,9 @@ export class HttpService {
     ): Promise<AxiosResponse<Scenario>> {
         let url = `/processes/${encodeURIComponent(processName)}`;
         if (options.versionId) url += `/${options.versionId}`;
-        return api
-            .get<Scenario>(url, {
-                params: { skipValidateAndResolve: options.skipValidation },
-            })
-            .then((response) => {
-                if (isDraftHackEnabled()) {
-                    const restored = unpackDraftFromStickyNote(response.data.scenarioGraph);
-                    if (restored) {
-                        this.#notificationActions?.warn("[DraftHack] Detected draft sticky note, restoring scenario graph.");
-                        response.data.scenarioGraph = restored;
-                    }
-                }
-                return response;
-            });
+        return api.get<Scenario>(url, {
+            params: { skipValidateAndResolve: options.skipValidation },
+        });
     }
 
     /**
@@ -843,33 +831,12 @@ export class HttpService {
 
     //to prevent closing edit node modal and corrupting graph display
     saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
-        const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
         const data = {
-            scenarioGraph: sanitized,
+            scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
             comment: comment,
             scenarioLabels: labels,
         };
         return api.put(`/processes/${encodeURIComponent(processName)}`, data).catch((error) => {
-            if (isDraftHackEnabled()) {
-                const draftGraph = packDraftIntoStickyNote(sanitized);
-                const draftData = {
-                    scenarioGraph: draftGraph,
-                    comment: "draft hack: saving state as sticky note",
-                    scenarioLabels: labels,
-                };
-                return api
-                    .put(`/processes/${encodeURIComponent(processName)}`, draftData)
-                    .then((res) => {
-                        this.#notificationActions?.warn(
-                            "[DraftHack] Save failed due to validation. Scenario state saved as draft sticky note.",
-                        );
-                        return res;
-                    })
-                    .catch((retryError) => {
-                        this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
-                        return Promise.reject(retryError);
-                    });
-            }
             this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
             return Promise.reject(error);
         });

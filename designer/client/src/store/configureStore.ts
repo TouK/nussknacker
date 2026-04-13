@@ -10,6 +10,7 @@ import { thunk } from "redux-thunk";
 import type { Action } from "../actions/reduxTypes";
 import type { RootState } from "../reducers";
 import { rootReducer } from "../reducers";
+import { draftAutoSaveMiddleware } from "./draftAutoSaveMiddleware";
 import { scenarioValidationMiddleware } from "./scenarioValidationMiddleware";
 
 // avoid polluting devtools with frequent refresh actions
@@ -48,6 +49,7 @@ export const setupStore = () => {
                             "TOGGLE_COMPONENT_GROUP_TOOLBOX",
                         ],
                     }),
+                    draftAutoSaveMiddleware,
                     scenarioValidationMiddleware([
                         "NODE_ADDED",
                         "DELETE_NODES",
