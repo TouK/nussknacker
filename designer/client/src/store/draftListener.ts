@@ -11,13 +11,7 @@ import type { ProcessName } from "../components/Process/types";
 import { getScenarioDraftBackend } from "../draftStorage";
 import type { RootState } from "../reducers";
 import type { ScenarioDraft, ScenarioDraftState } from "../reducers/scenarioDraft";
-import {
-    applyScenarioDraft,
-    draftKey,
-    scenarioDraftClear,
-    scenarioDraftHydrate,
-    scenarioDraftSet,
-} from "../reducers/scenarioDraft";
+import { applyScenarioDraft, draftKey, scenarioDraftClear, scenarioDraftHydrate, scenarioDraftSet } from "../reducers/scenarioDraft";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../reducers/selectors/graph";
 import { getUserSettings } from "../reducers/selectors/userSettings";
 
@@ -35,9 +29,9 @@ const debouncedPersist = debounce((dispatch: AppDispatch, state: RootState) => {
     if (!processName) return;
     dispatch(
         scenarioDraftSet({
-            processName,
+            id: processName,
             baseVersionId: getProcessVersionId(state),
-            scenarioGraph: getScenarioGraph(state),
+            data: getScenarioGraph(state),
             updatedAt: new Date().toISOString(),
         }),
     );
@@ -91,10 +85,10 @@ draftListener.startListening({
     predicate: (action) => action.type === "SCENARIO_DRAFT_SET" && !wasSyncedFromOtherTab(action),
     effect: (action) => {
         const payload = (action as unknown as { payload: ScenarioDraft }).payload;
-        const key = draftKey(payload.processName, payload.baseVersionId);
+        const key = draftKey(payload.id, payload.baseVersionId);
         pendingBackendWrites.add(key);
         getScenarioDraftBackend()
-            .set(payload.processName, payload.baseVersionId, JSON.stringify(payload))
+            .set(payload.id, payload.baseVersionId, payload)
             .then(() => pendingBackendWrites.delete(key))
             .catch(() => {
                 // keep key in the pending set — the prompt / beforeunload alert will warn the user
@@ -142,11 +136,7 @@ draftListener.startListening({
                 const entries = await getScenarioDraftBackend().list(processName);
                 const drafts: ScenarioDraftState = {};
                 for (const { versionId, value } of entries) {
-                    try {
-                        drafts[draftKey(processName, versionId)] = JSON.parse(value) as ScenarioDraft;
-                    } catch {
-                        // skip corrupted entry
-                    }
+                    drafts[draftKey(processName, versionId)] = value;
                 }
                 api.dispatch(scenarioDraftHydrate(drafts));
             } catch {
@@ -159,11 +149,11 @@ draftListener.startListening({
         const draft = state.scenarioDraft[draftKey(processName, versionId)];
         if (!draft) return;
 
-        if (isEqual(draft.scenarioGraph, getScenarioGraph(state))) {
+        if (isEqual(draft.data, getScenarioGraph(state))) {
             api.dispatch(scenarioDraftClear(processName, versionId));
             return;
         }
-        api.dispatch(applyScenarioDraft(draft.scenarioGraph));
+        api.dispatch(applyScenarioDraft(draft.data));
     },
 });
 

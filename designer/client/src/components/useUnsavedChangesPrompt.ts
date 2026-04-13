@@ -17,7 +17,7 @@ const isDraftInSync = (state: AppState) => {
     if (isDraftWritePending(processName, versionId)) return false; // backend write still in flight or failed
     const draft = state.scenarioDraft[draftKey(processName, versionId)];
     if (!draft) return true; // no draft means autosave decided current graph matches the loaded scenario
-    return isEqual(draft.scenarioGraph, getScenarioGraph(state));
+    return isEqual(draft.data, getScenarioGraph(state));
 };
 
 /**

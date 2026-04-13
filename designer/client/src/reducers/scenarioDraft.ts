@@ -1,18 +1,13 @@
 import type { Reducer } from "../actions/reduxTypes";
 import type { ProcessName, ProcessVersionId } from "../components/Process/types";
+import type { ScenarioDraft } from "../draftStorage";
 import type { ScenarioGraph } from "../types/scenarioGraph";
 
-export interface ScenarioDraft {
-    processName: ProcessName;
-    baseVersionId: ProcessVersionId | null;
-    scenarioGraph: ScenarioGraph;
-    updatedAt: string;
-}
+export type { ScenarioDraft } from "../draftStorage";
 
 export type ScenarioDraftState = Record<string, ScenarioDraft>;
 
-export const draftKey = (processName: ProcessName, baseVersionId: ProcessVersionId | null) =>
-    `${processName}::${baseVersionId ?? "null"}`;
+export const draftKey = (processName: ProcessName, baseVersionId: ProcessVersionId | null) => `${processName}::${baseVersionId ?? "null"}`;
 
 export type ScenarioDraftActions =
     | { type: "SCENARIO_DRAFT_SET"; payload: ScenarioDraft }
@@ -20,7 +15,10 @@ export type ScenarioDraftActions =
     | { type: "SCENARIO_DRAFT_HYDRATE"; drafts: ScenarioDraftState }
     | { type: "APPLY_SCENARIO_DRAFT"; scenarioGraph: ScenarioGraph };
 
-export const scenarioDraftSet = (payload: ScenarioDraft): ScenarioDraftActions => ({ type: "SCENARIO_DRAFT_SET", payload });
+export const scenarioDraftSet = (payload: ScenarioDraft): ScenarioDraftActions => ({
+    type: "SCENARIO_DRAFT_SET",
+    payload,
+});
 export const scenarioDraftClear = (processName: ProcessName, baseVersionId: ProcessVersionId | null): ScenarioDraftActions => ({
     type: "SCENARIO_DRAFT_CLEAR",
     processName,
@@ -35,7 +33,7 @@ export const applyScenarioDraft = (scenarioGraph: ScenarioGraph): ScenarioDraftA
 export const scenarioDraft: Reducer<ScenarioDraftState> = (state = {}, action) => {
     switch (action.type) {
         case "SCENARIO_DRAFT_SET": {
-            const k = draftKey(action.payload.processName, action.payload.baseVersionId);
+            const k = draftKey(action.payload.id, action.payload.baseVersionId);
             return { ...state, [k]: action.payload };
         }
         case "SCENARIO_DRAFT_CLEAR": {

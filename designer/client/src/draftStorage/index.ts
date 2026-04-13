@@ -1,13 +1,14 @@
 import { localStorageBackend } from "./localStorageBackend";
-import type { ScenarioDraftBackend } from "./types";
+import type { Draft, DraftBackend } from "./types";
+
+export type ScenarioDraft = Draft;
+export type ScenarioDraftBackend = DraftBackend;
 
 // Swap this at bootstrap with a remote CRUD-backed implementation to persist drafts server-side.
 let backend: ScenarioDraftBackend = localStorageBackend;
 
-export const setScenarioDraftBackend = (next: ScenarioDraftBackend) => {
+export const setScenarioDraftBackend = (next: typeof backend) => {
     backend = next;
 };
 
-export const getScenarioDraftBackend = (): ScenarioDraftBackend => backend;
-
-export type { ScenarioDraftBackend } from "./types";
+export const getScenarioDraftBackend = () => backend;
