@@ -3,7 +3,7 @@ import { useUserSettings } from "../../../common/useUserSettings";
 import type { TestCase } from "../../../reducers/graph/testCase";
 import { getSourceNodes } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import type { TestingDataRecords } from "../../modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../modals/TestingDataRecords/types";
 import { safeParseExpression } from "../../modals/TestingDataRecords/utils";
 import { useOpenNodeTestingTab } from "./useOpenNodeTestingTab";
 

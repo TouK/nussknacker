@@ -1,30 +1,25 @@
 import React, { useCallback, useEffect, useState } from "react";
 
-import HttpService from "../../../http/HttpService/instance";
-import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeValidationError } from "../../../types/validation";
 import { JsonEditor } from "../../graph/node-modal/editors/expression/JsonEditor";
 import { EditorType, ExpressionLang } from "../../graph/node-modal/editors/expression/types";
 import type { VariablesCell } from "./CellContent";
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 interface VariablesEditorProps {
     value: VariablesCell;
     onChange: (cell: VariablesCell) => void;
+    onValidate: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
 }
-export const VariablesEditor = ({ value, onChange }: VariablesEditorProps) => {
+
+export const VariablesEditor = ({ value, onChange, onValidate }: VariablesEditorProps) => {
     const [validationErrors, setValidationErrors] = useState<NodeValidationError[]>([]);
-    const scenarioName = useAppSelector(getProcessName);
-    const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const handleValidateData = useCallback(
         (row: TestingDataRecords) => {
-            HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row).then(({ data }) => {
-                setValidationErrors(data.validationErrors);
-            });
+            onValidate(row).then(({ data }) => setValidationErrors(data.validationErrors));
         },
-        [scenarioGraph, scenarioName],
+        [onValidate],
     );
 
     useEffect(() => {

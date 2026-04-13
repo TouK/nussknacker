@@ -41,8 +41,6 @@ trait ScenarioTestingApiHttpServiceGenericSpec
     with Matchers
     with LazyLogging {
 
-  import pl.touk.nussknacker.engine.spel.SpelExtension._
-
   protected val generatedSamplesCount = 3
 
   protected def expectedTestDataJson: String
@@ -150,7 +148,7 @@ trait ScenarioTestingApiHttpServiceGenericSpec
 
   "The endpoint for generating test parameters should" - {
     "properly generate parameters for source with support of testParametersDefinition" in {
-      shouldProperlyGetTestParameters()
+      shouldProperlyGetTestCapabilities()
     }
     "return error if scenario does not exists" in {
       val notExistingScenarioName = exampleScenario.name.value + "_2"
@@ -231,9 +229,21 @@ trait ScenarioTestingApiHttpServiceGenericSpec
     }
   }
 
+  "The endpoint for source capabilities should" - {
+    "return source parameters for a single source node" in {
+      shouldProperlyGetTestSourceCapabilities()
+    }
+  }
+
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
       shouldValidateParametersProperly()
+    }
+  }
+
+  "The endpoint for source validate should" - {
+    "return no errors on valid parameters" in {
+      shouldValidateSourceParametersProperly()
     }
   }
 

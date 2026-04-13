@@ -43,6 +43,24 @@ export interface TestFormParameters {
     parameters: UIParameter[];
 }
 
+export type SourceTestCapabilities = {
+    testWithParameters: SourceTestCapabilitiesTestWithParameters;
+};
+
+export type SourceTestCapabilitiesTestWithParameters =
+    | SourceTestCapabilitiesTestWithParametersAvailable
+    | SourceTestCapabilitiesTestWithParametersNotAvailable;
+
+type SourceTestCapabilitiesTestWithParametersAvailable = {
+    status: TestCapabilityStatus.AVAILABLE;
+    sourceParameters: TestFormParameters;
+};
+
+interface SourceTestCapabilitiesTestWithParametersNotAvailable {
+    status: TestCapabilityStatus.NOT_AVAILABLE;
+    reason: string;
+}
+
 export interface NodeTestResults {
     externalServiceInvocationResults: ExternalServiceInvocationResultJson[];
     expressionEvaluationResults: ExpressionEvaluationResultJson[];

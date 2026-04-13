@@ -3,10 +3,11 @@ package pl.touk.nussknacker.ui.api
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.stream.scaladsl.Source
-import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -25,9 +26,14 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ScenarioTest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
-  ScenarioTestCapabilities
+  ScenarioTestCapabilities,
+  SourceCapabilitiesRequestDto,
+  SourceTestCapabilities
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
+  SourceTestWithParametersDetails,
+  TestWithParametersDetails
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   PerformTestRequestJsonBody,
   PerformTestRequestMultiParts,
@@ -52,7 +58,6 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioNodeValidationErrors
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
-import sttp.model.sse.ServerSentEvent
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -167,6 +172,46 @@ class ScenarioTestingApiHttpService(
   }
 
   expose {
+    scenarioTestingApiEndpoints.sourceCapabilitiesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            sourceNodeData <- EitherT.fromEither[Future](request.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(ErrorResult(s"Expected SourceNodeData but got ${other.getClass.getSimpleName}"): TestingError)
+            })
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            metaData         = request.scenarioProperties.toMetaData(scenarioName)
+            sourceParameters = scenarioTestService.getSourceTestParameters(metaData, sourceNodeData)
+            result = SourceTestCapabilities(
+              testWithParameters = sourceParameters match {
+                case Right(params) =>
+                  CapabilityStatus.Available(
+                    SourceTestWithParametersDetails(
+                      UISourceParameters(
+                        sourceNodeData.id.value,
+                        sourceNodeData.name.value,
+                        params.map(DefinitionsService.createUIParameter)
+                      )
+                    )
+                  )
+                case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
+                  CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+                case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_, _)) =>
+                  CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+              }
+            )
+          } yield result
+        }
+      }
+  }
+
+  expose {
     scenarioTestingApiEndpoints.scenarioTestEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
@@ -229,6 +274,34 @@ class ScenarioTestingApiHttpService(
               scenarioTestData = request.testData,
             )
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
+        }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.sourceTestValidationEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            sourceNodeData <- EitherT.fromEither[Future](request.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(ErrorResult(s"Expected SourceNodeData but got ${other.getClass.getSimpleName}"): TestingError)
+            })
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+            metaData  = request.scenarioProperties.toMetaData(scenarioName)
+            params <- EitherT.fromEither[Future](
+              scenarioTestService.getSourceTestParameters(metaData, sourceNodeData).left.map(toDto(_, sourceNodeData))
+            )
+          } yield ParametersValidationResultDto(
+            validator.validate(request.sourceParameters, Map(sourceNodeData.id -> params))(metaData),
+            validationPerformed = true
+          )
         }
       }
   }
@@ -440,8 +513,13 @@ class ScenarioTestingApiHttpService(
       }
   }
 
-  private def toDto(error: ParametersDefinitionError, scenarioGraph: ScenarioGraph): TestingError = {
-    val nodeNamesById = extractNodeNamesById(scenarioGraph)
+  private def toDto(error: ParametersDefinitionError, scenarioGraph: ScenarioGraph): TestingError =
+    toDto(error, extractNodeNamesById(scenarioGraph))
+
+  private def toDto(error: ParametersDefinitionError, sourceNodeData: SourceNodeData): TestingError =
+    toDto(error, Map(sourceNodeData.id -> sourceNodeData.name.value))
+
+  private def toDto(error: ParametersDefinitionError, nodeNamesById: Map[NodeId, String]): TestingError = {
     error match {
       case ParametersDefinitionError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(

@@ -6,11 +6,12 @@ import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/gr
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, PropertiesType } from "../../../types/node";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
-import type { TestingDataRecords } from "./Table";
+import { cleanProperties } from "../../graph/node-modal/requestSourceAddons";
+import type { TestingDataRecords } from "./types";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
 
-export const useDataRecordsActions = () => {
+export const useDataRecordsActions = (node: NodeType, scenarioProperties: PropertiesType) => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
@@ -47,7 +48,7 @@ export const useDataRecordsActions = () => {
                 const { data } = await HttpService.fetchTestDataForSingleSource(
                     scenarioName,
                     scenarioProperties,
-                    nodeData,
+                    cleanProperties(nodeData),
                     numberOfSamples,
                 );
                 dispatch(setTestCaseInputs((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
@@ -58,7 +59,7 @@ export const useDataRecordsActions = () => {
 
     const validateEditedRow = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
-            HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row).then(({ data }) =>
+            HttpService.validateSourceNodeTestData(scenarioName, scenarioProperties, cleanProperties(node), row).then(({ data }) =>
                 setCellErrors((prev) => {
                     const withoutRow = prev.filter((e) => e.y !== rowIndex || e.columnName !== "variables");
                     const newErrors: CellError[] = data.validationErrors.map((validationError) => ({
@@ -72,7 +73,7 @@ export const useDataRecordsActions = () => {
                 }),
             );
         },
-        [scenarioName, scenarioGraph],
+        [scenarioName, node, scenarioProperties],
     );
 
     const handleRowAdded = React.useCallback(

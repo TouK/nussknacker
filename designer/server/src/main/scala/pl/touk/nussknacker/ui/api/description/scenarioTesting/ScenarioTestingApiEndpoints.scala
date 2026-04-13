@@ -20,13 +20,16 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationResultDto,
   TestSourceParameters
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
-  ScenarioTestCapabilities
+  ScenarioTestCapabilities,
+  SourceCapabilitiesRequestDto,
+  SourceTestCapabilities
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetching.FetchSourcesLiveDataRequest
@@ -55,11 +58,13 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
   NoScenario,
   NoSourcesWithLiveDataFetchingSupport
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.{
+  ScenarioTestValidationRequest,
+  SourceTestValidationRequestDto
+}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.capabilities.pekko.PekkoStreams
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.model.sse.ServerSentEvent
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
@@ -123,6 +128,23 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
+  def sourceCapabilitiesEndpoint: SecuredEndpoint[
+    (ProcessName, SourceCapabilitiesRequestDto),
+    TestingError,
+    SourceTestCapabilities,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Returns test parameters definition for a single source node")
+      .tag("Testing")
+      .post
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "sourceCapabilities")
+      .in(jsonBody[SourceCapabilitiesRequestDto])
+      .out(statusCode(Ok).and(jsonBody[SourceTestCapabilities]))
+      .errorOut(testingErrorOutput)
+      .withSecurity(auth)
+
+  // This endpoint is unused on FE, can be removed later.
   def scenarioTestValidationEndpoint: SecuredEndpoint[
     (ProcessName, ScenarioTestValidationRequest),
     TestingError,
@@ -187,6 +209,22 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
   }
+
+  def sourceTestValidationEndpoint: SecuredEndpoint[
+    (ProcessName, SourceTestValidationRequestDto),
+    TestingError,
+    ParametersValidationResultDto,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Validate test parameters for a single source node")
+      .tag("Testing")
+      .post
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "sourceValidate")
+      .in(jsonBody[SourceTestValidationRequestDto])
+      .out(statusCode(Ok).and(jsonBody[ParametersValidationResultDto]))
+      .errorOut(testingErrorOutput)
+      .withSecurity(auth)
 
   def scenarioTestEndpoint: SecuredEndpoint[
     (

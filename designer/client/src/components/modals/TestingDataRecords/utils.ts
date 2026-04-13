@@ -2,10 +2,11 @@ import type { Item } from "@glideapps/glide-data-grid";
 import { type EditListItem } from "@glideapps/glide-data-grid";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
+import type { UIParameter } from "../../../types/definition";
 import { isSourceSelectCell, isVariablesCell } from "./CellContent";
 import { formatDataRecordsVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 export const mapInputDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords) => {
     let parsedVariables: unknown;
@@ -36,27 +37,15 @@ export function safeParseExpression<T = unknown>(expr: string): T {
     }
 }
 
-export function buildDefaultVariablesMap(sourceParameters?: TestFormParameters[]): Record<string, string> {
-    const defaultsBySourceId: Record<string, string> = {};
-    if (!sourceParameters) return defaultsBySourceId;
-
-    for (const sourceParameter of sourceParameters) {
-        let values: unknown = {};
-        const params = sourceParameter?.parameters ?? [];
-        for (const param of params) {
-            const expr = param?.defaultValue?.expression ?? "";
-            values = safeParseExpression(expr);
-        }
-
-        try {
-            defaultsBySourceId[sourceParameter.sourceId] = JSON.stringify(values, null, 2);
-        } catch {
-            // If stringify fails for any reason, fall back to empty string
-            defaultsBySourceId[sourceParameter.sourceId] = "";
-        }
+export function buildDefaultVariables(parameters?: UIParameter[]): string {
+    // Source test parameters always contain a single "Input variables"
+    const expression = parameters?.[0]?.defaultValue?.expression ?? "";
+    const values = safeParseExpression(expression);
+    try {
+        return values ? JSON.stringify(values, null, 2) : "";
+    } catch {
+        return "";
     }
-
-    return defaultsBySourceId;
 }
 
 export function computeVariablesRowHeight(variables: string, columnInnerWidth: number, themeLineHeight: number): number {
@@ -69,7 +58,7 @@ export function computeVariablesRowHeight(variables: string, columnInnerWidth: n
 export function buildInputDataRecordUpdates(
     changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[],
     data: TestingDataRecords[],
-    defaultVariablesBySourceId: Record<string, string>,
+    defaultVariables: string,
 ): Record<number, TestingDataRecords> {
     const rowUpdates: Record<number, TestingDataRecords> = {};
     changes.forEach(({ location, value }) => {
@@ -91,8 +80,7 @@ export function buildInputDataRecordUpdates(
 
         if (col === 0) {
             if (prevRow?.sourceId !== cellValue) {
-                const resetVars = cellValue ? defaultVariablesBySourceId[cellValue] ?? "" : "";
-                rowUpdates[row] = { ...base, sourceId: cellValue, variables: resetVars };
+                rowUpdates[row] = { ...base, sourceId: cellValue, variables: cellValue ? defaultVariables : "" };
             } else {
                 rowUpdates[row] = { ...base, sourceId: cellValue };
             }

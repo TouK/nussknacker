@@ -12,19 +12,23 @@ import io.circe.generic.extras.{Configuration => CirceConfiguration}
 import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId, TestCaseName}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
   EmptyDetails,
+  SourceTestWithParametersDetails,
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
@@ -52,6 +56,10 @@ object Dtos {
       implicit def codec: circe.Codec[ScenarioTestCapabilities] = deriveCodec
       implicit def schema: Schema[ScenarioTestCapabilities]     = Schema.derived
     }
+
+    implicit def capabilityStatusSchema[T <: TestCapabilityDetails: Schema]: Schema[CapabilityStatus[T]] =
+      Schema.derived
+    implicit def uiSourceParametersSchema: Schema[UISourceParameters] = Schema.anyObject
 
     sealed trait CapabilityStatus[+T <: TestCapabilityDetails]
 
@@ -89,7 +97,6 @@ object Dtos {
           },
         )
 
-      implicit def schema[T <: TestCapabilityDetails: Schema]: Schema[CapabilityStatus[T]] = Schema.derived
     }
 
     sealed trait TestCapabilityDetails
@@ -99,9 +106,16 @@ object Dtos {
           extends TestCapabilityDetails
 
       object TestWithParametersDetails {
-        implicit def codec: circe.Codec[TestWithParametersDetails]        = deriveCodec
-        implicit def uiSourceParametersSchema: Schema[UISourceParameters] = Schema.anyObject
-        implicit def schema: Schema[TestWithParametersDetails]            = Schema.derived
+        implicit def codec: circe.Codec[TestWithParametersDetails] = deriveCodec
+        implicit def schema: Schema[TestWithParametersDetails]     = Schema.derived
+      }
+
+      final case class SourceTestWithParametersDetails(sourceParameters: UISourceParameters)
+          extends TestCapabilityDetails
+
+      object SourceTestWithParametersDetails {
+        implicit def codec: circe.Codec[SourceTestWithParametersDetails] = deriveCodec
+        implicit def schema: Schema[SourceTestWithParametersDetails]     = Schema.derived
       }
 
       final case class EmptyDetails() extends TestCapabilityDetails
@@ -128,6 +142,17 @@ object Dtos {
       override def values: immutable.IndexedSeq[NotAvailableReason] = findValues
       implicit def schema: Schema[NotAvailableReason]               = Schema.derived
     }
+
+    @derive(schema, encoder, decoder)
+    final case class SourceCapabilitiesRequestDto(
+        scenarioProperties: ProcessProperties,
+        nodeData: NodeData
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class SourceTestCapabilities(
+        testWithParameters: CapabilityStatus[SourceTestWithParametersDetails],
+    )
 
   }
 
@@ -212,6 +237,13 @@ object Dtos {
     final case class ScenarioTestValidationRequest(
         scenarioGraph: ScenarioGraph,
         testData: ScenarioTestData,
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class SourceTestValidationRequestDto(
+        scenarioProperties: ProcessProperties,
+        nodeData: NodeData,
+        sourceParameters: TestSourceParameters,
     )
 
   }

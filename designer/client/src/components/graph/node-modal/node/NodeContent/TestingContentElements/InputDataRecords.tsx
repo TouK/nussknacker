@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { usePromise } from "rooks";
 
-import type { TestFormParameters } from "../../../../../../common/TestResultUtils";
 import { TestCapabilityStatus } from "../../../../../../common/TestResultUtils";
-import { getTestCapabilities } from "../../../../../../reducers/selectors/graph";
+import HttpService from "../../../../../../http/HttpService/instance";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
@@ -10,21 +10,31 @@ import type { NodeType } from "../../../../../../types/node";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../../../../modals/TestingDataRecords/types";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
-import { getProcessProperties } from "../../../NodeDetailsContent/selectors";
+import { buildDefaultVariables } from "../../../../../modals/TestingDataRecords/utils";
+import { getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
+import { cleanProperties } from "../../../requestSourceAddons";
 import { ContentSize } from "../../ContentSize";
 import { StyledStack } from "./components/Styled";
 import { TestingExpandable } from "./components/TestingExpandable";
 
 interface Props {
     node: NodeType;
-    sourceId: string;
 }
 
-export const InputDataRecords = ({ node, sourceId }: Props) => {
+export const InputDataRecords = ({ node }: Props) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
-    const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
+    const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, node.id));
+    const scenarioProperties = useAppSelector(getProcessProperties);
+    const scenarioName = useAppSelector(getProcessName);
+
+    const { data: sourceParameters } = usePromise(async () => {
+        const { data } = await HttpService.getSourceTestCapabilities(scenarioName, scenarioProperties, cleanProperties(node));
+        const capabilities = data?.testWithParameters;
+        return capabilities?.status === TestCapabilityStatus.AVAILABLE ? capabilities?.sourceParameters : null;
+    }, [scenarioName, scenarioProperties, node]);
 
     const {
         cellErrors,
@@ -34,28 +44,20 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
         handleRowsDeleted,
         handleRowUpdated,
         generateTestDataForSingleSource,
-    } = useDataRecordsActions();
-
-    const testCapabilities = useAppSelector(getTestCapabilities);
-    const scenarioProperties = useAppSelector(getProcessProperties);
-
-    const testCapabilitiesParameters = testCapabilities?.testWithParameters;
-
-    const defaultParameter: TestFormParameters | undefined =
-        testCapabilitiesParameters?.status === TestCapabilityStatus.AVAILABLE
-            ? testCapabilitiesParameters.sourceParameters.find((sourceParameter) => sourceParameter.sourceId === sourceId)
-            : undefined;
+    } = useDataRecordsActions(node, scenarioProperties);
 
     const defaultDataRecord = useMemo(
-        () =>
-            defaultParameter
-                ? {
-                      sourceId: defaultParameter.sourceId,
-                      timestamp: undefined,
-                      variables: defaultParameter.parameters?.[0]?.defaultValue?.expression ?? "",
-                  }
-                : { sourceId: undefined, timestamp: undefined, variables: undefined },
-        [defaultParameter],
+        () => ({
+            sourceId: node.id,
+            timestamp: undefined,
+            variables: buildDefaultVariables(sourceParameters?.parameters),
+        }),
+        [node.id, sourceParameters],
+    );
+
+    const onValidateVariables = useCallback(
+        (row: TestingDataRecords) => HttpService.validateSourceNodeTestData(scenarioName, scenarioProperties, cleanProperties(node), row),
+        [scenarioName, scenarioProperties, node],
     );
 
     const recordsToAddLimitExceeded = useMemo(
@@ -80,19 +82,16 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
             >
                 <ContentSize sx={{ padding: 0, maxHeight: "45cqh", mb: 2 }}>
                     <Table
-                        cellErrors={cellErrors}
-                        defaultDataRecord={defaultDataRecord}
-                        onRowAdded={handleRowAdded}
-                        onRowMoved={handleRowMoved}
-                        onRowsDeleted={handleRowsDeleted}
-                        onRowUpdated={handleRowUpdated}
                         data={testingDataRecordsForSource}
-                        sourceOptions={[sourceId]}
-                        sourceParameters={
-                            testCapabilitiesParameters?.status === TestCapabilityStatus.AVAILABLE
-                                ? testCapabilitiesParameters.sourceParameters
-                                : []
-                        }
+                        onRowAdded={handleRowAdded}
+                        onRowUpdated={handleRowUpdated}
+                        onRowsDeleted={handleRowsDeleted}
+                        onRowMoved={handleRowMoved}
+                        defaultDataRecord={defaultDataRecord}
+                        sourceId={node.id}
+                        sourceName={node.name}
+                        cellErrors={cellErrors}
+                        onValidateVariables={onValidateVariables}
                     />
                 </ContentSize>
                 {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}

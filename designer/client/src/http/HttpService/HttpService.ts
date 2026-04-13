@@ -12,6 +12,7 @@ import type { ProcessingType } from "../../actions/nk/processDefinitionData";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";
+import type { SourceTestCapabilities } from "../../common/TestResultUtils";
 import type { ChatRequest } from "../../components/aiAssistant/ChatRequest";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
@@ -19,7 +20,7 @@ import type { ExpressionSuggestion } from "../../components/graph/node-modal/edi
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import { mapInputDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
@@ -750,6 +751,21 @@ export class HttpService {
         return promise;
     }
 
+    getSourceTestCapabilities(processName: string, scenarioProperties: PropertiesType, nodeData: NodeType) {
+        const promise = api.post<SourceTestCapabilities>(`/scenarioTesting/${encodeURIComponent(processName)}/sourceCapabilities`, {
+            scenarioProperties,
+            nodeData,
+        });
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGetSourceTestCapabilities", "Failed to get source test capabilities"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
     getActionParameters(processName: string) {
         const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
         promise.catch((error) =>
@@ -983,25 +999,25 @@ export class HttpService {
         );
     }
 
-    validateTestDataWithDataRecords(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, dataRecords: TestingDataRecords) {
-        const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
-
-        const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, {
-            scenarioGraph: sanitizedScenarioGraph,
-            testData: {
-                type: "WITH_PARAMETERS",
-                sourceParameters: {
-                    sourceId: dataRecords.sourceId,
-                    parameterExpressions: {
-                        "Input variables": {
-                            language: "json",
-                            expression: dataRecords.variables,
-                        },
+    validateSourceNodeTestData(
+        scenarioName: ProcessName,
+        scenarioProperties: PropertiesType,
+        nodeData: NodeType,
+        dataRecords: TestingDataRecords,
+    ) {
+        const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/sourceValidate`, {
+            scenarioProperties,
+            nodeData,
+            sourceParameters: {
+                sourceId: dataRecords.sourceId,
+                parameterExpressions: {
+                    "Input variables": {
+                        language: "json",
+                        expression: dataRecords.variables,
                     },
                 },
             },
         });
-
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedValidateTestDataWithEventsData", "Failed to validate due to: {{axiosError}}", {
