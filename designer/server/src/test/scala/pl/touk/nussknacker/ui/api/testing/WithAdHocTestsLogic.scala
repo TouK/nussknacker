@@ -162,7 +162,7 @@ trait WithAdHocTestsLogic {
   protected def expectedTestParametersJson: String
 
   protected def expectedTestSourceParametersJson: String =
-    io.circe.parser
+    parser
       .parse(expectedTestParametersJson)
       .getOrElse(fail("Invalid JSON in expectedTestParametersJson"))
       .asArray
