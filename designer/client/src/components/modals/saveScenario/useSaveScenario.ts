@@ -8,9 +8,11 @@ import { getScenarioActivities } from "../../../actions/nk/scenarioActivities";
 import type { ThunkAction } from "../../../actions/reduxTypes";
 import { visualizationUrl } from "../../../common/VisualizationUrl";
 import HttpService from "../../../http/HttpService/instance";
+import { scenarioDraftClear, scenarioVersionBumped } from "../../../reducers/scenarioDraft";
 import {
     getProcessName,
     getProcessUnsavedNewName,
+    getProcessVersionId,
     getScenarioGraph,
     getScenarioLabels,
     isProcessRenamed,
@@ -22,6 +24,7 @@ const saveScenario = (comment = ""): ThunkAction<Promise<{ prevName: string; nex
         const state = getState();
         const scenarioGraph = getScenarioGraph(state);
         const currentProcessName = getProcessName(state);
+        const baseVersionId = getProcessVersionId(state);
         const labels = getScenarioLabels(state);
 
         // save changes before rename and force same processName everywhere
@@ -33,6 +36,14 @@ const saveScenario = (comment = ""): ThunkAction<Promise<{ prevName: string; nex
 
         await dispatch(displayCurrentProcessVersion(nextProcessName));
         await dispatch(await getScenarioActivities(nextProcessName));
+
+        // The pre-save draft is now persisted as a new scenario version — drop it from the draft
+        // store and broadcast the version bump so other tabs viewing the same scenario get warned.
+        dispatch(scenarioDraftClear(currentProcessName, baseVersionId));
+        const newVersionId = getProcessVersionId(getState());
+        if (newVersionId != null) {
+            dispatch(scenarioVersionBumped(nextProcessName, newVersionId));
+        }
 
         if (isRenamed) {
             await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));

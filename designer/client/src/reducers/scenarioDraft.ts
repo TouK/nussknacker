@@ -13,6 +13,7 @@ export type ScenarioDraftActions =
     | { type: "SCENARIO_DRAFT_SET"; payload: ScenarioDraft }
     | { type: "SCENARIO_DRAFT_CLEAR"; processName: ProcessName; baseVersionId: ProcessVersionId | null }
     | { type: "SCENARIO_DRAFT_HYDRATE"; drafts: ScenarioDraftState }
+    | { type: "SCENARIO_VERSION_BUMPED"; processName: ProcessName; versionId: ProcessVersionId }
     | { type: "APPLY_SCENARIO_DRAFT"; scenarioGraph: ScenarioGraph };
 
 export const scenarioDraftSet = (payload: ScenarioDraft): ScenarioDraftActions => ({
@@ -28,6 +29,11 @@ export const scenarioDraftHydrate = (drafts: ScenarioDraftState): ScenarioDraftA
 export const applyScenarioDraft = (scenarioGraph: ScenarioGraph): ScenarioDraftActions => ({
     type: "APPLY_SCENARIO_DRAFT",
     scenarioGraph,
+});
+export const scenarioVersionBumped = (processName: ProcessName, versionId: ProcessVersionId): ScenarioDraftActions => ({
+    type: "SCENARIO_VERSION_BUMPED",
+    processName,
+    versionId,
 });
 
 export const scenarioDraft: Reducer<ScenarioDraftState> = (state = {}, action) => {

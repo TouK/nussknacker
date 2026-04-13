@@ -23,6 +23,7 @@ type NarrowedAction<T extends ScenarioDraftActions["type"]> = Extract<ScenarioDr
 const wasSyncedFromOtherTab = (action: SyncMarker) => action.$isSync === true;
 
 const DRAFT_OVERWRITTEN_UID = "scenario-draft-overwritten";
+const VERSION_BUMPED_UID = "scenario-version-bumped";
 
 export const draftListener = createListenerMiddleware<RootState, AppDispatch>();
 
@@ -136,6 +137,26 @@ draftListener.startListening({
             .catch(() => {
                 // keep key in the pending set
             });
+    },
+});
+
+// ---- SCENARIO_VERSION_BUMPED: other session saved a new version of the scenario we are viewing
+draftListener.startListening({
+    matcher: (action): action is NarrowedAction<"SCENARIO_VERSION_BUMPED"> =>
+        action.type === "SCENARIO_VERSION_BUMPED" && wasSyncedFromOtherTab(action),
+    effect: ({ processName, versionId }, { dispatch, getState }) => {
+        const state = getState();
+        if (processName !== getProcessName(state)) return;
+        if (versionId === getProcessVersionId(state)) return;
+        // A save produces both a DRAFT_CLEAR and a VERSION_BUMPED broadcast; hide the stale
+        // draft-overwritten notification so only the version-bump one remains.
+        dispatch(Notifications.hide(DRAFT_OVERWRITTEN_UID));
+        dispatch(
+            warn(`Scenario was saved in another session as version ${versionId} — refresh to see the new version.`, {
+                uid: VERSION_BUMPED_UID,
+                autoDismiss: 0,
+            }),
+        );
     },
 });
 

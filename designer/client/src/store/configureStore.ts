@@ -50,6 +50,7 @@ export const setupStore = () => {
                             "TOGGLE_COMPONENT_GROUP_TOOLBOX",
                             "SCENARIO_DRAFT_SET",
                             "SCENARIO_DRAFT_CLEAR",
+                            "SCENARIO_VERSION_BUMPED",
                         ],
                     }),
                     scenarioValidationMiddleware([
