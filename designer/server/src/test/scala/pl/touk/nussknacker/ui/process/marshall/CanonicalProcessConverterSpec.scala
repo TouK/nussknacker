@@ -214,7 +214,45 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("legacy-union"))
 
     canonical.collectAllNodes.collect { case b: BranchEndData => b.definition } should contain only
-      BranchEndDefinition(sourceUuid, unionUuid)
+      BranchEndDefinition("source1", unionUuid)
+  }
+
+  test("normalize branch ids from UUID node ids to node names for joins") {
+    def uuidOf(s: String): String = UUID.nameUUIDFromBytes(s.getBytes(StandardCharsets.UTF_8)).toString
+
+    val sourceUuid = uuidOf("source1")
+    val unionUuid  = uuidOf("Union")
+    val sinkUuid   = uuidOf("sink1")
+
+    val scenarioGraph = ScenarioGraph(
+      ProcessProperties(metaData),
+      List(
+        Source(NodeId(sourceUuid), NodeName("source1"), SourceRef("sourceRef", List.empty)),
+        Join(
+          NodeId(unionUuid),
+          NodeName("Union"),
+          Some("out"),
+          "union",
+          List.empty,
+          List(BranchParameters(sourceUuid, List.empty))
+        ),
+        Sink(NodeId(sinkUuid), NodeName("sink1"), SinkRef("kafka", List.empty))
+      ),
+      List(
+        Edge(NodeId(sourceUuid), NodeId(unionUuid), None),
+        Edge(NodeId(unionUuid), NodeId(sinkUuid), None)
+      )
+    )
+
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("uuid-branch-id-union"))
+
+    val joinNode = canonical.collectAllNodes
+      .collectFirst { case j: Join => j }
+      .getOrElse(fail("Missing Join node after conversion"))
+    joinNode.branchParameters.map(_.branchId) should contain only "source1"
+
+    canonical.collectAllNodes.collect { case b: BranchEndData => b.definition } should contain only
+      BranchEndDefinition("source1", unionUuid)
   }
 
   test("handle large union scenario fixture with legacy name-based edge references") {
@@ -244,7 +282,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
 
     val unionBranchEnd = converted.collectAllNodes
       .collectFirst {
-        case b: BranchEndData if b.definition.id == splitId.value => b
+        case b: BranchEndData if b.definition.id == "Split" => b
       }
       .getOrElse(fail("Missing BranchEndData for Split branch after conversion"))
 
