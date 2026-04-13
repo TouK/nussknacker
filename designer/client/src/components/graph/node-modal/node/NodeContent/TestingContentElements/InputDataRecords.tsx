@@ -1,7 +1,9 @@
 import AddIcon from "@mui/icons-material/Add";
+import CheckIcon from "@mui/icons-material/Check";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { Box, Button, Divider, Tooltip, Typography } from "@mui/material";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { usePromise } from "rooks";
 import { useTranslation } from "react-i18next";
 
@@ -84,6 +86,19 @@ export const InputDataRecords = ({ node }: Props) => {
         handleRowsDeleted(indices);
     }, [handleRowsDeleted, testingDataRecordsForSource]);
 
+    const [copied, setCopied] = useState(false);
+    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleCopyAll = useCallback(() => {
+        const records = testingDataRecordsForSource ?? [];
+        const text = records.map((r) => r.variables).join("\n");
+        navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+            copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+        });
+    }, [testingDataRecordsForSource]);
+
     const hasRecords = (testingDataRecordsForSource ?? []).length > 0;
     const addRecordDisabled = recordsToAddLimitExceeded;
 
@@ -162,6 +177,17 @@ export const InputDataRecords = ({ node }: Props) => {
                                 </Tooltip>
                                 <Box flex={1} />
                                 <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: "text.disabled" }} />
+                                <Tooltip title={t("testRecords.copyAll.hint", "Copy all records as JSON lines to clipboard")}>
+                                    <Button
+                                        size="small"
+                                        variant="text"
+                                        startIcon={copied ? <CheckIcon /> : <ContentCopyIcon />}
+                                        onClick={handleCopyAll}
+                                        sx={{ textTransform: "none", color: "text.disabled" }}
+                                    >
+                                        {copied ? t("testRecords.copyAll.copied", "Copied!") : t("testRecords.copyAll", "Copy all")}
+                                    </Button>
+                                </Tooltip>
                                 <Tooltip title={t("testRecords.clearAll.hint", "Remove all test records")}>
                                     <Button
                                         size="small"
