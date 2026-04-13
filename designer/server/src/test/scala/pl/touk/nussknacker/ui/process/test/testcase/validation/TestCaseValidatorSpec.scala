@@ -5,7 +5,6 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{Inside, Inspectors, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -29,7 +28,7 @@ import pl.touk.nussknacker.restmodel.validation.testcase.{
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
 import pl.touk.nussknacker.ui.config.TestCasesSettings
-import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator.NodeTyping
+import pl.touk.nussknacker.ui.process.test.testcase
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -88,7 +87,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -108,7 +107,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -128,7 +127,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -169,7 +168,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       filter,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes
       )
@@ -209,7 +208,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes
       )
@@ -246,7 +245,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -266,7 +265,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -308,7 +307,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -366,11 +365,11 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
 
     val nodes = List(enricher, filter)
     val nodesTyping = Map(
-      enricher.id.value -> NodeTyping(
+      enricher.id.value -> testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       ),
-      filter.id.value -> NodeTyping(
+      filter.id.value -> testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes
       )

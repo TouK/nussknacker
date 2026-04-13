@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValida
 import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -119,7 +120,7 @@ class NodeValidator(
       testCasesValidator.validateNodeTestCases(
         validationRequest.nodeData,
         _,
-        TestCaseValidator.NodeTyping(
+        testcase.NodeTyping(
           inputVariables = validationRequest.variableTypes,
           outputVariables = outputValidationContext.map(_.localVariables).getOrElse(Map.empty)
         )

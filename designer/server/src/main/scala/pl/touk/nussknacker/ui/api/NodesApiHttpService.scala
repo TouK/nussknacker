@@ -51,8 +51,8 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.test.{testcase, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
 import pl.touk.nussknacker.ui.process.test.testcase.{EnricherMockGenerator, TestCaseVariables}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -185,7 +185,9 @@ class NodesApiHttpService(
             outputVariableTypes = nodeValidator
               .getOutputVariableTypes(inputVariableTypes, request.nodeData, jobData)
               .getOrElse(Map.empty)
-            additionalVariables = prepareTestCaseAdditionalVariables(inputVariableTypes, outputVariableTypes)
+            additionalVariables = prepareTestCaseAdditionalVariables(
+              testcase.NodeTyping(inputVariableTypes, outputVariableTypes)
+            )
           } yield additionalVariables
         }
       }
@@ -396,11 +398,10 @@ class NodesApiHttpService(
   }
 
   private def prepareTestCaseAdditionalVariables(
-      inputVariableTypes: Map[String, TypingResult],
-      outputVariableTypes: Map[String, TypingResult]
+      nodeTyping: testcase.NodeTyping
   ): TestCaseAdditionalVariablesResponseDto =
     TestCaseAdditionalVariablesResponseDto(
-      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(inputVariableTypes, outputVariableTypes)
+      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(nodeTyping)
     )
 
   private def parametersValidationRequestFromDto(

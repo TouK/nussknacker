@@ -5,11 +5,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData, NodeId, NodeName, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -20,6 +19,7 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.ui.process.test.testcase
 
 import java.time.Instant
 import java.util
@@ -64,12 +64,10 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     "someCollection" -> Typed.fromInstance(new util.ArrayList[String]()),
   )
 
-  private val scenarioTyping: Map[String, NodeTypingInfo] = Map(
-    nodeId.value -> NodeTypingInfo(
-      inputValidationContext = ValidationContext(localVariables = inputVariableTypes),
-      expressionsTypingInfo = Map.empty,
-      parameters = None,
-      outputValidationContext = None,
+  private val scenarioTyping: Map[String, NodeTyping] = Map(
+    nodeId.value -> testcase.NodeTyping(
+      inputVariables = inputVariableTypes,
+      outputVariables = Map.empty,
     )
   )
 
@@ -348,15 +346,13 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  // TODO: rework this test
   test("should populate #outgoingRecords from originalNodeTransitionResults") {
     val outgoingNodeId = NodeId("enricherNode")
-    val typingWithOutput = Map(
-      outgoingNodeId.value -> NodeTypingInfo(
-        inputValidationContext = ValidationContext(localVariables = Map("input" -> Typed[String])),
-        expressionsTypingInfo = Map.empty,
-        parameters = None,
-        outputValidationContext =
-          Some(ValidationContext(localVariables = Map("input" -> Typed[String], "enricherOutput" -> Typed[String]))),
+    val nodesTyping = Map(
+      outgoingNodeId.value -> testcase.NodeTyping(
+        inputVariables = Map("input" -> Typed[String]),
+        outputVariables = Map("input" -> Typed[String], "enricherOutput" -> Typed[String]),
       )
     )
     val testCase = TestCase(
@@ -372,7 +368,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
     val compiledTestCase = assertionsCompiler
-      .compile(testCase, typingWithOutput, jobData, Map(outgoingNodeId -> NodeName(outgoingNodeId.value)))
+      .compile(testCase, nodesTyping, jobData, Map(outgoingNodeId -> NodeName(outgoingNodeId.value)))
       .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), compiled => compiled)
 
     val outgoingContext =

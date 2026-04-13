@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
+import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -491,7 +492,7 @@ class UIProcessValidator(
         ValidationResult.success
       case Some(TestCases(testCases)) =>
         val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
-          TestCaseValidator.NodeTyping(
+          testcase.NodeTyping(
             inputVariables = typingInfo.inputValidationContext.localVariables,
             outputVariables = typingInfo.outputValidationContext.map(_.localVariables).getOrElse(Map.empty),
           )

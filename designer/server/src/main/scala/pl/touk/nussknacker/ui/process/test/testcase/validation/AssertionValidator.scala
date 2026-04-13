@@ -3,10 +3,10 @@ package pl.touk.nussknacker.ui.process.test.testcase.validation
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, NodeName}
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionIndex, AssertionValidationError}
+import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.{AssertionCompilationError, AssertionsCompiler}
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.ExpressionAssertionCompilationError
 
@@ -16,15 +16,14 @@ private class AssertionValidator(
 
   def validateForNode(
       assertions: List[Assertion],
-      inputVariableTypes: Map[String, TypingResult],
-      outputVariableTypes: Map[String, TypingResult],
+      nodeTyping: testcase.NodeTyping,
       jobData: JobData
   )(
       implicit nodeId: NodeId,
       nodeName: NodeName
   ): Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] = {
     val compilationResults =
-      assertionsCompiler.compileForNode(assertions, inputVariableTypes, outputVariableTypes, jobData)
+      assertionsCompiler.compileForNode(assertions, nodeTyping, jobData)
     val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(errors), index) =>
       index -> convertToAssertionErrors(errors)
     }.toMap

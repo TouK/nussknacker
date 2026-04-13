@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.functor._
-import jdk.internal.net.http.common.Log.errors
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,12 +10,11 @@ import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompila
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, ProcessCompiler, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, ProcessCompiler, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -29,6 +26,7 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.PredicateAssertionCompilationError
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledPredicateAssertion
@@ -329,7 +327,7 @@ class AssertionsCompilerSpec
     assertionCompilationResult
   }
 
-  private def compileScenarioForTyping(scenario: CanonicalProcess): Map[String, NodeTypingInfo] = {
+  private def compileScenarioForTyping(scenario: CanonicalProcess): Map[String, testcase.NodeTyping] = {
     val jobData: JobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
       new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
@@ -344,7 +342,7 @@ class AssertionsCompilerSpec
       .compile(scenario)
 
     compilationResult.result match {
-      case Validated.Valid(_) => compilationResult.typing.toMap
+      case Validated.Valid(_) => compilationResult.typing.mapValuesNow(testcase.NodeTyping)
       case Validated.Invalid(errors) =>
         throw new IllegalStateException(s"Process compilation ended with errors: $errors")
     }

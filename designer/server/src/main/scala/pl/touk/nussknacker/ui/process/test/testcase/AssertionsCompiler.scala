@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import enumeratum.{Enum, EnumEntry}
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
   ExpressionAssertionCompilationError,
   PredicateAssertionCompilationError
@@ -34,7 +35,7 @@ class AssertionsCompiler(
 
   def compile(
       testCase: TestCase,
-      scenarioTypingResult: Map[String, NodeTypingInfo],
+      nodesTyping: Map[String, testcase.NodeTyping],
       jobData: JobData,
       nodeNamesById: Map[NodeId, NodeName],
   ): ValidatedNel[AssertionError, CompiledAssertions] = {
@@ -43,7 +44,7 @@ class AssertionsCompiler(
         nodeNamesById
           .get(nodeId)
           .map { nodeName =>
-            compileNodeAssertions(assertions, scenarioTypingResult, jobData)(nodeId, nodeName)
+            compileNodeAssertions(assertions, nodesTyping, jobData)(nodeId, nodeName)
               .tupleLeft(nodeId)
           }
           .getOrElse(
@@ -57,37 +58,30 @@ class AssertionsCompiler(
   // Returns all compiled assertions or combined compilation errors. It's used to compile test case before performing it.
   private def compileNodeAssertions(
       assertions: List[Assertion],
-      nodesTyping: Map[String, NodeTypingInfo],
+      nodesTyping: Map[String, testcase.NodeTyping],
       jobData: JobData
   )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[AssertionError, List[CompiledAssertion]] = {
-    validateTypingExistence(nodesTyping).andThen { nodeTypingInfo =>
-      compileForNode(
-        assertions,
-        nodeTypingInfo.inputValidationContext.localVariables,
-        nodeTypingInfo.outputValidationContext.map(_.localVariables).getOrElse(Map.empty),
-        jobData,
-      ).sequence
+    validateTypingExistence(nodesTyping).andThen { nodeTyping =>
+      compileForNode(assertions, nodeTyping, jobData).sequence
     }
   }
 
   // For each assertion, returns compiled assertion or compilation errors. We need this, to return errors by assertion.
   def compileForNode(
       assertions: List[Assertion],
-      inputVariableTypes: Map[String, TypingResult],
-      outputVariableTypes: Map[String, TypingResult],
+      nodeTyping: testcase.NodeTyping,
       jobData: JobData,
   )(implicit nodeId: NodeId, nodeName: NodeName): List[ValidatedNel[AssertionCompilationError, CompiledAssertion]] = {
     val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
-      inputVariableTypes,
-      outputVariableTypes
+      nodeTyping
     )
     assertions.map(compileAssertion(ctx, _))
   }
 
   private def validateTypingExistence(
-      nodesTyping: Map[String, NodeTypingInfo],
-  )(implicit nodeId: NodeId): ValidatedNel[AssertionError, NodeTypingInfo] = {
+      nodesTyping: Map[String, testcase.NodeTyping],
+  )(implicit nodeId: NodeId): ValidatedNel[AssertionError, testcase.NodeTyping] = {
     nodesTyping
       .get(nodeId.value)
       .map(Valid(_))

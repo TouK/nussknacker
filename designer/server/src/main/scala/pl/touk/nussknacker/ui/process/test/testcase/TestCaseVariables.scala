@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionSet
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.ObjectWithType
-import pl.touk.nussknacker.engine.extension.ExtensionMethods
+import pl.touk.nussknacker.ui.process.test.testcase
 
 object TestCaseVariables {
 
@@ -32,29 +32,25 @@ object TestCaseVariables {
 
   def extendNodeVariablesValidationContext(
       validationContext: ValidationContext,
-      variableTypes: Map[String, TypingResult],
-      outputVariableTypes: Map[String, TypingResult]
+      nodeTyping: testcase.NodeTyping
   ): ValidationContext = {
     val base = validationContext.withVariablesUnsafe(
       TestsGlobalVariableName -> testsGlobalVariableType,
-      RecordsNodeVariableName -> recordsNodeVariableType(variableTypes),
+      RecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.inputVariables),
     )
-    if (outputVariableTypes.nonEmpty)
-      base.withVariableUnsafe(OutgoingRecordsNodeVariableName, recordsNodeVariableType(outputVariableTypes))
+    if (nodeTyping.outputVariables.nonEmpty)
+      base.withVariableUnsafe(OutgoingRecordsNodeVariableName, recordsNodeVariableType(nodeTyping.outputVariables))
     else
       base
   }
 
-  def getNodeVariablesTyping(
-      inputVariablesForNode: Map[String, TypingResult],
-      outputVariableTypes: Map[String, TypingResult]
-  ): Map[String, TypingResult] = {
+  def getNodeVariablesTyping(nodeTyping: testcase.NodeTyping): Map[String, TypingResult] = {
     val base = Map(
       TestsGlobalVariableName -> testsGlobalVariableType,
-      RecordsNodeVariableName -> recordsNodeVariableType(inputVariablesForNode),
+      RecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.inputVariables),
     )
-    if (outputVariableTypes.nonEmpty)
-      base + (OutgoingRecordsNodeVariableName -> recordsNodeVariableType(outputVariableTypes))
+    if (nodeTyping.outputVariables.nonEmpty)
+      base + (OutgoingRecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.outputVariables))
     else
       base
   }

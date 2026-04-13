@@ -35,6 +35,7 @@ import pl.touk.nussknacker.engine.test.testcase.{EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors}
@@ -408,7 +409,7 @@ class ScenarioTestService(
       nodeNamesById: Map[NodeId, NodeName]
   ): Either[PerformTestError, CompiledAssertions] = {
     assertionCompiler
-      .compile(test, nodesTyping, jobData, nodeNamesById)
+      .compile(test, nodesTyping.mapValuesNow(testcase.NodeTyping), jobData, nodeNamesById)
       .fold(
         errors => Left(AssertionErrors(errors)),
         Right(_)
