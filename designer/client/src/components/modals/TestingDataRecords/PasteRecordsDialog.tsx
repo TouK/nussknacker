@@ -17,48 +17,12 @@ export interface PasteRecordsDialogData {
     defaultVariables?: string;
 }
 
-function isNkFormat(obj: unknown): obj is { input: unknown; inputMeta: unknown } {
-    return typeof obj === "object" && obj !== null && "input" in obj && "inputMeta" in obj;
+function isNkFormat(obj: unknown): obj is { input: unknown; inputMeta?: unknown } {
+    return typeof obj === "object" && obj !== null && "input" in obj;
 }
 
 function toRecord(parsed: unknown, defaultTemplate: Record<string, unknown> | null): unknown {
     return isNkFormat(parsed) ? parsed : { ...defaultTemplate, input: parsed };
-}
-
-function splitTopLevelJsonObjects(text: string): string[] {
-    const chunks: string[] = [];
-    let depth = 0;
-    let start = 0;
-    let inString = false;
-    let escape = false;
-
-    for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        if (escape) {
-            escape = false;
-            continue;
-        }
-        if (ch === "\\" && inString) {
-            escape = true;
-            continue;
-        }
-        if (ch === '"') {
-            inString = !inString;
-            continue;
-        }
-        if (inString) continue;
-
-        if (ch === "{" || ch === "[") {
-            if (depth === 0) start = i;
-            depth++;
-        } else if (ch === "}" || ch === "]") {
-            depth--;
-            if (depth === 0) {
-                chunks.push(text.slice(start, i + 1));
-            }
-        }
-    }
-    return chunks;
 }
 
 function splitNdjsonLines(text: string): string[] {
@@ -101,22 +65,6 @@ function parseRecords(text: string, sourceId: string, defaultVariables?: string)
         // not a single JSON — fall through to NDJSON
     }
 
-    // Try splitting into multiple top-level JSON objects (handles pretty-printed multi-line objects)
-    const topLevelChunks = splitTopLevelJsonObjects(trimmed);
-    if (topLevelChunks.length > 1) {
-        let errorCount = 0;
-        const rows: TestingDataRecords[] = [];
-        for (const chunk of topLevelChunks) {
-            try {
-                const parsed = JSON.parse(chunk);
-                rows.push({ sourceId, variables: JSON.stringify(toRecord(parsed, defaultTemplate), null, 2) });
-            } catch {
-                errorCount++;
-            }
-        }
-        return { rows, errorCount };
-    }
-
     // Fallback: NDJSON (one compact JSON object per line)
     const lines = splitNdjsonLines(trimmed);
     let errorCount = 0;
@@ -149,8 +97,6 @@ export const PasteRecordsDialog = (props: WindowContentProps<WindowKind, PasteRe
             const parsed = JSON.parse(trimmed);
             return Array.isArray(parsed) ? parsed.length : 1;
         } catch {
-            const topLevel = splitTopLevelJsonObjects(trimmed);
-            if (topLevel.length > 1) return topLevel.length;
             return splitNdjsonLines(trimmed).length;
         }
     }, [text]);
