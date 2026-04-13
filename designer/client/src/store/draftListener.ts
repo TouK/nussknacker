@@ -1,16 +1,14 @@
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import type { ThunkDispatch } from "@reduxjs/toolkit";
 import { createListenerMiddleware, createSelector } from "@reduxjs/toolkit";
 import { debounce, isEqual } from "lodash";
-import React from "react";
 import Notifications from "react-notification-system-redux";
 
+import { warn } from "../actions/notificationActions";
 import type { Action } from "../actions/reduxTypes";
-import Notification from "../components/notifications/Notification";
 import type { ProcessName } from "../components/Process/types";
 import { getScenarioDraftBackend } from "../draftStorage";
 import type { RootState } from "../reducers";
-import type { ScenarioDraft, ScenarioDraftState } from "../reducers/scenarioDraft";
+import type { ScenarioDraftActions, ScenarioDraftState } from "../reducers/scenarioDraft";
 import { applyScenarioDraft, draftKey, scenarioDraftClear, scenarioDraftHydrate, scenarioDraftSet } from "../reducers/scenarioDraft";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../reducers/selectors/graph";
 import { getUserSettings } from "../reducers/selectors/userSettings";
@@ -18,7 +16,11 @@ import { getUserSettings } from "../reducers/selectors/userSettings";
 type AppDispatch = ThunkDispatch<RootState, undefined, Action>;
 
 const isDraftEnabled = createSelector(getUserSettings, (settings) => !!settings["scenario.enableDraft"]);
-const wasSyncedFromOtherTab = (action: unknown) => (action as { $isSync?: boolean }).$isSync === true;
+
+type SyncMarker = { $isSync?: boolean };
+type NarrowedAction<T extends ScenarioDraftActions["type"]> = Extract<ScenarioDraftActions, { type: T }> & SyncMarker;
+
+const wasSyncedFromOtherTab = (action: SyncMarker) => action.$isSync === true;
 
 const DRAFT_OVERWRITTEN_UID = "scenario-draft-overwritten";
 
@@ -53,13 +55,12 @@ export const isDraftWritePending = (processName: ProcessName, versionId: number 
 // that "no undoable changes" strictly implies "no stored draft".
 draftListener.startListening({
     predicate: (_action, current, previous) => {
-        const prev = previous as RootState;
         return (
             isDraftEnabled(current) &&
             getProcessName(current) !== null &&
-            getProcessName(current) === getProcessName(prev) &&
-            getProcessVersionId(current) === getProcessVersionId(prev) &&
-            getScenarioGraph(current) !== getScenarioGraph(prev)
+            getProcessName(current) === getProcessName(previous) &&
+            getProcessVersionId(current) === getProcessVersionId(previous) &&
+            getScenarioGraph(current) !== getScenarioGraph(previous)
         );
     },
     effect: (_action, api) => {
@@ -79,12 +80,26 @@ draftListener.startListening({
     },
 });
 
-// ---- persistence: slice changes -> backend --------------------------------------------------
-// Skip writes that arrived via redux-state-sync; the originating tab already wrote its entry.
+// ---- SCENARIO_DRAFT_SET: local writes -> backend; remote writes -> overwrite warning --------
 draftListener.startListening({
-    predicate: (action) => action.type === "SCENARIO_DRAFT_SET" && !wasSyncedFromOtherTab(action),
-    effect: (action) => {
-        const payload = (action as unknown as { payload: ScenarioDraft }).payload;
+    matcher: (action): action is NarrowedAction<"SCENARIO_DRAFT_SET"> => action.type === "SCENARIO_DRAFT_SET",
+    effect: (action, { dispatch, getState }) => {
+        const { payload } = action;
+        if (wasSyncedFromOtherTab(action)) {
+            // Another tab updated the draft for the scenario/version we are looking at — the
+            // in-memory graph no longer matches the persisted draft. Sticky notification;
+            // dismissed by the user or by the autosave listener on the next local edit.
+            const state = getState();
+            if (payload.id !== getProcessName(state)) return;
+            if (payload.baseVersionId !== getProcessVersionId(state)) return;
+            dispatch(
+                warn("Draft for this version was updated in another session — refresh to see the latest changes.", {
+                    uid: DRAFT_OVERWRITTEN_UID,
+                    autoDismiss: 0,
+                }),
+            );
+            return;
+        }
         const key = draftKey(payload.id, payload.baseVersionId);
         pendingBackendWrites.add(key);
         getScenarioDraftBackend()
@@ -96,13 +111,23 @@ draftListener.startListening({
     },
 });
 
+// ---- SCENARIO_DRAFT_CLEAR: local clears -> backend; remote clears -> overwrite warning ------
 draftListener.startListening({
-    predicate: (action) => action.type === "SCENARIO_DRAFT_CLEAR" && !wasSyncedFromOtherTab(action),
-    effect: (action) => {
-        const { processName, baseVersionId } = action as unknown as {
-            processName: ProcessName;
-            baseVersionId: number | null;
-        };
+    matcher: (action): action is NarrowedAction<"SCENARIO_DRAFT_CLEAR"> => action.type === "SCENARIO_DRAFT_CLEAR",
+    effect: (action, { dispatch, getState }) => {
+        const { processName, baseVersionId } = action;
+        if (wasSyncedFromOtherTab(action)) {
+            const state = getState();
+            if (processName !== getProcessName(state)) return;
+            if (baseVersionId !== getProcessVersionId(state)) return;
+            dispatch(
+                warn("Draft for this version was discarded in another session — refresh to see the latest changes.", {
+                    uid: DRAFT_OVERWRITTEN_UID,
+                    autoDismiss: 0,
+                }),
+            );
+            return;
+        }
         const key = draftKey(processName, baseVersionId);
         pendingBackendWrites.add(key);
         getScenarioDraftBackend()
@@ -123,8 +148,7 @@ draftListener.startListening({
         if (!isDraftEnabled(current)) return false;
         const name = getProcessName(current);
         if (!name) return false;
-        const prev = previous as RootState;
-        return getProcessName(prev) !== name || getProcessVersionId(prev) !== getProcessVersionId(current);
+        return getProcessName(previous) !== name || getProcessVersionId(previous) !== getProcessVersionId(current);
     },
     effect: async (_action, api) => {
         const processName = getProcessName(api.getState());
@@ -154,30 +178,5 @@ draftListener.startListening({
             return;
         }
         api.dispatch(applyScenarioDraft(draft.data));
-    },
-});
-
-// ---- cross-tab overwrite warning ------------------------------------------------------------
-// Another tab updated the draft for the scenario/version we are looking at — the in-memory
-// graph no longer matches the persisted draft. Sticky notification; dismissed by the user or
-// by the autosave listener above on the next local edit.
-draftListener.startListening({
-    predicate: (action) => action.type === "SCENARIO_DRAFT_SET" && wasSyncedFromOtherTab(action),
-    effect: (action, api) => {
-        const payload = (action as unknown as { payload: { processName: string; baseVersionId: number | null } }).payload;
-        const state = api.getState();
-        if (payload.processName !== getProcessName(state) || payload.baseVersionId !== getProcessVersionId(state)) return;
-        api.dispatch(
-            Notifications.warning({
-                uid: DRAFT_OVERWRITTEN_UID,
-                autoDismiss: 0,
-                dismissible: "button",
-                children: React.createElement(Notification, {
-                    type: "warning",
-                    icon: React.createElement(WarningAmberOutlinedIcon),
-                    message: "Draft for this version was updated in another session — refresh to see the latest changes.",
-                }),
-            }),
-        );
     },
 });
