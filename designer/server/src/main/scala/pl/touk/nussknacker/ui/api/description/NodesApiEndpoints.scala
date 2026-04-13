@@ -1571,11 +1571,29 @@ object NodesApiEndpoints {
       private object VariableSchemaHelper {
         sealed trait NodeTypes
 
+        sealed trait VariableOperationSchemaType
+
         object NodeTypes {
           case object Variable extends NodeTypes
         }
 
+        object VariableOperationSchemaType {
+          case object SET   extends VariableOperationSchemaType
+          case object UNSET extends VariableOperationSchemaType
+        }
+
         implicit val variableTypeSchema: Schema[NodeTypes] = Schema.derivedEnumeration[NodeTypes].defaultStringBased
+
+        implicit val variableOperationSchema: Schema[VariableOperationSchemaType] =
+          Schema.derivedEnumeration[VariableOperationSchemaType].defaultStringBased
+
+        def toSchemaOperation(
+            operation: VariableOperation
+        ): VariableOperationSchemaType = operation match {
+          case VariableOperation.Set   => VariableOperationSchemaType.SET
+          case VariableOperation.Unset => VariableOperationSchemaType.UNSET
+        }
+
       }
 
       implicit lazy val variableSchema: Schema[Variable] = {
@@ -1592,6 +1610,16 @@ object NodesApiEndpoints {
                 FieldName("type"),
                 VariableSchemaHelper.variableTypeSchema,
                 _ => Some(VariableSchemaHelper.NodeTypes.Variable)
+              ),
+              SProductField(
+                FieldName("operation"),
+                VariableSchemaHelper.variableOperationSchema,
+                variable => Some(VariableSchemaHelper.toSchemaOperation(variable.operation))
+              ),
+              SProductField(
+                FieldName("fields"),
+                Schema.schemaForIterable[Field, List],
+                variable => Some(variable.fields)
               ),
               SProductField(FieldName("varName"), Schema.string, variable => Some(variable.varName)),
               SProductField(FieldName("value"), expressionSchema, variable => Some(variable.value))

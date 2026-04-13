@@ -347,6 +347,91 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should allow unsetting variables and remove them from output context") {
+    inside(
+      validate(
+        Variable(
+          NodeId("unsetVar"),
+          NodeName("unsetVar"),
+          "",
+          "null".spel,
+          operation = VariableOperation.Unset,
+          fields = List(Field("toRemove", "null".spel))
+        ),
+        Map("toRemove" -> Typed[String], "toKeep" -> Typed[Int])
+      )
+    ) { case ValidationPerformed(Nil, None, None, Some(outputValidationContext)) =>
+      outputValidationContext.localVariables shouldBe Map("toKeep" -> Typed[Int])
+    }
+  }
+
+  test("should require at least one variable to unset") {
+    inside(
+      validate(
+        Variable(NodeId("unsetVar"), NodeName("unsetVar"), "", "null".spel, operation = VariableOperation.Unset),
+        Map("toRemove" -> Typed[String])
+      )
+    ) { case ValidationPerformed(errors, None, _, _) =>
+      errors should contain(
+        CustomParameterValidationError(
+          "At least one variable has to be selected",
+          "Please add at least one variable to unset",
+          ParameterName("fields"),
+          NodeId("unsetVar")
+        )
+      )
+    }
+  }
+
+  test("should validate variables selected to unset") {
+    inside(
+      validate(
+        Variable(
+          NodeId("unsetVar"),
+          NodeName("unsetVar"),
+          "",
+          "null".spel,
+          operation = VariableOperation.Unset,
+          fields = List(Field("toRemove", "null".spel), Field("toRemove", "null".spel), Field("", "null".spel))
+        ),
+        Map("toRemove" -> Typed[String])
+      )
+    ) { case ValidationPerformed(errors, None, _, _) =>
+      errors should contain(
+        CustomParameterValidationError(
+          "The variable can be unset only once",
+          "Variable selected more than once",
+          ParameterName("$fields-0-$key"),
+          NodeId("unsetVar")
+        )
+      )
+      errors should contain(
+        CustomParameterValidationError(
+          "The variable can be unset only once",
+          "Variable selected more than once",
+          ParameterName("$fields-1-$key"),
+          NodeId("unsetVar")
+        )
+      )
+      errors should contain(
+        CustomParameterValidationError(
+          "This field value is required and can not be blank",
+          "Please fill field value for this parameter",
+          ParameterName("$fields-2-$key"),
+          NodeId("unsetVar")
+        )
+      )
+      errors should contain(
+        CustomParameterValidationError(
+          "Can only unset variables available in the context",
+          "Variable not found in the current context",
+          ParameterName("$fields-2-$key"),
+          NodeId("unsetVar")
+        )
+      )
+    }
+  }
+
   test("should validate empty or blank variable expression") {
     forAll(ExpressionsTestData.emptyOrBlankExpressions) { e =>
       validate(Variable(NodeId("var1"), NodeName("var1"), "specialVariable_2", e.spel), Map.empty) should matchPattern {

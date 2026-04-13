@@ -72,6 +72,12 @@ case class ValidationContext(
 
   def clearVariables: ValidationContext = copy(localVariables = Map.empty, parent = None)
 
+  def withoutVariable(name: String): ValidationContext =
+    withoutVariables(Set(name))
+
+  def withoutVariables(names: Iterable[String]): ValidationContext =
+    copy(localVariables = localVariables -- names)
+
   def pushNewContext(): ValidationContext =
     ValidationContext(Map.empty, globalVariables, Some(this))
 

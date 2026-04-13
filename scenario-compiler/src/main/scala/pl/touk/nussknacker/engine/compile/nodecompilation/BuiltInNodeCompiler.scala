@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxTuple2Semigroupal, toFoldableOps, toTraverseOps}
 import cats.instances.list._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentValidationHelper._
 import pl.touk.nussknacker.engine.compile.nodecompilation.BuiltInNodeCompiler._
@@ -19,6 +21,8 @@ import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionIdParamName
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.recordKeyFieldName
+import pl.touk.nussknacker.engine.graph.variable.{Field => GraphField}
 
 class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
 
@@ -38,6 +42,103 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
       validateVariableValue(validTypedExpression, DefaultExpressionIdParamName, inputContext)
 
     combineErrors(nodeCompilation, additionalValidationResult)
+  }
+
+  def compileVariableUnset(variable: Variable, inputContext: SingleInputNodeInputValidationContext)(
+      implicit nodeId: NodeId
+  ): NodeCompilationResult[List[String]] = {
+    val sanitizedUnsetVariablesWithIndexes = variable.fields.zipWithIndex.map { case (field, index) =>
+      (field.name.trim.stripPrefix("#"), index)
+    }
+
+    val atLeastOneVariableValidation: ValidatedNel[PartSubGraphCompilationError, Unit] =
+      if (sanitizedUnsetVariablesWithIndexes.nonEmpty) {
+        valid(())
+      } else {
+        invalid[PartSubGraphCompilationError, Unit](
+          CustomParameterValidationError(
+            "At least one variable has to be selected",
+            "Please add at least one variable to unset",
+            ParameterName("fields"),
+            nodeId
+          )
+        ).toValidatedNel
+      }
+
+    val variableNamesValidation = sanitizedUnsetVariablesWithIndexes.map { case (variableName, index) =>
+      val fieldParameterName = ParameterName(recordKeyFieldName(index))
+      val blankValidation: ValidatedNel[PartSubGraphCompilationError, Unit] =
+        if (variableName.nonEmpty) {
+          valid(())
+        } else {
+          invalid[PartSubGraphCompilationError, Unit](
+            CustomParameterValidationError(
+              "This field value is required and can not be blank",
+              "Please fill field value for this parameter",
+              fieldParameterName,
+              nodeId
+            )
+          ).toValidatedNel
+        }
+      val validNameValidation = validateVariableName(variableName, Some(fieldParameterName))
+      val existsValidation =
+        if (inputContext.validationContext.localVariables.contains(variableName)) {
+          valid(())
+        } else {
+          invalid[PartSubGraphCompilationError, Unit](
+            CustomParameterValidationError(
+              "Can only unset variables available in the context",
+              "Variable not found in the current context",
+              fieldParameterName,
+              nodeId
+            )
+          ).toValidatedNel
+        }
+      ((blankValidation, validNameValidation).tupled, existsValidation).mapN((_, _) => variableName)
+    }.sequence
+
+    val uniqueNamesValidation: ValidatedNel[PartSubGraphCompilationError, Unit] = {
+      val duplicatedIndexes = sanitizedUnsetVariablesWithIndexes
+        .groupBy(_._1)
+        .values
+        .filter(_.size > 1)
+        .flatMap(_.map(_._2))
+        .toList
+
+      if (duplicatedIndexes.isEmpty) {
+        valid(())
+      } else {
+        Invalid(
+          cats.data.NonEmptyList.fromListUnsafe(
+            duplicatedIndexes.map[PartSubGraphCompilationError](index =>
+              CustomParameterValidationError(
+                "The variable can be unset only once",
+                "Variable selected more than once",
+                ParameterName(recordKeyFieldName(index)),
+                nodeId
+              )
+            )
+          )
+        )
+      }
+    }
+
+    val validVariablesToUnset = ((atLeastOneVariableValidation, variableNamesValidation).tupled, uniqueNamesValidation)
+      .mapN { case ((_, variableNames), _) => variableNames }
+
+    // Keep UNSET validation/runtime behavior aligned: remove only local context variables and avoid duplicating
+    // the same errors in both compiledObject and validationContext.
+    val resultValidationContext = validVariablesToUnset match {
+      case Valid(variableNames) => Valid(inputContext.validationContext.withoutVariables(variableNames))
+      case Invalid(_)           => Valid(inputContext.validationContext)
+    }
+
+    NodeCompilationResult(
+      expressionTypingInfo = Map.empty,
+      parameters = None,
+      validationContext = resultValidationContext,
+      compiledObject = validVariablesToUnset
+    )
   }
 
   def compileFilter(filter: Filter, inputContext: SingleInputNodeInputValidationContext)(
@@ -110,7 +211,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
   }
 
   def compileFields(
-      fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
+      fields: List[GraphField],
       inputContext: SingleInputNodeInputValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
@@ -191,6 +292,14 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
 }
 
 object BuiltInNodeCompiler {
+
+  private[nodecompilation] val unusedCompiledExpression: CompiledExpression = new CompiledExpression {
+    override val language: Expression.Language = Expression.Language.Spel
+    override val original: String              = ""
+
+    override def evaluate[T](ctx: Context, globals: Map[String, Any]): T =
+      null.asInstanceOf[T]
+  }
 
   private def typedExprToTypingResult(expr: Option[TypedExpression]) = {
     expr.map(_.returnType).getOrElse(Unknown)
