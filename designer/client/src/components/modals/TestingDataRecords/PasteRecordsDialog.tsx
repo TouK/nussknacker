@@ -22,7 +22,11 @@ function isNkFormat(obj: unknown): obj is { input: unknown; inputMeta?: unknown 
 }
 
 function toRecord(parsed: unknown, defaultTemplate: Record<string, unknown> | null): unknown {
-    return isNkFormat(parsed) ? parsed : { ...defaultTemplate, input: parsed };
+    if (!isNkFormat(parsed)) {
+        return { ...defaultTemplate, input: parsed };
+    }
+    // Already has 'input', but fill in missing fields from template (e.g. inputMeta) as defaults
+    return defaultTemplate ? { ...defaultTemplate, ...parsed } : parsed;
 }
 
 function splitNdjsonLines(text: string): string[] {
