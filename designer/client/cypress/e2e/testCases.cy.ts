@@ -77,14 +77,18 @@ describe("Test cases", () => {
         cy.openNodeWindow("Event Generator");
         cy.openNodeDetailsTestingTab();
         appendFromLiveDataClick();
-        addEmptyAssertion();
-        fillAssertion(0, "#records.size", "10");
         cy.applyNodeChanges();
 
         cy.openNodeWindow("Enricher");
         cy.openNodeDetailsTestingTab();
         addEmptyAssertion();
         fillAssertion(0, "10", "2");
+        cy.applyNodeChanges();
+
+        cy.openNodeWindow("Log");
+        cy.openNodeDetailsTestingTab();
+        addEmptyAssertion();
+        fillAssertion(0, "#records.size", "10");
         cy.applyNodeChanges();
 
         cy.runCurrentTestCase();

@@ -5,18 +5,10 @@ import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.hamcrest.Matchers.containsString
 import org.scalatest.Assertion
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.KafkaFactory
-import pl.touk.nussknacker.engine.test.testcase.{EnricherMock, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -29,15 +21,10 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import sttp.client3.{quickRequest, Response, UriContext}
 import sttp.model.StatusCode
-
-import java.util.UUID
 
 trait ScenarioTestingApiHttpServiceGenericSpec
     extends AnyFreeSpecLike
