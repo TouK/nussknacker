@@ -1,40 +1,11 @@
 import type { Reducer } from "../actions/reduxTypes";
+import type { ScenarioDraftState } from "../actions/scenarioDraftActions";
 import type { ProcessName, ProcessVersionId } from "../components/Process/types";
 import type { ScenarioDraft } from "../draftStorage";
-import type { ScenarioGraph } from "../types/scenarioGraph";
 
 export type { ScenarioDraft } from "../draftStorage";
 
-export type ScenarioDraftState = Record<string, ScenarioDraft>;
-
 export const draftKey = (processName: ProcessName, baseVersionId: ProcessVersionId | null) => `${processName}::${baseVersionId ?? "null"}`;
-
-export type ScenarioDraftActions =
-    | { type: "SCENARIO_DRAFT_SET"; payload: ScenarioDraft }
-    | { type: "SCENARIO_DRAFT_CLEAR"; processName: ProcessName; baseVersionId: ProcessVersionId | null }
-    | { type: "SCENARIO_DRAFT_HYDRATE"; drafts: ScenarioDraftState }
-    | { type: "SCENARIO_VERSION_BUMPED"; processName: ProcessName; versionId: ProcessVersionId }
-    | { type: "APPLY_SCENARIO_DRAFT"; scenarioGraph: ScenarioGraph };
-
-export const scenarioDraftSet = (payload: ScenarioDraft): ScenarioDraftActions => ({
-    type: "SCENARIO_DRAFT_SET",
-    payload,
-});
-export const scenarioDraftClear = (processName: ProcessName, baseVersionId: ProcessVersionId | null): ScenarioDraftActions => ({
-    type: "SCENARIO_DRAFT_CLEAR",
-    processName,
-    baseVersionId,
-});
-export const scenarioDraftHydrate = (drafts: ScenarioDraftState): ScenarioDraftActions => ({ type: "SCENARIO_DRAFT_HYDRATE", drafts });
-export const applyScenarioDraft = (scenarioGraph: ScenarioGraph): ScenarioDraftActions => ({
-    type: "APPLY_SCENARIO_DRAFT",
-    scenarioGraph,
-});
-export const scenarioVersionBumped = (processName: ProcessName, versionId: ProcessVersionId): ScenarioDraftActions => ({
-    type: "SCENARIO_VERSION_BUMPED",
-    processName,
-    versionId,
-});
 
 export const scenarioDraft: Reducer<ScenarioDraftState> = (state = {}, action) => {
     switch (action.type) {

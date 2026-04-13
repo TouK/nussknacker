@@ -5,7 +5,6 @@ import type { RootState } from "../reducers";
 import type { CloudDataActions } from "../reducers/cloudData";
 import type { SquashHistoryActions } from "../reducers/graph/historySquash";
 import type { ProcessActivityActions } from "../reducers/processActivity";
-import type { ScenarioDraftActions } from "../reducers/scenarioDraft";
 import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
 import type { AssistantActions } from "./assistantActions";
@@ -25,6 +24,7 @@ import type { ToolWindowActions } from "./nk/toolWindow";
 import type { UiActions } from "./nk/ui/uiActions";
 import type { UserSettingsActions } from "./nk/userSettings";
 import type { ValidationsActions } from "./nk/validationsActions";
+import type { ScenarioDraftActions } from "./scenarioDraftActions";
 import type { SettingsActions } from "./settingsActions";
 
 export type TypedAction =

@@ -6,9 +6,9 @@ import { loadProcessToolbarsConfiguration } from "../../../actions/nk/loadProces
 import { displayCurrentProcessVersion } from "../../../actions/nk/process";
 import { getScenarioActivities } from "../../../actions/nk/scenarioActivities";
 import type { ThunkAction } from "../../../actions/reduxTypes";
+import { scenarioDraftClear, scenarioVersionBumped } from "../../../actions/scenarioDraftActions";
 import { visualizationUrl } from "../../../common/VisualizationUrl";
 import HttpService from "../../../http/HttpService/instance";
-import { scenarioDraftClear, scenarioVersionBumped } from "../../../reducers/scenarioDraft";
 import {
     getProcessName,
     getProcessUnsavedNewName,

@@ -6,10 +6,11 @@ import { useTranslation } from "react-i18next";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import { displayScenarioVersion } from "../../../../actions/nk/process";
+import { scenarioDraftClear } from "../../../../actions/scenarioDraftActions";
 import { formatDateTime } from "../../../../common/DateUtils";
 import { useUserSettings } from "../../../../common/useUserSettings";
+import { draftKey } from "../../../../reducers/scenarioDraft";
 import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
-import { draftKey, scenarioDraftClear } from "../../../../reducers/scenarioDraft";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import type { ItemActivity } from "../ActivitiesPanel";

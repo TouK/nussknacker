@@ -5,11 +5,12 @@ import Notifications from "react-notification-system-redux";
 
 import { warn } from "../actions/notificationActions";
 import type { Action } from "../actions/reduxTypes";
+import type { ScenarioDraftActions, ScenarioDraftState } from "../actions/scenarioDraftActions";
+import { applyScenarioDraft, scenarioDraftClear, scenarioDraftHydrate, scenarioDraftSet } from "../actions/scenarioDraftActions";
 import type { ProcessName } from "../components/Process/types";
 import { getScenarioDraftBackend } from "../draftStorage";
 import type { RootState } from "../reducers";
-import type { ScenarioDraftActions, ScenarioDraftState } from "../reducers/scenarioDraft";
-import { applyScenarioDraft, draftKey, scenarioDraftClear, scenarioDraftHydrate, scenarioDraftSet } from "../reducers/scenarioDraft";
+import { draftKey } from "../reducers/scenarioDraft";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../reducers/selectors/graph";
 import { getUserSettings } from "../reducers/selectors/userSettings";
 
@@ -27,17 +28,8 @@ const VERSION_BUMPED_UID = "scenario-version-bumped";
 
 export const draftListener = createListenerMiddleware<RootState, AppDispatch>();
 
-const debouncedPersist = debounce((dispatch: AppDispatch, state: RootState) => {
-    const processName = getProcessName(state);
-    if (!processName) return;
-    dispatch(
-        scenarioDraftSet({
-            id: processName,
-            baseVersionId: getProcessVersionId(state),
-            data: getScenarioGraph(state),
-            updatedAt: new Date().toISOString(),
-        }),
-    );
+const debouncedPersist = debounce((dispatch: AppDispatch) => {
+    dispatch(scenarioDraftSet());
 }, 500);
 
 export const flushDraftSave = () => debouncedPersist.flush();
@@ -64,20 +56,20 @@ draftListener.startListening({
             getScenarioGraph(current) !== getScenarioGraph(previous)
         );
     },
-    effect: (_action, api) => {
-        const state = api.getState();
+    effect: (_action, { dispatch, getState }) => {
+        const state = getState();
         const processName = getProcessName(state);
         const baseVersionId = getProcessVersionId(state);
         if (!processName) return;
-        api.dispatch(Notifications.hide(DRAFT_OVERWRITTEN_UID));
+        dispatch(Notifications.hide(DRAFT_OVERWRITTEN_UID));
         if (state.graphReducer.past.length === 0) {
             debouncedPersist.cancel();
             if (state.scenarioDraft[draftKey(processName, baseVersionId)]) {
-                api.dispatch(scenarioDraftClear(processName, baseVersionId));
+                dispatch(scenarioDraftClear(processName, baseVersionId));
             }
             return;
         }
-        debouncedPersist(api.dispatch, state);
+        debouncedPersist(dispatch);
     },
 });
 
@@ -171,11 +163,11 @@ draftListener.startListening({
         if (!name) return false;
         return getProcessName(previous) !== name || getProcessVersionId(previous) !== getProcessVersionId(current);
     },
-    effect: async (_action, api) => {
-        const processName = getProcessName(api.getState());
+    effect: async (_action, { dispatch, getOriginalState, getState }) => {
+        const processName = getProcessName(getState());
         if (!processName) return;
 
-        const nameChanged = getProcessName(api.getOriginalState()) !== processName;
+        const nameChanged = getProcessName(getOriginalState()) !== processName;
         if (nameChanged) {
             try {
                 const entries = await getScenarioDraftBackend().list(processName);
@@ -183,21 +175,21 @@ draftListener.startListening({
                 for (const { versionId, value } of entries) {
                     drafts[draftKey(processName, versionId)] = value;
                 }
-                api.dispatch(scenarioDraftHydrate(drafts));
+                dispatch(scenarioDraftHydrate(drafts));
             } catch {
                 // backend unavailable — leave state untouched
             }
         }
 
-        const state = api.getState();
+        const state = getState();
         const versionId = getProcessVersionId(state);
         const draft = state.scenarioDraft[draftKey(processName, versionId)];
         if (!draft) return;
 
         if (isEqual(draft.data, getScenarioGraph(state))) {
-            api.dispatch(scenarioDraftClear(processName, versionId));
+            dispatch(scenarioDraftClear(processName, versionId));
             return;
         }
-        api.dispatch(applyScenarioDraft(draft.data));
+        dispatch(applyScenarioDraft(draft.data));
     },
 });
