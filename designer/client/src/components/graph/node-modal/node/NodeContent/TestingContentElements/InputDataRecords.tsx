@@ -46,7 +46,6 @@ export const InputDataRecords = ({ node }: Props) => {
     const {
         cellErrors,
         recordsErrors,
-        handleRowAdded,
         handleRowsAdded,
         handleRowMoved,
         handleRowsDeleted,
@@ -73,12 +72,13 @@ export const InputDataRecords = ({ node }: Props) => {
     );
 
     const handleAddRecord = useCallback(() => {
-        const records = testingDataRecordsForSource ?? [];
-        handleRowAdded(records.length, {
-            sourceId: defaultDataRecord.sourceId ?? node.id,
-            variables: defaultDataRecord.variables ?? "",
-        });
-    }, [handleRowAdded, testingDataRecordsForSource, defaultDataRecord, node.id]);
+        handleRowsAdded([
+            {
+                sourceId: defaultDataRecord.sourceId ?? node.id,
+                variables: defaultDataRecord.variables ?? "",
+            },
+        ]);
+    }, [handleRowsAdded, defaultDataRecord.sourceId, defaultDataRecord.variables, node.id]);
 
     const handleClearAll = useCallback(() => {
         const indices = (testingDataRecordsForSource ?? []).map((_, i) => i);
