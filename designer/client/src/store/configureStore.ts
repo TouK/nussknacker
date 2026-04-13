@@ -10,7 +10,7 @@ import { thunk } from "redux-thunk";
 import type { Action } from "../actions/reduxTypes";
 import type { RootState } from "../reducers";
 import { rootReducer } from "../reducers";
-import { draftAutoSaveListener } from "./draftAutoSaveListener";
+import { draftListener } from "./draftListener";
 import { scenarioValidationMiddleware } from "./scenarioValidationMiddleware";
 
 // avoid polluting devtools with frequent refresh actions
@@ -33,8 +33,9 @@ export const setupStore = () => {
                 serializableCheck: false, // we still have non fixed antipatterns
                 thunk: false, // need to disable and provide own, typed thunk
             })
-                .prepend(listenerMiddleware.middleware, draftAutoSaveListener.middleware, thunk as ThunkMiddleware<RootState, Action>)
+                .prepend(listenerMiddleware.middleware, thunk as ThunkMiddleware<RootState, Action>)
                 .concat(
+                    draftListener.middleware,
                     createStateSyncMiddleware({
                         whitelist: [
                             "USERSETTING_SET",

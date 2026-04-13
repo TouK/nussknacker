@@ -1,6 +1,3 @@
-import { persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
-
 import type { Reducer } from "../actions/reduxTypes";
 import type { ProcessName, ProcessVersionId } from "../components/Process/types";
 import type { ScenarioGraph } from "../types/scenarioGraph";
@@ -20,6 +17,7 @@ export const draftKey = (processName: ProcessName, baseVersionId: ProcessVersion
 export type ScenarioDraftActions =
     | { type: "SCENARIO_DRAFT_SET"; payload: ScenarioDraft }
     | { type: "SCENARIO_DRAFT_CLEAR"; processName: ProcessName; baseVersionId: ProcessVersionId | null }
+    | { type: "SCENARIO_DRAFT_HYDRATE"; drafts: ScenarioDraftState }
     | { type: "APPLY_SCENARIO_DRAFT"; scenarioGraph: ScenarioGraph };
 
 export const scenarioDraftSet = (payload: ScenarioDraft): ScenarioDraftActions => ({ type: "SCENARIO_DRAFT_SET", payload });
@@ -28,12 +26,13 @@ export const scenarioDraftClear = (processName: ProcessName, baseVersionId: Proc
     processName,
     baseVersionId,
 });
+export const scenarioDraftHydrate = (drafts: ScenarioDraftState): ScenarioDraftActions => ({ type: "SCENARIO_DRAFT_HYDRATE", drafts });
 export const applyScenarioDraft = (scenarioGraph: ScenarioGraph): ScenarioDraftActions => ({
     type: "APPLY_SCENARIO_DRAFT",
     scenarioGraph,
 });
 
-const reducer: Reducer<ScenarioDraftState> = (state = {}, action) => {
+export const scenarioDraft: Reducer<ScenarioDraftState> = (state = {}, action) => {
     switch (action.type) {
         case "SCENARIO_DRAFT_SET": {
             const k = draftKey(action.payload.processName, action.payload.baseVersionId);
@@ -45,9 +44,9 @@ const reducer: Reducer<ScenarioDraftState> = (state = {}, action) => {
             const { [k]: _removed, ...rest } = state;
             return rest;
         }
+        case "SCENARIO_DRAFT_HYDRATE":
+            return action.drafts;
         default:
             return state;
     }
 };
-
-export const scenarioDraft = persistReducer({ key: "scenarioDraft", storage }, reducer);

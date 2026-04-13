@@ -14,7 +14,7 @@ import { getProcessName, getProcessVersionId, getScenario, isPristine } from "..
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { flushDraftSave } from "../../../../store/draftAutoSaveListener";
+import { flushDraftSave } from "../../../../store/draftListener";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { InfoTooltip } from "../../../graph/node-modal/editors/InfoTooltip/InfoTooltip";

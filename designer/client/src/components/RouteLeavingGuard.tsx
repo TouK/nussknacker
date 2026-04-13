@@ -3,7 +3,7 @@ import { useBlocker } from "react-router-dom";
 
 import { unsavedProcessChanges } from "../common/DialogMessages";
 import { getUserSettings } from "../reducers/selectors/userSettings";
-import { flushDraftSave } from "../store/draftAutoSaveListener";
+import { flushDraftSave } from "../store/draftListener";
 import { useAppSelector } from "../store/storeHelpers";
 import { useWindows } from "../windowManager/useWindows";
 

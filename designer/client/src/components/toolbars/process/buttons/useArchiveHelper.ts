@@ -10,7 +10,7 @@ import HttpService from "../../../../http/HttpService/instance";
 import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { flushDraftSave } from "../../../../store/draftAutoSaveListener";
+import { flushDraftSave } from "../../../../store/draftListener";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 
