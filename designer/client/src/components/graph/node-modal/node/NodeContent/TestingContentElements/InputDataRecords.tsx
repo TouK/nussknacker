@@ -91,7 +91,15 @@ export const InputDataRecords = ({ node }: Props) => {
 
     const handleCopyAll = useCallback(() => {
         const records = testingDataRecordsForSource ?? [];
-        const text = records.map((r) => r.variables).join("\n");
+        const text = records
+            .map((r) => {
+                try {
+                    return JSON.stringify(JSON.parse(r.variables));
+                } catch {
+                    return r.variables;
+                }
+            })
+            .join("\n");
         navigator.clipboard.writeText(text).then(() => {
             setCopied(true);
             if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
