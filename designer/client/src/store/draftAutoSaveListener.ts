@@ -31,6 +31,8 @@ const debouncedPersist = debounce((dispatch: AppDispatch, state: RootState) => {
     );
 }, 500);
 
+export const flushDraftSave = () => debouncedPersist.flush();
+
 // Persist draft whenever the user edits the graph of the currently-loaded scenario.
 // When undo history is empty (user is back at the clean loaded scenario), clear the
 // draft so that "no undoable changes" strictly implies "no stored draft".
