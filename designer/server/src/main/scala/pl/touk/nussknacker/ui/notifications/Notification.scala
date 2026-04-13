@@ -24,7 +24,9 @@ final case class Notification(
     message: String,
     // none is marker notification, just to refresh the data
     `type`: Option[NotificationType.Value],
-    toRefresh: List[DataToRefresh]
+    toRefresh: List[DataToRefresh],
+    // if set, this notification is suppressed for the user matching this username (author exclusion for awareness notifications)
+    author: Option[String] = None
 )
 
 object Notification {
@@ -93,6 +95,26 @@ object Notification {
       toRefresh = toRefresh
     )
   }
+
+  def draftUpdated(name: ProcessName, author: String): Notification =
+    Notification(
+      id = UUID.randomUUID().toString,
+      scenarioName = Some(name),
+      message = s"$author is editing this scenario (draft was updated)",
+      `type` = Some(NotificationType.info),
+      toRefresh = Nil,
+      author = Some(author)
+    )
+
+  def draftDiscarded(name: ProcessName, author: String): Notification =
+    Notification(
+      id = UUID.randomUUID().toString,
+      scenarioName = Some(name),
+      message = s"Draft of $name was discarded by $author",
+      `type` = Some(NotificationType.info),
+      toRefresh = Nil,
+      author = Some(author)
+    )
 
   def configurationReloaded: Notification =
     Notification(

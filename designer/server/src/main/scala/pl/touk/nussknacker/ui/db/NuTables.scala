@@ -12,7 +12,8 @@ trait NuTables
     with ScenarioLabelsEntityFactory
     with AttachmentEntityFactory
     with DeploymentEntityFactory
-    with LiveDataEntityFactory {
+    with LiveDataEntityFactory
+    with ProcessDraftEntityFactory {
 
   protected val profile: NuJdbcProfile
 }

@@ -59,6 +59,7 @@ class NotificationServiceImpl(
       for {
         notificationsForUserActions <- notificationsForUserActions(user, limit)
         globalNotifications = fetchGlobalNotificationsAndTriggerEviction(limit)
+          .filterNot(_.author.contains(user.username))
       } yield notificationsForUserActions ++ globalNotifications
     scope match {
       case NotificationsScope.NotificationsForLoggedUser(user) =>

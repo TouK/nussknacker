@@ -91,6 +91,7 @@ object PekkoRoutesFactory {
     }
     val validationResource =
       new ValidationResources(processService, processingTypeServicesProvider.mapValues(_.processResolver))
+    val processDraftResources = new ProcessDraftResources(processDraftService, processAuthorizer)
     val definitionResources = new DefinitionResources(
       processingTypeServicesProvider.mapValues(_.definitionService)
     )
@@ -107,6 +108,7 @@ object PekkoRoutesFactory {
       processExportResources,
       managementResources,
       validationResource,
+      processDraftResources,
       definitionResources,
       statusResources,
     )
