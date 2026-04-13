@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.flink.table.sql
 
 import com.typesafe.config.ConfigFactory
+import org.apache.avro.Schema
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.flink.types.Row
 import org.scalatest.{BeforeAndAfterAll, Inside, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
@@ -18,6 +20,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
+import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
@@ -115,6 +118,42 @@ class FlinkSqlQueryComponentTest
       Map("keyA" -> "valueA").toRow,
       Map("keyA" -> "valueB").toRow,
     )
+  }
+
+  test("should allow accessing fields on avro records") {
+    val avroSchema = new Schema.Parser().parse(
+      """{
+        |  "type": "record",
+        |  "name": "TestRecord",
+        |  "fields": [
+        |    {"name": "key", "type": "string"}
+        |  ]
+        |}""".stripMargin
+    )
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("source", TestScenarioRunner.testDataSource)
+      .customNode(
+        id = "flink-sql-query",
+        outputVar = "out",
+        customNodeRef = "flink-sql-query",
+        "flinkSqlQuery" -> "SELECT input.key FROM record".spelTemplate
+      )
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out".spel)
+
+    val inputType = AvroSchemaTypeDefinitionExtractor.typeDefinition(avroSchema)
+
+    val record = new GenericData.Record(avroSchema)
+    record.put("key", "value")
+
+    val result = runner.runWithDataWithType[GenericRecord, Row](
+      scenario,
+      List(record),
+      inputType
+    )
+
+    result.validValue.successes shouldBe List(Map("key" -> "value").toRow)
   }
 
   test("should clear context") {
