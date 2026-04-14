@@ -55,6 +55,7 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.validation.UIProcessValidator.ValidationResultWithDetails
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -391,8 +392,8 @@ class ScenarioTestService(
   private def validateScenario(scenarioGraph: ScenarioGraph, processVersion: ProcessVersion, isFragment: Boolean)(
       implicit user: LoggedUser
   ): Either[ScenarioValidationError, ScenarioWithTyping] = {
-    val (validationResult, rawTyping) =
-      processResolver.validateBeforeUiResolvingWithRawTyping(scenarioGraph, processVersion, isFragment)
+    val ValidationResultWithDetails(validationResult, rawTyping) =
+      processResolver.validateBeforeUiResolvingWithDetauls(scenarioGraph, processVersion, isFragment)
     val canonicalProcess =
       processResolver.resolveExpressions(scenarioGraph, processVersion.processName, validationResult.typingInfo)
     if (validationResult.hasErrors) {

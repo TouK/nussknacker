@@ -32,6 +32,17 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.validation.UIProcessValidator.ValidationResultWithDetails
+
+object UIProcessValidator {
+
+  // See todo in ValidationResult, which could be used only on API layer and this class could contain all necessary validation results.
+  final case class ValidationResultWithDetails(
+      validationResult: ValidationResult,
+      rawTyping: Map[String, NodeTypingInfo]
+  )
+
+}
 
 class UIProcessValidator(
     processingType: ProcessingType,
@@ -101,13 +112,13 @@ class UIProcessValidator(
   )(
       implicit loggedUser: LoggedUser
   ): ValidationResult =
-    validateWithRawTyping(scenarioGraph, processVersion, isFragment)._1
+    validateWithDetails(scenarioGraph, processVersion, isFragment).validationResult
 
-  def validateWithRawTyping(
+  def validateWithDetails(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-  )(implicit loggedUser: LoggedUser): (ValidationResult, Map[String, NodeTypingInfo]) = {
+  )(implicit loggedUser: LoggedUser): ValidationResultWithDetails = {
     val uiValidationResult = uiValidation(
       scenarioGraph,
       processVersion.processName,
@@ -116,9 +127,9 @@ class UIProcessValidator(
     )
     if (uiValidationResult.saveAllowed) {
       val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-      val (canonicalValidation, rawTyping) =
-        validateCanonicalProcessWithRawTyping(canonical, processVersion, isFragment)
-      (deduplicateErrors(uiValidationResult.add(canonicalValidation)), rawTyping)
+      val ValidationResultWithDetails(canonicalValidation, rawTyping) =
+        validateCanonicalProcessWithDetails(canonical, processVersion, isFragment)
+      ValidationResultWithDetails(deduplicateErrors(uiValidationResult.add(canonicalValidation)), rawTyping)
     } else {
       val errorAndWarningNodeIds =
         (uiValidationResult.errors.invalidNodes.keys ++
@@ -127,7 +138,10 @@ class UIProcessValidator(
         .filter(n => errorAndWarningNodeIds.contains(n.id.value))
         .map(n => n.id.value -> n.name.value)
         .toMap
-      (uiValidationResult.withNodeNames(nodeNamesForErrors), Map.empty[String, NodeTypingInfo])
+      ValidationResultWithDetails(
+        uiValidationResult.withNodeNames(nodeNamesForErrors),
+        Map.empty[String, NodeTypingInfo]
+      )
     }
   }
 
@@ -163,19 +177,19 @@ class UIProcessValidator(
       processVersion: ProcessVersion,
       isFragment: Boolean
   )(implicit loggedUser: LoggedUser): ValidationResult =
-    validateCanonicalProcessWithRawTyping(canonical, processVersion, isFragment)._1
+    validateCanonicalProcessWithDetails(canonical, processVersion, isFragment).validationResult
 
-  private def validateCanonicalProcessWithRawTyping(
+  private def validateCanonicalProcessWithDetails(
       canonical: CanonicalProcess,
       processVersion: ProcessVersion,
       isFragment: Boolean
-  )(implicit loggedUser: LoggedUser): (ValidationResult, Map[String, NodeTypingInfo]) = {
+  )(implicit loggedUser: LoggedUser): ValidationResultWithDetails = {
     engineScenarioCompilationDependenciesResource
       .use { engineScenarioCompilationDependencies =>
         SyncIO {
           def validateAndFormatResult(
               scenario: CanonicalProcess
-          ): (ValidationResult, Map[String, NodeTypingInfo]) = {
+          ): ValidationResultWithDetails = {
             val jobData: JobData = JobData(scenario.metaData, processVersion)
             implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
               new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
@@ -187,7 +201,7 @@ class UIProcessValidator(
               .fold(formatErrors, _ => ValidationResult.success)
               .withNodeResults(nodeResults)
               .add(testCasesValidationResult)
-            (validationResult, rawTyping)
+            ValidationResultWithDetails(validationResult, rawTyping)
           }
 
           val fragments = fragmentResolver.fetchFragmentsSync(processingType)
@@ -201,11 +215,11 @@ class UIProcessValidator(
           val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, fragments)
 
           // TODO: handle types when fragment resolution fails
-          val (validationResult, rawTyping) = resolvedScenarioResult match {
+          val ValidationResultWithDetails(validationResult, rawTyping) = resolvedScenarioResult match {
             case Invalid(fragmentResolutionErrors) =>
-              (formatErrors(fragmentResolutionErrors), Map.empty[String, NodeTypingInfo])
+              ValidationResultWithDetails(formatErrors(fragmentResolutionErrors), Map.empty[String, NodeTypingInfo])
             case Valid(scenario) =>
-              val (validationResult, rawTyping) = validateAndFormatResult(scenario)
+              val ValidationResultWithDetails(validationResult, rawTyping) = validateAndFormatResult(scenario)
               val containsDisabledNodes = canonical.collectAllNodes.exists {
                 case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
                 case _                                                           => false
@@ -215,19 +229,29 @@ class UIProcessValidator(
                   fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, fragments)
                 resolvedScenarioWithoutDisabledNodes match {
                   case Invalid(fragmentResolutionErrors) =>
-                    (formatErrors(fragmentResolutionErrors), Map.empty[String, NodeTypingInfo])
+                    ValidationResultWithDetails(
+                      formatErrors(fragmentResolutionErrors),
+                      Map.empty[String, NodeTypingInfo]
+                    )
                   case Valid(scenarioWithoutDisabledNodes) =>
                     // FIXME: Validation errors for fragment nodes are not properly handled by FE
                     // We add typing data from disabled nodes to have typing and suggestions for expressions in disabled nodes
-                    val (resultWithoutDisabledNodes, _) = validateAndFormatResult(scenarioWithoutDisabledNodes)
-                    (resultWithoutDisabledNodes.copy(nodeResults = validationResult.nodeResults), rawTyping)
+                    val ValidationResultWithDetails(resultWithoutDisabledNodes, _) =
+                      validateAndFormatResult(scenarioWithoutDisabledNodes)
+                    ValidationResultWithDetails(
+                      resultWithoutDisabledNodes.copy(nodeResults = validationResult.nodeResults),
+                      rawTyping
+                    )
                 }
               } else {
-                (validationResult, rawTyping)
+                ValidationResultWithDetails(validationResult, rawTyping)
               }
           }
           val finalResult = validationResult.add(additionalValidatorErrors)
-          (finalResult.withNodeNames(resolveNodeNamesForResult(finalResult, canonical, fragments)), rawTyping)
+          ValidationResultWithDetails(
+            finalResult.withNodeNames(resolveNodeNamesForResult(finalResult, canonical, fragments)),
+            rawTyping
+          )
         }
       }
       .unsafeRunSync()

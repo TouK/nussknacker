@@ -5,13 +5,13 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.validation.UIProcessValidator.ValidationResultWithDetails
 
 /**
   * This class handles resolving of expression (e.g. dict labels resolved to keys) which should be done before
@@ -54,14 +54,14 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
     beforeUiResolvingValidator.validate(scenarioGraph, processName, isFragment, labels)
   }
 
-  def validateBeforeUiResolvingWithRawTyping(
+  def validateBeforeUiResolvingWithDetauls(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
   )(
       implicit loggedUser: LoggedUser
-  ): (ValidationResult, Map[String, NodeTypingInfo]) = {
-    beforeUiResolvingValidator.validateWithRawTyping(scenarioGraph, processVersion, isFragment)
+  ): ValidationResultWithDetails = {
+    beforeUiResolvingValidator.validateWithDetails(scenarioGraph, processVersion, isFragment)
   }
 
   def resolveExpressions(
