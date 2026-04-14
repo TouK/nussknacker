@@ -119,7 +119,7 @@ In some contexts data type conversions may be necessary - conversion functions a
 
 Nussknacker uses variables as placeholders for data within a scenario. They allow you to store intermediate or derived values and reuse them later in the scenario. This helps reduce redundancy (e.g., avoiding repeated computations) and improves traceability, especially in complex data transformations. You can watch variables values using [testing and debugging](/docs/scenariosAuthoring/testingAndDebugging.mdx#watch-live-data) Nussknacker functionality. 
 
-Variables have to be declared; a `variable` or `record-variable` component is used for this. Once declared, a hash sign `"#"` is used to refer to a variable from a SpEL expression. Variables are attributes of a [record](/docs/scenariosAuthoring/introduction.mdx#record), they do not exist by themselves. 
+Variables are usually declared using a `variable` or `record-variable` component. The `variable` component can also remove no longer needed local variables (`UNSET` operation). Once declared, a hash sign `"#"` is used to refer to a variable from a SpEL expression. Variables are attributes of a [record](/docs/scenariosAuthoring/introduction.mdx#record), they do not exist by themselves. 
 
 
 ### Predefined variables. 
@@ -242,7 +242,6 @@ Writing SpEL expressions is the original method of providing parameters, transfo
 :::caution
 As of now, when you switch between expression types (SpEL, JSON template, string template), there is no attempt to convert the entered text to the target expression type. For example in the case of SpEL expression string "John" will be treated as having length 4. When you switch to the string template expression, the entered text will remain unchanged and it will be treated as a string of length 6. The quotes will be treated as regular characters; not a string "boundary". 
 :::
-
 
 
 

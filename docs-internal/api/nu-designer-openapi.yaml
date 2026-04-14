@@ -9310,6 +9310,7 @@ components:
       required:
       - id
       - type
+      - operation
       - varName
       - value
       properties:
@@ -9321,6 +9322,12 @@ components:
           - type: 'null'
         type:
           $ref: '#/components/schemas/NodeTypes13'
+        operation:
+          $ref: '#/components/schemas/VariableOperationSchemaType'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
         varName:
           type: string
         value:
@@ -9351,6 +9358,12 @@ components:
           $ref: '#/components/schemas/NodeTypes14'
         varName:
           type: string
+    VariableOperationSchemaType:
+      title: VariableOperationSchemaType
+      type: string
+      enum:
+      - SET
+      - UNSET
     WithLiveData:
       title: WithLiveData
       type: object
