@@ -24,11 +24,16 @@ import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
 
 
 ## Description
-A Variable component is used to declare a new variable. 
+A Variable component is used to set or unset variables in context.
 
 As the [record](/docs/scenariosAuthoring/introduction.mdx#record) moves through the scenario, it can be extended with additional information. This additional information is stored in variables - named placeholders that are attached to the record during scenario execution. Variables make it possible to retain and reuse intermediate results or derived data later in the scenario. 
 
 The SpEL expression defining the value of the variable must evaluate to one of the [SpEL data types](/docs/scenariosAuthoring/SpEL.md#data-types-and-structures).
+
+### Operations
+
+- `SET` (default): declares a new variable or updates an existing one, using `Variable Name` and `Expression`.
+- `UNSET`: removes one or more selected local variables from context so they are not propagated further.
 
 <!--
 In its simplest form a variable declaration looks like in the example  below. As the record has been read from a data source, the `#input` variable holds the record's value. After that, the record's (`#input`) value is assigned to a newly declared `myFirstVariable` variable.
@@ -67,6 +72,5 @@ Internally, Nussknacker converts SpEL record into a JSON object. In simple cases
 ```json
 { "name": "John", "surname": "Doe"}
 ```
-
 
 
