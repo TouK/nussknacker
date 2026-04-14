@@ -51,6 +51,13 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<A
     };
 }
 
+export function clearTestCaseNodeAssertionResult(nodeId: string, assertionIndex: number): ThunkAction {
+    return (dispatch, getState) => {
+        const activeTestCaseId = getActiveTestCaseId(getState());
+        dispatch({ type: "CLEAR_TEST_CASE_NODE_ASSERTION_RESULTS", testCaseId: activeTestCaseId, nodeId, assertionIndex });
+    };
+}
+
 export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => TestingDataRecords[]): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
