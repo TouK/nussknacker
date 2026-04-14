@@ -39,7 +39,7 @@ object UIProcessValidator {
   // See todo in ValidationResult, which could be used only on API layer and this class could contain all necessary validation results.
   final case class ValidationResultWithDetails(
       validationResult: ValidationResult,
-      rawTyping: Map[String, NodeTypingInfo]
+      typing: Map[String, NodeTypingInfo]
   )
 
 }
@@ -127,9 +127,9 @@ class UIProcessValidator(
     )
     if (uiValidationResult.saveAllowed) {
       val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-      val ValidationResultWithDetails(canonicalValidation, rawTyping) =
+      val ValidationResultWithDetails(canonicalValidation, typing) =
         validateCanonicalProcessWithDetails(canonical, processVersion, isFragment)
-      ValidationResultWithDetails(deduplicateErrors(uiValidationResult.add(canonicalValidation)), rawTyping)
+      ValidationResultWithDetails(deduplicateErrors(uiValidationResult.add(canonicalValidation)), typing)
     } else {
       val errorAndWarningNodeIds =
         (uiValidationResult.errors.invalidNodes.keys ++
@@ -194,14 +194,13 @@ class UIProcessValidator(
             implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
               new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
             val validated                 = validator.validate(scenario, isFragment)
-            val rawTyping                 = validated.typing
-            val nodeResults               = rawTyping.mapValuesNow(nodeInfoToResult)
+            val nodeResults               = validated.typing.mapValuesNow(nodeInfoToResult)
             val testCasesValidationResult = validateTestCases(scenario, validated.typing)
             val validationResult = validated.result
               .fold(formatErrors, _ => ValidationResult.success)
               .withNodeResults(nodeResults)
               .add(testCasesValidationResult)
-            ValidationResultWithDetails(validationResult, rawTyping)
+            ValidationResultWithDetails(validationResult, validated.typing)
           }
 
           val fragments = fragmentResolver.fetchFragmentsSync(processingType)
@@ -215,11 +214,11 @@ class UIProcessValidator(
           val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, fragments)
 
           // TODO: handle types when fragment resolution fails
-          val ValidationResultWithDetails(validationResult, rawTyping) = resolvedScenarioResult match {
+          val ValidationResultWithDetails(validationResult, typing) = resolvedScenarioResult match {
             case Invalid(fragmentResolutionErrors) =>
               ValidationResultWithDetails(formatErrors(fragmentResolutionErrors), Map.empty[String, NodeTypingInfo])
             case Valid(scenario) =>
-              val ValidationResultWithDetails(validationResult, rawTyping) = validateAndFormatResult(scenario)
+              val ValidationResultWithDetails(validationResult, typing) = validateAndFormatResult(scenario)
               val containsDisabledNodes = canonical.collectAllNodes.exists {
                 case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
                 case _                                                           => false
@@ -240,17 +239,17 @@ class UIProcessValidator(
                       validateAndFormatResult(scenarioWithoutDisabledNodes)
                     ValidationResultWithDetails(
                       resultWithoutDisabledNodes.copy(nodeResults = validationResult.nodeResults),
-                      rawTyping
+                      typing
                     )
                 }
               } else {
-                ValidationResultWithDetails(validationResult, rawTyping)
+                ValidationResultWithDetails(validationResult, typing)
               }
           }
           val finalResult = validationResult.add(additionalValidatorErrors)
           ValidationResultWithDetails(
             finalResult.withNodeNames(resolveNodeNamesForResult(finalResult, canonical, fragments)),
-            rawTyping
+            typing
           )
         }
       }

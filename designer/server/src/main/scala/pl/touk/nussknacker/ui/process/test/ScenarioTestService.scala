@@ -392,14 +392,14 @@ class ScenarioTestService(
   private def validateScenario(scenarioGraph: ScenarioGraph, processVersion: ProcessVersion, isFragment: Boolean)(
       implicit user: LoggedUser
   ): Either[ScenarioValidationError, ScenarioWithTyping] = {
-    val ValidationResultWithDetails(validationResult, rawTyping) =
-      processResolver.validateBeforeUiResolvingWithDetauls(scenarioGraph, processVersion, isFragment)
+    val ValidationResultWithDetails(validationResult, typing) =
+      processResolver.validateBeforeUiResolvingWithDetails(scenarioGraph, processVersion, isFragment)
     val canonicalProcess =
       processResolver.resolveExpressions(scenarioGraph, processVersion.processName, validationResult.typingInfo)
     if (validationResult.hasErrors) {
       Left(ScenarioValidationError(validationResult.errors))
     } else {
-      Right(ScenarioWithTyping(canonicalProcess, rawTyping))
+      Right(ScenarioWithTyping(canonicalProcess, typing))
     }
   }
 

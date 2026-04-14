@@ -54,7 +54,7 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
     beforeUiResolvingValidator.validate(scenarioGraph, processName, isFragment, labels)
   }
 
-  def validateBeforeUiResolvingWithDetauls(
+  def validateBeforeUiResolvingWithDetails(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
