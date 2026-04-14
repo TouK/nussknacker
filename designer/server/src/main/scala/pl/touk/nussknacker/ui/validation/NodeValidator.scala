@@ -34,32 +34,6 @@ class NodeValidator(
 
   private val testCasesValidator = TestCaseValidator(modelData, testCasesSettings)
 
-  def getOutputVariableTypes(
-      inputVariableTypes: Map[String, TypingResult],
-      nodeData: NodeData,
-      jobData: JobData
-  ): Option[Map[String, TypingResult]] = {
-    engineScenarioCompilationDependenciesResource
-      .use { engineScenarioCompilationDependencies =>
-        SyncIO {
-          implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-            new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
-          new NodeDataValidator(modelData).validate(
-            nodeData,
-            inputVariableTypes,
-            branchVariableTypes = None,
-            outgoingEdges = Nil,
-            fragmentResolver = FragmentResolver(_ => None)
-          ) match {
-            case ValidationPerformed(_, _, _, outputValidationContext) =>
-              outputValidationContext.map(_.localVariables)
-            case ValidationNotPerformed => None
-          }
-        }
-      }
-      .unsafeRunSync()
-  }
-
   def validate(processVersion: ProcessVersion, validationRequest: NodeValidationRequest)(
       implicit loggedUser: LoggedUser
   ): NodeValidationResult = {
@@ -126,5 +100,31 @@ class NodeValidator(
         )
       )
     )
+
+  def getOutputVariableTypes(
+      inputVariableTypes: Map[String, TypingResult],
+      nodeData: NodeData,
+      jobData: JobData
+  ): Option[Map[String, TypingResult]] = {
+    engineScenarioCompilationDependenciesResource
+      .use { engineScenarioCompilationDependencies =>
+        SyncIO {
+          implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+            new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+          new NodeDataValidator(modelData).validate(
+            nodeData,
+            inputVariableTypes,
+            branchVariableTypes = None,
+            outgoingEdges = Nil,
+            fragmentResolver = FragmentResolver(_ => None)
+          ) match {
+            case ValidationPerformed(_, _, _, outputValidationContext) =>
+              outputValidationContext.map(_.localVariables)
+            case ValidationNotPerformed => None
+          }
+        }
+      }
+      .unsafeRunSync()
+  }
 
 }
