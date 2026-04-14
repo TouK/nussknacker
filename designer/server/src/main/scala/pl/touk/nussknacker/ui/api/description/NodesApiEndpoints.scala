@@ -752,6 +752,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
+  // Since this endpoint requires the node to be compiled, consider returning test case additional variables in nodesValidationEndpoint.
   lazy val testCaseAdditionalVariablesEndpoint: SecuredEndpoint[
     (ProcessName, TestCaseAdditionalVariablesRequestDto),
     NodesError,

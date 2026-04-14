@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.test.testcase.Assertion.AssertionOperator
-import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, ResultContext, TestResults}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
