@@ -1667,14 +1667,14 @@ class NodesApiHttpServiceBusinessSpec
             |    }
             |  },
             |  "nodeData": {
-            |    "id": "filterId",
-            |    "type": "Filter",
-            |    "expression": {
+            |    "id": "varNodeId",
+            |    "varName": "myVar",
+            |    "value": {
             |      "language": "spel",
-            |      "expression": "#input != null"
+            |      "expression": "'hello'"
             |    },
-            |    "isDisabled": null,
-            |    "additionalFields": null
+            |    "additionalFields": null,
+            |    "type": "Variable"
             |  },
             |  "scenarioProperties": {
             |    "isFragment": false,
@@ -1792,12 +1792,12 @@ class NodesApiHttpServiceBusinessSpec
             |      ]
             |    },
             |    "outgoingRecords": {
-            |      "display": "List[Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}]",
+            |      "display": "List[Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, myVar: String(hello), sampleVariable: String(sample value)}]",
             |      "type": "TypedClass",
             |      "refClazzName": "java.util.List",
             |      "params": [
             |        {
-            |          "display": "Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}",
+            |          "display": "Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, myVar: String(hello), sampleVariable: String(sample value)}",
             |          "type": "TypedObjectTypingResult",
             |          "fields": {
             |            "input": {
@@ -1858,6 +1858,14 @@ class NodesApiHttpServiceBusinessSpec
             |              "refClazzName": "java.lang.String",
             |              "params": [
             |              ]
+            |            },
+            |            "myVar": {
+            |              "value": "hello",
+            |              "display": "String(hello)",
+            |              "type": "TypedObjectWithValue",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
             |            }
             |          },
             |          "refClazzName": "java.util.Map",
@@ -1881,60 +1889,8 @@ class NodesApiHttpServiceBusinessSpec
             |      ]
             |    }
             |  }
-            |}""".stripMargin
-        )
-    }
-
-    "return outgoingRecords typing when nodeData is provided" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(
-          s"""{
-             |  "variableTypes": {
-             |    "input": {
-             |      "display": "String",
-             |      "type": "TypedClass",
-             |      "refClazzName": "java.lang.String",
-             |      "params": []
-             |    }
-             |  },
-             |  "processProperties": {
-             |    "isFragment": false,
-             |    "additionalFields": {
-             |      "description": null,
-             |      "properties": {
-             |        "parallelism": "",
-             |        "spillStateToDisk": "true",
-             |        "useAsyncInterpretation": "",
-             |        "checkpointIntervalInSeconds": ""
-             |      },
-             |      "metaDataType": "StreamMetaData"
-             |    }
-             |  },
-             |  "nodeData": {
-             |    "id": "varNodeId",
-             |    "varName": "myVar",
-             |    "value": {
-             |      "language": "spel",
-             |      "expression": "'hello'"
-             |    },
-             |    "additionalFields": null,
-             |    "type": "Variable"
-             |  }
-             |}""".stripMargin
-        )
-        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/additionalVariables")
-        .Then()
-        .statusCode(200)
-        .body("assertionsAdditionalVariables.outgoingRecords.type", equalTo("TypedClass"))
-        .body("assertionsAdditionalVariables.outgoingRecords.refClazzName", equalTo("java.util.List"))
-        .body(
-          "assertionsAdditionalVariables.outgoingRecords.params[0].fields.myVar.refClazzName",
-          equalTo("java.lang.String")
+            |}
+            |""".stripMargin
         )
     }
   }
