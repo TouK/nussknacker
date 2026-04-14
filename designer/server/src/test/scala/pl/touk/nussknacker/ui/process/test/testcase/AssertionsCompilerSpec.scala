@@ -102,6 +102,26 @@ class AssertionsCompilerSpec
     compiledAssertionsForNode(1).comparisonExpression.original shouldBe "(#records.size > 0) == (true)"
   }
 
+  test("should compile assertions with #outgoingRecords") {
+    val test = prepareTestCase(
+      Map(
+        NodeId("enricher1") -> List(
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'xyz'".spel,
+            "#outgoingRecords[0].enricherOutput".spel
+          )
+        ),
+        NodeId("sink1") -> List(
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'zyx'".spel, "#outgoingRecords[0].result".spel)
+        )
+      )
+    )
+    val result = compileScenarioWithAssertions(scenario, test)
+
+    result.isValid shouldBe true
+  }
+
   test("should produce errors for assertions on missing nodes") {
     val test = prepareTestCase(
       Map(
@@ -288,30 +308,6 @@ class AssertionsCompilerSpec
 
       actualCompilationResult shouldBe expectedCompilationResult
     }
-  }
-
-  test("should allow #outgoingRecords in assertions for enricher node") {
-    val test = prepareTestCase(
-      Map(
-        NodeId("enricher1") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#outgoingRecords.size".spel)
-        )
-      )
-    )
-    val result = compileScenarioWithAssertions(scenario, test)
-    result.isValid shouldBe true
-  }
-
-  test("should allow #outgoingRecords in assertions for sink node (typed as input vars since sink output = input)") {
-    val test = prepareTestCase(
-      Map(
-        NodeId("sink1") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#outgoingRecords.size".spel)
-        )
-      )
-    )
-    val result = compileScenarioWithAssertions(scenario, test)
-    result.isValid shouldBe true
   }
 
   private def compileScenarioWithAssertions(scenario: CanonicalProcess, test: TestCase) = {
