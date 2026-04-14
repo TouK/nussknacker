@@ -7,7 +7,7 @@ import com.dimafeng.testcontainers.{Container, ForAllTestContainer, LazyContaine
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
-import org.scalatest.{BeforeAndAfterAll, OptionValues, Suite}
+import org.scalatest.{OptionValues, Suite}
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -21,18 +21,17 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.flink.test.docker.{WithFlinkContainers, WithKafkaContainer}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.WithProcessingTypeConfig
-import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
+import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
 
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 
 trait FlinkKafkaDockerSpec
-    extends BeforeAndAfterAll
-    with ForAllTestContainer
+    extends ForAllTestContainer
     with WithFlinkContainers
     with WithKafkaContainer
     with WithProcessingTypeConfig
-    with ExtremelyPatientScalaFutures
+    with VeryPatientScalaFutures
     with Matchers
     with OptionValues {
   // Warning: we need StrictLogging capability instead of LazyLogging because with LazyLogging we had a deadlock during kafkaClient allocation
@@ -68,7 +67,7 @@ trait FlinkKafkaDockerSpec
         .withValue("deploymentConfig.useMiniClusterForDeployment", fromAnyRef(true))
         .withValue(
           "deploymentConfig.miniCluster.config.\"execution.checkpointing.savepoint-dir\"",
-          fromAnyRef(savepointDir.resolve("savepoint").toFile.toURI.toString)
+          fromAnyRef(savepointBind.hostPath.toFile.toURI.toString)
         )
         .withValue(
           KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
