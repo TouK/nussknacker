@@ -22,6 +22,7 @@ export type AceWrapperInputProps = {
     className?: string;
     style?: SerializedStyles;
     rows?: number;
+    maxLines?: number;
     cols?: number;
     placeholder?: string;
     InputAdornmentEnd?: ReactNode;
@@ -184,7 +185,7 @@ export default forwardRef(function AceWrapper(
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): React.JSX.Element {
-    const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
+    const { language, readOnly, rows = 1, maxLines = 512, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
 
     return (
         <>
@@ -194,7 +195,7 @@ export default forwardRef(function AceWrapper(
                 mode={editorLangToMode(language, editorMode)}
                 width={"100%"}
                 minLines={rows}
-                maxLines={512}
+                maxLines={maxLines}
                 theme={"nussknacker"}
                 showPrintMargin={false}
                 cursorStart={-1} //line start

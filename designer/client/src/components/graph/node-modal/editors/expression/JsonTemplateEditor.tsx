@@ -1,19 +1,33 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { Info, InputAdornmentEndColumn } from "./InputAdornmentEndColumn";
-import { ResetToDefault } from "./ResetToDefaultButton";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { addQuotesToExpression } from "./SpelQuotesUtils";
 import { EditorMode, EditorType, ExpressionLang, type ExpressionObj } from "./types";
+import { useAceEditorAdornment } from "./useAceEditorAdornment";
 
 export const JsonTemplateEditor = prepareEditor<SpelEditorProps>(
     (props) => {
-        const { expressionObj, rows = 5, inputAdornmentEnd, ...passProps } = props;
+        const { expressionObj, rows = 5, inputAdornmentEnd, readOnly, onValueChange, defaultValue, ...passProps } = props;
 
         const language = editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language;
+
+        const onChange = useCallback(
+            (expression: string) => {
+                onValueChange({ expression, language });
+            },
+            [language, onValueChange],
+        );
+
+        const { editorRef, maxLines, resetToDefaultButton, fullscreenButton } = useAceEditorAdornment({
+            value: expressionObj.expression,
+            defaultValue,
+            readOnly,
+            onChange,
+        });
 
         const value = useMemo(
             () => ({
@@ -25,21 +39,21 @@ export const JsonTemplateEditor = prepareEditor<SpelEditorProps>(
 
         return (
             <SpelEditor
+                ref={editorRef}
                 inputAdornmentEnd={
                     <InputAdornmentEndColumn>
                         <Info editorConfig={props.editorConfig} />
-                        {inputAdornmentEnd || (
-                            <ResetToDefault
-                                value={expressionObj?.expression}
-                                defaultValue={props.defaultValue}
-                                handleChange={props.onValueChange}
-                            />
-                        )}
+                        {inputAdornmentEnd || resetToDefaultButton}
+                        {fullscreenButton}
                     </InputAdornmentEndColumn>
                 }
                 {...passProps}
+                readOnly={readOnly}
+                onValueChange={onValueChange}
+                defaultValue={defaultValue}
                 expressionObj={value}
                 rows={rows}
+                maxLines={maxLines}
                 editorMode={EditorMode.JsonTemplate}
                 language={language}
             />

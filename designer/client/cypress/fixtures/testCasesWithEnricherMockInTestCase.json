@@ -1,0 +1,141 @@
+{
+    "metaData": {
+        "id": "test12123",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "maxEvents": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Event Generator",
+            "ref": {
+                "typ": "event-generator",
+                "parameters": [
+                    {
+                        "name": "schedule",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "jsonTemplate",
+                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                        }
+                    },
+                    {
+                        "name": "Event time",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "#DATE.now"
+                        }
+                    },
+                    {
+                        "name": "Max out-of-orderness",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT10S')"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -212,
+                    "y": -52
+                }
+            },
+            "type": "Source",
+            "name": "Event Generator"
+        },
+        {
+            "id": "Unionreturnobjectservice",
+            "service": {
+                "id": "unionReturnObjectService",
+                "parameters": []
+            },
+            "output": "unionreturnobjectservice_output",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -208,
+                    "y": 98
+                }
+            },
+            "mockExpression": null,
+            "type": "Enricher",
+            "name": "Unionreturnobjectservice"
+        },
+        {
+            "id": "Dead End",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -183,
+                    "y": 294
+                }
+            },
+            "type": "Sink",
+            "name": "Dead End"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": [],
+    "testCases": {
+        "value": {
+            "id": "f8757b06-6610-4900-90cc-fd3963356e8e",
+            "name": "Test case 1",
+            "inputs": "[{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"c6e5feae-616d-47af-ade5-89f26f9d8d01\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.756571Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"}]",
+            "mocks": {
+                "Unionreturnobjectservice": {
+                    "expression": {
+                        "language": "spel",
+                        "expression": "1/0"
+                    }
+                }
+            },
+            "assertions": {
+                "Unionreturnobjectservice": [
+                    {
+                        "operator": "equals",
+                        "expected": {
+                            "language": "spel",
+                            "expression": "1"
+                        },
+                        "actual": {
+                            "language": "spel",
+                            "expression": "#records.size"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -13,6 +13,7 @@ import { useGetNodeTestCasesErrors, useIsEditMode, useSetProperty, useValidation
 import type { TestingContentProps } from "../TestingContent";
 import { StyledStack } from "./components/Styled";
 import { TestingExpandable } from "./components/TestingExpandable";
+import { MockEnabledSwitch } from "./MockEnabledSwitch";
 
 const MOCK_EXPRESSION_HINT_TEXT =
     "If you provide this expression, the real service won't be invoked during tests. Instead, the result of the evaluation will be used.";
@@ -61,6 +62,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                             {t("testingDialog.label.mock", "Mock")}
                         </Typography>
                         <InfoTooltip title={t("testingDialog.mock.hint", MOCK_EXPRESSION_HINT_TEXT)} variant={"hover"} />
+                        <MockEnabledSwitch scenarioName={scenarioName} nodeId={node.id} />
                     </Box>
                 }
                 expanded={isExpanded}

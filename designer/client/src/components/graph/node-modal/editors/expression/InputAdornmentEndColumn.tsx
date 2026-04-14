@@ -28,5 +28,6 @@ export const InputAdornmentEndColumn = styled(Box)({
     flexDirection: "column",
     alignItems: "center",
     width: "1rem",
-    gap: 0.5,
+    gap: 4,
+    paddingBottom: 4,
 });

@@ -46,16 +46,17 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
     );
 }
 
-export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: boolean): ThunkAction {
-    const testData = isMockEnabled ? testCase : { ...testCase, mocks: {} };
+export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: boolean, disabledMockNodeIds: string[] = []): ThunkAction {
+    const mocks = resolveMocks(testCase, isMockEnabled, disabledMockNodeIds);
+
     return wrapWithTestCaseAction(testCase, (scenarioName, scenarioGraph) =>
-        HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testData).then(({ data }) => ({
+        HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, { ...testCase, mocks }).then(({ data }) => ({
             testResults: data,
         })),
     );
 }
 
-export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
+export function testAllScenarioTestCases(isMockEnabled: boolean, disabledMockNodeIds: string[] = []): ThunkAction {
     return async (dispatch, getState) => {
         await dispatch(checkPendingChanges());
 
@@ -73,7 +74,11 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
         dispatch({ type: "TEST_RESULTS_LOADING" });
         testCases.forEach((testCase) => dispatch(setTestCaseAssertionResultsLoading(testCase.id)));
 
-        const testData = testCases.map((testCase) => (isMockEnabled ? testCase : { ...testCase, mocks: {} }));
+        const testData = testCases.map((testCase) => {
+            if (!isMockEnabled) return { ...testCase, mocks: {} };
+            const mocks = resolveMocks(testCase, isMockEnabled, disabledMockNodeIds);
+            return { ...testCase, mocks };
+        });
 
         try {
             const response = await HttpService.testScenarioWithTestMultipleCases(processName, scenarioGraph, testData);
@@ -110,6 +115,12 @@ export function testAllScenarioTestCases(isMockEnabled: boolean): ThunkAction {
             testCases.forEach((tc) => failTestCase(tc.id, tc.name));
         }
     };
+}
+
+function resolveMocks(testCase: TestCase, isMockEnabled: boolean, disabledMockNodeIds: string[]) {
+    if (!isMockEnabled) return {};
+
+    return Object.fromEntries(Object.entries(testCase.mocks ?? {}).filter(([nodeId]) => !disabledMockNodeIds.includes(nodeId)));
 }
 
 export type TestsActions =
