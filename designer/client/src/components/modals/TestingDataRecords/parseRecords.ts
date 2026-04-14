@@ -1,4 +1,4 @@
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 function isNkFormat(obj: unknown): obj is { input: unknown; inputMeta?: unknown } {
     return typeof obj === "object" && obj !== null && "input" in obj;

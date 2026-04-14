@@ -10,7 +10,7 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../windowManager/WindowKind";
 import { parseRecords } from "./parseRecords";
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 export interface PasteRecordsDialogData {
     sourceId: string;

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useWindows } from "../../../windowManager/useWindows";
 import { WindowKind } from "../../../windowManager/WindowKind";
 import type { PasteRecordsDialogData } from "./PasteRecordsDialog";
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 interface Props {
     sourceId: string;
