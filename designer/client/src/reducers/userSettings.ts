@@ -63,6 +63,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("scenario.allowQuickDeploy"),
         createFlag("scenario.allowQuickSave"),
         createFlag("scenario.autoEnableLiveData"),
+        createFlag("scenario.enableDraft"),
         createFlag("scenario.liveData.showNodeAnimations", true),
         createFlag("scenario.liveData.showTransitionAnimations", true),
         createFlag("scenario.showBreadcrumbs"),

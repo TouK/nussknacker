@@ -10,6 +10,7 @@ import { thunk } from "redux-thunk";
 import type { Action } from "../actions/reduxTypes";
 import type { RootState } from "../reducers";
 import { rootReducer } from "../reducers";
+import { draftListener } from "./draftListener";
 import { scenarioValidationMiddleware } from "./scenarioValidationMiddleware";
 
 // avoid polluting devtools with frequent refresh actions
@@ -34,6 +35,7 @@ export const setupStore = () => {
             })
                 .prepend(listenerMiddleware.middleware, thunk as ThunkMiddleware<RootState, Action>)
                 .concat(
+                    draftListener.middleware,
                     createStateSyncMiddleware({
                         whitelist: [
                             "USERSETTING_SET",
@@ -46,6 +48,9 @@ export const setupStore = () => {
                             "TOGGLE_ALL_TOOLBARS",
                             "TOGGLE_PANEL",
                             "TOGGLE_COMPONENT_GROUP_TOOLBOX",
+                            "SCENARIO_DRAFT_SET",
+                            "SCENARIO_DRAFT_CLEAR",
+                            "SCENARIO_VERSION_BUMPED",
                         ],
                     }),
                     scenarioValidationMiddleware([
@@ -57,6 +62,7 @@ export const setupStore = () => {
                         "STICKY_NOTE_UPDATED",
                         "NODE_DETAILS_CLOSED",
                         "TOOL_CLOSED",
+                        "APPLY_SCENARIO_DRAFT",
                     ]),
                 ),
         devTools: {

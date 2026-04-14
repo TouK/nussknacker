@@ -32,10 +32,14 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
     useEffect(() => {
-        if (rowRef.current) {
-            setRowHeight(index, rowRef.current.clientHeight);
-        }
-    }, [index, rowRef, setRowHeight]);
+        const node = rowRef.current;
+        if (!node) return;
+        setRowHeight(index, node.clientHeight);
+        if (typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(() => setRowHeight(index, node.clientHeight));
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [index, setRowHeight]);
 
     const itemToRender = useMemo(() => {
         switch (activity.uiType) {

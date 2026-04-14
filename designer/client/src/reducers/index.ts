@@ -18,6 +18,7 @@ import { backendNotifications } from "./notifications";
 import type { ProcessActivityState } from "./processActivity";
 import { reducer as processActivity } from "./processActivity";
 import { reducer as scenarios } from "./scenarios";
+import { scenarioDraft } from "./scenarioDraft";
 import { reducer as scenarioState } from "./scenarioState";
 import type { SettingsState } from "./settings";
 import { reducer as settings } from "./settings";
@@ -42,6 +43,7 @@ export const rootReducer = combineReducers({
     scenarioState,
     cloudData,
     scenarios,
+    scenarioDraft,
     nodeWindowIdMap,
 });
 
@@ -60,6 +62,7 @@ export type RootState = {
     scenarioState: ProcessStateType;
     cloudData: ReturnType<typeof cloudData>;
     scenarios: ReturnType<typeof scenarios>;
+    scenarioDraft: ReturnType<typeof scenarioDraft>;
     nodeWindowIdMap: ReturnType<typeof nodeWindowIdMap>;
 };
 

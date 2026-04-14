@@ -24,6 +24,7 @@ import type { ToolWindowActions } from "./nk/toolWindow";
 import type { UiActions } from "./nk/ui/uiActions";
 import type { UserSettingsActions } from "./nk/userSettings";
 import type { ValidationsActions } from "./nk/validationsActions";
+import type { ScenarioDraftActions } from "./scenarioDraftActions";
 import type { SettingsActions } from "./settingsActions";
 
 export type TypedAction =
@@ -39,6 +40,7 @@ export type TypedAction =
     | ProcessActivityActions
     | PropertiesActions
     | ScenarioActions
+    | ScenarioDraftActions
     | ScenariosActions
     | SelectionActions
     | SettingsActions

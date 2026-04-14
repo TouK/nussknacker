@@ -1,46 +1,38 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useBlocker } from "react-router-dom";
 
-import { unsavedProcessChanges } from "../common/DialogMessages";
-import { useWindows } from "../windowManager/useWindows";
+import { hasUnpersistedDraftWrites } from "../store/draftListener";
+import { useUnsavedChangesPrompt } from "./useUnsavedChangesPrompt";
 
 export function useRouteLeavingGuard(when: boolean) {
-    const { confirm } = useWindows();
+    const { draftEnabled, promptOrProceed } = useUnsavedChangesPrompt();
 
+    // Always intercept in-app navigation when there are unsaved changes; promptOrProceed will
+    // either flush + proceed silently (draft is on and safely persisted) or fall back to the
+    // DISCARD/CANCEL confirm dialog.
     const { proceed, reset, state } = useBlocker(
         ({ currentLocation, nextLocation }) => when && currentLocation.pathname !== nextLocation.pathname,
     );
 
-    const showModal = useCallback(
-        () =>
-            confirm({
-                text: unsavedProcessChanges(),
-                onConfirmCallback: (confirmed) => (confirmed ? proceed() : reset()),
-                confirmText: "DISCARD",
-                denyText: "CANCEL",
-            }),
-        [confirm, proceed, reset],
-    );
+    useEffect(() => {
+        if (state === "blocked") {
+            promptOrProceed(proceed, reset);
+        }
+    }, [promptOrProceed, proceed, reset, state]);
 
-    // fallback for navigation outside router
+    // Browser-level navigation (refresh / close tab) — preventDefault triggers the native alert.
+    // With drafts on we only alert when something hasn't been safely persisted yet.
     useEffect(() => {
         function listener(event: BeforeUnloadEvent) {
-            if (when) {
-                // it causes browser alert on reload/close tab with default message that cannot be changed
-                event.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
-                event.returnValue = ""; // Chrome requires returnValue to be set
-            }
+            if (!when) return;
+            if (draftEnabled && !hasUnpersistedDraftWrites()) return;
+            event.preventDefault();
+            event.returnValue = "";
         }
 
         window.addEventListener("beforeunload", listener);
         return () => window.removeEventListener("beforeunload", listener);
-    }, [when]);
-
-    useEffect(() => {
-        if (state === "blocked") {
-            showModal();
-        }
-    }, [showModal, state]);
+    }, [when, draftEnabled]);
 }
 
 export function RouteLeavingGuard({ when }: { when?: boolean }): React.JSX.Element {

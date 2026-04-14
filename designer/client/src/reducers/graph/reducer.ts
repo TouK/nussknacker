@@ -232,6 +232,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 },
             };
         }
+        case "APPLY_SCENARIO_DRAFT": {
+            return {
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: action.scenarioGraph,
+                },
+                layout: fromMeta(action.scenarioGraph),
+            };
+        }
         case "CORRECT_INVALID_SCENARIO": {
             const scenario = correctFetchedDetails(state.scenario, action.processDefinitionData);
             return {

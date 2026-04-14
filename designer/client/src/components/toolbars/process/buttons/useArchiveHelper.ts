@@ -4,20 +4,19 @@ import { useNavigate } from "react-router-dom";
 import { loadProcessToolbarsConfiguration } from "../../../../actions/nk/loadProcessToolbarsConfiguration";
 import { displayCurrentProcessVersion } from "../../../../actions/nk/process";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
-import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService/instance";
 import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows } from "../../../../windowManager/useWindows";
+import { useUnsavedChangesPrompt } from "../../../useUnsavedChangesPrompt";
 
 export const useArchiveHelper = (processName: string) => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const { confirm } = useWindows();
     const nothingToSave = useAppSelector(isPristine);
     const { redirectAfterArchive } = useAppSelector(getFeatureSettings);
+    const { promptOrProceed } = useUnsavedChangesPrompt();
 
     const archive = useCallback(async () => {
         return HttpService.archiveProcess(processName).then(async () => {
@@ -33,27 +32,17 @@ export const useArchiveHelper = (processName: string) => {
     }, [dispatch, navigate, processName, redirectAfterArchive]);
 
     const confirmArchiveCallback = useCallback(
-        async (archiveConfirmed: boolean) => {
-            if (!archiveConfirmed) {
+        (archiveConfirmed: boolean) => {
+            if (!archiveConfirmed) return;
+            if (nothingToSave) {
+                archive();
                 return;
             }
-
-            if (nothingToSave) {
-                return archive();
-            }
-
-            return confirm({
-                text: unsavedProcessChanges(),
-                onConfirmCallback: async (discardChangesConfirmed) => {
-                    if (discardChangesConfirmed) {
-                        return archive();
-                    }
-                },
-                confirmText: "DISCARD",
-                denyText: "CANCEL",
+            promptOrProceed(() => {
+                archive();
             });
         },
-        [archive, confirm, nothingToSave],
+        [archive, nothingToSave, promptOrProceed],
     );
 
     return { confirmArchiveCallback };
