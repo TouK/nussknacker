@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { AssertionOperator } from "../../../../../../actions/nk/testCasesActions";
-import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
+import { clearTestCaseNodeAssertionResult, setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
 import httpService from "../../../../../../http/HttpService/instance";
 import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
@@ -14,12 +14,12 @@ import type { Edge } from "../../../../../../types/edge";
 import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import type { ContextData } from "../../../../../dataMapper/DataMapper";
-import { useInputOutputContext } from "../../../../../graph/node-modal/io/InputOutputContext";
 import { withUuid } from "../../../appendUuid";
 import { useHelpText } from "../../../editors/expression/helpText";
 import { ExpressionLang } from "../../../editors/expression/types";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
+import { useInputOutputContext } from "../../../io/InputOutputContext";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
 import { OverrideKeys } from "../../../parameterHelpers";
@@ -92,9 +92,13 @@ export const Assertions = ({ node, edges }: Props) => {
 
     const removeAssertion = useCallback(
         (_, uuid: string) => {
+            const assertionIndex = testCaseAssertions.findIndex((item) => item.uuid === uuid);
             dispatch(setTestCaseAssertions(node.id, (prev) => prev.filter((item) => item.uuid !== uuid)));
+            if (assertionIndex !== -1) {
+                dispatch(clearTestCaseNodeAssertionResult(node.id, assertionIndex));
+            }
         },
-        [dispatch, node.id],
+        [dispatch, node.id, testCaseAssertions],
     );
 
     const editAssertion = useCallback(

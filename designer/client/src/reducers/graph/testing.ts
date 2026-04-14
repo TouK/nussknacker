@@ -93,6 +93,36 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
                 testCasesResults: null,
             };
         }
+        case "CLEAR_TEST_CASE_NODE_ASSERTION_RESULTS": {
+            const testCaseResult = state.testCasesResults?.[action.testCaseId];
+            if (testCaseResult?.status !== "loaded" || testCaseResult.results.type !== "Completed") {
+                return state;
+            }
+            const nodeResults = testCaseResult.results.result.assertionsResults[action.nodeId];
+            if (!nodeResults) {
+                return state;
+            }
+            const updatedNodeResults = nodeResults.filter((_, i) => i !== action.assertionIndex);
+            return {
+                ...state,
+                testCasesResults: {
+                    ...state.testCasesResults,
+                    [action.testCaseId]: {
+                        ...testCaseResult,
+                        results: {
+                            ...testCaseResult.results,
+                            result: {
+                                ...testCaseResult.results.result,
+                                assertionsResults: {
+                                    ...testCaseResult.results.result.assertionsResults,
+                                    [action.nodeId]: updatedNodeResults,
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+        }
         case "DELETE_NODES": {
             return { ...state, testCasesResults: cleanTestCasesResultsOfNodes(state.testCasesResults, action.ids) };
         }

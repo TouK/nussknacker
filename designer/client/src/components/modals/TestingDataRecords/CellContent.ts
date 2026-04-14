@@ -1,7 +1,7 @@
 import type { CustomCell, GridCell, Item } from "@glideapps/glide-data-grid";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
-import type { TestingDataRecords } from "./Table";
+import type { TestingDataRecords } from "./types";
 
 type SourceSelectCellData = {
     kind: "source-select-cell";
@@ -19,12 +19,7 @@ export type VariablesCell = CustomCell<VariablesCellData>;
 export const isVariablesCell = (c: GridCell): c is VariablesCell =>
     c.kind === GridCellKind.Custom && (c as VariablesCell).data?.kind === "variables-cell";
 
-export function getTestingCellContent(
-    item: Item,
-    data: TestingDataRecords[],
-    sourceOptions: string[],
-    sourceNameById: Record<string, string>,
-): GridCell {
+export function getTestingCellContent(item: Item, data: TestingDataRecords[], sourceId: string, sourceName: string): GridCell {
     const [columnIndex, rowIndex] = item;
     const rowData = data[rowIndex];
     if (!rowData) return { kind: GridCellKind.Text, displayData: "", data: "", allowOverlay: true, readonly: false };
@@ -36,9 +31,9 @@ export function getTestingCellContent(
             data: {
                 kind: "source-select-cell",
                 value: rowData.sourceId || "",
-                displayValue: (rowData.sourceId && sourceNameById[rowData.sourceId]) || rowData.sourceId || "",
-                options: sourceOptions,
-                optionLabels: sourceOptions.map((id) => sourceNameById[id] || id),
+                displayValue: sourceName,
+                options: [sourceId],
+                optionLabels: [sourceName],
             },
             readonly: false,
         } as SourceSelectCell;

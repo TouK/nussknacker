@@ -1,6 +1,6 @@
 import type { WithUuid } from "../../components/graph/node-modal/appendUuid";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import type { TestCase } from "../../reducers/graph/testCase";
 import {
     getTestCaseAssertions,
@@ -48,6 +48,13 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<A
             testCaseId: activeTestCaseId,
             updates: { assertions: { ...testingAssertions, [nodeId]: next } },
         });
+    };
+}
+
+export function clearTestCaseNodeAssertionResult(nodeId: string, assertionIndex: number): ThunkAction {
+    return (dispatch, getState) => {
+        const activeTestCaseId = getActiveTestCaseId(getState());
+        dispatch({ type: "CLEAR_TEST_CASE_NODE_ASSERTION_RESULTS", testCaseId: activeTestCaseId, nodeId, assertionIndex });
     };
 }
 

@@ -17,7 +17,7 @@ import { Box, useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
-import type { TestFormParameters } from "../../../common/TestResultUtils";
+import type { NodeValidationError } from "../../../types/validation";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -30,36 +30,27 @@ import type { SourceSelectCell } from "./SourceEditor";
 import { SourceEditor } from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { TableFooter } from "./TableFooter";
+import type { TestingDataRecords } from "./types";
 import { useTableHeight } from "./useTableHeight";
-import { buildDefaultVariablesMap, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
+import { buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
-
-export interface TestingDataRecords {
-    sourceId: string;
-    variables: string;
-}
-
-export interface TestingDataRecordsRequestData {
-    sourceId: string;
-    variables: unknown;
-}
 
 interface TableProps {
     data?: TestingDataRecords[];
-    onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
     onRowAdded: (rowIndex: number, row: TestingDataRecords) => void;
+    onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
     defaultDataRecord: TestingDataRecords;
-    sourceOptions: string[];
+    sourceId: string;
+    sourceName: string;
     className?: string;
-    sourceParameters: TestFormParameters[];
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
+    onValidateVariables: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
 }
 
-export const TABLE_HEIGHT = "100vh";
-export const TABLE_WIDTH = "100%";
+const TABLE_WIDTH = "100%";
 const TRAILING_ROW_HINT = "Add record";
 const COLUMN_SOURCE_ID = "sourceId";
 const COLUMN_VARIABLES_ID = "variables";
@@ -78,16 +69,17 @@ type HeaderRenderArgs = { columnIndex: number; theme: Theme; rect: { width: numb
 
 export const Table: React.FC<TableProps> = ({
     data = [],
-    onRowUpdated,
     onRowAdded,
+    onRowUpdated,
     onRowsDeleted,
     onRowMoved,
-    sourceOptions,
-    className,
     defaultDataRecord,
-    sourceParameters,
+    sourceId,
+    sourceName,
+    className,
     cellErrors,
     recordsToAddLimitExceeded,
+    onValidateVariables,
 }) => {
     const [draggingRow, setDraggingRow] = useState<number | null>(null);
     const lastDraggingRowRef = useRef<number | null>(null);
@@ -131,42 +123,29 @@ export const Table: React.FC<TableProps> = ({
                 editor: (props) => {
                     const { onChange, value } = props;
 
-                    return <VariablesEditor value={value} onChange={onChange} />;
+                    return <VariablesEditor value={value} onChange={onChange} onValidate={onValidateVariables} />;
                 },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),
         }),
-        [theme],
-    );
-
-    const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
-
-    const sourceNameById = useMemo(
-        () => sourceParameters.reduce<Record<string, string>>((acc, sp) => ({ ...acc, [sp.sourceId]: sp.sourceName }), {}),
-        [sourceParameters],
+        [theme, onValidateVariables],
     );
 
     const getCellContent = useCallback(
-        (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceNameById),
-        [data, sourceOptions, sourceNameById],
-    );
-    const buildRowUpdates = useCallback(
-        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
-            buildInputDataRecordUpdates(changes, data, defaultVariablesBySourceId),
-        [data, defaultVariablesBySourceId],
+        (item: Item): GridCell => getTestingCellContent(item, data, sourceId, sourceName),
+        [data, sourceId, sourceName],
     );
 
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(
         (changes): void => {
             if (!changes.length) return;
-            const rowUpdates = buildRowUpdates(changes);
+            const rowUpdates = buildInputDataRecordUpdates(changes, data, defaultDataRecord.variables);
             if (!Object.keys(rowUpdates).length) return;
             Object.entries(rowUpdates).forEach(([rowIndexStr, value]) => {
-                const rowIndex = Number(rowIndexStr);
-                onRowUpdated(rowIndex, value);
+                onRowUpdated(Number(rowIndexStr), value);
             });
         },
-        [buildRowUpdates, onRowUpdated],
+        [data, defaultDataRecord.variables, onRowUpdated],
     );
 
     const onCellAdded = useCallback((): void => {
@@ -311,7 +290,7 @@ export const Table: React.FC<TableProps> = ({
             const { removedCellColumnId, removedCellRowIndex } = getDeletedColumn(selection);
 
             // Remove whole row when sourceId column value removed
-            if (removedCellColumnId === "sourceId") {
+            if (removedCellColumnId === COLUMN_SOURCE_ID) {
                 onCellDeleted([removedCellRowIndex]);
                 return false;
             }
@@ -326,8 +305,6 @@ export const Table: React.FC<TableProps> = ({
         },
         [getDeletedColumn, handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
     );
-
-    const noSourcesDefined = sourceParameters.length === 0;
 
     return (
         <Box
@@ -354,7 +331,7 @@ export const Table: React.FC<TableProps> = ({
                     customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
-                    onRowAppended={recordsToAddLimitExceeded || noSourcesDefined ? undefined : onCellAdded}
+                    onRowAppended={recordsToAddLimitExceeded ? undefined : onCellAdded}
                     rowMarkers="both"
                     rows={data.length}
                     smoothScrollX

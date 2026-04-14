@@ -6,7 +6,7 @@ import { getTestCases } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { readMockEnabled } from "../../graph/node-modal/node/NodeContent/TestingContentElements/useMockEnabled";
 import { getProcessName } from "../../graph/node-modal/NodeDetailsContent/selectors";
-import type { TestingDataRecords } from "../../modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../modals/TestingDataRecords/types";
 import { safeParseExpression } from "../../modals/TestingDataRecords/utils";
 import { useOpenNodeTestingTab } from "./useOpenNodeTestingTab";
 

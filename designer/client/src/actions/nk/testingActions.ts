@@ -1,7 +1,7 @@
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { ProcessName } from "src/components/Process/types";
 
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/types";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { MultipleResultsWithCountsDto, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
@@ -151,6 +151,12 @@ export type TestsActions =
       }
     | {
           type: "CLEAR_TEST_ASSERTIONS_RESULTS";
+      }
+    | {
+          type: "CLEAR_TEST_CASE_NODE_ASSERTION_RESULTS";
+          testCaseId: string;
+          nodeId: string;
+          assertionIndex: number;
       }
     | { type: "CHANGE_ACTIVE_TEST_CASE"; testCaseId: string };
 

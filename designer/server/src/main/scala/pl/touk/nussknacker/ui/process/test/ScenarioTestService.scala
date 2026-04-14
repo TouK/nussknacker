@@ -170,6 +170,26 @@ class ScenarioTestService(
 
   }
 
+  def getSourceTestParameters(
+      metaData: MetaData,
+      sourceNodeData: SourceNodeData,
+  ): Either[ParametersDefinitionError, List[Parameter]] = {
+    val jobData = JobData(metaData, ProcessVersion.empty)
+    withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
+      val nodeId            = sourceNodeData.id
+      val compilationResult = commonModelDataInfoProvider.nodeCompiler.compileNode(sourceNodeData)
+      testDataFormatHandler
+        .getTestParametersDefinition(nodeId, sourceNodeData.name, compilationResult)
+        .map { params =>
+          StandardParameterEnrichment.enrichParameterDefinitions(
+            original = params,
+            parametersConfig = Map.empty,
+            globalParametersConfig = modelData.modelConfig.globalParametersConfig
+          )
+        }
+    }
+  }
+
   def fetchSourcesLiveData(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
