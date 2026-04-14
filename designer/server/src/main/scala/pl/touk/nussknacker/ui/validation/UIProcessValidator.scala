@@ -100,34 +100,8 @@ class UIProcessValidator(
       isFragment: Boolean,
   )(
       implicit loggedUser: LoggedUser
-  ): ValidationResult = {
-    val uiValidationResult = uiValidation(
-      scenarioGraph,
-      processVersion.processName,
-      isFragment,
-      processVersion.labels.map(ScenarioLabel.apply)
-    )
-
-    // TODO: Enable further validation when save is not allowed
-    // The problem preventing further validation is that loose nodes and their children are skipped during conversion
-    // and in case if the scenario has only loose nodes, it will be reported that the scenario is empty
-    if (uiValidationResult.saveAllowed) {
-      val canonical           = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-      val canonicalValidation = validateCanonicalProcess(canonical, processVersion, isFragment)
-      // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
-      // CanonicalProcess validation.
-      deduplicateErrors(uiValidationResult.add(canonicalValidation))
-    } else {
-      val errorAndWarningNodeIds =
-        (uiValidationResult.errors.invalidNodes.keys ++
-          uiValidationResult.warnings.invalidNodes.keys).map(_.value).toSet
-      val nodeNamesForErrors = scenarioGraph.nodes
-        .filter(n => errorAndWarningNodeIds.contains(n.id.value))
-        .map(n => n.id.value -> n.name.value)
-        .toMap
-      uiValidationResult.withNodeNames(nodeNamesForErrors)
-    }
-  }
+  ): ValidationResult =
+    validateWithRawTyping(scenarioGraph, processVersion, isFragment)._1
 
   // Some of these validations are duplicated with CanonicalProcess validations in order to show them in case when there
   // is an error preventing graph canonization. For example we want to display node and scenario id errors for scenarios
@@ -163,7 +137,7 @@ class UIProcessValidator(
   )(implicit loggedUser: LoggedUser): ValidationResult =
     validateCanonicalProcessWithRawTyping(canonical, processVersion, isFragment)._1
 
-  def validateCanonicalProcessWithRawTyping(
+  private def validateCanonicalProcessWithRawTyping(
       canonical: CanonicalProcess,
       processVersion: ProcessVersion,
       isFragment: Boolean
