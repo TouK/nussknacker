@@ -152,8 +152,8 @@ export default function Variable({
     const operation = (node.operation as VariableOperation) === UNSET_OPERATION ? UNSET_OPERATION : SET_OPERATION;
     const operationOptions = useMemo<Option[]>(
         () => [
-            { value: SET_OPERATION, label: SET_OPERATION },
-            { value: UNSET_OPERATION, label: UNSET_OPERATION },
+            { value: SET_OPERATION, label: "Set" },
+            { value: UNSET_OPERATION, label: "Unset" },
         ],
         [],
     );

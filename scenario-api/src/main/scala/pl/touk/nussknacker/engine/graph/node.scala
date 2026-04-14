@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.graph
 
+import enumeratum.{CirceEnum, Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import io.circe._
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
@@ -235,28 +237,14 @@ object node {
   ) extends OneOutputSubsequentNodeData
       with CompilableNodeData
 
-  sealed trait VariableOperation
+  sealed trait VariableOperation extends EnumEntry with UpperSnakecase
 
-  object VariableOperation {
+  object VariableOperation extends Enum[VariableOperation] with CirceEnum[VariableOperation] {
 
     case object Set   extends VariableOperation
     case object Unset extends VariableOperation
 
-    private val operationByName: Map[String, VariableOperation] = Map(
-      "SET"   -> Set,
-      "UNSET" -> Unset
-    )
-
-    implicit val variableOperationEncoder: Encoder[VariableOperation] = Encoder.encodeString.contramap {
-      case Set   => "SET"
-      case Unset => "UNSET"
-    }
-
-    implicit val variableOperationDecoder: Decoder[VariableOperation] = Decoder.decodeString.emap { operationName =>
-      operationByName
-        .get(operationName)
-        .toRight(s"Unexpected Variable operation: $operationName")
-    }
+    override val values: IndexedSeq[VariableOperation] = findValues
 
   }
 
