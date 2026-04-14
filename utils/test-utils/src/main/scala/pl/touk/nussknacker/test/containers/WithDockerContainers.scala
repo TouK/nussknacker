@@ -39,9 +39,19 @@ trait WithDockerContainers { self: Suite =>
         Nil // Windows
       }
     }
-    Files.createTempDirectory(prefix, tempDirectoryAttributes: _*)
+    val tempPath = Files.createTempDirectory(prefix, tempDirectoryAttributes: _*)
+    tempPath.toFile.deleteOnExit()
+    tempPath
   }
 
 }
 
-final case class FileSystemBind(hostPath: String, containerPath: String, mode: BindMode)
+final case class FileSystemBind(hostPath: Path, containerPath: String, mode: BindMode) {
+
+  def subdirectory(name: String): FileSystemBind = this.copy(
+    hostPath = hostPath.resolve(name),
+    containerPath = containerPath + "/" + name,
+    mode
+  )
+
+}

@@ -83,13 +83,13 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     createMountableTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-", BindMode.READ_WRITE)
 
   private lazy val inputTransactionsBind = FileSystemBind(
-    inputDirectory.toString,
+    inputDirectory,
     "/transactions",
     BindMode.READ_ONLY
   )
 
   private lazy val outputTransactionsSummaryBind = FileSystemBind(
-    outputDirectory.toString,
+    outputDirectory,
     "/output/transactions_summary",
     BindMode.READ_WRITE
   )

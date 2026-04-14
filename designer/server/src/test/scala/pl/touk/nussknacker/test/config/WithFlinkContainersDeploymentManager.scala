@@ -4,7 +4,6 @@ import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleCont
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
-import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.flink.test.docker.WithFlinkContainers
 
@@ -18,11 +17,6 @@ trait WithFlinkContainersDeploymentManager
   self: Suite with StrictLogging =>
 
   override val container: Container = MultipleContainers(flinkContainers: _*)
-
-  override protected def afterAll(): Unit = {
-    FileUtils.deleteQuietly(savepointDir.toFile) // it might not work because docker user can has other uid
-    super.afterAll()
-  }
 
   abstract override def designerRawConfig: Config = {
     val config                   = super.designerRawConfig
