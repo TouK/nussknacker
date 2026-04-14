@@ -225,8 +225,8 @@ object PdfExporter extends LazyLogging {
         ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
       case Variable(_, _, name, expr, _, VariableOperation.Set, _) =>
         ("Operation", "SET") :: (name -> expr.expression) :: Nil
-      case Variable(_, _, _, _, _, VariableOperation.Unset, fields) =>
-        ("Operation", "UNSET") :: fields.map(field => ("Unset variable", field.name))
+      case Variable(_, _, _, _, _, VariableOperation.Unset, variablesToUnset) =>
+        ("Operation", "UNSET") :: variablesToUnset.map(field => ("Unset variable", field.name))
       case VariableBuilder(_, _, name, fields, _) =>
         ("Variable name", name) :: fields.map(p => p.name -> p.expression.expression)
       case Join(_, _, output, typ, parameters, branch, _) =>

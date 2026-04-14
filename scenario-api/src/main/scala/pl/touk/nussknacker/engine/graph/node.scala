@@ -233,7 +233,7 @@ object node {
       value: Expression,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
       operation: VariableOperation = VariableOperation.Set,
-      fields: List[Field] = List.empty
+      variablesToUnset: List[Field] = List.empty
   ) extends OneOutputSubsequentNodeData
       with CompilableNodeData
 
@@ -476,7 +476,8 @@ object node {
       }
     }
 
-  def recordKeyFieldName(index: Int)   = s"$$fields-$index-$$key"
-  def recordValueFieldName(index: Int) = s"$$fields-$index-$$value"
+  def recordKeyFieldName(index: Int)           = s"$$fields-$index-$$key"
+  def recordValueFieldName(index: Int)         = s"$$fields-$index-$$value"
+  def variablesToUnsetKeyFieldName(index: Int) = s"$$variablesToUnset-$index-$$key"
 
 }

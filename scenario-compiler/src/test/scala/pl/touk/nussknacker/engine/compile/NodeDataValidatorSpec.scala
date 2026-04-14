@@ -356,7 +356,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "",
           "null".spel,
           operation = VariableOperation.Unset,
-          fields = List(Field("toRemove", "null".spel))
+          variablesToUnset = List(Field("toRemove", "null".spel))
         ),
         Map("toRemove" -> Typed[String], "toKeep" -> Typed[Int])
       )
@@ -376,7 +376,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         CustomParameterValidationError(
           "At least one variable has to be selected",
           "Please add at least one variable to unset",
-          ParameterName("fields"),
+          ParameterName("variablesToUnset"),
           NodeId("unsetVar")
         )
       )
@@ -392,7 +392,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "",
           "null".spel,
           operation = VariableOperation.Unset,
-          fields = List(Field("toRemove", "null".spel), Field("toRemove", "null".spel), Field("", "null".spel))
+          variablesToUnset =
+            List(Field("toRemove", "null".spel), Field("toRemove", "null".spel), Field("", "null".spel))
         ),
         Map("toRemove" -> Typed[String])
       )
@@ -401,7 +402,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         CustomParameterValidationError(
           "The variable can be unset only once",
           "Variable selected more than once",
-          ParameterName("$fields-0-$key"),
+          ParameterName("$variablesToUnset-0-$key"),
           NodeId("unsetVar")
         )
       )
@@ -409,7 +410,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         CustomParameterValidationError(
           "The variable can be unset only once",
           "Variable selected more than once",
-          ParameterName("$fields-1-$key"),
+          ParameterName("$variablesToUnset-1-$key"),
           NodeId("unsetVar")
         )
       )
@@ -417,7 +418,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         CustomParameterValidationError(
           "This field value is required and can not be blank",
           "Please fill field value for this parameter",
-          ParameterName("$fields-2-$key"),
+          ParameterName("$variablesToUnset-2-$key"),
           NodeId("unsetVar")
         )
       )
@@ -425,7 +426,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         CustomParameterValidationError(
           "Can only unset variables available in the context",
           "Variable not found in the current context",
-          ParameterName("$fields-2-$key"),
+          ParameterName("$variablesToUnset-2-$key"),
           NodeId("unsetVar")
         )
       )

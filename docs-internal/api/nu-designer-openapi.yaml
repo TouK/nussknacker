@@ -9324,7 +9324,7 @@ components:
           $ref: '#/components/schemas/NodeTypes13'
         operation:
           $ref: '#/components/schemas/VariableOperationSchemaType'
-        fields:
+        variablesToUnset:
           type: array
           items:
             $ref: '#/components/schemas/Field'

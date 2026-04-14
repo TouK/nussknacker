@@ -50,7 +50,7 @@ trait GraphBuilder[R] {
               varName = "",
               value = Expression.spel("null"),
               operation = VariableOperation.Unset,
-              fields = variableNames.toList.map(name => Field(name, Expression.spel("null")))
+              variablesToUnset = variableNames.toList.map(name => Field(name, Expression.spel("null")))
             ),
             node
           )

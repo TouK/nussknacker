@@ -169,7 +169,7 @@ export default function Variable({
         [setProperty],
     );
 
-    const normalizeUnsetVariableName = useCallback((value: string): string => value.trim().replace(/^#/, ""), []);
+    const normalizeUnsetVariableName = useCallback((value: string): string => value.trim(), []);
 
     const unsetVariableOptions = useMemo<Option[]>(() => {
         return Object.keys(variableTypes || {})
@@ -181,7 +181,7 @@ export default function Variable({
             }));
     }, [variableTypes]);
 
-    const unsetFields = useMemo(() => (node.fields || []) as Field[], [node.fields]);
+    const unsetFields = useMemo(() => (node.variablesToUnset || []) as Field[], [node.variablesToUnset]);
 
     const addUnsetVariableField = useCallback(() => {
         const newField: Field = {
@@ -189,19 +189,19 @@ export default function Variable({
             name: "",
             expression: { expression: "", language: ExpressionLang.SpEL },
         };
-        addElement("fields", newField);
+        addElement("variablesToUnset", newField);
     }, [addElement]);
 
     const removeUnsetVariableField = useCallback(
         (_: string, uuid: string) => {
-            removeElement("fields", uuid);
+            removeElement("variablesToUnset", uuid);
         },
         [removeElement],
     );
 
     const onUnsetVariableChange = useCallback(
         (index: number, value: string) => {
-            setProperty(`fields[${index}].name`, normalizeUnsetVariableName(value));
+            setProperty(`variablesToUnset[${index}].name`, normalizeUnsetVariableName(value));
         },
         [normalizeUnsetVariableName, setProperty],
     );
@@ -260,11 +260,11 @@ export default function Variable({
             ) : (
                 <NodeRowFieldsProvider
                     label={"Variables to unset"}
-                    path={"fields"}
+                    path={"variablesToUnset"}
                     onFieldAdd={addUnsetVariableField}
                     onFieldRemove={removeUnsetVariableField}
                     readOnly={readOnly}
-                    errors={getValidationErrorsForField(errors, "fields")}
+                    errors={getValidationErrorsForField(errors, "variablesToUnset")}
                 >
                     {unsetFields.map((field, index) => {
                         const variableName = normalizeUnsetVariableName(field.name || "");
@@ -279,8 +279,8 @@ export default function Variable({
                                     onChange={(value) => onUnsetVariableChange(index, value)}
                                     options={unsetVariableOptions}
                                     readOnly={readOnly}
-                                    placeholder={"#someVar"}
-                                    fieldErrors={getValidationErrorsForField(errors, `$fields-${index}-$key`)}
+                                    placeholder={"someVar"}
+                                    fieldErrors={getValidationErrorsForField(errors, `$variablesToUnset-${index}-$key`)}
                                 />
                             </FieldsRow>
                         );

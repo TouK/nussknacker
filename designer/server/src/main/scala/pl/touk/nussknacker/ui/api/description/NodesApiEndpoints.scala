@@ -1617,9 +1617,9 @@ object NodesApiEndpoints {
                 variable => Some(VariableSchemaHelper.toSchemaOperation(variable.operation))
               ),
               SProductField(
-                FieldName("fields"),
+                FieldName("variablesToUnset"),
                 Schema.schemaForIterable[Field, List],
-                variable => Some(variable.fields)
+                variable => Some(variable.variablesToUnset)
               ),
               SProductField(FieldName("varName"), Schema.string, variable => Some(variable.varName)),
               SProductField(FieldName("value"), expressionSchema, variable => Some(variable.value))

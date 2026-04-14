@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionIdParamName
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.node.recordKeyFieldName
+import pl.touk.nussknacker.engine.graph.node.variablesToUnsetKeyFieldName
 import pl.touk.nussknacker.engine.graph.variable.{Field => GraphField}
 
 class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
@@ -47,8 +47,8 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
   def compileVariableUnset(variable: Variable, inputContext: SingleInputNodeInputValidationContext)(
       implicit nodeId: NodeId
   ): NodeCompilationResult[List[String]] = {
-    val sanitizedUnsetVariablesWithIndexes = variable.fields.zipWithIndex.map { case (field, index) =>
-      (field.name.trim.stripPrefix("#"), index)
+    val sanitizedUnsetVariablesWithIndexes = variable.variablesToUnset.zipWithIndex.map { case (field, index) =>
+      (field.name.trim, index)
     }
 
     val atLeastOneVariableValidation: ValidatedNel[PartSubGraphCompilationError, Unit] =
@@ -59,14 +59,14 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
           CustomParameterValidationError(
             "At least one variable has to be selected",
             "Please add at least one variable to unset",
-            ParameterName("fields"),
+            ParameterName("variablesToUnset"),
             nodeId
           )
         ).toValidatedNel
       }
 
     val variableNamesValidation = sanitizedUnsetVariablesWithIndexes.map { case (variableName, index) =>
-      val fieldParameterName = ParameterName(recordKeyFieldName(index))
+      val fieldParameterName = ParameterName(variablesToUnsetKeyFieldName(index))
       val blankValidation: ValidatedNel[PartSubGraphCompilationError, Unit] =
         if (variableName.nonEmpty) {
           valid(())
@@ -114,7 +114,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
               CustomParameterValidationError(
                 "The variable can be unset only once",
                 "Variable selected more than once",
-                ParameterName(recordKeyFieldName(index)),
+                ParameterName(variablesToUnsetKeyFieldName(index)),
                 nodeId
               )
             )

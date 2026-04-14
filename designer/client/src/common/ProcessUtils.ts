@@ -180,8 +180,8 @@ class ProcessUtils {
             case "Variable": {
                 if (node.operation === "UNSET") {
                     const variablesAfterUnset = { ...currentVariables };
-                    for (const field of node.fields || []) {
-                        const unsetName = `${field?.name || ""}`.trim().replace(/^#/, "");
+                    for (const field of node.variablesToUnset || []) {
+                        const unsetName = `${field?.name || ""}`.trim();
                         if (unsetName) {
                             delete variablesAfterUnset[unsetName];
                         }
