@@ -178,7 +178,7 @@ class UIProcessValidator(
             implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
               new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
             val validated                 = validator.validate(scenario, isFragment)
-            val rawTyping                 = validated.typing.toMap
+            val rawTyping                 = validated.typing
             val nodeResults               = rawTyping.mapValuesNow(nodeInfoToResult)
             val testCasesValidationResult = validateTestCases(scenario, validated.typing)
             val validationResult = validated.result
