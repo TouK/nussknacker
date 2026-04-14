@@ -74,8 +74,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   test("should run assertions on test nodes results and return assertion result for each assertion") {
     val testCase = prepareTestCase(
       List(
-        ExpressionAssertion("#TESTS.assertEquals('valid', #records[0].someVariable)".spel, description = None),
-        ExpressionAssertion("#TESTS.assertEquals('valid', #records[1].someVariable)".spel, description = None),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #records[0].someVariable)".spel),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #records[1].someVariable)".spel),
         PredicateAssertion(
           AssertionOperator.Equals,
           "'valid'".spel,
@@ -168,7 +168,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     ) { (actualExpression, expectedExpression, expectedResult) =>
       val testCase = prepareTestCase(
         List(
-          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel, description = None),
+          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel),
           PredicateAssertion(
             AssertionOperator.Equals,
             expectedExpression.spel,

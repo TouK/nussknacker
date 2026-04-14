@@ -1614,8 +1614,54 @@ class NodesApiHttpServiceBusinessSpec
             |{
             |  "variableTypes": {
             |    "input": {
-            |      "display": "String",
-            |      "type": "TypedClass",
+            |      "display": "Record{dateTime: Instant, sampleField: String, type: String, value: Integer}",
+            |      "type": "TypedObjectTypingResult",
+            |      "fields": {
+            |        "sampleField": {
+            |          "display": "String",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.String",
+            |          "params": []
+            |        },
+            |        "dateTime": {
+            |          "display": "Instant",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.time.Instant",
+            |          "params": []
+            |        },
+            |        "type": {
+            |          "display": "String",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.String",
+            |          "params": []
+            |        },
+            |        "value": {
+            |          "display": "Integer",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.Integer",
+            |          "params": []
+            |        }
+            |      },
+            |      "refClazzName": "java.util.Map",
+            |      "params": [
+            |        {
+            |          "display": "String",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.String",
+            |          "params": []
+            |        },
+            |        {
+            |          "display": "Unknown",
+            |          "type": "Unknown",
+            |          "refClazzName": "java.lang.Object",
+            |          "params": []
+            |        }
+            |      ]
+            |    },
+            |    "sampleVariable": {
+            |      "value": "sample value",
+            |      "display": "String(value)",
+            |      "type": "TypedObjectWithValue",
             |      "refClazzName": "java.lang.String",
             |      "params": []
             |    }
@@ -1630,7 +1676,7 @@ class NodesApiHttpServiceBusinessSpec
             |    "isDisabled": null,
             |    "additionalFields": null
             |  },
-            |  "processProperties": {
+            |  "scenarioProperties": {
             |    "isFragment": false,
             |    "additionalFields": {
             |      "description": null,
@@ -1645,10 +1691,198 @@ class NodesApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/additionalVariables")
         .Then()
         .statusCode(200)
-        .body("assertionsAdditionalVariables.TESTS.type", equalTo("TypedClass"))
-        .body("assertionsAdditionalVariables.records.refClazzName", equalTo("java.util.List"))
-        .body("assertionsAdditionalVariables.records.params[0].fields.input.refClazzName", equalTo("java.lang.String"))
-        .body("assertionsAdditionalVariables.outgoingRecords.refClazzName", equalTo("java.util.List"))
+        .equalsJsonBody(
+          """
+            |{
+            |  "assertionsAdditionalVariables": {
+            |    "TESTS": {
+            |      "display": "tests",
+            |      "type": "TypedClass",
+            |      "refClazzName": "pl.touk.nussknacker.ui.process.test.testcase.tests$",
+            |      "params": [
+            |      ]
+            |    },
+            |    "records": {
+            |      "display": "List[Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}]",
+            |      "type": "TypedClass",
+            |      "refClazzName": "java.util.List",
+            |      "params": [
+            |        {
+            |          "display": "Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}",
+            |          "type": "TypedObjectTypingResult",
+            |          "fields": {
+            |            "input": {
+            |              "display": "Record{dateTime: Instant, sampleField: String, type: String, value: Integer}",
+            |              "type": "TypedObjectTypingResult",
+            |              "fields": {
+            |                "sampleField": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "dateTime": {
+            |                  "display": "Instant",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.time.Instant",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "type": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "value": {
+            |                  "display": "Integer",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.Integer",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              },
+            |              "refClazzName": "java.util.Map",
+            |              "params": [
+            |                {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                {
+            |                  "display": "Unknown",
+            |                  "type": "Unknown",
+            |                  "refClazzName": "java.lang.Object",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              ]
+            |            },
+            |            "sampleVariable": {
+            |              "value": "sample value",
+            |              "display": "String(sample value)",
+            |              "type": "TypedObjectWithValue",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            }
+            |          },
+            |          "refClazzName": "java.util.Map",
+            |          "params": [
+            |            {
+            |              "display": "String",
+            |              "type": "TypedClass",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            },
+            |            {
+            |              "display": "Unknown",
+            |              "type": "Unknown",
+            |              "refClazzName": "java.lang.Object",
+            |              "params": [
+            |              ]
+            |            }
+            |          ]
+            |        }
+            |      ]
+            |    },
+            |    "outgoingRecords": {
+            |      "display": "List[Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}]",
+            |      "type": "TypedClass",
+            |      "refClazzName": "java.util.List",
+            |      "params": [
+            |        {
+            |          "display": "Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}",
+            |          "type": "TypedObjectTypingResult",
+            |          "fields": {
+            |            "input": {
+            |              "display": "Record{dateTime: Instant, sampleField: String, type: String, value: Integer}",
+            |              "type": "TypedObjectTypingResult",
+            |              "fields": {
+            |                "sampleField": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "dateTime": {
+            |                  "display": "Instant",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.time.Instant",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "type": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "value": {
+            |                  "display": "Integer",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.Integer",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              },
+            |              "refClazzName": "java.util.Map",
+            |              "params": [
+            |                {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                {
+            |                  "display": "Unknown",
+            |                  "type": "Unknown",
+            |                  "refClazzName": "java.lang.Object",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              ]
+            |            },
+            |            "sampleVariable": {
+            |              "value": "sample value",
+            |              "display": "String(sample value)",
+            |              "type": "TypedObjectWithValue",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            }
+            |          },
+            |          "refClazzName": "java.util.Map",
+            |          "params": [
+            |            {
+            |              "display": "String",
+            |              "type": "TypedClass",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            },
+            |            {
+            |              "display": "Unknown",
+            |              "type": "Unknown",
+            |              "refClazzName": "java.lang.Object",
+            |              "params": [
+            |              ]
+            |            }
+            |          ]
+            |        }
+            |      ]
+            |    }
+            |  }
+            |}""".stripMargin
+        )
     }
 
     "return outgoingRecords typing when nodeData is provided" in {
