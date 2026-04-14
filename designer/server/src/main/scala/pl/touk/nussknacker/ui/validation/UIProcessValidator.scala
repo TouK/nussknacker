@@ -103,6 +103,34 @@ class UIProcessValidator(
   ): ValidationResult =
     validateWithRawTyping(scenarioGraph, processVersion, isFragment)._1
 
+  def validateWithRawTyping(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(implicit loggedUser: LoggedUser): (ValidationResult, Map[String, NodeTypingInfo]) = {
+    val uiValidationResult = uiValidation(
+      scenarioGraph,
+      processVersion.processName,
+      isFragment,
+      processVersion.labels.map(ScenarioLabel.apply)
+    )
+    if (uiValidationResult.saveAllowed) {
+      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+      val (canonicalValidation, rawTyping) =
+        validateCanonicalProcessWithRawTyping(canonical, processVersion, isFragment)
+      (deduplicateErrors(uiValidationResult.add(canonicalValidation)), rawTyping)
+    } else {
+      val errorAndWarningNodeIds =
+        (uiValidationResult.errors.invalidNodes.keys ++
+          uiValidationResult.warnings.invalidNodes.keys).map(_.value).toSet
+      val nodeNamesForErrors = scenarioGraph.nodes
+        .filter(n => errorAndWarningNodeIds.contains(n.id.value))
+        .map(n => n.id.value -> n.name.value)
+        .toMap
+      (uiValidationResult.withNodeNames(nodeNamesForErrors), Map.empty[String, NodeTypingInfo])
+    }
+  }
+
   // Some of these validations are duplicated with CanonicalProcess validations in order to show them in case when there
   // is an error preventing graph canonization. For example we want to display node and scenario id errors for scenarios
   // that have loose nodes. If you want to achieve this result, you need to add these validations here and deduplicate
@@ -203,34 +231,6 @@ class UIProcessValidator(
         }
       }
       .unsafeRunSync()
-  }
-
-  def validateWithRawTyping(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(implicit loggedUser: LoggedUser): (ValidationResult, Map[String, NodeTypingInfo]) = {
-    val uiValidationResult = uiValidation(
-      scenarioGraph,
-      processVersion.processName,
-      isFragment,
-      processVersion.labels.map(ScenarioLabel.apply)
-    )
-    if (uiValidationResult.saveAllowed) {
-      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-      val (canonicalValidation, rawTyping) =
-        validateCanonicalProcessWithRawTyping(canonical, processVersion, isFragment)
-      (deduplicateErrors(uiValidationResult.add(canonicalValidation)), rawTyping)
-    } else {
-      val errorAndWarningNodeIds =
-        (uiValidationResult.errors.invalidNodes.keys ++
-          uiValidationResult.warnings.invalidNodes.keys).map(_.value).toSet
-      val nodeNamesForErrors = scenarioGraph.nodes
-        .filter(n => errorAndWarningNodeIds.contains(n.id.value))
-        .map(n => n.id.value -> n.name.value)
-        .toMap
-      (uiValidationResult.withNodeNames(nodeNamesForErrors), Map.empty[String, NodeTypingInfo])
-    }
   }
 
   private def resolveNodeNamesForResult(
