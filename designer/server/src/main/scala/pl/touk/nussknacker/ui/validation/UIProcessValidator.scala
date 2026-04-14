@@ -230,7 +230,7 @@ class UIProcessValidator(
                   case Invalid(fragmentResolutionErrors) =>
                     ValidationResultWithDetails(
                       formatErrors(fragmentResolutionErrors),
-                      Map.empty[String, NodeTypingInfo]
+                      typing = Map.empty
                     )
                   case Valid(scenarioWithoutDisabledNodes) =>
                     // FIXME: Validation errors for fragment nodes are not properly handled by FE
