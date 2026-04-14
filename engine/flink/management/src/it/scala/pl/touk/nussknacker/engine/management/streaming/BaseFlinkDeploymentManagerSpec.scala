@@ -265,7 +265,7 @@ trait BaseFlinkDeploymentManagerSpec
   test("cancel of not existing job should not fail") {
     deploymentManager
       .processCommand(DMCancelScenarioCommand(ProcessName("not existing job"), user = userToAct))
-      .futureValue shouldBe (())
+      .futureValue shouldBe ()
   }
 
   test("save state when redeploying") {
@@ -385,14 +385,14 @@ trait BaseFlinkDeploymentManagerSpec
 
       logger.info("Starting to redeploy")
 
-      val statefullProcess = StatefulSampleProcess.prepareProcessWithLongState(processName)
+      val statefulProcess = StatefulSampleProcess.prepareProcessWithLongState(processName)
       val exception =
         deploymentManager
           .processCommand(
             DMRunDeploymentCommand(
               empty(process.name),
               defaultDeploymentData,
-              statefullProcess,
+              statefulProcess,
               DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
                 StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
               )
