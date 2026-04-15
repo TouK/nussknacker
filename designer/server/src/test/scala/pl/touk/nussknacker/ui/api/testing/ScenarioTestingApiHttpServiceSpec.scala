@@ -123,7 +123,7 @@ class ScenarioTestingApiHttpServiceSpec
         inputs = testDataContent,
         mocks = Map.empty,
         assertions = Map(
-          NodeId("endsuffix") -> List(
+          NodeId("end") -> List(
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "'ala'".spel,
@@ -141,7 +141,7 @@ class ScenarioTestingApiHttpServiceSpec
               "#records[0].output".spel,
             ),
           ),
-          NodeId("messagesuffix") -> List(
+          NodeId("messageVariable") -> List(
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "'ala'".spel,
@@ -167,15 +167,15 @@ class ScenarioTestingApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performTestCase")
         .Then()
         .statusCode(200)
-        .body("assertionsResults.endsuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
-        .body("assertionsResults.endsuffix[1].type", org.hamcrest.Matchers.equalTo("FailedAssertion"))
+        .body("assertionsResults.end[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.end[1].type", org.hamcrest.Matchers.equalTo("FailedAssertion"))
         .body(
-          "assertionsResults.endsuffix[1].message",
+          "assertionsResults.end[1].message",
           org.hamcrest.Matchers.equalTo("Expected: ['ala'] but found ['bela']")
         )
-        .body("assertionsResults.endsuffix[2].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
-        .body("assertionsResults.messagesuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
-        .body("assertionsResults.messagesuffix[1].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.end[2].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.messageVariable[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.messageVariable[1].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
 
     "run a test case with mocked enricher service" in {
@@ -189,7 +189,7 @@ class ScenarioTestingApiHttpServiceSpec
         inputs = testDataContent,
         mocks = Map(NodeId("someEnricher1") -> EnricherMock("'b'".spel)),
         assertions = Map(
-          NodeId("endsuffix") -> List(
+          NodeId("end") -> List(
             PredicateAssertion(AssertionOperator.Equals, "'b'".spel, "#records[0].out1".spel),
           )
         )
@@ -205,7 +205,7 @@ class ScenarioTestingApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseEnricherScenario.name}/performTestCase")
         .Then()
         .statusCode(200)
-        .body("assertionsResults.endsuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.end[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
 
     "ignore enricher mocks with empty expression or disabled and use the actual service result" in {
@@ -222,7 +222,7 @@ class ScenarioTestingApiHttpServiceSpec
           NodeId("someEnricher2") -> EnricherMock(Expression.spel("invalid expression"), enabled = false),
         ),
         assertions = Map(
-          NodeId("endsuffix") -> List(
+          NodeId("end") -> List(
             PredicateAssertion(AssertionOperator.Equals, "'a'".spel, "#records[0].out1".spel),
             PredicateAssertion(AssertionOperator.Equals, "'a'".spel, "#records[0].out2".spel),
           )
@@ -239,7 +239,7 @@ class ScenarioTestingApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseEnricherScenario.name}/performTestCase")
         .Then()
         .statusCode(200)
-        .body("assertionsResults.endsuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.end[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
 
     "return bad request when asserting on a non-existing node" in {
@@ -311,7 +311,7 @@ class ScenarioTestingApiHttpServiceSpec
         inputs = testDataContent,
         mocks = Map.empty,
         assertions = Map(
-          NodeId("messagesuffix") -> List(
+          NodeId("messageVariable") -> List(
             // output variable is only visible at endsuffix, not at messagesuffix
             PredicateAssertion(
               AssertionOperator.Equals,
@@ -573,7 +573,7 @@ class ScenarioTestingApiHttpServiceSpec
         inputs = validInputs,
         mocks = Map.empty,
         assertions = Map(
-          NodeId("endsuffix") -> List(
+          NodeId("end") -> List(
             PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#records[0].input[0]".spel)
           )
         )
@@ -591,7 +591,7 @@ class ScenarioTestingApiHttpServiceSpec
         inputs = validInputs,
         mocks = Map.empty,
         assertions = Map(
-          NodeId("endsuffix") -> List(
+          NodeId("end") -> List(
             PredicateAssertion(Assertion.AssertionOperator.Equals, "'notAla'".spel, "#records[0].input[0]".spel)
           )
         )
@@ -633,7 +633,7 @@ class ScenarioTestingApiHttpServiceSpec
       testCase1Event.hcursor
         .downField("result")
         .downField("assertionsResults")
-        .downField("endsuffix")
+        .downField("end")
         .downArray
         .downField("type")
         .as[String]
@@ -644,7 +644,7 @@ class ScenarioTestingApiHttpServiceSpec
       testCase2Event.hcursor
         .downField("result")
         .downField("assertionsResults")
-        .downField("endsuffix")
+        .downField("end")
         .downArray
         .downField("type")
         .as[String]
@@ -664,9 +664,9 @@ class ScenarioTestingApiHttpServiceSpec
     .filter("input", "#input != null".spel)
     .to(
       GraphBuilder
-        .buildVariable("messagesuffix", "output", "message" -> "'message'".spel)
+        .buildVariable("messageVariable", "output", "message" -> "'message'".spel)
         .emptySink(
-          "endsuffix",
+          "end",
           "kafka-string",
           KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
           KafkaFactory.SinkValueParamName.value -> "#output".spel
@@ -683,9 +683,9 @@ class ScenarioTestingApiHttpServiceSpec
     .filter("input", "#input != null".spel)
     .to(
       GraphBuilder
-        .buildVariable("messagesuffix", "output", "message" -> "'message'".spel)
+        .buildVariable("messageVariable", "output", "message" -> "'message'".spel)
         .emptySink(
-          "endsuffix",
+          "end",
           "kafka-string",
           KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
           KafkaFactory.SinkValueParamName.value -> "#output".spel
