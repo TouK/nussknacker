@@ -76,29 +76,6 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
         [scenarioName, node, scenarioProperties],
     );
 
-    const handleRowAdded = React.useCallback(
-        (rowIndex: number, row: TestingDataRecords) => {
-            if (
-                !validateForCount((currentCount) => {
-                    return currentCount + 1;
-                })
-            )
-                return;
-
-            dispatch(
-                setTestCaseInputs((prev) => {
-                    const next = [...prev];
-                    if (rowIndex === next.length) next.push(row);
-                    else next.splice(rowIndex, 0, row);
-                    return next;
-                }),
-            );
-
-            setCellErrors((prev) => prev.map((e) => (e.y >= rowIndex ? { ...e, y: e.y + 1 } : e)));
-        },
-        [dispatch, validateForCount],
-    );
-
     const handleRowUpdated = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
             dispatch(
@@ -142,6 +119,21 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
         [dispatch, validateForCount],
     );
 
+    const handleRowsAdded = React.useCallback(
+        (rows: TestingDataRecords[]) => {
+            if (!rows.length) return;
+            if (
+                !validateForCount((currentCount) => {
+                    return currentCount + rows.length;
+                })
+            )
+                return;
+
+            dispatch(setTestCaseInputs((prev) => [...prev, ...rows]));
+        },
+        [dispatch, validateForCount],
+    );
+
     const handleRowMoved = React.useCallback(
         (fromIndex: number, toIndex: number) => {
             dispatch(
@@ -160,7 +152,7 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
     return {
         cellErrors,
         recordsErrors,
-        handleRowAdded,
+        handleRowsAdded,
         handleRowUpdated,
         handleRowsDeleted,
         handleGenerateTestData,

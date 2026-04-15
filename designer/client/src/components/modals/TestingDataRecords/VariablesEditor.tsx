@@ -9,7 +9,7 @@ import type { TestingDataRecords } from "./types";
 interface VariablesEditorProps {
     value: VariablesCell;
     onChange: (cell: VariablesCell) => void;
-    onValidate: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
+    onValidate?: (row: TestingDataRecords) => Promise<{ data: { validationErrors: NodeValidationError[] } }>;
 }
 
 export const VariablesEditor = ({ value, onChange, onValidate }: VariablesEditorProps) => {
@@ -17,7 +17,7 @@ export const VariablesEditor = ({ value, onChange, onValidate }: VariablesEditor
 
     const handleValidateData = useCallback(
         (row: TestingDataRecords) => {
-            onValidate(row).then(({ data }) => setValidationErrors(data.validationErrors));
+            onValidate?.(row).then(({ data }) => setValidationErrors(data.validationErrors));
         },
         [onValidate],
     );
