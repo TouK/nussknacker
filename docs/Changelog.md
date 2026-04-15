@@ -355,6 +355,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   When enabled, expressions with Unknown type cannot be assigned to fields with a concrete type, reducing runtime type errors for partially typed data.
   Can be configured by implementing TypingConfigurationProvider and registering it as SPI.
   By default, the existing permissive behavior is preserved.
+* [#9286](https://github.com/TouK/nussknacker/pull/9286) Fixed handling of Avro records in Flink SQL component.
 
 ## 1.18
 
