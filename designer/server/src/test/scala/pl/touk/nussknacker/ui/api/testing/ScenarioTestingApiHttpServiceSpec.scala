@@ -134,12 +134,23 @@ class ScenarioTestingApiHttpServiceSpec
               "'ala'".spel,
               "#records[1].input[0]".spel,
             ),
-            // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "{message: 'message'}".spel,
               "#records[0].output".spel,
             ),
+            // #outgoingRecords are available in sink nodes...
+            PredicateAssertion(
+              Assertion.AssertionOperator.HasSize,
+              "0".spel,
+              "#outgoingRecords".spel,
+            ),
+            // ... but they are empty
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'message'".spel,
+              "#outgoingRecords[0].output.message".spel
+            )
           ),
           NodeId("messageVariable") -> List(
             PredicateAssertion(
@@ -147,7 +158,7 @@ class ScenarioTestingApiHttpServiceSpec
               "'ala'".spel,
               "#records[0].input[0]".spel,
             ),
-            // The output variable produced by the messagesuffix node is visible in #outgoingRecords at that node.
+            // The output variable produced by the messageVariable node is visible in #outgoingRecords at that node.
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "'message'".spel,
@@ -174,6 +185,12 @@ class ScenarioTestingApiHttpServiceSpec
           org.hamcrest.Matchers.equalTo("Expected: ['ala'] but found ['bela']")
         )
         .body("assertionsResults.end[2].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.end[3].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.end[4].type", org.hamcrest.Matchers.equalTo("FailedAssertion"))
+        .body(
+          "assertionsResults.end[4].message",
+          org.hamcrest.Matchers.containsString("The collection has '0' elements")
+        )
         .body("assertionsResults.messageVariable[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
         .body("assertionsResults.messageVariable[1].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
