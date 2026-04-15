@@ -18,6 +18,7 @@
 
 package pl.touk.nussknacker.engine.flink.api.typeinfo.option;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.CompositeTypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
@@ -25,15 +26,14 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import scala.Option;
 
 /** A {@link TypeSerializerSnapshot} for the Scala {@link OptionSerializer}. */
+@Internal
 public final class ScalaOptionSerializerSnapshot<E>
         extends CompositeTypeSerializerSnapshot<Option<E>, OptionSerializer<E>> {
 
     private static final int VERSION = 2;
 
-    @SuppressWarnings({"WeakerAccess", "deprecation"})
-    public ScalaOptionSerializerSnapshot() {
-        super(OptionSerializer.class);
-    }
+    @SuppressWarnings("WeakerAccess")
+    public ScalaOptionSerializerSnapshot() {}
 
     public ScalaOptionSerializerSnapshot(OptionSerializer<E> serializerInstance) {
         super(serializerInstance);
