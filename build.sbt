@@ -1841,13 +1841,15 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
     name := "nussknacker-flink-base-components-tests",
     libraryDependencies ++= Seq(
       "org.apache.flink" % "flink-connector-jdbc-postgres" % jdbcFlinkConnectorV % Test,
+      "org.apache.flink" % "flink-avro"                    % flinkV              % Test,
       "org.postgresql"   % "postgresql"                    % postgresV           % Test,
     )
   )
   .dependsOn(
-    flinkComponentsTestkit  % Test,
-    flinkTestUtils          % Test,
-    flinkTableApiComponents % Test
+    flinkComponentsTestkit      % Test,
+    flinkTestUtils              % Test,
+    flinkTableApiComponents     % Test,
+    schemedKafkaComponentsUtils % Test,
   )
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka"))

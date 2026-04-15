@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.flink.test.docker
 
 import com.dimafeng.testcontainers.{GenericContainer, LazyContainer}
 import com.typesafe.scalalogging.StrictLogging
-import org.scalatest.Suite
+import org.apache.flink.util.FileUtils
+import org.scalatest.{BeforeAndAfterAll, Suite}
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.images.builder.ImageFromDockerfile
@@ -10,11 +11,11 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.containers.{FileSystemBind, WithDockerContainers}
 
-import java.nio.file.Path
+import scala.util.control.NonFatal
 
-trait WithFlinkContainers extends WithDockerContainers { self: Suite with StrictLogging =>
+trait WithFlinkContainers extends WithDockerContainers with BeforeAndAfterAll { self: Suite with StrictLogging =>
 
-  protected val FlinkJobManagerRestPort = 8081
+  private val FlinkJobManagerRestPort = 8081
 
   protected lazy val taskManagerSlotCount = 32
 
@@ -27,30 +28,33 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
 
   protected def flinkContainers: List[LazyContainer[GenericContainer]] = List(jobManagerContainer, taskManagerContainer)
 
-  protected lazy val savepointDir: Path =
-    createMountableTempDirectory("nussknackerFlinkSavepointTest", BindMode.READ_WRITE)
+  private var savepointBindInitialized = false
+
+  protected lazy val savepointBind: FileSystemBind = {
+    savepointBindInitialized = true
+    val tempPath = createMountableTempDirectory("nussknackerFlinkSavepointTest", BindMode.READ_WRITE)
+    FileSystemBind(tempPath, s"/tmp/${tempPath.getFileName}", BindMode.READ_WRITE)
+  }
 
   private lazy val flinkImage = prepareFlinkImage()
 
   private lazy val jobManagerContainer: GenericContainer = {
-    val containerSavepointPath = s"/tmp/${savepointDir.getFileName}"
     new GenericContainer(
       dockerImage = flinkImage,
       command = "jobmanager" :: Nil,
       exposedPorts = FlinkJobManagerRestPort :: Nil,
       env = Map(
-        "SAVEPOINT_DIR_PATH" -> containerSavepointPath,
+        "SAVEPOINT_DIR_PATH" -> savepointBind.containerPath,
         "FLINK_PROPERTIES" ->
-          s"""execution.checkpointing.savepoint-dir: file:$containerSavepointPath
+          s"""execution.checkpointing.savepoint-dir: file:${savepointBind.containerPath}
              |""".stripMargin,
       ),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
     ).configure { self =>
       self.withNetwork(network)
       self.withLogConsumer(logConsumer(prefix = "jobmanager"))
-      self.withFileSystemBind(savepointDir.toString, containerSavepointPath, BindMode.READ_WRITE)
-      jobManagerExtraFSBinds.foreach { bind =>
-        self.withFileSystemBind(bind.hostPath, bind.containerPath, bind.mode)
+      (savepointBind :: jobManagerExtraFSBinds).foreach { bind =>
+        self.withFileSystemBind(bind.hostPath.toString, bind.containerPath, bind.mode)
       }
     }
   }
@@ -69,14 +73,25 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
       self.setNetwork(network)
       self.withLogConsumer(logConsumer(prefix = "taskmanager"))
       taskManagerExtraFSBinds.foreach { bind =>
-        self.withFileSystemBind(bind.hostPath, bind.containerPath, bind.mode)
+        self.withFileSystemBind(bind.hostPath.toString, bind.containerPath, bind.mode)
+      }
+    }
+  }
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    if (savepointBindInitialized) {
+      try {
+        FileUtils.deleteDirectory(savepointBind.hostPath.toFile)
+      } catch {
+        case NonFatal(e) => logger.warn(s"Failed to delete temp savepoint directory $savepointBind (${e.getMessage})")
       }
     }
   }
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
     List("Dockerfile", "entrypointWithIP.sh", "config.overrides.yml", "log4j-console.overrides.properties").foldLeft(
-      new ImageFromDockerfile()
+      new ImageFromDockerfile("localhost/nu-tests/flink")
     ) { case (image, file) =>
       val resource = ResourceLoader.load(s"/docker/$file")
 

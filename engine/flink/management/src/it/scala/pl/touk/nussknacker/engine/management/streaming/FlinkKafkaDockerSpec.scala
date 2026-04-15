@@ -68,7 +68,7 @@ trait FlinkKafkaDockerSpec
         .withValue("deploymentConfig.useMiniClusterForDeployment", fromAnyRef(true))
         .withValue(
           "deploymentConfig.miniCluster.config.\"execution.checkpointing.savepoint-dir\"",
-          fromAnyRef(savepointDir.resolve("savepoint").toFile.toURI.toString)
+          fromAnyRef(savepointBind.hostPath.toFile.toURI.toString)
         )
         .withValue(
           KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
