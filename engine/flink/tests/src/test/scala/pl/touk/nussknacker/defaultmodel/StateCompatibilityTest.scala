@@ -49,7 +49,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
   private val inTopic  = "state.compatibility.input"
   private val outTopic = "state.compatibility.output"
 
-  private val savepointDir = {
+  private val localSavepointDir = {
     val resourcesDir = Paths.get(s"src/test/resources/state-compatibility/${ScalaMajorVersionConfig.scalaMajorVersion}")
     if (Files.exists(resourcesDir)) {
       // Working directory is module root directory.
@@ -136,7 +136,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
 
       val savepointLocation = eventually {
         flinkMiniCluster.miniCluster
-          .triggerSavepoint(fixture.jobId, savepointDir.toString, false, SavepointFormatType.DEFAULT)
+          .triggerSavepoint(fixture.jobId, localSavepointDir.toString, false, SavepointFormatType.DEFAULT)
           .get()
       }
 
@@ -148,7 +148,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
-    val existingSavepoints = Files.list(savepointDir).iterator().asScala.toSeq
+    val existingSavepoints = Files.list(localSavepointDir).iterator().asScala.toSeq
     existingSavepoints.size shouldBe 1
 
     val existingSavepointLocation = existingSavepoints.head
@@ -178,7 +178,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
   private def saveSnapshot(savepointLocation: String): Unit = {
     val savepointPath          = Paths.get(new URI(savepointLocation))
     val savepointName          = s"${LocalDate.now()}_${BuildInfo.gitCommit}"
-    val versionedSavepointPath = savepointDir.resolve(savepointName)
+    val versionedSavepointPath = localSavepointDir.resolve(savepointName)
     Files.move(savepointPath, versionedSavepointPath)
     logger.info("Saved savepoint in: '{}'", versionedSavepointPath)
   }
