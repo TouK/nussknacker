@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.util.service
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
@@ -48,6 +49,17 @@ object EagerServiceWithErrorSupport {
     ),
     labelOpt = Some(HandleErrorsLabel)
   )
+
+  def isHandleErrorsEnabled(params: Params): Boolean =
+    params.extractParam[Boolean](HandleErrorsParamName) match {
+      case Params.ParamExtractionResult.Value(value) => value
+      case _                                         => false
+    }
+
+  def isHandleErrorsEnabled(parameters: List[(ParameterName, DefinedSingleParameter)]): Boolean =
+    parameters
+      .collectFirst { case (`HandleErrorsParamName`, DefinedEagerParameter(value: Boolean, _)) => value }
+      .getOrElse(false)
 
 }
 

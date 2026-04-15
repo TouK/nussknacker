@@ -5,9 +5,10 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
-import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.HandleErrorsParamName
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.isHandleErrorsEnabled
 import pl.touk.nussknacker.engine.util.service.ReturnErrors
 import pl.touk.nussknacker.http.backend.{HttpBackendProvider, HttpStatusCodeExtractor, LoggingAndCollectingSttpBackend}
+import pl.touk.nussknacker.http.backend.HttpStatusCodeExtractor.handleHttpResult
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.enrichers.InvocationBaseUrl.determineInvocationBaseUrl
 import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricher.packageName
@@ -30,7 +31,7 @@ class OpenAPIEnricher(
   private val codesToInterpretAsEmpty = config.codesToInterpretAsEmpty.map(StatusCode(_))
   private val swaggerHttpService      = new SwaggerSttpService(baseUrl, service, codesToInterpretAsEmpty)
   private val serviceName             = service.name.value
-  private val returnErrors            = ReturnErrors.fromBoolean[AnyRef](isHandleErrorsEnabled)
+  private val returnErrors            = ReturnErrors.fromBoolean[AnyRef](isHandleErrorsEnabled(params))
   private val tags                    = Map(AsyncExecutionTimeMeasurement.serviceNameTagKey -> serviceName)
 
   override def invoke(context: Context)(
@@ -47,19 +48,7 @@ class OpenAPIEnricher(
       .toMap
     val preparedParams = extractor.prepareParams(fixedOrEvaluatedParams)
     val invokeResult   = swaggerHttpService.invokeWithStatus(preparedParams)
-    handleResult(invokeResult)
-  }
-
-  private def handleResult(
-      invokeResult: Future[(AnyRef, Option[java.lang.Integer])]
-  )(implicit ec: ExecutionContext): Future[AnyRef] = {
-    ReturnErrors
-      .handleWithStatus(
-        returnErrors,
-        invokeResult,
-        errorStatusCode = HttpStatusCodeExtractor.extract _
-      )
-      .map(_.asInstanceOf[AnyRef])
+    handleHttpResult(returnErrors, invokeResult)
   }
 
   implicit protected def httpBackendForEc(
@@ -68,11 +57,6 @@ class OpenAPIEnricher(
   ): SttpBackend[Future, Any] = {
     val originalBackend: SttpBackend[Future, Any] = clientProvider.httpBackendForEc
     new LoggingAndCollectingSttpBackend(originalBackend, s"$packageName.$serviceName")
-  }
-
-  private def isHandleErrorsEnabled: Boolean = params.extractParam[Boolean](HandleErrorsParamName) match {
-    case Params.ParamExtractionResult.Value(value) => value
-    case _                                         => false
   }
 
 }

@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.http.backend
 
 import org.polyvariant.sttp.oauth2.common
+import pl.touk.nussknacker.engine.util.service.ReturnErrors
 import sttp.client3.HttpError
 
 import scala.annotation.tailrec
+import scala.concurrent.{ExecutionContext, Future}
 
 object HttpStatusCodeExtractor {
 
@@ -24,5 +26,18 @@ object HttpStatusCodeExtractor {
 
     loop(error)
   }
+
+  def handleHttpResult[T](
+      returnErrors: ReturnErrors[T],
+      invokeResult: Future[(T, Option[java.lang.Integer])],
+      additionalExtractors: PartialFunction[Throwable, java.lang.Integer] = PartialFunction.empty
+  )(implicit ec: ExecutionContext): Future[AnyRef] =
+    ReturnErrors
+      .handleWithStatus(
+        returnErrors,
+        invokeResult,
+        errorStatusCode = extract(_, additionalExtractors)
+      )
+      .map(_.asInstanceOf[AnyRef])
 
 }

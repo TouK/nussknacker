@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithErrorSupport, TimeMeasuringService}
-import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.{handleErrorsParam, HandleErrorsParamName}
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.{handleErrorsParam, isHandleErrorsEnabled}
 import pl.touk.nussknacker.http.backend.HttpBackendProvider
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.discovery.OpenApiDefinitionDiscovery
@@ -151,13 +151,6 @@ class OpenAPIEnricherFactory(
       )
     )
   }
-
-  private def isHandleErrorsEnabled(parameters: List[(ParameterName, DefinedSingleParameter)]): Boolean =
-    parameters
-      .collectFirst { case (`HandleErrorsParamName`, DefinedEagerParameter(value: Boolean, _)) =>
-        value
-      }
-      .getOrElse(false)
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
