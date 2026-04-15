@@ -392,8 +392,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "",
           "null".spel,
           operation = VariableOperation.Unset,
-          variablesToUnset =
-            List(Field("toRemove", "null".spel), Field("toRemove", "null".spel), Field("", "null".spel))
+          variablesToUnset = List(
+            Field("toRemove", "null".spel),
+            Field("toRemove", "null".spel),
+            Field("", "null".spel),
+            Field("notInContext", "null".spel)
+          )
         ),
         Map("toRemove" -> Typed[String])
       )
@@ -406,6 +410,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           NodeId("unsetVar")
         )
       )
+
       errors should contain(
         CustomParameterValidationError(
           "The variable can be unset only once",
@@ -414,6 +419,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           NodeId("unsetVar")
         )
       )
+
       errors should contain(
         CustomParameterValidationError(
           "This field value is required and can not be blank",
@@ -422,11 +428,20 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           NodeId("unsetVar")
         )
       )
+
+      // don't show existsValidation if nameValidation returned errors
+      errors should not contain CustomParameterValidationError(
+        "Can only unset variables available in the context",
+        "Variable not found in the current context",
+        ParameterName("$variablesToUnset-2-$key"),
+        NodeId("unsetVar")
+      )
+
       errors should contain(
         CustomParameterValidationError(
           "Can only unset variables available in the context",
           "Variable not found in the current context",
-          ParameterName("$variablesToUnset-2-$key"),
+          ParameterName("$variablesToUnset-3-$key"),
           NodeId("unsetVar")
         )
       )

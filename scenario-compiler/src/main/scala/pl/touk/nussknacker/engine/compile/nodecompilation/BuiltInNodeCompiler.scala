@@ -80,8 +80,8 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
             )
           ).toValidatedNel
         }
-      val validNameValidation = validateVariableName(variableName, Some(fieldParameterName))
-      val existsValidation =
+      val nameValidation = (blankValidation, validateVariableName(variableName, Some(fieldParameterName))).tupled
+      val existsValidation: ValidatedNel[PartSubGraphCompilationError, Unit] =
         if (inputContext.validationContext.localVariables.contains(variableName)) {
           valid(())
         } else {
@@ -94,7 +94,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
             )
           ).toValidatedNel
         }
-      ((blankValidation, validNameValidation).tupled, existsValidation).mapN((_, _) => variableName)
+      nameValidation.andThen(_ => existsValidation).map(_ => variableName)
     }.sequence
 
     val uniqueNamesValidation: ValidatedNel[PartSubGraphCompilationError, Unit] = {
