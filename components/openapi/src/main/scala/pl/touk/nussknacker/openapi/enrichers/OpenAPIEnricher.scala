@@ -7,13 +7,13 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.HandleErrorsParamName
 import pl.touk.nussknacker.engine.util.service.ReturnErrors
-import pl.touk.nussknacker.http.backend.{HttpBackendProvider, LoggingAndCollectingSttpBackend}
+import pl.touk.nussknacker.http.backend.{HttpBackendProvider, HttpStatusCodeExtractor, LoggingAndCollectingSttpBackend}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.enrichers.InvocationBaseUrl.determineInvocationBaseUrl
 import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricher.packageName
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
-import sttp.client3.{HttpError, SttpBackend}
+import sttp.client3.SttpBackend
 import sttp.model.StatusCode
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,8 +57,7 @@ class OpenAPIEnricher(
       .handleWithStatus(
         returnErrors,
         invokeResult,
-        errorDescription = errorDescription,
-        errorStatusCode = extractStatusCode
+        errorStatusCode = HttpStatusCodeExtractor.extract _
       )
       .map(_.asInstanceOf[AnyRef])
   }
@@ -74,25 +73,6 @@ class OpenAPIEnricher(
   private def isHandleErrorsEnabled: Boolean = params.extractParam[Boolean](HandleErrorsParamName) match {
     case Params.ParamExtractionResult.Value(value) => value
     case _                                         => false
-  }
-
-  private def errorDescription(error: Throwable): String = {
-    if (error.getCause == null) {
-      s"error: ${error.getMessage}"
-    } else {
-      s"error: ${error.getMessage}. ${error.getCause.getMessage}"
-    }
-  }
-
-  private def extractStatusCode(error: Throwable): Option[java.lang.Integer] = {
-    @annotation.tailrec
-    def loop(throwable: Throwable): Option[java.lang.Integer] = throwable match {
-      case null                    => None
-      case httpError: HttpError[_] => Some(Int.box(httpError.statusCode.code))
-      case other                   => loop(other.getCause)
-    }
-
-    loop(error)
   }
 
 }
