@@ -79,13 +79,28 @@ object ReturnErrors {
       errorStatusCode: Throwable => Option[java.lang.Integer] = (_: Throwable) => None
   )(
       implicit ec: ExecutionContext
+  ): Future[ReturnErrors[T]#Out] =
+    handleWithStatus(
+      returnErrors = returnErrors,
+      invokeResult = invokeResult.map(_ -> None),
+      errorDescription = errorDescription,
+      errorStatusCode = errorStatusCode
+    )
+
+  def handleWithStatus[T](
+      returnErrors: ReturnErrors[T],
+      invokeResult: Future[(T, Option[java.lang.Integer])],
+      errorDescription: Throwable => String = defaultErrorDescription,
+      errorStatusCode: Throwable => Option[java.lang.Integer] = (_: Throwable) => None
+  )(
+      implicit ec: ExecutionContext
   ): Future[ReturnErrors[T]#Out] = {
     returnErrors match {
       case noErrors: NoErrors[T] =>
-        invokeResult.map(noErrors.asOut)
+        invokeResult.map { case (result, _) => noErrors.asOut(result) }
       case withErrors: WithErrors[T] =>
         invokeResult
-          .map(ServiceResponseWithError.success[T])
+          .map { case (result, statusCode) => ServiceResponseWithError.success[T](result, statusCode = statusCode) }
           .recoverWith {
             case NonFatal(error) =>
               Future.successful(
@@ -125,7 +140,7 @@ object ServiceResponseWithError {
   ): ServiceResponseWithError[R] =
     ServiceResponseWithError(error = true, Some(errorMessage), None, statusCode = statusCode)
 
-  def success[R](response: R): ServiceResponseWithError[R] =
-    ServiceResponseWithError(error = false, None, Some(response), statusCode = None)
+  def success[R](response: R, statusCode: Option[java.lang.Integer] = None): ServiceResponseWithError[R] =
+    ServiceResponseWithError(error = false, None, Some(response), statusCode = statusCode)
 
 }

@@ -46,13 +46,20 @@ class OpenAPIEnricher(
       }
       .toMap
     val preparedParams = extractor.prepareParams(fixedOrEvaluatedParams)
-    val invokeResult   = swaggerHttpService.invoke(preparedParams)
+    val invokeResult   = swaggerHttpService.invokeWithStatus(preparedParams)
     handleResult(invokeResult)
   }
 
-  private def handleResult(invokeResult: Future[AnyRef])(implicit ec: ExecutionContext): Future[AnyRef] = {
+  private def handleResult(
+      invokeResult: Future[(AnyRef, Option[java.lang.Integer])]
+  )(implicit ec: ExecutionContext): Future[AnyRef] = {
     ReturnErrors
-      .handle(returnErrors, invokeResult, errorDescription = errorDescription, errorStatusCode = extractStatusCode)
+      .handleWithStatus(
+        returnErrors,
+        invokeResult,
+        errorDescription = errorDescription,
+        errorStatusCode = extractStatusCode
+      )
       .map(_.asInstanceOf[AnyRef])
   }
 

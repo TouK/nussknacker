@@ -79,7 +79,10 @@ class CodeHandlingTest
       Map(codeParameter -> 200, HandleErrorsParamName -> true)
     )(ServiceName("code"))
 
-    service.invoke(context).futureValue shouldBe ServiceResponseWithError.success(TypedMap(Map.empty))
+    service.invoke(context).futureValue shouldBe ServiceResponseWithError.success(
+      TypedMap(Map.empty),
+      statusCode = Some(Int.box(200))
+    )
   }
 
 }
