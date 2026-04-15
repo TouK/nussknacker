@@ -134,16 +134,9 @@ class ProcessUtils {
         scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
     ): VariableTypes => {
-        const previousNodes = this._findPreviousNodes(nodeId, scenarioGraph);
-        const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, scenarioGraph, components);
-        });
-        return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
-    };
-
-    _listOfObjectsToObject = <T>(list: Record<string, T>[]): Record<string, T> => {
-        return list.reduce((memo, current) => {
-            return { ...memo, ...current };
+        const previousNodes = this._findPreviousNodes(nodeId, scenarioGraph).reverse();
+        return previousNodes.reduce<VariableTypes>((variables, previousNodeId) => {
+            return this._findVariablesDefinedInProcess(previousNodeId, scenarioGraph, components, variables);
         }, {});
     };
 
@@ -151,8 +144,12 @@ class ProcessUtils {
         nodeId: NodeId,
         scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
-    ): Record<string, ReturnedType>[] => {
+        currentVariables: VariableTypes,
+    ): VariableTypes => {
         const node = scenarioGraph.nodes.find((node) => node.id === nodeId);
+        if (!node) {
+            return currentVariables;
+        }
         const componentDefinition = this.extractComponentDefinition(node, components);
         const clazzName = componentDefinition?.returnType;
         const unknown: ReturnedType = {
@@ -163,29 +160,41 @@ class ProcessUtils {
         };
         switch (node.type) {
             case "Source": {
-                return isEmpty(clazzName) ? [] : [{ input: clazzName }];
+                return isEmpty(clazzName) ? currentVariables : { ...currentVariables, input: clazzName };
             }
             case "FragmentInputDefinition": {
-                return node.parameters?.map((param) => ({ [param.name]: param.typ }));
+                return (node.parameters || []).reduce<VariableTypes>((variables, param) => {
+                    return { ...variables, [param.name]: param.typ };
+                }, currentVariables);
             }
             case "Enricher": {
-                return [{ [node.output]: clazzName }];
+                return { ...currentVariables, [node.output]: clazzName };
             }
             case "CustomNode":
             case "Join": {
-                return isEmpty(clazzName) ? [] : [{ [node.outputVar]: clazzName }];
+                return isEmpty(clazzName) ? currentVariables : { ...currentVariables, [node.outputVar]: clazzName };
             }
             case "VariableBuilder": {
-                return [{ [node.varName]: unknown }];
+                return { ...currentVariables, [node.varName]: unknown };
             }
             case "Variable": {
-                return [{ [node.varName]: unknown }];
+                if (node.operation === "UNSET") {
+                    const variablesAfterUnset = { ...currentVariables };
+                    for (const field of node.variablesToUnset || []) {
+                        const unsetName = `${field?.name || ""}`.trim();
+                        if (unsetName) {
+                            delete variablesAfterUnset[unsetName];
+                        }
+                    }
+                    return variablesAfterUnset;
+                }
+                return { ...currentVariables, [node.varName]: unknown };
             }
             case "Switch": {
-                return node.exprVal ? [{ [node.exprVal]: unknown }] : [];
+                return node.exprVal ? { ...currentVariables, [node.exprVal]: unknown } : currentVariables;
             }
             default: {
-                return [];
+                return currentVariables;
             }
         }
     };

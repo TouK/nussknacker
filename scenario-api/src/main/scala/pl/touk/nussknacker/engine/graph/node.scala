@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.graph
 
+import enumeratum.{CirceEnum, Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import io.circe._
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
@@ -229,9 +231,22 @@ object node {
       name: NodeName,
       varName: String,
       value: Expression,
-      additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+      additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
+      operation: VariableOperation = VariableOperation.Set,
+      variablesToUnset: List[Field] = List.empty
   ) extends OneOutputSubsequentNodeData
       with CompilableNodeData
+
+  sealed trait VariableOperation extends EnumEntry with UpperSnakecase
+
+  object VariableOperation extends Enum[VariableOperation] with CirceEnum[VariableOperation] {
+
+    case object Set   extends VariableOperation
+    case object Unset extends VariableOperation
+
+    override val values: IndexedSeq[VariableOperation] = findValues
+
+  }
 
   case class Split(
       id: NodeId,
@@ -461,7 +476,8 @@ object node {
       }
     }
 
-  def recordKeyFieldName(index: Int)   = s"$$fields-$index-$$key"
-  def recordValueFieldName(index: Int) = s"$$fields-$index-$$value"
+  def recordKeyFieldName(index: Int)           = s"$$fields-$index-$$key"
+  def recordValueFieldName(index: Int)         = s"$$fields-$index-$$value"
+  def variablesToUnsetKeyFieldName(index: Int) = s"$$variablesToUnset-$index-$$key"
 
 }

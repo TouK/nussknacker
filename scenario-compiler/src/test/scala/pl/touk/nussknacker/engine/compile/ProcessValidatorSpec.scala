@@ -1162,6 +1162,45 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     )
   }
 
+  test("allow to overwrite variable after unsetting it") {
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "typed-source")
+      .buildSimpleVariable("var1", "var1", "''".spel)
+      .unsetVariables("unset1", "var1")
+      .buildSimpleVariable("var1overwrite", "var1", "'redefined'".spel)
+      .emptySink("id2", "sink")
+
+    val compilationResult = validate(process, definitionWithTypedSource)
+    compilationResult.result shouldBe Valid(())
+    compilationResult.variablesInNodes("id2")("var1") shouldBe Typed.fromInstance("redefined")
+  }
+
+  test("variables unset by variable node should not be available further in scenario") {
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "typed-source")
+      .buildSimpleVariable("var1", "var1", "''".spel)
+      .unsetVariables("unset1", "var1")
+      .buildSimpleVariable("var2", "var2", "#var1".spel)
+      .emptySink("id2", "sink")
+
+    validate(process, definitionWithTypedSource).result should matchPattern {
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Unresolved reference 'var1'",
+                NodeId("var2"),
+                Some(DefaultExpressionIdParamName),
+                "#var1",
+                _
+              ),
+              _
+            )
+          ) =>
+    }
+  }
+
   test("not allow to overwrite variable by switch node") {
     val process = ScenarioBuilder
       .streaming("process1")

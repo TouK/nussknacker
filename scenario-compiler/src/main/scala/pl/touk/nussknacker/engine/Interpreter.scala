@@ -89,10 +89,12 @@ private class InterpreterInternal[F[_]: Monad](
     node match {
       case Source(_, _, _, next) =>
         interpretOptionalNext(node, next, ctx)
-      case VariableBuilder(_, _, varName, Right(fields), next) =>
+      case VariableBuilder(_, _, _, _, next, unsetVariables) if unsetVariables.nonEmpty =>
+        interpretOptionalNext(node, next, ctx.withoutVariables(unsetVariables))
+      case VariableBuilder(_, _, varName, Right(fields), next, _) =>
         val variable = createOrUpdateVariable(ctx, varName, fields)
         interpretOptionalNext(node, next, variable)
-      case VariableBuilder(_, _, varName, Left(expression), next) =>
+      case VariableBuilder(_, _, varName, Left(expression), next, _) =>
         val valueWithModifiedContext = expressionEvaluator.evaluate[Any](expression, varName, NodeId(node.id), ctx)
         interpretOptionalNext(node, next, ctx.withVariable(varName, valueWithModifiedContext.value))
       case FragmentUsageStart(_, _, params, next) =>

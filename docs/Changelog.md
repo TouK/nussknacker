@@ -15,6 +15,8 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9292](https://github.com/TouK/nussknacker/pull/9292) Variable node: added `SET`/`UNSET` operation with multi-variable `UNSET` and context cleanup for removed local variables.
+    * Backward compatible: existing scenarios keep previous behavior (`SET` by default), no migration required.
 * [#9231](https://github.com/TouK/nussknacker/pull/9231) OpenAPI enricher: improved discovery cache resilience.
     * Added optional `cacheFileLocation` configuration for persisting last valid OpenAPI definitions.
     * Added stale-on-error behavior for discovery refresh: on refresh failure, cached definitions are used from memory and (if configured) from file cache.

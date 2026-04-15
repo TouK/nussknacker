@@ -26,7 +26,8 @@ object node {
       name: String,
       varName: String,
       value: Either[CompiledExpression, List[Field]],
-      next: Option[Next]
+      next: Option[Next],
+      unsetVariables: List[String] = List.empty
   ) extends Node
 
   case class Processor(id: String, name: String, service: ServiceRef, next: Option[Next], isDisabled: Boolean)

@@ -36,6 +36,7 @@ export type NodeType<F extends Field = Field> = {
     varName?: string;
     value?: $TodoType;
     fields?: Array<F>;
+    variablesToUnset?: Array<F>;
     outputName?: string;
     service?: {
         id: string;
