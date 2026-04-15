@@ -139,17 +139,11 @@ class ScenarioTestingApiHttpServiceSpec
               "{message: 'message'}".spel,
               "#records[0].output".spel,
             ),
-            // #outgoingRecords are available in sink nodes...
-            PredicateAssertion(
-              Assertion.AssertionOperator.HasSize,
-              "0".spel,
-              "#outgoingRecords".spel,
-            ),
-            // ... but they are empty
+            // #outgoingRecords on sink nodes contain the same records as #records
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "'message'".spel,
-              "#outgoingRecords[0].output.message".spel
+              "#outgoingRecords[0].output.message".spel,
             )
           ),
           NodeId("messageVariable") -> List(
@@ -186,11 +180,6 @@ class ScenarioTestingApiHttpServiceSpec
         )
         .body("assertionsResults.end[2].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
         .body("assertionsResults.end[3].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
-        .body("assertionsResults.end[4].type", org.hamcrest.Matchers.equalTo("FailedAssertion"))
-        .body(
-          "assertionsResults.end[4].message",
-          org.hamcrest.Matchers.containsString("The collection has '0' elements")
-        )
         .body("assertionsResults.messageVariable[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
         .body("assertionsResults.messageVariable[1].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
