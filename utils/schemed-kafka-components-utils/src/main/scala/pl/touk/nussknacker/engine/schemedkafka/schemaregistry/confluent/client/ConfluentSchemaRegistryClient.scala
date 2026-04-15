@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.kafka.{SchemaRegistryClientKafkaConfig, Unspec
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
+import java.net.UnknownHostException
 import scala.jdk.CollectionConverters._
 
 trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLogging {
@@ -34,6 +35,9 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         invalid(SchemaVersionError("Schema version doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == schemaNotFoundCode =>
         invalid(SchemaError("Schema doesn't exist."))
+      case exc: UnknownHostException =>
+        logger.error(s"Cannot resolve Schema Registry host: ${exc.getMessage}", exc)
+        invalid(UnknownHostError(s"Cannot resolve Schema Registry host: ${exc.getMessage}.", exc))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
