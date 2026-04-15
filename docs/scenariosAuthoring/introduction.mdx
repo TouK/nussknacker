@@ -136,6 +136,12 @@ The `#meta` variable carries meta information about the scenario under execution
 The `#inputMeta` predefined variable is specific to streaming processing mode only; check [here](/docs/scenariosAuthoring/streamingProcessingMode.md#predefined-variables) for more information. 
 
 
+### Instance variables
+
+Instance variables have instance-level scope and can be used in scenarios in the same way as other variables. Once defined, they are available via the `#ENV` helper (for example, `#ENV.myInstanceVariable`).
+
+Instance variables can be defined, modified, and deleted in the Admin panel → Settings tab.  
+
 ## Variables and SpEL in action
 
 ### Filter node - filtering condition example 
