@@ -16,7 +16,7 @@ import { FlinkSqlTemplateEditor } from "./FlinkSqlTemplateEditor";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-const FLINK_SQL_PARAM = "flinkSqlQuery";
+export const FLINK_SQL_PARAM = "flinkSqlQuery";
 
 export type ExpressionFieldProps = {
     fieldName: string;

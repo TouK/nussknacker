@@ -8,6 +8,7 @@ import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
+import { FLINK_SQL_PARAM } from "./editors/expression/ExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { NameField } from "./NameField";
 import { findParameters } from "./NodeDetailsContent/helpers";
@@ -42,7 +43,7 @@ export function CustomNode({
         (): boolean => !!ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.returnType || !!node.outputVar,
         [node, processDefinitionData.components],
     );
-    const isFlinkSqlNode = useMemo(() => findParameters(node).some((p) => p.name === "flinkSqlQuery"), [node]);
+    const isFlinkSqlNode = useMemo(() => findParameters(node).some((p) => p.name === FLINK_SQL_PARAM), [node]);
 
     return (
         <>
