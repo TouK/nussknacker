@@ -28,4 +28,3 @@ export const getMetricsSettings = createSelector(getFeatureSettings, (settings) 
 export const getMaxTestingRecords = createSelector(getSettings, (s) => s.featuresSettings.testDataSettings.maxSamplesCount);
 
 export const getIsAssitantEnabled = createSelector(getFeatureSettings, (featureSettings) => featureSettings?.assistant.enabled);
-export const getFlinkSqlTemplateEditorEnabled = createSelector(getFeatureSettings, (s) => s?.flinkSqlTemplateEditor ?? false);
