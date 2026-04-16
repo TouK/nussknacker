@@ -17,19 +17,23 @@ class SwaggerSttpService(baseUrl: URL, swaggerService: SwaggerService, codesToIn
 
   private val oauth2ClientCredentialsSupport = new OAuth2ClientCredentialsSupport()
 
-  def invoke(parameters: Map[String, Any])(
+  def invokeWithStatus(parameters: Map[String, Any])(
       implicit backend: SttpBackend[Future, Any],
       ec: ExecutionContext
-  ): Future[AnyRef] = {
+  ): Future[(AnyRef, Option[java.lang.Integer])] = {
     implicit val monad: MonadError[Future] = backend.responseMonad
     val request                            = ServiceRequest(baseUrl, swaggerService, parameters)
-    val sendResult =
-      sendRequest(request).flatMap(SttpUtils.handleOptionalResponse[Future, Json](_, codesToInterpretAsEmpty))
-    swaggerService.responseSwaggerType match {
-      case Some(responseType) =>
-        sendResult.map(json => HandleResponse(json, responseType))
-      case None =>
-        sendResult.map(_ => null)
+    sendRequest(request).flatMap { response =>
+      val statusCode = Some(Int.box(response.code.code))
+      SttpUtils
+        .handleOptionalResponse[Future, Json](response, codesToInterpretAsEmpty)
+        .map { responseBody =>
+          val invocationResult = swaggerService.responseSwaggerType match {
+            case Some(responseType) => HandleResponse(responseBody, responseType)
+            case None               => null
+          }
+          invocationResult -> statusCode
+        }
     }
   }
 

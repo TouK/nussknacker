@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.openapi.enrichers
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{EagerService, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.AllProcessingModesComponent
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
+  DefinedSingleParameter,
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
@@ -20,7 +21,8 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
+import pl.touk.nussknacker.engine.util.service.{EagerServiceWithErrorSupport, TimeMeasuringService}
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.{handleErrorsParam, isHandleErrorsEnabled}
 import pl.touk.nussknacker.http.backend.HttpBackendProvider
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.discovery.OpenApiDefinitionDiscovery
@@ -39,7 +41,7 @@ class OpenAPIEnricherFactory(
     config: OpenAPIServicesConfig,
     httpBeProvider: HttpBackendProvider,
     openApiDefinitionDiscovery: OpenApiDefinitionDiscovery,
-) extends EagerService
+) extends EagerServiceWithErrorSupport[AnyRef]
     with SingleInputDynamicComponent
     with AllProcessingModesComponent
     with LazyLogging
@@ -104,10 +106,7 @@ class OpenAPIEnricherFactory(
         case Some(service) =>
           val extractor            = new ParametersExtractor(service, fixedParameters)
           val selectedServiceState = SelectedServiceState(service, extractor)
-          extractor.parameterDefinition match {
-            case Nil => createFinalResults(context, dependencies, selectedServiceState)
-            case _   => NextParameters(extractor.parameterDefinition, Nil, Some(selectedServiceState))
-          }
+          NextParameters(extractor.parameterDefinition :+ handleErrorsParam, Nil, Some(selectedServiceState))
         case None =>
           FinalResults(
             context,
@@ -123,15 +122,23 @@ class OpenAPIEnricherFactory(
 
   private def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): ContextTransformationDefinition = { case TransformationStep(_, Some(state @ SelectedServiceState(_, _))) =>
-    createFinalResults(context, dependencies, state)
+  ): ContextTransformationDefinition = {
+    case TransformationStep(parameters, Some(state @ SelectedServiceState(_, _))) =>
+      createFinalResults(context, dependencies, parameters, state)
   }
 
   private def createFinalResults(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
+      parameters: List[(ParameterName, DefinedSingleParameter)],
       selectedServiceState: SelectedServiceState
   )(implicit nodeId: NodeId) = {
+    val baseResponseType = selectedServiceState.service.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
+    val outputType = if (isHandleErrorsEnabled(parameters)) {
+      responseTypeWithError(baseResponseType)
+    } else {
+      baseResponseType
+    }
     FinalResults.forValidation(
       context = context,
       errors = List.empty,
@@ -139,7 +146,7 @@ class OpenAPIEnricherFactory(
     )(ctx =>
       ctx.withVariable(
         name = OutputVariableNameDependency.extract(dependencies),
-        value = selectedServiceState.service.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit]),
+        value = outputType,
         paramName = Some(ParameterName(OutputVar.CustomNodeFieldName))
       )
     )
