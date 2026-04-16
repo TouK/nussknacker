@@ -77,9 +77,7 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
       ref: String,
       context: Context,
       processMetaData: MetaData
-  ): Unit = {
-    updateResults(_.updateNodeOutputResult(nodeId, None, context, variableEncoder))
-  }
+  ): Unit = {}
 
   override def deadEndEncountered(
       lastNodeId: NodeId,
