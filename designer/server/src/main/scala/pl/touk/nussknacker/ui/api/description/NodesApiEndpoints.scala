@@ -1055,14 +1055,31 @@ object NodesApiEndpoints {
       implicit lazy val fragmentClazzRefSchema: Schema[FragmentClazzRef] = Schema.derived
       implicit lazy val parameterValueCompileTimeValidationSchema: Schema[ParameterValueCompileTimeValidation] =
         Schema.derived
-      implicit lazy val parameterValueInputSchema: Schema[ParameterValueInput]                         = Schema.derived
-      implicit lazy val fragmentParameterSchema: Schema[FragmentParameter]                             = Schema.derived
-      implicit lazy val serviceRefSchema: Schema[ServiceRef]                                           = Schema.derived
-      implicit lazy val branchEndDefinitionSchema: Schema[BranchEndDefinition]                         = Schema.derived
-      implicit lazy val userDefinedAdditionalNodeFieldsSchema: Schema[UserDefinedAdditionalNodeFields] = Schema.derived
-      implicit lazy val layoutDataUnsafeExtraSchema: Schema[Option[Map[String, io.circe.Json]]] =
-        Schema.anyObject
-      implicit lazy val layoutDataSchema: Schema[LayoutData]                                   = Schema.derived
+      implicit lazy val parameterValueInputSchema: Schema[ParameterValueInput] = Schema.derived
+      implicit lazy val fragmentParameterSchema: Schema[FragmentParameter]     = Schema.derived
+      implicit lazy val serviceRefSchema: Schema[ServiceRef]                   = Schema.derived
+      implicit lazy val branchEndDefinitionSchema: Schema[BranchEndDefinition] = Schema.derived
+      implicit lazy val layoutDataSchema: Schema[LayoutData]                   = Schema.derived
+
+      implicit lazy val userDefinedAdditionalNodeFieldsSchema: Schema[UserDefinedAdditionalNodeFields] =
+        Schema(
+          SchemaType.SProduct(
+            List(
+              SProductField(
+                FieldName("description"),
+                Schema.schemaForOption(Schema.string[String]),
+                f => Some(f.description)
+              ),
+              SProductField(
+                FieldName("layoutData"),
+                Schema.schemaForOption(layoutDataSchema),
+                f => Some(f.layoutData)
+              )
+            )
+          ),
+          Some(SName("UserDefinedAdditionalNodeFields"))
+        )
+
       implicit lazy val branchParametersSchema: Schema[BranchParameters]                       = Schema.derived
       implicit lazy val fieldSchema: Schema[Field]                                             = Schema.derived
       implicit lazy val fragmentOutputVarDefinitionSchema: Schema[FragmentOutputVarDefinition] = Schema.derived
