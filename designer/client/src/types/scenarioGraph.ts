@@ -3,7 +3,7 @@ import type { TestCase } from "../reducers/graph/testCase";
 import type { ComponentGroup } from "./component";
 import type { TypingResult, UIParameter } from "./definition";
 import type { Edge, EdgeType } from "./edge";
-import type { NodeType, PropertiesType } from "./node";
+import type { NodeType, PropertiesType, UnsafeOptions } from "./node";
 
 export type ScenarioGraph = {
     nodes: NodeType[];
@@ -15,8 +15,6 @@ export type ScenarioGraph = {
 
 export type Category = string;
 export type PropertiesConfigKeys = "inputSchema" | "outputSchema" | "slug" | (string & NonNullable<unknown>);
-
-type UnsafeOptions = Record<`_unsafe_${string}`, unknown>;
 
 export type ProcessAdditionalFields = {
     description?: string | null;

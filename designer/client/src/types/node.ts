@@ -7,7 +7,7 @@ type Type = "FragmentInput" | typeof StickyNoteType | "Source" | "Sink" | "Enric
 
 export type LayoutData = { x: number; y: number };
 
-type UnsafeOptions = Record<`_unsafe_${string}`, unknown>;
+export type UnsafeOptions = Record<`_unsafe_${string}`, unknown>;
 
 export interface BranchParams {
     branchId: string;

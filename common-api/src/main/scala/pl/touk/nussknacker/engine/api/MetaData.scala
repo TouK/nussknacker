@@ -109,16 +109,16 @@ case class ProcessAdditionalFields(
 object ProcessAdditionalFields {
   import io.circe.syntax._
 
-  val UnsafeFieldPrefix = "_unsafe_"
-
   implicit val circeEncoder: Encoder.AsObject[ProcessAdditionalFields] = Encoder.AsObject.instance { f =>
-    val base = JsonObject(
-      "description"     -> f.description.asJson,
-      "properties"      -> f.properties.asJson,
-      "metaDataType"    -> f.metaDataType.asJson,
-      "showDescription" -> f.showDescription.asJson,
+    UnsafePrefixedFields.merge(
+      JsonObject(
+        "description"     -> f.description.asJson,
+        "properties"      -> f.properties.asJson,
+        "metaDataType"    -> f.metaDataType.asJson,
+        "showDescription" -> f.showDescription.asJson,
+      ),
+      f.unsafeFields
     )
-    f.unsafeFields.foldLeft(base) { case (obj, (k, v)) => obj.add(k, v) }
   }
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields] = Decoder.instance { c =>
@@ -127,19 +127,13 @@ object ProcessAdditionalFields {
       properties      <- c.get[Option[Map[String, String]]]("properties")
       metaDataType    <- c.get[String]("metaDataType")
       showDescription <- c.getOrElse[Boolean]("showDescription")(false)
-    } yield {
-      val unsafeFields = c.keys.toList.flatten
-        .filter(_.startsWith(UnsafeFieldPrefix))
-        .flatMap(k => c.downField(k).as[Json].toOption.map(k -> _))
-        .toMap
-      ProcessAdditionalFields(
-        description,
-        properties.getOrElse(Map.empty),
-        metaDataType,
-        showDescription,
-        unsafeFields
-      )
-    }
+    } yield ProcessAdditionalFields(
+      description,
+      properties.getOrElse(Map.empty),
+      metaDataType,
+      showDescription,
+      UnsafePrefixedFields.extract(c)
+    )
   }
 
 }
