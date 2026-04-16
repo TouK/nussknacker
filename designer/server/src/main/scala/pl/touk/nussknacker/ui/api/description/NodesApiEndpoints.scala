@@ -1060,10 +1060,12 @@ object NodesApiEndpoints {
       implicit lazy val serviceRefSchema: Schema[ServiceRef]                                           = Schema.derived
       implicit lazy val branchEndDefinitionSchema: Schema[BranchEndDefinition]                         = Schema.derived
       implicit lazy val userDefinedAdditionalNodeFieldsSchema: Schema[UserDefinedAdditionalNodeFields] = Schema.derived
-      implicit lazy val layoutDataSchema: Schema[LayoutData]                                           = Schema.derived
-      implicit lazy val branchParametersSchema: Schema[BranchParameters]                               = Schema.derived
-      implicit lazy val fieldSchema: Schema[Field]                                                     = Schema.derived
-      implicit lazy val fragmentOutputVarDefinitionSchema: Schema[FragmentOutputVarDefinition]         = Schema.derived
+      implicit lazy val layoutDataUnsafeExtraSchema: Schema[Option[Map[String, io.circe.Json]]] =
+        Schema.anyObject
+      implicit lazy val layoutDataSchema: Schema[LayoutData]                                   = Schema.derived
+      implicit lazy val branchParametersSchema: Schema[BranchParameters]                       = Schema.derived
+      implicit lazy val fieldSchema: Schema[Field]                                             = Schema.derived
+      implicit lazy val fragmentOutputVarDefinitionSchema: Schema[FragmentOutputVarDefinition] = Schema.derived
 
       //  Tapir currently supports only json schema v4 which has no way to declare discriminator
       //  We declare that each type of NodeData belongs to an enum with only one value as a workaround for this problem
