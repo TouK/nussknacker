@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.api
 
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe.{Decoder, Encoder, HCursor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
-@JsonCodec case class LayoutData(x: Long, y: Long, _unsafeExtra: Option[Map[String, Json]] = None)
+@JsonCodec case class LayoutData(x: Long, y: Long)
 
 // TODO: This class should be moved into components-api, scenario-api shouldn't use this. It should hold only properties
 //       and ScenarioRuntimeMetadata (Currently called ProcessVersion)
