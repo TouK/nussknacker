@@ -30,7 +30,7 @@ class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, cli
       modelDataProvider.getCurrentModelData().inputConfigDuringExecution.serialized,
       processVersion,
       deploymentData,
-      canonicalProcess
+      canonicalProcess.withoutUnsafeFields
     )
     client.runProgram(
       modelJarProvider.getJobJar(),

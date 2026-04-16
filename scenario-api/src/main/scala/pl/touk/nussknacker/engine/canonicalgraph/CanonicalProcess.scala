@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.canonicalgraph
 
 import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
@@ -107,6 +108,17 @@ case class CanonicalProcess(
     copy(metaData = metaData.copy(id = processName.value))
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
+
+  // Strips `_unsafe_*` extension fields from metadata and every node's additionalFields. We use a
+  // JSON round-trip because there is no common `additionalFields` setter across the node ADT;
+  // walking the JSON keeps us future-proof against new node types.
+  lazy val withoutUnsafeFields: CanonicalProcess =
+    CanonicalProcess.canonicalProcessDecoder
+      .decodeJson(CirceUtil.UnsafePrefixedFields.deepStrip(this.asJson))
+      .fold(
+        err => throw new IllegalStateException(s"Failed to strip _unsafe_ fields: ${err.getMessage}"),
+        identity
+      )
 
   def collectAllSources: List[SourceNodeData] = {
     val allNodes = collectAllNodes
