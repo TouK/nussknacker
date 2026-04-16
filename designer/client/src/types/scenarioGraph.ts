@@ -16,12 +16,14 @@ export type ScenarioGraph = {
 export type Category = string;
 export type PropertiesConfigKeys = "inputSchema" | "outputSchema" | "slug" | (string & NonNullable<unknown>);
 
+type UnsafeOptions = Record<`_unsafe_${string}`, unknown>;
+
 export type ProcessAdditionalFields = {
     description?: string | null;
     properties: { [key in PropertiesConfigKeys]: string };
     metaDataType: string;
     showDescription?: boolean;
-};
+} & UnsafeOptions;
 
 export interface UIScenarioProperty {
     defaultValue?: string;
