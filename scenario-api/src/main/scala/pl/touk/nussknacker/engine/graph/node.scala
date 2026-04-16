@@ -82,27 +82,25 @@ object node {
   object UserDefinedAdditionalNodeFields {
     import io.circe.syntax._
 
-    val UnsafeFieldPrefix = "_unsafe_"
-
     implicit val encoder: Encoder.AsObject[UserDefinedAdditionalNodeFields] = Encoder.AsObject.instance { f =>
-      val base = JsonObject(
-        "description" -> f.description.asJson,
-        "layoutData"  -> f.layoutData.asJson,
+      UnsafePrefixedFields.merge(
+        JsonObject(
+          "description" -> f.description.asJson,
+          "layoutData"  -> f.layoutData.asJson,
+        ),
+        f.unsafeFields
       )
-      f.unsafeFields.foldLeft(base) { case (obj, (k, v)) => obj.add(k, v) }
     }
 
     implicit val decoder: Decoder[UserDefinedAdditionalNodeFields] = Decoder.instance { c =>
       for {
         description <- c.get[Option[String]]("description")
         layoutData  <- c.get[Option[LayoutData]]("layoutData")
-      } yield {
-        val unsafeFields = c.keys.toList.flatten
-          .filter(_.startsWith(UnsafeFieldPrefix))
-          .flatMap(k => c.downField(k).as[Json].toOption.map(k -> _))
-          .toMap
-        UserDefinedAdditionalNodeFields(description, layoutData, unsafeFields)
-      }
+      } yield UserDefinedAdditionalNodeFields(
+        description,
+        layoutData,
+        UnsafePrefixedFields.extract(c)
+      )
     }
 
   }
