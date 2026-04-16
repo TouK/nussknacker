@@ -84,21 +84,6 @@ object ReturnErrors {
     else new NoErrors[X]
   }
 
-  def handle[T](
-      returnErrors: ReturnErrors[T],
-      invokeResult: Future[T],
-      errorDescription: Throwable => String = defaultErrorDescription,
-      errorStatusCode: Throwable => Option[java.lang.Integer] = (_: Throwable) => None
-  )(
-      implicit ec: ExecutionContext
-  ): Future[ReturnErrors[T]#Out] =
-    handleWithStatus(
-      returnErrors = returnErrors,
-      invokeResult = invokeResult.map(_ -> None),
-      errorDescription = errorDescription,
-      errorStatusCode = errorStatusCode
-    )
-
   def handleWithStatus[T](
       returnErrors: ReturnErrors[T],
       invokeResult: Future[(T, Option[java.lang.Integer])],

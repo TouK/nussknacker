@@ -9,11 +9,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object HttpStatusCodeExtractor {
 
-  def extract(error: Throwable): Option[java.lang.Integer] = extract(error, PartialFunction.empty)
-
   def extract(
       error: Throwable,
-      additionalExtractors: PartialFunction[Throwable, java.lang.Integer]
+      additionalExtractors: PartialFunction[Throwable, java.lang.Integer] = PartialFunction.empty
   ): Option[java.lang.Integer] = {
     @tailrec
     def loop(throwable: Throwable): Option[java.lang.Integer] = throwable match {

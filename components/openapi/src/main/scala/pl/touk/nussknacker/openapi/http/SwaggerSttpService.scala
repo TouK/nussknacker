@@ -17,12 +17,6 @@ class SwaggerSttpService(baseUrl: URL, swaggerService: SwaggerService, codesToIn
 
   private val oauth2ClientCredentialsSupport = new OAuth2ClientCredentialsSupport()
 
-  def invoke(parameters: Map[String, Any])(
-      implicit backend: SttpBackend[Future, Any],
-      ec: ExecutionContext
-  ): Future[AnyRef] =
-    invokeWithStatus(parameters).map(_._1)
-
   def invokeWithStatus(parameters: Map[String, Any])(
       implicit backend: SttpBackend[Future, Any],
       ec: ExecutionContext
