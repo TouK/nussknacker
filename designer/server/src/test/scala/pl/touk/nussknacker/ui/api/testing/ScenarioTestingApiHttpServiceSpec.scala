@@ -139,11 +139,11 @@ class ScenarioTestingApiHttpServiceSpec
               "{message: 'message'}".spel,
               "#records[0].output".spel,
             ),
-            // #outgoingRecords on sink nodes contain the same records as #records
+            // #outgoingRecords on sink nodes contain a representation of the record received by a sink.
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
-              "'message'".spel,
-              "#outgoingRecords[0].output.message".spel,
+              "{message: 'message'}".spel,
+              "#outgoingRecords[1]['end']".spel,
             )
           ),
           NodeId("messageVariable") -> List(
