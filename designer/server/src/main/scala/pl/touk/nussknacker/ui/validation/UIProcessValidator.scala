@@ -491,7 +491,7 @@ class UIProcessValidator(
         val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
           testcase.NodeTyping(
             inputVariables = typingInfo.inputValidationContext.localVariables,
-            outputVariables = typingInfo.outputValidationContext.map(_.localVariables).getOrElse(Map.empty),
+            outputVariables = typingInfo.outputValidationContext.map(_.localVariables),
           )
         }
         testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, testCases.toList)

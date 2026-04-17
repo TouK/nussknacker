@@ -63,11 +63,11 @@ private class EnricherMockValidator(
 
   private def determineEnricherOutputVariableType(
       enricher: Enricher,
-      outputVariableTypes: Map[String, TypingResult],
+      outputVariableTypes: Option[Map[String, TypingResult]],
   ): ValidatedNel[EnricherMockValidationError, TypingResult] = {
     Validated
       .fromOption(
-        outputVariableTypes.get(enricher.output),
+        outputVariableTypes.flatMap(_.get(enricher.output)),
         errors.missingEnricherOutputVariable(enricher)
       )
       .toValidatedNel

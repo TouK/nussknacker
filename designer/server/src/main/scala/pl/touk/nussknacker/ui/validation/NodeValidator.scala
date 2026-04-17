@@ -96,7 +96,7 @@ class NodeValidator(
         _,
         testcase.NodeTyping(
           inputVariables = validationRequest.variableTypes,
-          outputVariables = outputValidationContext.map(_.localVariables).getOrElse(Map.empty)
+          outputVariables = outputValidationContext.map(_.localVariables)
         )
       )
     )

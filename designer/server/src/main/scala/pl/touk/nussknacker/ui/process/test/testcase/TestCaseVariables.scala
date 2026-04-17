@@ -34,24 +34,18 @@ object TestCaseVariables {
       validationContext: ValidationContext,
       nodeTyping: testcase.NodeTyping
   ): ValidationContext = {
-    val outgoingRecordsType =
-      if (nodeTyping.outputVariables.nonEmpty) recordsNodeVariableType(nodeTyping.outputVariables)
-      else listOfUnknownType
     validationContext.withVariablesUnsafe(
       TestsGlobalVariableName         -> testsGlobalVariableType,
       RecordsNodeVariableName         -> recordsNodeVariableType(nodeTyping.inputVariables),
-      OutgoingRecordsNodeVariableName -> outgoingRecordsType,
+      OutgoingRecordsNodeVariableName -> nodeTyping.outputVariables.fold(listOfUnknownType)(recordsNodeVariableType)
     )
   }
 
   def getNodeVariablesTyping(nodeTyping: testcase.NodeTyping): Map[String, TypingResult] = {
-    val outgoingRecordsType =
-      if (nodeTyping.outputVariables.nonEmpty) recordsNodeVariableType(nodeTyping.outputVariables)
-      else listOfUnknownType
     Map(
       TestsGlobalVariableName         -> testsGlobalVariableType,
       RecordsNodeVariableName         -> recordsNodeVariableType(nodeTyping.inputVariables),
-      OutgoingRecordsNodeVariableName -> outgoingRecordsType,
+      OutgoingRecordsNodeVariableName -> nodeTyping.outputVariables.fold(listOfUnknownType)(recordsNodeVariableType),
     )
   }
 

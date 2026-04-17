@@ -184,7 +184,6 @@ class NodesApiHttpService(
             jobData        = JobData(request.scenarioProperties.toMetaData(processVersion.processName), processVersion)
             outputVariableTypes = nodeValidator
               .getOutputVariableTypes(inputVariableTypes, request.nodeData, jobData)
-              .getOrElse(Map.empty)
             additionalVariables = prepareTestCaseAdditionalVariables(
               testcase.NodeTyping(inputVariableTypes, outputVariableTypes)
             )
