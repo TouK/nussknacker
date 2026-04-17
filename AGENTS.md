@@ -4,6 +4,11 @@ Multi-module Scala 2.13 / TypeScript 5.9 project. Backend uses SBT, frontend use
 Two frontend sub-projects live under `designer/client/` and `designer/submodules/` — each has its own
 `AGENTS.md` with frontend-specific details. This file covers the **root project and Scala backend**.
 
+## Git & PR Conventions
+
+- Main development branch: `staging` (PRs target this, not `master`)
+- Any API-breaking change must be documented in `docs/Changelog.md` and `docs/MigrationGuide.md`
+
 ## Build & Test (Scala / SBT)
 
 ```bash
@@ -192,3 +197,8 @@ scenario-compiler/              # Scenario compilation engine
 common-api/                     # Shared API types
 e2e-tests/                      # End-to-end Scala tests
 ```
+
+## Critical Rules
+- Never commit secrets or API keys
+- Ask for confirmation before destructive operations
+- Check diff before pushing
