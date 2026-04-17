@@ -9,9 +9,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
+### Flink state incompatibility
+
+* [#9317](https://github.com/TouK/nussknacker/pull/9317/) List elements are now serialized with `NullableSerializer` to correctly handle `null` values at runtime.
+  This is a **breaking change for Flink state** (savepoints/checkpoints) for scenarios that use `List` types.
+  See [FLINK-35555](https://issues.apache.org/jira/browse/FLINK-35555).
+
 ### Configuration changes
 
-* [#7181](https://github.com/TouK/nussknacker/pull/7181) [#7620](https://github.com/TouK/nussknacker/pull/7620) Added designer configuration: stickyNotesSettings 
+* [#7181](https://github.com/TouK/nussknacker/pull/7181) [#7620](https://github.com/TouK/nussknacker/pull/7620) Added designer configuration: stickyNotesSettings
+ 
   * maxContentLength - max length of a sticky notes content (characters)
   * maxNotesCount - optional, max count of sticky notes inside one scenario/fragment (if not set the amount of sticky notes in scenario is not limited)
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph

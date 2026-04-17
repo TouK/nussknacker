@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSer
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 
+import java.{util, util => jutil}
 import java.nio.charset.{Charset, StandardCharsets}
 import java.time._
 import java.util.{Currency, Locale, UUID}
@@ -246,6 +247,39 @@ class TypingResultAwareTypeInformationDetectionSpec
       .snapshotConfiguration()
       .resolveSchemaCompatibility(oldSerializerSnapshot)
       .isCompatibleAfterMigration shouldBe true
+  }
+
+  test("list serialization handles null elements") {
+    val list: jutil.List[java.lang.Integer] = new util.ArrayList[java.lang.Integer]()
+    list.add(1)
+    list.add(null)
+    list.add(1)
+    val typeInfo: TypeInformation[jutil.List[_]] =
+      detection.forType(Typed.genericTypeClass(classOf[jutil.List[_]], List(Typed[java.lang.Integer])))
+
+    serializeRoundTrip(list, typeInfo)()
+  }
+
+  test("list of lists handles null inner list") {
+    val innerList: jutil.List[AnyRef] = util.Arrays.asList("x", "y")
+    val outerList: jutil.List[AnyRef] = new util.ArrayList[AnyRef]()
+    outerList.add(innerList)
+    outerList.add(null)
+    outerList.add(innerList)
+
+    val innerTypingResult = Typed.genericTypeClass(classOf[jutil.List[_]], List(Typed[String]))
+    val outerTypingResult = Typed.genericTypeClass(classOf[jutil.List[_]], List(innerTypingResult))
+    val typeInfo: TypeInformation[jutil.List[AnyRef]] = detection.forType(outerTypingResult)
+
+    serializeRoundTrip(outerList, typeInfo)()
+  }
+
+  // FIXME: What to do with passing direct null as value??
+  ignore("list serialization handles null") {
+    val typeInfo: TypeInformation[jutil.List[_]] =
+      detection.forType(Typed.genericTypeClass(classOf[jutil.List[_]], List(Typed[java.lang.Integer])))
+
+    serializeRoundTrip(null, typeInfo)()
   }
 
   // We have to compare it this way because context can contains arrays

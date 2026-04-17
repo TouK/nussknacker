@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   CurrencyTypeInformation,
   DurationTypeInformation,
   LocaleTypeInformation,
+  NullableTypeInformation,
   OffsetDateTimeTypeInformation,
   PeriodTypeInformation,
   TypeInformationDetection,
@@ -58,7 +59,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
   override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case TypedClass(`ListClass`, elementType :: Nil) =>
-        new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
+        new ListTypeInfo[AnyRef](NullableTypeInformation.wrap(forType[AnyRef](elementType)))
       case TypedClass(`ZonedDateTimeClass`, Nil)                             => ZonedDateTimeTypeInformation
       case TypedClass(`OffsetDateTimeClass`, Nil)                            => OffsetDateTimeTypeInformation
       case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass) => ZoneIdTypeInformation

@@ -15,6 +15,8 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9317](https://github.com/TouK/nussknacker/pull/9317/)Fixed null handling in Flink `ListSerializer` — list elements are now serialized with `NullableSerializer`,
+  enabling correct runtime behavior when SpEL expressions inside a list return `null`.
 * [#9314](https://github.com/TouK/nussknacker/pull/9314) OpenAPI enricher: `handleErrors` renamed to `Error Strategy` and moved to advanced parameters
 * [#9303](https://github.com/TouK/nussknacker/pull/9303) OpenAPI enricher: added `handleErrors` response wrapping (`error`, `errorResponse`, `successResponse`, optional `statusCode`), with `statusCode` when it can be extracted.
 * [#9292](https://github.com/TouK/nussknacker/pull/9292) Variable node: added `SET`/`UNSET` operation with multi-variable `UNSET` and context cleanup for removed local variables.
