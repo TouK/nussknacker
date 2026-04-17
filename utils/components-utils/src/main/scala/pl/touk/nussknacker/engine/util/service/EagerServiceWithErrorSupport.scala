@@ -1,17 +1,13 @@
 package pl.touk.nussknacker.engine.util.service
 
+import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
-import pl.touk.nussknacker.engine.api.definition.{
-  FixedExpressionValue,
-  FixedValuesParameterEditor,
-  Parameter,
-  WithExplicitTypesToExtract
-}
+import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -33,22 +29,7 @@ class EagerServiceWithErrorSupport[T: ClassTag] extends EagerService with WithEx
 }
 
 object EagerServiceWithErrorSupport {
-  // Internal name avoids collisions with real component/API params, while UI still presents it as `handleErrors`.
-  final val HandleErrorsParamName     = ParameterName("nkHandleErrors")
-  private final val HandleErrorsLabel = "handleErrors"
-
-  val handleErrorsParam: Parameter = Parameter[Boolean](HandleErrorsParamName).copy(
-    defaultValue = Some(Expression.spel("false")),
-    editors = List(
-      FixedValuesParameterEditor(
-        List(
-          FixedExpressionValue("false", "false"),
-          FixedExpressionValue("true", "true")
-        )
-      )
-    ),
-    labelOpt = Some(HandleErrorsLabel)
-  )
+  final val HandleErrorsParamName = ParameterName("nkHandleErrors")
 
   def isHandleErrorsEnabled(params: Params): Boolean =
     params.extractParam[Boolean](HandleErrorsParamName) match {
@@ -127,9 +108,27 @@ case class ServiceResponseWithError[R] private (
     errorResponse: Option[String],
     successResponse: Option[R],
     statusCode: Option[java.lang.Integer]
-)
+) extends DisplayJsonWithEncoder[ServiceResponseWithError[R]]
 
 object ServiceResponseWithError {
+
+  private val jsonEncoder = ToJsonEncoder.looseEncoder
+
+  implicit def encoder[R]: Encoder[ServiceResponseWithError[R]] = Encoder.instance { value =>
+    Json.obj(
+      "error" -> Json.fromBoolean(value.error),
+      "errorResponse" -> value.errorResponse
+        .map(Json.fromString)
+        .getOrElse(Json.Null),
+      "successResponse" -> value.successResponse
+        .map(jsonEncoder.encodeUnsafe)
+        .getOrElse(Json.Null),
+      "statusCode" -> value.statusCode
+        .flatMap(code => Option(code))
+        .map(code => Json.fromInt(code.intValue()))
+        .getOrElse(Json.Null)
+    )
+  }
 
   def error[R](
       errorMessage: String,
