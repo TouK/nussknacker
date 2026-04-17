@@ -54,7 +54,7 @@ class CodeHandlingTest
 
   }
 
-  test("should return wrapped response when handleErrors is enabled and request fails") {
+  test("should return wrapped response when Error Strategy returns error in output and request fails") {
     val service = parseToEnrichers(
       "custom-codes.yml",
       backend,
@@ -71,7 +71,7 @@ class CodeHandlingTest
     result.successResponse shouldBe None
   }
 
-  test("should return wrapped success response when handleErrors is enabled") {
+  test("should return wrapped success response when Error Strategy returns error in output") {
     val service = parseToEnrichers(
       "custom-codes.yml",
       backend,

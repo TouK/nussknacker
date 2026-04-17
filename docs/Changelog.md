@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9314](https://github.com/TouK/nussknacker/pull/9314) OpenAPI enricher: `handleErrors` renamed to `Error Strategy` and moved to advanced parameters
 * [#9303](https://github.com/TouK/nussknacker/pull/9303) OpenAPI enricher: added `handleErrors` response wrapping (`error`, `errorResponse`, `successResponse`, optional `statusCode`), with `statusCode` when it can be extracted.
 * [#9292](https://github.com/TouK/nussknacker/pull/9292) Variable node: added `SET`/`UNSET` operation with multi-variable `UNSET` and context cleanup for removed local variables.
     * Backward compatible: existing scenarios keep previous behavior (`SET` by default), no migration required.

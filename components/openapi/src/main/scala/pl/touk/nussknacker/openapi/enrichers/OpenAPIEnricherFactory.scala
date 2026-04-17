@@ -16,17 +16,23 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesParameterEditor,
   NodeDependency,
   OutputVariableNameDependency,
-  Parameter
+  Parameter,
+  ParameterCategory
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithErrorSupport, TimeMeasuringService}
-import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.{handleErrorsParam, isHandleErrorsEnabled}
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.{
+  isHandleErrorsEnabled,
+  HandleErrorsParamName
+}
 import pl.touk.nussknacker.http.backend.HttpBackendProvider
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.discovery.OpenApiDefinitionDiscovery
 import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory.{
+  errorStrategyParam,
   serviceParam,
   ServiceParamName,
   TransformationState
@@ -106,7 +112,7 @@ class OpenAPIEnricherFactory(
         case Some(service) =>
           val extractor            = new ParametersExtractor(service, fixedParameters)
           val selectedServiceState = SelectedServiceState(service, extractor)
-          NextParameters(extractor.parameterDefinition :+ handleErrorsParam, Nil, Some(selectedServiceState))
+          NextParameters(extractor.parameterDefinition :+ errorStrategyParam, Nil, Some(selectedServiceState))
         case None =>
           FinalResults(
             context,
@@ -179,6 +185,20 @@ object OpenAPIEnricherFactory {
     val values = services.map(_.name.value).sorted.distinct
     fixedValuesWithNullParameter(ServiceParamName, values)
   }
+
+  private val errorStrategyParam: Parameter = Parameter[Boolean](HandleErrorsParamName).copy(
+    defaultValue = Some(Expression.spel("false")),
+    editors = List(
+      FixedValuesParameterEditor(
+        List(
+          FixedExpressionValue("false", "Fail on error"),
+          FixedExpressionValue("true", "Return error")
+        )
+      )
+    ),
+    labelOpt = Some("Error Strategy"),
+    category = ParameterCategory.Advanced
+  )
 
   private[this] def fixedValuesWithNullParameter(parameterName: ParameterName, values: List[String]) = {
     val fixedExprValues = values.map(name => FixedExpressionValue(s"'$name'", name))

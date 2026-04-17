@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, ParameterCategory}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -42,7 +42,7 @@ class OpenAPIEnricherFactoryTest extends AnyFunSuite with Matchers with BaseOpen
 
   private implicit val nodeId: NodeId = NodeId("nodeId")
 
-  test("should expose handleErrors parameter with default value") {
+  test("should expose Error Strategy parameter with default value") {
     val definition = factory.contextTransformation(ValidationContext.empty, List(OutputVariableNameValue("out")))
 
     val initStep = definition(factory.TransformationStep(Nil, None)).asInstanceOf[factory.NextParameters]
@@ -54,21 +54,22 @@ class OpenAPIEnricherFactoryTest extends AnyFunSuite with Matchers with BaseOpen
       )
     ).asInstanceOf[factory.NextParameters]
 
-    val handleErrorsParameter = serviceSelectedStep.parameters.find(_.name == HandleErrorsParamName).value
+    val errorStrategyParameter = serviceSelectedStep.parameters.find(_.name == HandleErrorsParamName).value
 
-    handleErrorsParameter.defaultValue shouldBe Some(Expression.spel("false"))
-    handleErrorsParameter.labelOpt shouldBe Some("handleErrors")
-    handleErrorsParameter.editors shouldBe List(
+    errorStrategyParameter.defaultValue shouldBe Some(Expression.spel("false"))
+    errorStrategyParameter.labelOpt shouldBe Some("Error Strategy")
+    errorStrategyParameter.category shouldBe ParameterCategory.Advanced
+    errorStrategyParameter.editors shouldBe List(
       FixedValuesParameterEditor(
         List(
-          FixedExpressionValue("false", "false"),
-          FixedExpressionValue("true", "true")
+          FixedExpressionValue("false", "Fail on error"),
+          FixedExpressionValue("true", "Return error")
         )
       )
     )
   }
 
-  test("should adjust output type when handleErrors changes") {
+  test("should adjust output type when Error Strategy changes") {
     val definition = factory.contextTransformation(ValidationContext.empty, List(OutputVariableNameValue("out")))
 
     val initStep = definition(factory.TransformationStep(Nil, None)).asInstanceOf[factory.NextParameters]

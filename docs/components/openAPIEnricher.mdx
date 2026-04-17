@@ -37,12 +37,17 @@ In purely streaming contexts, we typically use term **event** - that simply mean
 |-----------------------|---------------------------------------------------|
 | OperationId | Id of the OpenAPI operation, as defined in the interface definition |
 | Input parameters | An entry field for each of the operation's input parameters. Nussknacker validates the data type of each entry field against the OpenAPI interface definition. |
-| handleErrors | If set to `true`, OpenAPI call errors are returned as a normal output value instead of failing node execution. |
 | Output variable name | This variable will contain the result of OpenAPI service call  |
+
+### Advanced parameters
+
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Error Strategy | Defines how OpenAPI call errors are handled. `Fail on error` (default) fails node execution. `Return error` returns a wrapped result in the output variable. |
 
 ## Error handling output
 
-When `handleErrors` is set to `true`, the output variable is a record with:
+When `Error Strategy` is set to `Return error`, the output variable is a record with:
 
 | Field | Description |
 |-------|-------------|
