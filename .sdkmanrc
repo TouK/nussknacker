@@ -1,0 +1,4 @@
+# Enable auto-env through the sdkman_auto_env config
+# Add key=value pairs of SDKs to use below
+# Keep it synchronized with Ansible java_17_version
+java=17.0.16-tem
