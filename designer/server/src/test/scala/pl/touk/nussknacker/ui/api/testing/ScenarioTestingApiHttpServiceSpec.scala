@@ -158,7 +158,15 @@ class ScenarioTestingApiHttpServiceSpec
               "'message'".spel,
               "#outgoingRecords[0].output.message".spel,
             ),
-          )
+          ),
+          NodeId("processor end") -> List(
+            // outgoing records should be the same as incoming records for processor that is an end node
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "#records".spel,
+              "#outgoingRecords".spel,
+            ),
+          ),
         )
       )
 
@@ -668,7 +676,8 @@ class ScenarioTestingApiHttpServiceSpec
     .additionalFields(properties = Map("environment" -> "test"))
     .source("startProcess", "csv-source")
     .filter("input", "#input != null".spel)
-    .to(
+    .split(
+      "split",
       GraphBuilder
         .buildVariable("messageVariable", "output", "message" -> "'message'".spel)
         .emptySink(
@@ -676,7 +685,9 @@ class ScenarioTestingApiHttpServiceSpec
           "kafka-string",
           KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
           KafkaFactory.SinkValueParamName.value -> "#output".spel
-        )
+        ),
+      GraphBuilder
+        .processorEnd("processor end", "componentService")
     )
 
   private val testCaseEnricherScenario = ScenarioBuilder
@@ -687,15 +698,12 @@ class ScenarioTestingApiHttpServiceSpec
     .enricher("someEnricher1", "out1", "paramService", "param" -> "'a'".spel)
     .enricher("someEnricher2", "out2", "paramService", "param" -> "'a'".spel)
     .filter("input", "#input != null".spel)
-    .to(
-      GraphBuilder
-        .buildVariable("messageVariable", "output", "message" -> "'message'".spel)
-        .emptySink(
-          "end",
-          "kafka-string",
-          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
-          KafkaFactory.SinkValueParamName.value -> "#output".spel
-        )
+    .buildVariable("messageVariable", "output", "message" -> "'message'".spel)
+    .emptySink(
+      "end",
+      "kafka-string",
+      KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+      KafkaFactory.SinkValueParamName.value -> "#output".spel
     )
 
 }

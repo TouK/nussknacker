@@ -34,18 +34,19 @@ object TestCaseVariables {
       validationContext: ValidationContext,
       nodeTyping: testcase.NodeTyping
   ): ValidationContext = {
-    validationContext.withVariablesUnsafe(
-      TestsGlobalVariableName         -> testsGlobalVariableType,
-      RecordsNodeVariableName         -> recordsNodeVariableType(nodeTyping.inputVariables),
-      OutgoingRecordsNodeVariableName -> nodeTyping.outputVariables.fold(listOfUnknownType)(recordsNodeVariableType)
-    )
+    validationContext.withVariablesUnsafe(getNodeVariablesTyping(nodeTyping).toList: _*)
   }
 
   def getNodeVariablesTyping(nodeTyping: testcase.NodeTyping): Map[String, TypingResult] = {
     Map(
-      TestsGlobalVariableName         -> testsGlobalVariableType,
-      RecordsNodeVariableName         -> recordsNodeVariableType(nodeTyping.inputVariables),
-      OutgoingRecordsNodeVariableName -> nodeTyping.outputVariables.fold(listOfUnknownType)(recordsNodeVariableType),
+      TestsGlobalVariableName -> testsGlobalVariableType,
+      RecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.inputVariables),
+      OutgoingRecordsNodeVariableName -> (nodeTyping.outputVariables match {
+        // In case of missing output variables information or empty output variables (e.g. for a sink), we provide a list of unknown records
+        case None                                   => listOfUnknownType
+        case Some(outputVars) if outputVars.isEmpty => listOfUnknownType
+        case Some(outputVars)                       => recordsNodeVariableType(outputVars)
+      })
     )
   }
 

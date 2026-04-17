@@ -44,8 +44,8 @@ class StaticComponentOutputValidationContextDeterminer(
           contextAfterSource(returnTypeOpt)
         case (ComponentType.Fragment, _: FragmentInputDefinition, _) =>
           Valid(contextAfterFragmentInputDefinition(staticComponent.parameters))
-        case (ComponentType.Sink, _, singleInputContext: SingleInputNodeInputValidationContext) =>
-          Valid(singleInputContext.validationContext)
+        case (ComponentType.Sink, _, _) =>
+          Valid(ValidationContext.empty)
         case (
               ComponentType.Service,
               serviceData: NodeData with WithOptionalOutputVar,

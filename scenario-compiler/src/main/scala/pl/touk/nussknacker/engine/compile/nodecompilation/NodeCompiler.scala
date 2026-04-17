@@ -510,7 +510,7 @@ class NodeCompiler(
         NodeCompilationResult(
           Map.empty[String, ExpressionTypingInfo],
           None,
-          Valid(inputContext.validationContext),
+          Valid(ValidationContext.empty),
           error
         )
     }
