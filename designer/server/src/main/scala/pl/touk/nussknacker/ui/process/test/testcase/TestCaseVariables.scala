@@ -34,25 +34,25 @@ object TestCaseVariables {
       validationContext: ValidationContext,
       nodeTyping: testcase.NodeTyping
   ): ValidationContext = {
-    val base = validationContext.withVariablesUnsafe(
-      TestsGlobalVariableName -> testsGlobalVariableType,
-      RecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.inputVariables),
+    val outgoingRecordsType =
+      if (nodeTyping.outputVariables.nonEmpty) recordsNodeVariableType(nodeTyping.outputVariables)
+      else listOfUnknownType
+    validationContext.withVariablesUnsafe(
+      TestsGlobalVariableName         -> testsGlobalVariableType,
+      RecordsNodeVariableName         -> recordsNodeVariableType(nodeTyping.inputVariables),
+      OutgoingRecordsNodeVariableName -> outgoingRecordsType,
     )
-    if (nodeTyping.outputVariables.nonEmpty)
-      base.withVariableUnsafe(OutgoingRecordsNodeVariableName, recordsNodeVariableType(nodeTyping.outputVariables))
-    else
-      base
   }
 
   def getNodeVariablesTyping(nodeTyping: testcase.NodeTyping): Map[String, TypingResult] = {
-    val base = Map(
-      TestsGlobalVariableName -> testsGlobalVariableType,
-      RecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.inputVariables),
+    val outgoingRecordsType =
+      if (nodeTyping.outputVariables.nonEmpty) recordsNodeVariableType(nodeTyping.outputVariables)
+      else listOfUnknownType
+    Map(
+      TestsGlobalVariableName         -> testsGlobalVariableType,
+      RecordsNodeVariableName         -> recordsNodeVariableType(nodeTyping.inputVariables),
+      OutgoingRecordsNodeVariableName -> outgoingRecordsType,
     )
-    if (nodeTyping.outputVariables.nonEmpty)
-      base + (OutgoingRecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.outputVariables))
-    else
-      base
   }
 
   def extendGlobalVariables(globalVariables: Map[String, ObjectWithType]): Map[String, ObjectWithType] =
@@ -65,6 +65,12 @@ object TestCaseVariables {
     Typed.genericTypeClass(
       classOf[java.util.List[_]],
       List(Typed.record(variablesForNode))
+    )
+
+  private def listOfUnknownType: typing.TypingResult =
+    Typed.genericTypeClass(
+      classOf[java.util.List[_]],
+      List(typing.Unknown)
     )
 
 }

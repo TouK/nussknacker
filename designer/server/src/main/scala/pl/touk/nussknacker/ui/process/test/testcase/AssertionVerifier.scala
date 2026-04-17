@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.test.testcase.Assertion.AssertionOperator
-import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, ResultContext}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExternalServiceInvocationResult, NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
@@ -69,12 +69,21 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       .getOrElse(nodeId, List.empty)
       .map(_.variables.asJava)
       .asJava
-    val outgoingResultsForNode = testResults.originalNodeTransitionResults
+    val transitionResults = testResults.originalNodeTransitionResults
       .collect { case (NodeTransition(sourceNodeId, _), results) if sourceNodeId == nodeId => results }
       .flatten
       .map(_.variables.asJava)
       .toList
-      .asJava
+    val outgoingResultsForNode = if (transitionResults.nonEmpty) {
+      transitionResults.asJava
+    } else {
+      // For ending nodes (sinks), use external service invocation results as outgoing records.
+      // Each record contains the sink's displayable output value (as produced by SinkDisplayableValue.asDisplayableValue).
+      testResults.originalExternalServiceInvocationResults
+        .getOrElse(nodeId, List.empty)
+        .map(invocation => java.util.Collections.singletonMap(invocation.name, invocation.value))
+        .asJava
+    }
     Context(
       ContextId.dummy,
       Map(
@@ -139,6 +148,7 @@ object AssertionVerifier {
   final case class TestResults(
       originalNodeResults: Map[NodeId, List[ResultContext[Any]]],
       originalNodeTransitionResults: Map[NodeTransition, List[ResultContext[Any]]],
+      originalExternalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Any]]],
   )
 
 }

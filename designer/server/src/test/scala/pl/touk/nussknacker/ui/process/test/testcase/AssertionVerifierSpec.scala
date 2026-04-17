@@ -406,6 +406,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       originalNodeResults = Map(nodeId -> inputVariablesForEachRun.map(dummyResultContext)),
       originalNodeTransitionResults =
         Map(NodeTransition(nodeId, Some(NodeId("someOtherNode"))) -> outputVariablesForEachRun.map(dummyResultContext)),
+      originalExternalServiceInvocationResults = Map.empty,
     )
   }
 

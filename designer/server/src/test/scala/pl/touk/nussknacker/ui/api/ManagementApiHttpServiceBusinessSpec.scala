@@ -47,7 +47,8 @@ class ManagementApiHttpServiceBusinessSpec
                 externalServiceInvocationResults = Map.empty,
                 exceptions = List.empty,
                 originalNodeResults = Map.empty,
-                originalNodeTransitionResults = Map.empty
+                originalNodeTransitionResults = Map.empty,
+                originalExternalServiceInvocationResults = Map.empty
               )
             )
           )

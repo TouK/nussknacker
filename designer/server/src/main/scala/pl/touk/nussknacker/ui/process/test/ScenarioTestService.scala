@@ -350,7 +350,8 @@ class ScenarioTestService(
       jsonTestResults = JsonTestResults.from(testResults)
       testResultsForAssertions = AssertionVerifier.TestResults(
         testResults.originalNodeResults,
-        testResults.originalNodeTransitionResults
+        testResults.originalNodeTransitionResults,
+        testResults.originalExternalServiceInvocationResults,
       )
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(jsonTestResults))
     } yield ResultsWithCounts(
