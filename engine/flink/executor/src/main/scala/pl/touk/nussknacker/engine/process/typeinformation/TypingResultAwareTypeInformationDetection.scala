@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
+import org.apache.flink.api.java.typeutils.{MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   CharsetTypeInformation,
   CurrencyTypeInformation,
   DurationTypeInformation,
+  ListNullableElementTypeInfo,
   LocaleTypeInformation,
-  NullableTypeInformation,
   OffsetDateTimeTypeInformation,
   PeriodTypeInformation,
   TypeInformationDetection,
@@ -59,7 +59,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
   override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case TypedClass(`ListClass`, elementType :: Nil) =>
-        new ListTypeInfo[AnyRef](NullableTypeInformation.wrap(forType[AnyRef](elementType)))
+        new ListNullableElementTypeInfo[AnyRef](forType[AnyRef](elementType))
       case TypedClass(`ZonedDateTimeClass`, Nil)                             => ZonedDateTimeTypeInformation
       case TypedClass(`OffsetDateTimeClass`, Nil)                            => OffsetDateTimeTypeInformation
       case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass) => ZoneIdTypeInformation
@@ -79,7 +79,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Row] =>
         val (fieldNames, typeInfos) = a.fields.unzip
         // Warning: RowTypeInfo is fields order sensitive
-        new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
+        new RowTypeInfo(typeInfos.map(forType(_)).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult if MapClass.isAssignableFrom(a.runtimeObjType.klass) =>
         createJavaMapTypeInformation(a)

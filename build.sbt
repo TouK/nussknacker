@@ -753,6 +753,7 @@ lazy val flinkExecutor = (project in flink("executor"))
         "pl.touk"         %% "flink-scala"                % flinkScalaV % Provided,
         // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
         "org.apache.flink" % "flink-streaming-java"       % flinkV      % Provided,
+        "org.apache.flink" % "flink-table-common"         % flinkV      % Provided,
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV      % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
         "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV      % Provided,
@@ -1663,6 +1664,7 @@ lazy val flinkComponentsApi = (project in flink("components-api"))
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV     % Provided,
+        "org.apache.flink" % "flink-table-common"   % flinkV     % Provided,
         "org.scalatest"   %% "scalatest"            % scalaTestV % Test
       )
     }
