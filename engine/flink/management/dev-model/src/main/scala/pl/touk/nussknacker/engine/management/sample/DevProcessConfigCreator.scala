@@ -206,10 +206,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def customStreamTransformers(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "noneReturnTypeTransformer" -> categories(NoneReturnTypeTransformer),
-    "timestampReader"           -> categories(CustomTimestampExtractingTransformationCopy),
-    "stateful"                  -> categories(StatefulTransformer),
-    "customFilter"              -> categories(CustomFilter),
+    "noneReturnTypeTransformer"       -> categories(NoneReturnTypeTransformer),
+    "noneReturnTypeEndingTransformer" -> categories(NoneReturnTypeEndingTransformer),
+    "timestampReader"                 -> categories(CustomTimestampExtractingTransformationCopy),
+    "stateful"                        -> categories(StatefulTransformer),
+    "customFilter"                    -> categories(CustomFilter),
     "constantStateTransformer" -> categories(
       ConstantStateTransformer[String](
         Encoder[ConstantState].apply(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3"))).noSpaces
@@ -226,7 +227,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "lastVariableWithFilter"   -> all(LastVariableFilterTransformer),
     "enrichWithAdditionalData" -> all(EnrichWithAdditionalDataTransformer),
     "sendCommunication"        -> all(DynamicParametersTransformer),
-    "hideVariables"            -> all(HidingVariablesTransformer)
+    "hideVariables"            -> all(HidingVariablesTransformer),
   )
 
   override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {

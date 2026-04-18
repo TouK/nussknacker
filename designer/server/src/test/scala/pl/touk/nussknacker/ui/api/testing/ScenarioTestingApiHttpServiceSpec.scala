@@ -167,6 +167,14 @@ class ScenarioTestingApiHttpServiceSpec
               "#outgoingRecords".spel,
             ),
           ),
+          NodeId("custom end") -> List(
+            // outgoing records should be the same as incoming records for custom node with void return type
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "#records".spel,
+              "#outgoingRecords".spel,
+            ),
+          ),
         )
       )
 
@@ -190,6 +198,8 @@ class ScenarioTestingApiHttpServiceSpec
         .body("assertionsResults.end[3].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
         .body("assertionsResults.messageVariable[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
         .body("assertionsResults.messageVariable[1].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.\"processor end\"[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.\"custom end\"[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
     }
 
     "run a test case with mocked enricher service" in {
@@ -687,7 +697,9 @@ class ScenarioTestingApiHttpServiceSpec
           KafkaFactory.SinkValueParamName.value -> "#output".spel
         ),
       GraphBuilder
-        .processorEnd("processor end", "componentService")
+        .processorEnd("processor end", "componentService"),
+      GraphBuilder
+        .endingCustomNode("custom end", None, "noneReturnTypeEndingTransformer")
     )
 
   private val testCaseEnricherScenario = ScenarioBuilder
