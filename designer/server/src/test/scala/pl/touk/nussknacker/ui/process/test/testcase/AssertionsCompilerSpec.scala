@@ -113,7 +113,8 @@ class AssertionsCompilerSpec
           )
         ),
         NodeId("sink1") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'zyx'".spel, "#outgoingRecords[0].result".spel)
+          // Sinks have outgoing records typed as List[Unknown], so typed property access is not available
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'zyx'".spel, "#outgoingRecords[0]['value']".spel)
         )
       )
     )
