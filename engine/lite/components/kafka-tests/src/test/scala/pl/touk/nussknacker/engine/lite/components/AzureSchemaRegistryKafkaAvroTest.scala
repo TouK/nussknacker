@@ -28,11 +28,8 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{
-  AzureSchemaRegistryClientFactory,
-  AzureUtils,
-  SchemaNameTopicMatchStrategy
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{AzureUtils, SchemaNameTopicMatchStrategy}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.client.AzureSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult

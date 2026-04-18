@@ -1,21 +1,16 @@
-package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure
+package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.client
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.avro.reflect.ReflectData
+import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
-import pl.touk.nussknacker.engine.kafka.{
-  KafkaComponentsConfig,
-  KafkaUtils,
-  SchemaRegistryCacheConfig,
-  SchemaRegistryClientKafkaConfig,
-  UnspecializedTopicName
-}
+import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.util.Collections
@@ -45,8 +40,7 @@ class AzureSchemaRegistryClientIntegrationTest
       "schema.group"        -> "test-group",
     )
 
-  private val schemaRegistryConfig =
-    SchemaRegistryClientKafkaConfig(kafkaPropertiesConfigMap, SchemaRegistryCacheConfig(), None)
+  private val schemaRegistryConfig = SchemaRegistryClientKafkaConfig(kafkaPropertiesConfigMap)
   private val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(schemaRegistryConfig)
 
   test("getAllTopics should return topic for corresponding schema based on schema name") {
