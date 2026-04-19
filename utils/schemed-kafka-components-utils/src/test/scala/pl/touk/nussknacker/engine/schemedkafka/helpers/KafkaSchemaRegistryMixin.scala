@@ -16,6 +16,11 @@ trait KafkaSchemaRegistryMixin extends KafkaSpec with KafkaWithSchemaRegistryOpe
         KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "schema.registry.url"),
         fromAnyRef("not_used")
       )
+      // turn off auto registration so that tests can use a mocked Schema Registry client (meaningful only in Flink tests)
+      .withValue(
+        s"$kafkaComponentsConfigPrefix.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization",
+        fromAnyRef(false)
+      )
   }
 
 }

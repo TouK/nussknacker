@@ -16,11 +16,7 @@ import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  DefinedSingleParameter,
-  NodeDependencyValue
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -83,8 +79,17 @@ class UniversalKafkaSourceFactory(
 
   override protected val splitName: String = "partition"
 
-  override val typesToExtract: List[TypedClass] =
-    Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Typed.typedClass[EnumSymbol] :: Nil
+  private def optimizedRecordTypeToExtract: List[TypedClass] =
+    if (kafkaComponentsConfig.optimizedGenericRecordSerialization.enabled)
+      List(Typed.typedClass[GenericRecordWithSchemaId])
+    else
+      List.empty
+
+  override val typesToExtract: List[TypedClass] = optimizedRecordTypeToExtract ::: List(
+    Typed.typedClass[GenericRecord],
+    Typed.typedClass[TimestampType],
+    Typed.typedClass[EnumSymbol],
+  )
 
   override def contextTransformation(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId

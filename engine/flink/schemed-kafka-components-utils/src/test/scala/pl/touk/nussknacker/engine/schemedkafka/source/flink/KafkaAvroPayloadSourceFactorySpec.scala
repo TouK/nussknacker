@@ -7,11 +7,11 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.NonRecordContainer
-import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericData
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidPropertyFixedValue
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, FixedExpressionValue}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -36,6 +36,7 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.{KafkaSchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
+  GenericRecordWithSchemaId,
   LatestSchemaVersion,
   SchemaRegistryClientFactory,
   SchemaVersionOption
@@ -371,7 +372,7 @@ class KafkaAvroPayloadSourceFactorySpec
             "middle" -> Typed[String],
             "last"   -> Typed[String]
           ),
-          Typed.typedClass[GenericRecord]
+          Typed.typedClass[GenericRecordWithSchemaId]
         ),
         VariableConstants.InputMetaVariableName -> InputMeta.withType(Typed[String])
       )

@@ -37,6 +37,11 @@ public class GenericRecordWithSchemaId extends GenericData.Record {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), schemaRegistryId, schemaId);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!super.equals(o)) return false;

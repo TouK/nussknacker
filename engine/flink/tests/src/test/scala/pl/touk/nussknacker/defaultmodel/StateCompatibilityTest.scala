@@ -5,6 +5,7 @@ import io.circe.generic.JsonCodec
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
+import org.scalatest.Inspectors.forAll
 import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 import java.time.LocalDate
 
 object StateCompatibilityTest {
@@ -140,7 +141,20 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
           .get()
       }
 
-      saveSnapshot(savepointLocation)
+      val savepointPath = Paths.get(new URI(savepointLocation))
+      try {
+        withClue("optimized serializer didn't write field names into savepoint") {
+          val savepointBytes = Files.readAllBytes(savepointPath.resolve("_metadata"))
+          forAll(givenMatchingAvroObj.getSchema.getFields) { field =>
+            savepointBytes shouldNot contain(field.name().getBytes)
+          }
+        }
+
+        saveSnapshot(savepointPath)
+      } finally {
+        Files.deleteIfExists(savepointPath.resolve("_metadata"))
+        Files.deleteIfExists(savepointPath)
+      }
     }
   }
 
@@ -175,8 +189,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     outputEvent.previousInput shouldBe previousInput
   }
 
-  private def saveSnapshot(savepointLocation: String): Unit = {
-    val savepointPath          = Paths.get(new URI(savepointLocation))
+  private def saveSnapshot(savepointPath: Path): Unit = {
     val savepointName          = s"${LocalDate.now()}_${BuildInfo.gitCommit}"
     val versionedSavepointPath = localSavepointDir.resolve(savepointName)
     Files.move(savepointPath, versionedSavepointPath)

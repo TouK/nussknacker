@@ -15632,6 +15632,20 @@
   {
     "clazzName": {"refClazzName": "org.apache.avro.generic.GenericRecord"},
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "get": [
         {
           "name": "get",
@@ -15665,6 +15679,34 @@
             ],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -16367,6 +16409,148 @@
               ],
               "refClazzName": "[Ljava.lang.Object;"
             }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId"},
+    "methods": {
+      "get": [
+        {
+          "name": "get",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "key", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "i", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "getSchemaId": [
+        {
+          "name": "getSchemaId",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId"}
+          }
+        }
+      ],
+      "getSchemaRegistryId": [
+        {
+          "name": "getSchemaRegistryId",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "hasField": [
+        {
+          "name": "hasField",
+          "signature": {
+            "noVarArgs": [
+              {"name": "key", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "schemaId": [
+        {
+          "name": "schemaId",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId"}
+          }
+        }
+      ],
+      "schemaRegistryId": [
+        {
+          "name": "schemaRegistryId",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId"},
+    "methods": {
+      "asInt": [
+        {
+          "name": "asInt",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "asString": [
+        {
+          "name": "asString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "fromInt": [
+        {
+          "name": "fromInt",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.Integer"}}
+            ],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId"}
+          }
+        }
+      ],
+      "fromString": [
+        {
+          "name": "fromString",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId"}
           }
         }
       ]

@@ -26,7 +26,7 @@ trait KafkaSpec extends BeforeAndAfterAll with WithModelConfig { self: Suite =>
         fromAnyRef("earliest")
       )
       // Use explicit schemaRegistryId (meaningful only in Flink tests)
-      .withValue(s"$kafkaComponentsConfigPrefix.optimizedGenericRecordSerialization.schemaRegistryId", fromAnyRef(55))
+      .withValue(s"$kafkaComponentsConfigPrefix.optimizedGenericRecordSerialization.schemaRegistryId", fromAnyRef(1771))
 
   protected final lazy val kafkaComponentsConfig: KafkaComponentsConfig =
     KafkaComponentsConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
