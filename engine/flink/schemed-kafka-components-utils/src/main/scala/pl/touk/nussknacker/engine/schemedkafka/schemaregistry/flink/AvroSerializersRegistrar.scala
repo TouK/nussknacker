@@ -5,7 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.{ExecutionConfig, SerializableSerializer}
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.serialization.{SerializerConfig, SerializerConfigImpl}
 import org.apache.flink.api.java.typeutils.AvroUtils
 import pl.touk.nussknacker.engine.api.component.ComponentProviderConfig
@@ -108,32 +108,19 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
     //       We should use standard TypeInfo/TypeInfoFactory or class-based Kryo serializers,
     //       but currently there is no possibility of having them parameterized with Schema Registry addresses
     //       or making them stateful (to remember seen schemas so that they can be serialized only once).
-    //       .
-    //       This also causes issues with RawType usage in table-api components because, RawTypes become incomparable
-    //       if there is any instance-based serializer registered in ExecutionConfig:
-    //         - RawType.equals checks serializer.equals(rawType.serializer)
-    //         - KryoSerializer.equals checks Objects.equals(defaultSerializers, other.defaultSerializers)
-    //         - KryoSerializer.defaultSerializers is a LinkedHashMap<Class<?>, ExecutionConfig.SerializableSerializer<?>>
-    //         - SerializableSerializer has equals method not implemented (so it checks reference equality)
 
     val serializerConfigImpl = castSerializerConfig(serializerConfig)
-    // TODO: try to subclass SerializableSerializer?
-    val serializer = new GenericRecordWithSchemaIdSerializer(
-      schemaRegistryClientFactory,
-      Map.empty[Int, SchemaRegistryClientKafkaConfig]
-    )
-    // register for exact type, gets a fixed registration ID
-    serializerConfigImpl.getRegisteredTypesWithKryoSerializers.put(
-      classOf[GenericRecordWithSchemaId],
-      new SerializableSerializer(serializer)
+
+    val serializer =
+      new SerializableSerializerWithEquals(
+        new GenericRecordWithSchemaIdSerializer(
+        schemaRegistryClientFactory,
+        Map.empty[Int, SchemaRegistryClientKafkaConfig]
+        )
     )
 
-    // TODO: do we need this?
-    // register for type and its subtypes, doesn't get a registration ID
-    serializerConfigImpl.getDefaultKryoSerializers.put(
-      classOf[GenericRecordWithSchemaId],
-      new SerializableSerializer(serializer)
-    )
+    // register for exact type, gets a fixed registration ID
+    serializerConfigImpl.getRegisteredTypesWithKryoSerializers.put(classOf[GenericRecordWithSchemaId], serializer)
 
     // this ensures that our API for adding a serializer actually works
     schemaRegistryConfigs.foreach { case (schemaRegistryId, schemaRegistryConfig) =>
@@ -147,16 +134,12 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
       schemaRegistryConfig: SchemaRegistryClientKafkaConfig
   ): Unit = {
     val serializerConfigImpl = castSerializerConfig(serializerConfig)
-    val serializer1 = serializerConfigImpl.getRegisteredTypesWithKryoSerializers.get(classOf[GenericRecordWithSchemaId])
-    val serializer2 = serializerConfigImpl.getDefaultKryoSerializers.get(classOf[GenericRecordWithSchemaId])
-    if (serializer1 == null || serializer2 == null) {
+    val serializer = serializerConfigImpl.getRegisteredTypesWithKryoSerializers.get(classOf[GenericRecordWithSchemaId])
+    if (serializer == null) {
       throw new IllegalStateException("Serializer must be initialized by calling registerOptimizedSerializer method")
     }
-    if (!serializer1.getSerializer.asInstanceOf[AnyRef].eq(serializer2.getSerializer)) {
-      throw new IllegalArgumentException("Registered type and subtype serializers are not equal")
-    }
 
-    serializer1.getSerializer
+    serializer.getSerializer
       .asInstanceOf[GenericRecordWithSchemaIdSerializer]
       .registerSchemaRegistry(
         schemaRegistryId,
