@@ -11,8 +11,8 @@ import scala.concurrent.duration._
 
 case class SchemaRegistryClientKafkaConfig(
     kafkaProperties: Map[String, String],
-    cacheConfig: SchemaRegistryCacheConfig,
-    avroAsJsonSerialization: Option[Boolean]
+    cacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
+    avroAsJsonSerialization: Option[Boolean] = None
 )
 
 case class KafkaComponentsConfig(

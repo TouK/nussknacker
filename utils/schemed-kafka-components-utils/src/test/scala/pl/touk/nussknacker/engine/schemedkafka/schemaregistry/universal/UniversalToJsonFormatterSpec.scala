@@ -23,6 +23,7 @@ class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with Option
     .empty()
     .withValue("kafkaProperties.\"bootstrap.servers\"", fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue("kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema_registry_should_not_be_used:8081"))
+    .withValue("optimizedGenericRecordSerialization.enabled", fromAnyRef(false))
 
   private val kafkaComponentsConfig = KafkaComponentsConfig.parseConfig(rawKafkaConfig)
 

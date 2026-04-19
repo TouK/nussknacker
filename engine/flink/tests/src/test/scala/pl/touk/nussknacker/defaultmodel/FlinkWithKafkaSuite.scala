@@ -7,6 +7,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
@@ -33,6 +34,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.flink.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -76,6 +78,13 @@ abstract class FlinkWithKafkaSuite
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(extraComponents)
+      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
+        new AvroSerializersRegistrar().registerOptimizedSerializer(
+          executionConfig.getSerializerConfig,
+          schemaRegistryClientProvider.schemaRegistryClientFactory,
+          List(kafkaComponentsConfig)
+        )
+      }))
       .build()
   }
 
@@ -92,6 +101,10 @@ abstract class FlinkWithKafkaSuite
       .resolveModelConfig(config)
       .withValue(s"$kafkaComponentsConfigPrefix.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
       .withValue(s"$kafkaComponentsConfigPrefix.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+      .withValue(
+        s"$kafkaComponentsConfigPrefix.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization",
+        fromAnyRef(false)
+      )
     maybeAddSchemaRegistryUrl(baseModelConfig)
   }
 

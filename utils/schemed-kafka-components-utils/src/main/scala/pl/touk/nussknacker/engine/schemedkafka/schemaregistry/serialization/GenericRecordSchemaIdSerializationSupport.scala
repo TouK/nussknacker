@@ -26,7 +26,7 @@ object GenericRecordSchemaIdSerializationSupport extends LazyLogging {
     }
   }
 
-  private def isEnabledForComponent(kafkaComponentsConfig: KafkaComponentsConfig): Boolean =
+  def isEnabledForComponent(kafkaComponentsConfig: KafkaComponentsConfig): Boolean =
     !kafkaComponentsConfig.avroAsJsonSerialization.getOrElse(false) &&
       kafkaComponentsConfig.optimizedGenericRecordSerialization.enabled &&
       kafkaComponentsConfig.kafkaProperties.contains("schema.registry.url")

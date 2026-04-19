@@ -97,7 +97,10 @@ trait FlinkKafkaDockerSpec
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
-  protected lazy val (kafkaClient, releaseKafkaClient) =
+  private var kafkaClientInitialized: Boolean = false
+
+  protected lazy val (kafkaClient, releaseKafkaClient) = {
+    kafkaClientInitialized = true
     Resource
       .make(
         acquire = IO(new KafkaClient(hostKafkaAddress, self.suiteName))
@@ -110,6 +113,7 @@ trait FlinkKafkaDockerSpec
       )
       .allocated
       .unsafeRunSync()
+  }
 
   protected lazy val (deploymentManagerClassLoader, releaseDeploymentManagerClassLoaderResources) =
     DeploymentManagersClassLoaderFactory.create(List.empty).allocated.unsafeRunSync()
@@ -121,7 +125,10 @@ trait FlinkKafkaDockerSpec
     )
 
   override def afterAll(): Unit = {
-    releaseKafkaClient.unsafeRunSync()
+    if (kafkaClientInitialized) {
+      // run only when needed to prevent client creation in afterAll()
+      releaseKafkaClient.unsafeRunSync()
+    }
     deploymentManager.close()
     releaseDeploymentManagerClassLoaderResources.unsafeRunSync()
     super.afterAll()
