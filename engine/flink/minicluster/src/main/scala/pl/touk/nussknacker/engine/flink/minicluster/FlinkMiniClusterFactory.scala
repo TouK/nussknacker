@@ -8,9 +8,11 @@ import org.apache.flink.configuration._
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.util.FlinkException
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
+import java.nio.file.DirectoryNotEmptyException
 import scala.language.higherKinds
 
 object FlinkMiniClusterFactory extends LazyLogging {
@@ -82,7 +84,8 @@ object FlinkMiniClusterFactory extends LazyLogging {
 class FlinkMiniClusterWithServices(
     val miniCluster: MiniCluster,
     modelClassLoader: ModelClassLoader
-) extends AutoCloseable {
+) extends AutoCloseable
+    with LazyLogging {
 
   def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
     // We use SyncIO, because passed actions sometimes uses ThreadLocal and we don't want to change the Thread which run this action
@@ -112,6 +115,17 @@ class FlinkMiniClusterWithServices(
       attached
     )
 
-  override def close(): Unit = miniCluster.close()
+  override def close(): Unit = {
+    try {
+      miniCluster.close()
+    } catch {
+      case e: FlinkException
+          if e.getCause != null &&
+            e.getCause.isInstanceOf[DirectoryNotEmptyException] &&
+            e.getCause.getMessage.contains("rocksdb-lib-") =>
+        // known error with StateCompatibilityTest on Windows, let's not fail
+        logger.warn("MiniCluster didn't close cleanly", e)
+    }
+  }
 
 }
