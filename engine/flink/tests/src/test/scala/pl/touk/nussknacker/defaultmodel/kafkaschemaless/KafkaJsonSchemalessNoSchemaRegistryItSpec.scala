@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.FlinkKafkaComponentProv
 
 class KafkaJsonSchemalessNoSchemaRegistryItSpec extends BaseKafkaJsonSchemalessItSpec {
 
-  override def createFinkKafkaComponentProvider(schemaRegistryClientProvider: MockSchemaRegistryClientProvider) =
+  override def createFlinkKafkaComponentProvider(schemaRegistryClientProvider: MockSchemaRegistryClientProvider) =
     new FlinkKafkaComponentProvider()
 
   override protected def maybeAddSchemaRegistryUrl(config: Config): Config = config
