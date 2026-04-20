@@ -104,7 +104,7 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       // Each record contains the sink's displayable output value (as produced by SinkDisplayableValue.asDisplayableValue).
       testResults.originalExternalServiceInvocationResults
         .getOrElse(nodeId, List.empty)
-        .map(invocation => java.util.Collections.singletonMap(invocation.name, invocation.value))
+        .map(invocation => Map(invocation.name -> invocation.value).asJava)
         .asJava
     }
   }
