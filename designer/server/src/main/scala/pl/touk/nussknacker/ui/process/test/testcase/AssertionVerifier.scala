@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.test.testcase.Assertion.AssertionOperator
 import pl.touk.nussknacker.engine.testmode.TestProcess.{ExternalServiceInvocationResult, NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionVerifier.deepConvertToJava
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
   CompiledExpressionAssertion,
   CompiledPredicateAssertion,
@@ -101,10 +102,11 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       transitionResults.asJava
     } else {
       // For ending nodes (sinks), use external service invocation results as outgoing records.
-      // Each record contains the sink's displayable output value (as produced by SinkDisplayableValue.asDisplayableValue).
+      // Each record contains the sink's displayable output value encoded via variableEncoder.
       testResults.originalExternalServiceInvocationResults
         .getOrElse(nodeId, List.empty)
-        .map(invocation => Map(invocation.name -> invocation.value).asJava)
+        // Convert to Java collections because values produced by SinkDisplayableValue can contain Scala ones.
+        .map(invocation => Map(invocation.name -> deepConvertToJava(invocation.value)).asJava)
         .asJava
     }
   }
@@ -166,5 +168,13 @@ object AssertionVerifier {
       originalNodeTransitionResults: Map[NodeTransition, List[ResultContext[Any]]],
       originalExternalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Any]]],
   )
+
+  private def deepConvertToJava(value: Any): Any = value match {
+    case m: scala.collection.Map[_, _] =>
+      m.view.mapValues(deepConvertToJava).toMap.asJava
+    case l: Iterable[_] =>
+      l.map(deepConvertToJava).toList.asJava
+    case other => other
+  }
 
 }

@@ -165,12 +165,23 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
           "43L".spel,
           s"#outgoingRecords[1]['$nodeName']['key2']".spel
         ),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          s"{'$nodeName': {key1: 'third record', key2: 44L, complex: {nestedKey: 'nestedValue', nestedList: {1, 2, 3}}}}".spel,
+          "#outgoingRecords[2]".spel
+        ),
       )
     )
     val nodesResultsAfterTestRun = prepareNodeResults(
       externalServiceInvocations = List(
         Map("key1" -> "first record", "key2" -> 42L).asJava,
         Map("key1" -> "second record", "key2" -> 43L).asJava,
+        // with Scala collections
+        Map(
+          "key1"    -> "third record",
+          "key2"    -> 44L,
+          "complex" -> Map("nestedKey" -> "nestedValue", "nestedList" -> List(1, 2, 3))
+        ),
       )
     )
 
