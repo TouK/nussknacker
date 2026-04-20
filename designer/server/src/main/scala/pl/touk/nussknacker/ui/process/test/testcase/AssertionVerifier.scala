@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
   EmptyCompiledAssertion
 }
 
+import java.util
 import scala.jdk.CollectionConverters._
 
 class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
@@ -65,16 +66,38 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       nodeId: NodeId,
       testResults: TestResults
   ): Context = {
-    val resultsForNode = testResults.originalNodeResults
+    Context(
+      ContextId.dummy,
+      Map(
+        TestCaseVariables.RecordsNodeVariableName -> prepareEvaluationContextForIncomingRecords(nodeId, testResults),
+        TestCaseVariables.OutgoingRecordsNodeVariableName -> prepareEvaluationContextForOutgoingRecords(
+          nodeId,
+          testResults
+        ),
+      )
+    )
+  }
+
+  private def prepareEvaluationContextForIncomingRecords(
+      nodeId: NodeId,
+      testResults: TestResults
+  ): util.List[util.Map[String, Any]] = {
+    testResults.originalNodeResults
       .getOrElse(nodeId, List.empty)
       .map(_.variables.asJava)
       .asJava
+  }
+
+  private def prepareEvaluationContextForOutgoingRecords(
+      nodeId: NodeId,
+      testResults: TestResults
+  ): util.List[util.Map[String, Any]] = {
     val transitionResults = testResults.originalNodeTransitionResults
       .collect { case (NodeTransition(sourceNodeId, _), results) if sourceNodeId == nodeId => results }
       .flatten
       .map(_.variables.asJava)
       .toList
-    val outgoingResultsForNode = if (transitionResults.nonEmpty) {
+    if (transitionResults.nonEmpty) {
       transitionResults.asJava
     } else {
       // For ending nodes (sinks), use external service invocation results as outgoing records.
@@ -84,13 +107,6 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
         .map(invocation => java.util.Collections.singletonMap(invocation.name, invocation.value))
         .asJava
     }
-    Context(
-      ContextId.dummy,
-      Map(
-        TestCaseVariables.RecordsNodeVariableName         -> resultsForNode,
-        TestCaseVariables.OutgoingRecordsNodeVariableName -> outgoingResultsForNode,
-      )
-    )
   }
 
   private def evaluateExpressionAssertion(
