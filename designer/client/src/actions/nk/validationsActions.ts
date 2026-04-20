@@ -13,12 +13,12 @@ export type ValidationsActions =
     | { type: "VALIDATE_NODE"; node: NodeType }
     | { type: "VALIDATE_PROPERTIES"; properties: PropertiesType };
 
-export function validateScenarioProperties({ name, additionalFields }: PropertiesType): ThunkAction {
+export function validateScenarioProperties({ name, additionalFields }: PropertiesType, controller?: AbortController): ThunkAction {
     return async (dispatch, getState) => {
         dispatch({ type: "VALIDATE_PROPERTIES", properties: { name, additionalFields } });
 
         const scenarioName = getProcessName(getState());
-        const data = await HttpService.validateProperties(scenarioName, { additionalFields, name });
+        const data = await HttpService.validateProperties(scenarioName, { additionalFields, name }, controller);
         if (!data) return;
 
         dispatch({ type: "PROPERTIES_VALIDATION_UPDATED", properties: { name, additionalFields }, errors: data.validationErrors });
@@ -48,16 +48,16 @@ function normalizeBranchVariableTypesForValidation(
     }, {});
 }
 
-export function validateNode({
-    nodeData,
-    ...validationRequestData
-}: Omit<ValidationRequest, "processProperties">): ThunkAction<Promise<ValidationData | void>> {
+export function validateNode(
+    { nodeData, ...validationRequestData }: Omit<ValidationRequest, "processProperties">,
+    controller?: AbortController,
+): ThunkAction<Promise<ValidationData | void>> {
     return async (dispatch, getState) => {
         dispatch({ type: "VALIDATE_NODE", node: nodeData });
         const processProperties = getProcessProperties(getState());
 
         if (isRequestSource(nodeData)) {
-            await dispatch(validateScenarioProperties(appendNodeDataToProperties(processProperties, nodeData)));
+            await dispatch(validateScenarioProperties(appendNodeDataToProperties(processProperties, nodeData), controller));
             nodeData = cleanProperties(nodeData);
         }
 
@@ -69,12 +69,16 @@ export function validateNode({
             scenarioGraph.nodes || [],
         );
 
-        const data = await HttpService.validateNode(scenarioName, {
-            ...validationRequestData,
-            branchVariableTypes,
-            nodeData,
-            processProperties,
-        });
+        const data = await HttpService.validateNode(
+            scenarioName,
+            {
+                ...validationRequestData,
+                branchVariableTypes,
+                nodeData,
+                processProperties,
+            },
+            controller,
+        );
 
         if (!data) return;
 

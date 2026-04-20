@@ -11,6 +11,7 @@ export type NodeDetailsState = Partial<
             expressionType?: TypingResult;
             validationErrors: NodeValidationError[];
             validationPerformed: boolean;
+            isValidating: boolean;
             changingDynamicParameters: string[];
             testCasesValidationErrors: TestCaseValidationErrors;
         }
@@ -27,7 +28,19 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                     parameters: [],
                     validationErrors: [],
                     validationPerformed: false,
+                    isValidating: false,
                     changingDynamicParameters: [],
+                },
+            };
+        }
+
+        case "NODE_VALIDATION_PENDING": {
+            const { nodeId } = action;
+            return {
+                ...state,
+                [nodeId]: {
+                    ...state[nodeId],
+                    isValidating: true,
                 },
             };
         }
@@ -54,6 +67,16 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
             };
         }
 
+        case "VALIDATE_PROPERTIES": {
+            return {
+                ...state,
+                ".properties": {
+                    ...state[".properties"],
+                    isValidating: true,
+                },
+            };
+        }
+
         case "NODE_VALIDATION_UPDATED": {
             const { validationData, nodeId } = action;
             return {
@@ -61,6 +84,7 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 [nodeId]: {
                     ...state[nodeId],
                     ...validationData,
+                    isValidating: false,
                 },
             };
         }
@@ -75,6 +99,7 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                     validationPerformed: true,
                     changingDynamicParameters: [],
                     testCasesValidationErrors: {},
+                    isValidating: false,
                 },
             };
         }

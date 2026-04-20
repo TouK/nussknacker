@@ -12,6 +12,7 @@ import type { Assertion, Mock } from "./testCasesActions";
 import { validateNode } from "./validationsActions";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
+type NodeValidationPending = { type: "NODE_VALIDATION_PENDING"; nodeId: string };
 type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string; windowId: string };
 type NodeDetailsClosed = { type: "NODE_DETAILS_RELOAD" | "NODE_DETAILS_CLOSED"; nodeId: string; windowId: string };
 type NodeValidationDynamicParametersLoading = {
@@ -25,6 +26,7 @@ type NodeValidationDynamicParametersLoaded = {
 };
 export type NodeDetailsActions =
     | NodeValidationUpdated
+    | NodeValidationPending
     | NodeDetailsOpened
     | NodeValidationDynamicParametersLoading
     | NodeValidationDynamicParametersLoaded
@@ -83,6 +85,44 @@ function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
 }
 
+//we don't return ThunkAction here as it would not work correctly with debounce
+//TODO: use sth better, how long should be timeout?
+const validateDebouncedByNode = new Map<
+    string,
+    ReturnType<
+        typeof debounce<
+            (
+                dispatch: AppDispatch,
+                validationRequestData: Omit<ValidationRequest, "processProperties">,
+                controller: AbortController,
+                callback: (data?: ValidationData | void) => void,
+            ) => Promise<void>
+        >
+    >
+>();
+
+const nodeValidationControllers = new Map<string, AbortController>();
+
+function getOrCreateDebouncedForNode(nodeId: string) {
+    if (!validateDebouncedByNode.has(nodeId)) {
+        validateDebouncedByNode.set(
+            nodeId,
+            debounce(async (dispatch, validationRequestData, controller, callback) => {
+                const data = await dispatch(validateNode(validationRequestData, controller));
+                // Only clean up if no newer controller has replaced this one.
+                // If a new call aborted this request while it was in-flight, the map
+                // already holds the newer controller — deleting it unconditionally would
+                // prevent that controller from being aborted by subsequent calls.
+                if (nodeValidationControllers.get(nodeId) === controller) {
+                    nodeValidationControllers.delete(nodeId);
+                }
+                callback(data);
+            }, 500),
+        );
+    }
+    return validateDebouncedByNode.get(nodeId);
+}
+
 export function nodeDetailsOpened(nodeId: string, windowId: string): ThunkAction {
     return (dispatch) => {
         dispatch({
@@ -96,6 +136,11 @@ export function nodeDetailsOpened(nodeId: string, windowId: string): ThunkAction
 
 export function nodeDetailsClosed(nodeId: string, windowId: string, reloadOnly?: boolean): ThunkAction {
     return (dispatch) => {
+        nodeValidationControllers.get(nodeId)?.abort();
+        nodeValidationControllers.delete(nodeId);
+        validateDebouncedByNode.get(nodeId)?.cancel();
+        validateDebouncedByNode.delete(nodeId);
+
         dispatch({
             type: reloadOnly ? "NODE_DETAILS_RELOAD" : "NODE_DETAILS_CLOSED",
             nodeId,
@@ -105,27 +150,22 @@ export function nodeDetailsClosed(nodeId: string, windowId: string, reloadOnly?:
     };
 }
 
-//we don't return ThunkAction here as it would not work correctly with debounce
-//TODO: use sth better, how long should be timeout?
-const validateDebounced = debounce(
-    async (
-        dispatch: AppDispatch,
-        validationRequestData: Omit<ValidationRequest, "processProperties">,
-        callback: (data?: ValidationData | void) => void,
-    ) => {
-        const data = await dispatch(validateNode(validationRequestData));
-        callback(data);
-    },
-    500,
-);
-
 export function validateNodeData(
     validationRequestData: Omit<ValidationRequest, "processProperties">,
     callback?: (status: "allowDataUpdate" | "unknown") => void,
 ): ThunkAction {
     return (dispatch, getState) => {
-        validateDebounced(dispatch, validationRequestData, (data) => {
-            const allowDataUpdate = data && getNodesDetails(getState())[validationRequestData.nodeData.id];
+        const nodeId = validationRequestData.nodeData.id;
+
+        // Abort any in-flight request for this node
+        nodeValidationControllers.get(nodeId)?.abort();
+        const controller = new AbortController();
+        nodeValidationControllers.set(nodeId, controller);
+
+        dispatch({ type: "NODE_VALIDATION_PENDING", nodeId });
+
+        getOrCreateDebouncedForNode(nodeId)(dispatch, validationRequestData, controller, (data) => {
+            const allowDataUpdate = data && getNodesDetails(getState())[nodeId];
             callback?.(allowDataUpdate ? "allowDataUpdate" : "unknown");
         });
     };

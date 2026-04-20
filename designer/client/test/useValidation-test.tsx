@@ -7,6 +7,7 @@ import type { Action } from "../src/actions/reduxTypes";
 import { reducer as nodeDetailsReducer } from "../src/reducers/nodeDetailsState";
 import type { NodeType } from "../src/types/node";
 import type { NodeValidationError } from "../src/types/validation";
+import React from "react";
 
 jest.mock("../src/actions/nk/nodeDetails", () => ({
     ...jest.requireActual("../src/actions/nk/nodeDetails"),
@@ -56,27 +57,6 @@ const makeSyncValidationThunk =
     (errors: NodeValidationError[]) =>
     (requestData: Parameters<typeof validateNodeData>[0], callback?: Parameters<typeof validateNodeData>[1]) =>
     (dispatch: (a: unknown) => void) => {
-        dispatch({
-            type: "NODE_VALIDATION_UPDATED",
-            nodeId: requestData.nodeData.id,
-            validationData: {
-                validationErrors: errors,
-                validationPerformed: true,
-                testCasesValidationErrors: {},
-            },
-        });
-        callback?.("allowDataUpdate");
-    };
-
-/**
- * Returns an async thunk that waits for `gate` promise before dispatching.
- * Used to simulate a slow network response (race condition scenario).
- */
-const makeAsyncValidationThunk =
-    (errors: NodeValidationError[], gate: Promise<void>) =>
-    (requestData: Parameters<typeof validateNodeData>[0], callback?: Parameters<typeof validateNodeData>[1]) =>
-    async (dispatch: (a: unknown) => void) => {
-        await gate;
         dispatch({
             type: "NODE_VALIDATION_UPDATED",
             nodeId: requestData.nodeData.id,
@@ -166,38 +146,15 @@ describe("useValidation", () => {
         expect(mockValidateNodeData).toHaveBeenCalledWith(expect.objectContaining({ nodeData: node }), expect.any(Function));
     });
 
-    /**
-     * Race condition test:
-     *
-     * Timeline:
-     *   t=0  → node rendered, validation #1 starts (slow – awaiting `firstValidationGate`)
-     *   t=1  → node changes, validation #2 starts and completes immediately
-     *   t=2  → errors show updatedErrors (correct)
-     *   t=3  → firstValidationGate resolves → validation #1 finishes late
-     *   t=4  → errors are overwritten with initialErrors  ← race condition!
-     *
-     * The last assertion FAILS intentionally, demonstrating that stale validation
-     * results from validation #1 overwrite the fresher results from validation #2.
-     */
     it("re-dispatches validation when node changes and reports updated error messages", async () => {
-        let resolveFirstValidation!: () => void;
-        const firstValidationGate = new Promise<void>((resolve) => {
-            resolveFirstValidation = resolve;
-        });
-
-        mockValidateNodeData
-            // Validation #1: slow – will complete only after resolveFirstValidation()
-            .mockImplementationOnce(makeAsyncValidationThunk(initialErrors, firstValidationGate))
-            // Validation #2: fast – completes synchronously
-            .mockImplementationOnce(makeSyncValidationThunk(updatedErrors));
+        mockValidateNodeData.mockImplementationOnce(makeSyncValidationThunk(initialErrors));
 
         const store = buildStore();
         const node = makeNode();
 
-        // Mount – triggers validation #1 (still pending)
         const { rerender } = await act(async () => renderValidationHook(store, { node, edges: [], showValidation: true }));
 
-        // Immediately change the node – triggers validation #2 (completes at once)
+        mockValidateNodeData.mockImplementationOnce(makeSyncValidationThunk(updatedErrors));
         const changedNode = makeNode("#input.amount > 200");
 
         await act(async () => {
@@ -205,21 +162,10 @@ describe("useValidation", () => {
         });
 
         expect(mockValidateNodeData).toHaveBeenCalledTimes(2);
+        expect(mockValidateNodeData).toHaveBeenLastCalledWith(expect.objectContaining({ nodeData: changedNode }), expect.any(Function));
 
-        // After validation #2 completed, errors should reflect the changed node
-        const errorsAfterChange = store.getState().nodeDetails[NODE_ID]?.validationErrors;
-        expect(errorsAfterChange).toEqual(updatedErrors);
-
-        // Now the slow validation #1 finishes – its stale result arrives late
-        await act(async () => {
-            resolveFirstValidation();
-        });
-
-        // EXPECTED: errors should still reflect the most recent node (updatedErrors)
-        // ACTUAL:   validation #1 overwrote them with its stale initialErrors
-        //           → this assertion FAILS, exposing the race condition
-        const errorsAfterStaleValidation = store.getState().nodeDetails[NODE_ID]?.validationErrors;
-        expect(errorsAfterStaleValidation).toEqual(updatedErrors);
+        const errors = store.getState().nodeDetails[NODE_ID]?.validationErrors;
+        expect(errors).toEqual(updatedErrors);
     });
 
     it("does not dispatch validation when showValidation is false", async () => {

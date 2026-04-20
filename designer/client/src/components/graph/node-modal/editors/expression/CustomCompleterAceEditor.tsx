@@ -2,14 +2,13 @@ import { cx } from "@emotion/css";
 import { Box, Fade, LinearProgress, styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
-import { useDebouncedValue, useMergeRefs } from "rooks";
+import { useDebouncedValue, useMergeRefs, usePreviousImmediate } from "rooks";
 
 import { useUserSettings } from "../../../../../common/useUserSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
-import { useCallbackRef } from "../../node/useCallbackRef";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
@@ -30,6 +29,7 @@ type InputProps = AceWrapperInputProps & {
 export type CustomCompleterAceEditorProps = {
     completer?: CustomAceEditorCompleter;
     isLoading?: boolean;
+    isValidating?: boolean;
     inputProps: InputProps;
     fieldErrors?: FieldError[];
     validationLabelInfo?: ReactNode;
@@ -41,13 +41,23 @@ export type CustomCompleterAceEditorProps = {
 
 function getCompletionsActivated(editorRef: React.MutableRefObject<ReactAce | undefined>) {
     const completer = editorRef.current?.editor.completer;
-    if (!completer) return;
+    if (!completer) return false;
 
     return Boolean(completer.activated && completer.getPopup?.()?.isOpen);
 }
 
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): React.JSX.Element {
-    const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
+    const {
+        className,
+        isMarked,
+        showValidation,
+        fieldErrors,
+        validationLabelInfo,
+        completer,
+        isLoading,
+        isValidating,
+        enableLiveAutocompletion,
+    } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
     const editorRef = useRef<ReactAce>();
     const mergedRefs = useMergeRefs(ref, editorRef);
@@ -59,53 +69,54 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
     const [showLines] = useUserSettings(`editor.${props.inputProps.language}.showLines`);
 
     const [completionsVisible, setCompletionsVisible] = useState(false);
-    const [errorsToDisplay, setErrorsToDisplay] = useState(fieldErrors);
-    useEffect(() => {
-        setErrorsToDisplay(getCompletionsActivated(editorRef) ? [] : fieldErrors);
-    }, [fieldErrors]);
 
-    const [debouncedErrorsToDisplay] = useDebouncedValue(errorsToDisplay, 200);
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
-    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(debouncedErrorsToDisplay, showLines);
-
-    const deferredChange = useCallback(
-        (value: string, completionsVisible?: boolean) => {
-            if (completionsVisible && getCompletionsActivated(editorRef)) return;
-            return onValueChange(value);
+    useEffect(
+        function updateValueWhenCompletionsClosed() {
+            if (props.inputProps?.readOnly) return;
+            if (completionsVisible) return;
+            onValueChange(internalValue);
         },
-        [onValueChange],
+        [internalValue, completionsVisible, onValueChange, props.inputProps?.readOnly],
     );
 
-    useEffect(() => {
-        if (props.inputProps?.readOnly) return;
-        deferredChange(internalValue, completionsVisible);
-    }, [completionsVisible, deferredChange, internalValue, props.inputProps?.readOnly]);
+    const previousLoadingState = usePreviousImmediate(isLoading);
 
-    const [onValueChangeRef] = useCallbackRef(onValueChange, [onValueChange]);
     useEffect(() => {
-        const editor = editorRef.current?.editor;
-        if (!editor || !editorFocused) return;
-        const callback = () => {
-            setCompletionsVisible(getCompletionsActivated(editorRef));
-        };
-        editor.on("keyboardActivity" as any, callback);
-        return () => {
-            editor.off("keyboardActivity" as any, callback);
-        };
-    }, [editorFocused]);
+        const completionsPopupIsVisible = previousLoadingState && !isLoading;
+
+        if (completionsPopupIsVisible) {
+            setTimeout(() => setCompletionsVisible(getCompletionsActivated(editorRef)), 0);
+        }
+    }, [isLoading, previousLoadingState]);
 
     useEffect(() => {
         const editor = editorRef.current?.editor;
         if (!editor) return;
-        const callback = () => {
-            setInternalValue(editor.getValue());
-            onValueChangeRef.current(editor.getValue());
+        if (!completionsVisible) return;
+        const updateCompletionsVisible = (callback?: () => void) => {
+            setTimeout(() => {
+                setCompletionsVisible(getCompletionsActivated(editorRef));
+                callback?.();
+            }, 0);
         };
-        editor.on("blur", callback);
+        const onBlur = () => {
+            updateCompletionsVisible(() => {
+                setInternalValue(editor.getValue());
+            });
+        };
+        const onChange = () => updateCompletionsVisible();
+
+        editor.on("keyboardActivity" as any, updateCompletionsVisible);
+        editor.on("change", onChange);
+        editor.on("blur", onBlur);
         return () => {
-            editor.off("blur", callback);
+            editor.off("keyboardActivity" as any, updateCompletionsVisible);
+            editor.off("change", onChange);
+            editor.off("blur", onBlur);
         };
-    }, [onValueChangeRef]);
+    }, [completionsVisible]);
 
     useEffect(() => {
         if (!editorFocused) {
@@ -113,13 +124,20 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         }
     }, [editorFocused, value]);
 
+    const validationErrorVisible = useMemo(
+        () => showValidation && !isEmpty(fieldErrors) && !isValidating && !completionsVisible,
+        [completionsVisible, fieldErrors, isValidating, showValidation],
+    );
+
+    const [debouncedVisible] = useDebouncedValue(validationErrorVisible, 100);
+
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
             <Box sx={{ position: "relative" }}>
                 <Box
                     className={cx([
                         rowAceEditor,
-                        showValidation && !isEmpty(debouncedErrorsToDisplay) && nodeInputWithError,
+                        debouncedVisible && nodeInputWithError,
                         isMarked && "marked",
                         editorFocused && "focused",
                         inputProps.readOnly && "read-only",
@@ -143,7 +161,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                         }}
                         customAceEditorCompleter={completer}
                         enableLiveAutocompletion={enableLiveAutocompletion}
-                        fieldErrors={debouncedErrorsToDisplay}
+                        fieldErrors={fieldErrors}
                         annotations={annotations}
                         markers={markers}
                     />
@@ -158,8 +176,8 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     <LoadingFeedback color="warning" inflate={0.25} />
                 </Fade>
             </Box>
-            {showValidation && !hasRangeText ? (
-                <ValidationLabels fieldErrors={debouncedErrorsToDisplay} validationLabelInfo={validationLabelInfo} />
+            {debouncedVisible && !hasRangeText ? (
+                <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />
             ) : null}
         </Box>
     );

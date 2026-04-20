@@ -49,6 +49,7 @@ export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
             expressionObj,
             fieldErrors,
             isMarked,
+            isValidating,
             language = editorsParameters[EditorType.SPEL_PARAMETER_EDITOR].language,
             maxLines,
             onValueChange,
@@ -110,6 +111,7 @@ export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
                 variableTypes={variableTypes}
                 fieldErrors={fieldErrors}
                 isMarked={isMarked}
+                isValidating={isValidating}
                 showValidation={showValidation}
                 validationLabelInfo={validationLabelInfo}
             />

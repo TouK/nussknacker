@@ -538,11 +538,12 @@ export class HttpService {
             });
     }
 
-    validateNode(processName: string, node: ValidationRequest): Promise<ValidationData | void> {
+    validateNode(processName: string, node: ValidationRequest, controller?: AbortController): Promise<ValidationData | void> {
         return api
-            .post(`/nodes/${encodeURIComponent(processName)}/validation`, node)
+            .post(`/nodes/${encodeURIComponent(processName)}/validation`, node, { signal: controller?.signal })
             .then((res) => res.data)
             .catch((error) => {
+                if (axios.isCancel(error)) return;
                 this.#addError(i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"), error, true);
                 return;
             });
@@ -651,11 +652,13 @@ export class HttpService {
     validateProperties(
         processName: string,
         { name = processName, additionalFields }: PropertiesValidationRequest,
+        controller?: AbortController,
     ): Promise<ValidationData | void> {
         return api
-            .post(`/properties/${encodeURIComponent(processName)}/validation`, { name, additionalFields })
+            .post(`/properties/${encodeURIComponent(processName)}/validation`, { name, additionalFields }, { signal: controller?.signal })
             .then((res) => res.data)
             .catch((error) => {
+                if (axios.isCancel(error)) return;
                 this.#addError(
                     i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
                     error,

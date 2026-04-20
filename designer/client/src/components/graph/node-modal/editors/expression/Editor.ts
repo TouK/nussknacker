@@ -36,6 +36,7 @@ type BaseEditorProps = {
     readOnly?: boolean;
     showSwitch?: boolean;
     showValidation?: boolean;
+    isValidating?: boolean;
     className?: string;
     formatter?: Formatter;
     variableTypes?: VariableTypes;

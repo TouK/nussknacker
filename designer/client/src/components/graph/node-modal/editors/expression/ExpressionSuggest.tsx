@@ -33,7 +33,7 @@ function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
 }
 
 export function ExpressionSuggest(props: ExpressionSuggestProps): React.JSX.Element {
-    const { className, isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
+    const { className, isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo, isValidating } = props;
 
     const definitionData = useAppSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
@@ -62,6 +62,7 @@ export function ExpressionSuggest(props: ExpressionSuggestProps): React.JSX.Elem
             validationLabelInfo={validationLabelInfo}
             completer={customAceEditorCompleter}
             isLoading={isLoading}
+            isValidating={isValidating}
         />
     ) : null;
 }
