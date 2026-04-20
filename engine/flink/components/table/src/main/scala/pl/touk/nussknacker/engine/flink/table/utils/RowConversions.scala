@@ -63,7 +63,7 @@ object RowConversions {
       val (fieldNames, typeInfos) =
         validationContext.localVariables
           .mapValuesNow(ToTableTypeEncoder.alignTypingResult)
-          .mapValuesNow(typeInformationDetection.forType)
+          .mapValuesNow(typeInformationDetection.forType(_, withNullableList = false))
           .unzip
       val variablesRow = new RowTypeInfo(typeInfos.toArray[TypeInformation[_]], fieldNames.toArray)
 

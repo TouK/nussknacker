@@ -9,6 +9,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
+### Flink state incompatibility
+
+* [#9317](https://github.com/TouK/nussknacker/pull/9317/) Add handling null in List during Flink serialization
+  This is a **breaking change for Flink state** (savepoints/checkpoints) for scenarios that use `List` types.
+  See [FLINK-35555](https://issues.apache.org/jira/browse/FLINK-35555).
+
 ### Configuration changes
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) [#7620](https://github.com/TouK/nussknacker/pull/7620) Added designer configuration: stickyNotesSettings 
