@@ -470,4 +470,14 @@ class GenericTransformationValidationSpec
     result.typing("sink1").outputValidationContext shouldBe Some(ValidationContext.empty)
   }
 
+  test("should produce empty output validation context for static sink") {
+    val result = validate(
+      processBase
+        .buildSimpleVariable("var1", "someVar", "'value'".spel)
+        .emptySink("sink1", "dummySink")
+    )
+
+    result.typing("sink1").outputValidationContext shouldBe Some(ValidationContext.empty)
+  }
+
 }
