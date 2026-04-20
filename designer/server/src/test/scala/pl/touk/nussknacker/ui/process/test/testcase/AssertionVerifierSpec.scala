@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, ResultContext}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExternalServiceInvocationResult, NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.ui.process.test.testcase
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.process.test.testcase
 import java.time.Instant
 import java.util
 import java.util.UUID
+import scala.jdk.CollectionConverters._
 
 class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
@@ -53,7 +54,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   private val assertionsCompiler = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   private val assertionVerifier  = new AssertionVerifier(globalVariablesPreparer)
 
-  private val nodeId = NodeId("someNode")
+  private val nodeId                = NodeId("someNode")
+  private val serviceInvocationName = "Kafka Sink"
 
   private val inputVariableTypes = Map(
     "someVariable"   -> Typed.fromInstance("bar"),
@@ -117,7 +119,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  test("should run assertions on outgoing results") {
+  test("should run assertions on outgoing records") {
     val testCase = prepareTestCase(
       List(
         PredicateAssertion(AssertionOperator.HasSize, "2".spel, "#outgoingRecords".spel),
@@ -141,6 +143,40 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
 
     results should contain only (SuccessfulAssertion)
+  }
+
+  test("should run assertions on outgoing records for sink using external service invocation results") {
+    val scenarioTyping = Map(
+      nodeId.value -> testcase.NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = None,
+      )
+    )
+    val testCase = prepareTestCase(
+      List(
+        PredicateAssertion(AssertionOperator.HasSize, "2".spel, "#outgoingRecords".spel),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          s"{'$serviceInvocationName': {key1: 'first record', key2: 42L}}".spel,
+          "#outgoingRecords[0]".spel
+        ),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          "43L".spel,
+          s"#outgoingRecords[1]['$serviceInvocationName']['key2']".spel
+        ),
+      )
+    )
+    val nodesResultsAfterTestRun = prepareNodeResults(
+      externalServiceInvocations = List(
+        Map("key1" -> "first record", "key2" -> 42L).asJava,
+        Map("key1" -> "second record", "key2" -> 43L).asJava,
+      )
+    )
+
+    val results = verifyForTestCase(testCase, nodesResultsAfterTestRun, scenarioTyping)
+
+    results should contain only SuccessfulAssertion
   }
 
   test("should properly compare various types used in SpEL") {
@@ -374,7 +410,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private def verifyForTestCase(
       testCase: TestCase,
-      testResults: AssertionVerifier.TestResults
+      testResults: AssertionVerifier.TestResults,
+      scenarioTyping: Map[String, testcase.NodeTyping] = scenarioTyping,
   ): List[AssertionResult] = {
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
     val compiledTestCase = assertionsCompiler
@@ -400,13 +437,19 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private def prepareNodeResults(
       inputVariablesForEachRun: List[Map[String, Any]] = Nil,
-      outputVariablesForEachRun: List[Map[String, Any]] = Nil
+      outputVariablesForEachRun: List[Map[String, Any]] = Nil,
+      externalServiceInvocations: List[Any] = Nil,
   ): AssertionVerifier.TestResults = {
     AssertionVerifier.TestResults(
       originalNodeResults = Map(nodeId -> inputVariablesForEachRun.map(dummyResultContext)),
       originalNodeTransitionResults =
         Map(NodeTransition(nodeId, Some(NodeId("someOtherNode"))) -> outputVariablesForEachRun.map(dummyResultContext)),
-      originalExternalServiceInvocationResults = Map.empty,
+      originalExternalServiceInvocationResults = Map(
+        nodeId ->
+          externalServiceInvocations.map(
+            ExternalServiceInvocationResult(ContextId.dummy, Instant.now, serviceInvocationName, _)
+          )
+      ),
     )
   }
 
