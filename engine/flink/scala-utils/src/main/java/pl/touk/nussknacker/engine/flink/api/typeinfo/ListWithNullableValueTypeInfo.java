@@ -15,20 +15,18 @@ import java.util.Objects;
  * A {@link TypeInformation} for the list types of the Java API, accepting null collection and null
  * elements.
  *
- * It's a modified copy of solution from Flink 2.0+
- *
  * @param <T> The type of the elements in the list.
  */
 @PublicEvolving
-public class NullableListTypeInfo<T> extends TypeInformation<List<T>> {
+public class ListWithNullableValueTypeInfo<T> extends TypeInformation<List<T>> {
 
     private final TypeInformation<T> elementTypeInfo;
 
-    public NullableListTypeInfo(Class<T> elementTypeClass) {
+    public ListWithNullableValueTypeInfo(Class<T> elementTypeClass) {
         this(TypeInformation.of(Objects.requireNonNull(elementTypeClass)));
     }
 
-    public NullableListTypeInfo(TypeInformation<T> elementTypeInfo) {
+    public ListWithNullableValueTypeInfo(TypeInformation<T> elementTypeInfo) {
         this.elementTypeInfo = Objects.requireNonNull(elementTypeInfo);
     }
 
@@ -71,8 +69,7 @@ public class NullableListTypeInfo<T> extends TypeInformation<List<T>> {
     public TypeSerializer<List<T>> createSerializer(SerializerConfig config) {
         TypeSerializer<T> elementTypeSerializer =
                 NullableSerializer.wrap(elementTypeInfo.createSerializer(config), false);
-        ListSerializer<T> listSerializer = new ListSerializer<>(elementTypeSerializer);
-        return NullableSerializer.wrap(listSerializer, false);
+        return new ListSerializer<>(elementTypeSerializer);
     }
 
     @Override
@@ -87,8 +84,8 @@ public class NullableListTypeInfo<T> extends TypeInformation<List<T>> {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof NullableListTypeInfo) {
-            NullableListTypeInfo<?> other = (NullableListTypeInfo<?>) obj;
+        if (obj instanceof ListWithNullableValueTypeInfo) {
+            ListWithNullableValueTypeInfo<?> other = (ListWithNullableValueTypeInfo<?>) obj;
             return other.canEqual(this) && elementTypeInfo.equals(other.elementTypeInfo);
         }
         return false;
@@ -101,6 +98,6 @@ public class NullableListTypeInfo<T> extends TypeInformation<List<T>> {
 
     @Override
     public boolean canEqual(Object obj) {
-        return obj instanceof NullableListTypeInfo;
+        return obj instanceof ListWithNullableValueTypeInfo;
     }
 }

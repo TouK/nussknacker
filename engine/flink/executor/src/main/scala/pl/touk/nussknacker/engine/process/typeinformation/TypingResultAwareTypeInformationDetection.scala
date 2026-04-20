@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
-import pl.touk.nussknacker.engine.flink.api.typeinfo.NullableListTypeInfo
+import pl.touk.nussknacker.engine.flink.api.typeinfo.ListWithNullableValueTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   CharsetTypeInformation,
   CurrencyTypeInformation,
@@ -60,7 +60,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
     (typingResult match {
       case FlinkBelow119AdditionalTypeInfo(typeInfo) => typeInfo
       case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] && withNullableList =>
-        new NullableListTypeInfo[AnyRef](forType[AnyRef](elementType, withNullableList))
+        new ListWithNullableValueTypeInfo[AnyRef](forType[AnyRef](elementType, withNullableList))
       case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
         new ListTypeInfo[AnyRef](forType[AnyRef](elementType, withNullableList))
       case TypedClass(klass, Nil) if klass == classOf[ZonedDateTime]                => ZonedDateTimeTypeInformation
