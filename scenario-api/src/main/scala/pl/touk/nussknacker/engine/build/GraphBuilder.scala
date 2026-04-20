@@ -39,6 +39,25 @@ trait GraphBuilder[R] {
   def buildSimpleVariable(id: String, varName: String, value: Expression): GraphBuilder[R] =
     build(node => creator(Some(OneOutputSubsequentNode(Variable(NodeId(id), NodeName(id), varName, value), node))))
 
+  def unsetVariables(id: String, variableNames: String*): GraphBuilder[R] =
+    build(node =>
+      creator(
+        Some(
+          OneOutputSubsequentNode(
+            Variable(
+              id = NodeId(id),
+              name = NodeName(id),
+              varName = "",
+              value = Expression.spel("null"),
+              operation = VariableOperation.Unset,
+              variablesToUnset = variableNames.toList.map(name => Field(name, Expression.spel("null")))
+            ),
+            node
+          )
+        )
+      )
+    )
+
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
       creator(

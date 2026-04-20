@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9314](https://github.com/TouK/nussknacker/pull/9314) OpenAPI enricher: `handleErrors` renamed to `Error Strategy` and moved to advanced parameters
+* [#9303](https://github.com/TouK/nussknacker/pull/9303) OpenAPI enricher: added `handleErrors` response wrapping (`error`, `errorResponse`, `successResponse`, optional `statusCode`), with `statusCode` when it can be extracted.
+* [#9292](https://github.com/TouK/nussknacker/pull/9292) Variable node: added `SET`/`UNSET` operation with multi-variable `UNSET` and context cleanup for removed local variables.
+    * Backward compatible: existing scenarios keep previous behavior (`SET` by default), no migration required.
 * [#9231](https://github.com/TouK/nussknacker/pull/9231) OpenAPI enricher: improved discovery cache resilience.
     * Added optional `cacheFileLocation` configuration for persisting last valid OpenAPI definitions.
     * Added stale-on-error behavior for discovery refresh: on refresh failure, cached definitions are used from memory and (if configured) from file cache.
@@ -355,6 +359,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   When enabled, expressions with Unknown type cannot be assigned to fields with a concrete type, reducing runtime type errors for partially typed data.
   Can be configured by implementing TypingConfigurationProvider and registering it as SPI.
   By default, the existing permissive behavior is preserved.
+* [#9286](https://github.com/TouK/nussknacker/pull/9286) Fixed handling of Avro records in Flink SQL component.
 
 ## 1.18
 

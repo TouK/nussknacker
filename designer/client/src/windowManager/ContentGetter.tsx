@@ -83,6 +83,10 @@ const SaveAsTestCaseDialog = loadable(() => import("../components/modals/saveAsT
     fallback: <LoaderSpinner show />,
 });
 
+const PasteRecordsDialog = loadable(() => import("../components/modals/TestingDataRecords/PasteRecordsDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter = (props: WindowContentProps<WindowKind>) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -139,6 +143,8 @@ const contentGetter = (props: WindowContentProps<WindowKind>) => {
             return <EnterpriseFeatureInfo {...props} />;
         case WindowKind.saveAsTestCase:
             return <SaveAsTestCaseDialog {...props} />;
+        case WindowKind.pasteRecords:
+            return <PasteRecordsDialog {...props} />;
         default:
             return (
                 <WindowContent {...props}>

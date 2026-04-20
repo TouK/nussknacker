@@ -1,0 +1,142 @@
+package pl.touk.nussknacker.engine.util.service
+
+import io.circe.{Encoder, Json}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
+import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
+class EagerServiceWithErrorSupport[T: ClassTag] extends EagerService with WithExplicitTypesToExtract {
+
+  protected def responseTypeWithError(successResponseType: typing.TypingResult): typing.TypingResult = Typed.record(
+    Map(
+      "error"           -> Typed.typedClass(classOf[Boolean]),
+      "errorResponse"   -> Typed.typedClass(classOf[String]),
+      "statusCode"      -> Typed.typedClass(classOf[java.lang.Integer]),
+      "successResponse" -> successResponseType,
+    )
+  )
+
+  override def typesToExtract: List[typing.TypingResult] =
+    List(Typed[T], Typed.typedClass[ServiceResponseWithError[T]])
+}
+
+object EagerServiceWithErrorSupport {
+  final val HandleErrorsParamName = ParameterName("nkHandleErrors")
+
+  def isHandleErrorsEnabled(params: Params): Boolean =
+    params.extractParam[Boolean](HandleErrorsParamName) match {
+      case Params.ParamExtractionResult.Value(value) => value
+      case _                                         => false
+    }
+
+  def isHandleErrorsEnabled(parameters: List[(ParameterName, DefinedSingleParameter)]): Boolean =
+    parameters
+      .collectFirst { case (`HandleErrorsParamName`, DefinedEagerParameter(value: Boolean, _)) => value }
+      .getOrElse(false)
+
+}
+
+sealed trait ReturnErrors[X] {
+  type Out
+}
+
+object ReturnErrors {
+
+  sealed class WithErrors[X] extends ReturnErrors[X] {
+    override type Out = ServiceResponseWithError[X]
+    def asOut(x: ServiceResponseWithError[X]): Out = x
+  }
+
+  sealed class NoErrors[X] extends ReturnErrors[X] {
+    override type Out = X
+    def asOut(x: X): Out = x
+  }
+
+  def fromBoolean[X](returnErrors: Boolean): ReturnErrors[X] = {
+    if (returnErrors) new WithErrors[X]
+    else new NoErrors[X]
+  }
+
+  def handleWithStatus[T](
+      returnErrors: ReturnErrors[T],
+      invokeResult: Future[(T, Option[java.lang.Integer])],
+      errorDescription: Throwable => String = defaultErrorDescription,
+      errorStatusCode: Throwable => Option[java.lang.Integer] = (_: Throwable) => None
+  )(
+      implicit ec: ExecutionContext
+  ): Future[ReturnErrors[T]#Out] = {
+    returnErrors match {
+      case noErrors: NoErrors[T] =>
+        invokeResult.map { case (result, _) => noErrors.asOut(result) }
+      case withErrors: WithErrors[T] =>
+        invokeResult
+          .map { case (result, statusCode) => ServiceResponseWithError.success[T](result, statusCode = statusCode) }
+          .recoverWith {
+            case NonFatal(error) =>
+              Future.successful(
+                ServiceResponseWithError.error[T](
+                  errorMessage = errorDescription(error),
+                  statusCode = errorStatusCode(error)
+                )
+              )
+            case other => Future.failed(other)
+          }
+          .map(withErrors.asOut)
+    }
+  }
+
+  private def defaultErrorDescription(error: Throwable): String = {
+    if (error.getCause == null) {
+      s"error: ${error.getMessage}"
+    } else {
+      s"error: ${error.getMessage}. ${error.getCause.getMessage}"
+    }
+  }
+
+}
+
+case class ServiceResponseWithError[R] private (
+    error: Boolean,
+    errorResponse: Option[String],
+    successResponse: Option[R],
+    statusCode: Option[java.lang.Integer]
+) extends DisplayJsonWithEncoder[ServiceResponseWithError[R]]
+
+object ServiceResponseWithError {
+
+  private val jsonEncoder = ToJsonEncoder.looseEncoder
+
+  implicit def encoder[R]: Encoder[ServiceResponseWithError[R]] = Encoder.instance { value =>
+    Json.obj(
+      "error" -> Json.fromBoolean(value.error),
+      "errorResponse" -> value.errorResponse
+        .map(Json.fromString)
+        .getOrElse(Json.Null),
+      "successResponse" -> value.successResponse
+        .map(jsonEncoder.encodeUnsafe)
+        .getOrElse(Json.Null),
+      "statusCode" -> value.statusCode
+        .flatMap(code => Option(code))
+        .map(code => Json.fromInt(code.intValue()))
+        .getOrElse(Json.Null)
+    )
+  }
+
+  def error[R](
+      errorMessage: String,
+      statusCode: Option[java.lang.Integer] = None
+  ): ServiceResponseWithError[R] =
+    ServiceResponseWithError(error = true, Some(errorMessage), None, statusCode = statusCode)
+
+  def success[R](response: R, statusCode: Option[java.lang.Integer] = None): ServiceResponseWithError[R] =
+    ServiceResponseWithError(error = false, None, Some(response), statusCode = statusCode)
+
+}

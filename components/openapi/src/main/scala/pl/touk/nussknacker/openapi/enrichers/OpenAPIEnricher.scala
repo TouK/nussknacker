@@ -5,7 +5,10 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
-import pl.touk.nussknacker.http.backend.{HttpBackendProvider, LoggingAndCollectingSttpBackend}
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithErrorSupport.isHandleErrorsEnabled
+import pl.touk.nussknacker.engine.util.service.ReturnErrors
+import pl.touk.nussknacker.http.backend.{HttpBackendProvider, HttpStatusCodeExtractor, LoggingAndCollectingSttpBackend}
+import pl.touk.nussknacker.http.backend.HttpStatusCodeExtractor.handleHttpResult
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.enrichers.InvocationBaseUrl.determineInvocationBaseUrl
 import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricher.packageName
@@ -28,6 +31,7 @@ class OpenAPIEnricher(
   private val codesToInterpretAsEmpty = config.codesToInterpretAsEmpty.map(StatusCode(_))
   private val swaggerHttpService      = new SwaggerSttpService(baseUrl, service, codesToInterpretAsEmpty)
   private val serviceName             = service.name.value
+  private val returnErrors            = ReturnErrors.fromBoolean[AnyRef](isHandleErrorsEnabled(params))
   private val tags                    = Map(AsyncExecutionTimeMeasurement.serviceNameTagKey -> serviceName)
 
   override def invoke(context: Context)(
@@ -43,7 +47,8 @@ class OpenAPIEnricher(
       }
       .toMap
     val preparedParams = extractor.prepareParams(fixedOrEvaluatedParams)
-    swaggerHttpService.invoke(preparedParams)
+    val invokeResult   = swaggerHttpService.invokeWithStatus(preparedParams)
+    handleHttpResult(returnErrors, invokeResult)
   }
 
   implicit protected def httpBackendForEc(

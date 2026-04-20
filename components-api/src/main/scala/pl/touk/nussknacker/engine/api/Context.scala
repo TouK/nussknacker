@@ -134,6 +134,12 @@ case class Context(
   def withVariables(otherVariables: Map[String, Any]): Context =
     copy(variables = variables ++ otherVariables)
 
+  def withoutVariable(name: String): Context =
+    withoutVariables(Set(name))
+
+  def withoutVariables(names: Iterable[String]): Context =
+    copy(variables = variables -- names)
+
   def withTraceId(value: TraceId): Context =
     copy(traceId = Some(value))
 

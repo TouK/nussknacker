@@ -254,15 +254,35 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       )
 
     data match {
-      case variable @ Variable(id, _, varName, _, _) =>
-        val NodeCompilationResult(typingInfo, parameters, newCtx, compiledExpression, t) =
-          nodeCompiler.compileVariable(variable, inputContext)
-        CompilationResult.map3(
-          f0 = CompilationResult(newCtx),
-          f1 = toCompilationResult(compiledExpression, typingInfo, parameters, newCtx.toOption),
-          f2 = compile(next, newCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse(inputContext))
-        ) { (_, compiled, compiledNext) =>
-          compiledgraph.node.VariableBuilder(id.value, variable.name.value, varName, Left(compiled), compiledNext)
+      case variable @ Variable(id, _, varName, _, _, operation, _) =>
+        operation match {
+          case VariableOperation.Set =>
+            val NodeCompilationResult(typingInfo, parameters, newCtx, compiledExpression, _) =
+              nodeCompiler.compileVariable(variable, inputContext)
+            CompilationResult.map3(
+              f0 = CompilationResult(newCtx),
+              f1 = toCompilationResult(compiledExpression, typingInfo, parameters, newCtx.toOption),
+              f2 = compile(next, newCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse(inputContext))
+            ) { (_, compiled, compiledNext) =>
+              compiledgraph.node.VariableBuilder(id.value, variable.name.value, varName, Left(compiled), compiledNext)
+            }
+          case VariableOperation.Unset =>
+            val NodeCompilationResult(typingInfo, parameters, newCtx, variablesToUnset, _) =
+              nodeCompiler.compileUnsetVariable(variable, inputContext)
+            CompilationResult.map3(
+              f0 = CompilationResult(newCtx),
+              f1 = toCompilationResult(variablesToUnset, typingInfo, parameters, newCtx.toOption),
+              f2 = compile(next, newCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse(inputContext))
+            ) { (_, compiledUnsetVariables, compiledNext) =>
+              compiledgraph.node.VariableBuilder(
+                id = id.value,
+                name = variable.name.value,
+                varName = varName,
+                value = Right(Nil),
+                next = compiledNext,
+                unsetVariables = compiledUnsetVariables
+              )
+            }
         }
       case vb @ VariableBuilder(id, _, varName, fields, _) =>
         implicit val nodeId: NodeId = id

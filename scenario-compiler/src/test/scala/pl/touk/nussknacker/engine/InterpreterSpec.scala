@@ -415,6 +415,19 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction(accountId = "123")) should equal("123")
   }
 
+  test("unset variable and set it again") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .buildSimpleVariable("setVar", "fooVar", "'123'".spel)
+      .unsetVariables("unsetVar", "fooVar")
+      .buildSimpleVariable("setVarAgain", "fooVar", "'456'".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#fooVar".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(accountId = "123")) should equal("456")
+  }
+
   test("choose based on expression") {
     val process = ScenarioBuilder
       .streaming("test")

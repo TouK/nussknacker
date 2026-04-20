@@ -39,4 +39,21 @@ In purely streaming contexts, we typically use term **event** - that simply mean
 | Input parameters | An entry field for each of the operation's input parameters. Nussknacker validates the data type of each entry field against the OpenAPI interface definition. |
 | Output variable name | This variable will contain the result of OpenAPI service call  |
 
+### Advanced parameters
 
+| Name                  | Description                                       |
+|-----------------------|---------------------------------------------------|
+| Error Strategy | Defines how OpenAPI call errors are handled. `Fail on error` (default) fails node execution. `Return error` returns a wrapped result in the output variable. |
+
+## Error handling output
+
+When `Error Strategy` is set to `Return error`, the output variable is a record with:
+
+| Field | Description |
+|-------|-------------|
+| error | `true` for failed call, `false` for successful call |
+| errorResponse | Error description for failed call |
+| successResponse | OpenAPI response for successful call |
+| statusCode | Optional HTTP status code for successful and failed calls (present when available) |
+
+`statusCode` can be empty in some failure cases, when the underlying exception does not expose an HTTP status.
