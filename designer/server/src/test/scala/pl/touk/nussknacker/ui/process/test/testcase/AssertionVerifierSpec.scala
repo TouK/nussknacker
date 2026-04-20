@@ -154,7 +154,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
     val testCase = prepareTestCase(
       List(
-        PredicateAssertion(AssertionOperator.HasSize, "2".spel, "#outgoingRecords".spel),
+        PredicateAssertion(AssertionOperator.HasSize, "3".spel, "#outgoingRecords".spel),
         PredicateAssertion(
           AssertionOperator.Equals,
           s"{'$nodeName': {key1: 'first record', key2: 42L}}".spel,
