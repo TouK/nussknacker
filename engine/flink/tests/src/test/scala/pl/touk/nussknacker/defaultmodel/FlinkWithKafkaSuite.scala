@@ -67,7 +67,7 @@ abstract class FlinkWithKafkaSuite
     schemaRegistryMockClient = schemaRegistryClientProvider.schemaRegistryClient
     valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
-    extraComponents = createFinkKafkaComponentProvider(schemaRegistryClientProvider)
+    extraComponents = createFlinkKafkaComponentProvider(schemaRegistryClientProvider)
       .create(
         modelConfig.getConfig("components.kafka"),
         ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
@@ -79,7 +79,7 @@ abstract class FlinkWithKafkaSuite
       .build()
   }
 
-  protected def createFinkKafkaComponentProvider(
+  protected def createFlinkKafkaComponentProvider(
       schemaRegistryClientProvider: MockSchemaRegistryClientProvider
   ): FlinkKafkaComponentProvider = {
     new MockFlinkKafkaComponentProvider(() => schemaRegistryClientProvider.schemaRegistryClientFactory)
