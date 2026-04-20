@@ -776,10 +776,14 @@ class NodeCompiler(
                   Invalid(NonEmptyList(h, t))
                 )
             }
+        val outputContext = nodeData match {
+          case _: Sink => afterValidation.map(_ => ValidationContext.empty)
+          case _       => afterValidation.map(_._3)
+        }
         NodeCompilationResult(
           afterValidation.map(_._1).valueOr(_ => Map.empty),
           afterValidation.map(_._2).valueOr(_ => None),
-          afterValidation.map(_._3),
+          outputContext,
           afterValidation.andThen(_._4)
         )
       case staticComponent: MethodBasedComponentDefinitionWithImplementation =>
