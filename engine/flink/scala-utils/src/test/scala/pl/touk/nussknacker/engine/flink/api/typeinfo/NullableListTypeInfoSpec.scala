@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.typeinfo
 
-import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfigImpl
 import org.apache.flink.api.common.typeinfo.Types
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.scalatest.funsuite.AnyFunSuite
@@ -8,12 +8,8 @@ import org.scalatest.matchers.should.Matchers
 
 import java.{util => jutil}
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.annotation.nowarn
 
 class NullableListTypeInfoSpec extends AnyFunSuite with Matchers {
-
-  @nowarn("cat=deprecation")
-  private val executionConfig = new ExecutionConfig()
 
   test("list serialization handles null elements") {
     val list = new jutil.ArrayList[java.lang.Integer]()
@@ -43,9 +39,8 @@ class NullableListTypeInfoSpec extends AnyFunSuite with Matchers {
     serializeRoundTrip(nullList, typeInfo) shouldBe null
   }
 
-  @nowarn("cat=deprecation")
   private def serializeRoundTrip[T](value: jutil.List[T], typeInfo: NullableListTypeInfo[T]): jutil.List[T] = {
-    val serializer = typeInfo.createSerializer(executionConfig)
+    val serializer = typeInfo.createSerializer(new SerializerConfigImpl())
     val outStream  = new ByteArrayOutputStream(1024)
     val outWrapper = new DataOutputViewStreamWrapper(outStream)
     serializer.serialize(value, outWrapper)

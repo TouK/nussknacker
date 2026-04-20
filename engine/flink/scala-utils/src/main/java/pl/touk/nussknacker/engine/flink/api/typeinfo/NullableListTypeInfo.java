@@ -15,6 +15,8 @@ import java.util.Objects;
  * A {@link TypeInformation} for the list types of the Java API, accepting null collection and null
  * elements.
  *
+ * It's a modified copy of solution from Flink 2.0+
+ *
  * @param <T> The type of the elements in the list.
  */
 @PublicEvolving
