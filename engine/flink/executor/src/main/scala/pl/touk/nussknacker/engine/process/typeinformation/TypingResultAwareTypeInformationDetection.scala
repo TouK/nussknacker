@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
+import pl.touk.nussknacker.engine.flink.api.typeinfo.NullableListTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   CharsetTypeInformation,
   CurrencyTypeInformation,
@@ -55,11 +56,13 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
     ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
-  def forType[T](typingResult: TypingResult): TypeInformation[T] = {
+  override def forType[T](typingResult: TypingResult, withNullableList: Boolean): TypeInformation[T] = {
     (typingResult match {
       case FlinkBelow119AdditionalTypeInfo(typeInfo) => typeInfo
+      case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] && withNullableList =>
+        new NullableListTypeInfo[AnyRef](forType[AnyRef](elementType, withNullableList))
       case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
-        new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
+        new ListTypeInfo[AnyRef](forType[AnyRef](elementType, withNullableList))
       case TypedClass(klass, Nil) if klass == classOf[ZonedDateTime]                => ZonedDateTimeTypeInformation
       case TypedClass(klass, Nil) if klass == classOf[OffsetDateTime]               => OffsetDateTimeTypeInformation
       case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass)        => ZoneIdTypeInformation
@@ -71,28 +74,31 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
       case TypedClass(klass, Nil) if klass == classOf[UUID]                         => UUIDTypeInformation
       case TypedClass(klass, elementType :: Nil) if klass == classOf[Array[AnyRef]] =>
         // We have to use OBJECT_ARRAY even for numeric types, because ARRAY<INT> is represented as Integer[] which can't be handled by IntPrimitiveArraySerializer
-        Types.OBJECT_ARRAY(forType[AnyRef](elementType))
+        Types.OBJECT_ARRAY(forType[AnyRef](elementType, withNullableList))
       case TypedClass(klass, keyType :: valueType :: Nil) if klass == classOf[java.util.Map[_, _]] =>
-        new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](keyType), forType[AnyRef](valueType))
+        new MapTypeInfo[AnyRef, AnyRef](
+          forType[AnyRef](keyType, withNullableList),
+          forType[AnyRef](valueType, withNullableList)
+        )
       case TypedMultiset(elementType) =>
-        new MultisetTypeInfo[AnyRef](forType[AnyRef](elementType))
+        new MultisetTypeInfo[AnyRef](forType[AnyRef](elementType, withNullableList))
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Row] =>
         val (fieldNames, typeInfos) = a.fields.unzip
         // Warning: RowTypeInfo is fields order sensitive
-        new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
+        new RowTypeInfo(typeInfos.map(forType(_, withNullableList)).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult
           if classOf[java.util.Map[String @unchecked, _]].isAssignableFrom(a.runtimeObjType.klass) =>
-        createJavaMapTypeInformation(a)
+        TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType(_, withNullableList)))
       // We generally don't use scala Maps in our runtime, but it is useful for some internal type infos: TODO move it somewhere else
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Map[String, _]] =>
-        createScalaMapTypeInformation(a)
+        TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType(_, withNullableList)))
       // TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
       case a: SingleTypingResult if a.runtimeObjType.params.isEmpty =>
         TypeInformation.of(a.runtimeObjType.klass)
       // TODO: how can we handle union - at least of some types?
       case TypedObjectWithValue(tc: TypedClass, _) =>
-        forType(tc)
+        forType(tc, withNullableList)
       case _ =>
         TypeInformation.of(classOf[Any])
     }).asInstanceOf[TypeInformation[T]]
@@ -120,12 +126,6 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
     }
 
   }
-
-  private def createScalaMapTypeInformation(typingResult: TypedObjectTypingResult) =
-    TypedScalaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
-
-  private def createJavaMapTypeInformation(typingResult: TypedObjectTypingResult) =
-    TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
 
   def forValueWithContext[T](
       validationContext: ValidationContext,

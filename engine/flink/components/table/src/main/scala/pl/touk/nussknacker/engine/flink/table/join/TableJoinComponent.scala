@@ -241,7 +241,8 @@ object TableJoinComponent
       Array(contextInternalColumnName, mainKeyInternalColumnName),
       TypeInformationDetection.instance.contextRowTypeInfo(mainBranchValidationContext),
       TypeInformationDetection.instance.forType(
-        ToTableTypeEncoder.alignTypingResult(mainKeyLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(mainKeyLazyParam.returnType),
+        withNullableList = false
       )
     )
   }
@@ -282,10 +283,12 @@ object TableJoinComponent
     Types.ROW_NAMED(
       Array(joinedKeyInternalColumnName, outputInternalColumnName),
       TypeInformationDetection.instance.forType(
-        ToTableTypeEncoder.alignTypingResult(joinedKeyLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(joinedKeyLazyParam.returnType),
+        withNullableList = false
       ),
       TypeInformationDetection.instance.forType(
-        ToTableTypeEncoder.alignTypingResult(outputLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(outputLazyParam.returnType),
+        withNullableList = false
       )
     )
   }

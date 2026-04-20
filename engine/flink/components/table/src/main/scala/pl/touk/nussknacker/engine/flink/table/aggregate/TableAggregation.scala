@@ -100,10 +100,12 @@ class TableAggregation(
     val outputTypeInfo: TypeInformation[Row] = Types.ROW_NAMED(
       Array(groupByInternalColumnName, aggregateByInternalColumnName),
       TypeInformationDetection.instance.forType(
-        ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType),
+        withNullableList = false
       ),
       TypeInformationDetection.instance.forType(
-        ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType),
+        withNullableList = false
       )
     )
 
@@ -139,7 +141,8 @@ class TableAggregation(
       TypeInformationDetection.instance.forValueWithContext[AnyRef](
         validationContext = ValidationContext.empty
           .withVariableUnsafe(KeyVariableName, ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
-        value = ToTableTypeEncoder.alignTypingResult(aggregationResultType)
+        value = ToTableTypeEncoder.alignTypingResult(aggregationResultType),
+        withNullableList = false
       )
 
   }

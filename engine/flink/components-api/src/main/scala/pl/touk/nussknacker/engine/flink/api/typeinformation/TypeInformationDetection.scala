@@ -27,7 +27,14 @@ trait TypeInformationDetection extends Serializable {
       validationContext: ValidationContext,
       value: TypingResult
   ): TypeInformation[ValueWithContext[T]] =
-    forValueWithContext(validationContext, forType(value).asInstanceOf[TypeInformation[T]])
+    forValueWithContext(validationContext, value, withNullableList = true)
+
+  def forValueWithContext[T](
+      validationContext: ValidationContext,
+      value: TypingResult,
+      withNullableList: Boolean
+  ): TypeInformation[ValueWithContext[T]] =
+    forValueWithContext(validationContext, forType(value, withNullableList).asInstanceOf[TypeInformation[T]])
 
   def forValueWithContext[T](
       validationContext: ValidationContext,
@@ -48,7 +55,10 @@ trait TypeInformationDetection extends Serializable {
     }
   }
 
-  def forType[T](typingResult: TypingResult): TypeInformation[T]
+  def forType[T](typingResult: TypingResult): TypeInformation[T] =
+    forType(typingResult, withNullableList = true)
+
+  def forType[T](typingResult: TypingResult, withNullableList: Boolean): TypeInformation[T]
 
   def priority: Int
 

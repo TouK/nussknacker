@@ -50,7 +50,7 @@ object ToSimulatedDataTypeConverter {
   // This is a simulated conversion based on a simulated DataTypeFactory which may work differently in a real Flink
   // cluster, but it may be suitable for example for purposes of type validation
   def toDataType(typingResult: TypingResult): DataType = {
-    val typeInfo = TypeInformationDetection.instance.forType(typingResult)
+    val typeInfo = TypeInformationDetection.instance.forType(typingResult, withNullableList = false)
     TypeInfoDataTypeConverter.toDataType(SimulatedDataTypeFactory.instance, typeInfo)
   }
 
