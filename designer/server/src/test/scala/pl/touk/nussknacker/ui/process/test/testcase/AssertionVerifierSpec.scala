@@ -54,8 +54,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   private val assertionsCompiler = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   private val assertionVerifier  = new AssertionVerifier(globalVariablesPreparer)
 
-  private val nodeId                = NodeId("someNode")
-  private val serviceInvocationName = "Kafka Sink"
+  private val nodeId   = NodeId("someNode-123")
+  private val nodeName = NodeName("someName")
 
   private val inputVariableTypes = Map(
     "someVariable"   -> Typed.fromInstance("bar"),
@@ -142,7 +142,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
     val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
 
-    results should contain only (SuccessfulAssertion)
+    results should contain only SuccessfulAssertion
   }
 
   test("should run assertions on outgoing records for sink using external service invocation results") {
@@ -157,13 +157,13 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         PredicateAssertion(AssertionOperator.HasSize, "2".spel, "#outgoingRecords".spel),
         PredicateAssertion(
           AssertionOperator.Equals,
-          s"{'$serviceInvocationName': {key1: 'first record', key2: 42L}}".spel,
+          s"{'$nodeName': {key1: 'first record', key2: 42L}}".spel,
           "#outgoingRecords[0]".spel
         ),
         PredicateAssertion(
           AssertionOperator.Equals,
           "43L".spel,
-          s"#outgoingRecords[1]['$serviceInvocationName']['key2']".spel
+          s"#outgoingRecords[1]['$nodeName']['key2']".spel
         ),
       )
     )
@@ -447,7 +447,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       originalExternalServiceInvocationResults = Map(
         nodeId ->
           externalServiceInvocations.map(
-            ExternalServiceInvocationResult(ContextId.dummy, Instant.now, serviceInvocationName, _)
+            ExternalServiceInvocationResult(ContextId.dummy, Instant.now, nodeName.value, _)
           )
       ),
     )
