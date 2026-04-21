@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.encode._
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaBasedParameter, DefaultAvroSchemaEvolution}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.client.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.serialization.AzureAvroSerializerFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   ConfluentSchemaRegistryClient,

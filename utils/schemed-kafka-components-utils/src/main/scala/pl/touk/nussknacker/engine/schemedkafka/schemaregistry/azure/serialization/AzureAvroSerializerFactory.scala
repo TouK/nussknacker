@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.serialization.DelegatingKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{AzureSchemaRegistryClient, AzureUtils}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.client.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.AzureConfigurationFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.DefaultConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClient,
   SchemaRegistryClientFactory
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.client.AzureSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 
 object UniversalSchemaRegistryClientFactory extends UniversalSchemaRegistryClientFactory
