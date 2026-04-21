@@ -10,10 +10,27 @@ import com.azure.data.schemaregistry.models.{SchemaFormat, SchemaProperties, Sch
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.commons.io.IOUtils
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaUtils, SchemaRegistryClientKafkaConfig, UnspecializedTopicName}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryError, SchemaRegistryUnknownError, SchemaVersionError, SchemaWithMetadata}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaComponentsConfig,
+  KafkaUtils,
+  SchemaRegistryClientKafkaConfig,
+  UnspecializedTopicName
+}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaId,
+  SchemaRegistryError,
+  SchemaRegistryUnknownError,
+  SchemaVersionError,
+  SchemaWithMetadata
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{AzureConfigurationFactory, AzureHttpPipelineFactory, AzureTokenCredentialFactory, EnhancedSchemasImpl, SchemaRegistryJsonSerializer}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{
+  AzureConfigurationFactory,
+  AzureHttpPipelineFactory,
+  AzureTokenCredentialFactory,
+  EnhancedSchemasImpl,
+  SchemaRegistryJsonSerializer
+}
 import reactor.core.publisher.Mono
 
 import java.nio.charset.StandardCharsets
@@ -69,9 +86,9 @@ class DefaultAzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) 
   }
 
   override protected def getLatestFreshSchema(
-                                               topicName: UnspecializedTopicName,
-                                               isKey: Boolean
-                                             ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
+      topicName: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
     getOneMatchingSchemaName(topicName, isKey).andThen { fullSchemaName =>
       try {
         FluxUtil
@@ -101,9 +118,9 @@ class DefaultAzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) 
   }
 
   override def getAllVersions(
-                               topicName: UnspecializedTopicName,
-                               isKey: Boolean
-                             ): Validated[SchemaRegistryError, List[Integer]] = {
+      topicName: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, List[Integer]] = {
     getOneMatchingSchemaName(topicName, isKey).andThen(getVersions)
   }
 
@@ -126,9 +143,9 @@ class DefaultAzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) 
   }
 
   override def registerSchemaVersionIfNotExists(
-                                        schema: ParsedSchema,
-                                        forceSchemaNameOpt: Option[String] = None
-                                      ): SchemaProperties = {
+      schema: ParsedSchema,
+      forceSchemaNameOpt: Option[String] = None
+  ): SchemaProperties = {
     val avroSchema   = checkAvroSchema(schema).rawSchema()
     val schemaString = schema.canonicalString()
     val name         = forceSchemaNameOpt.getOrElse(avroSchema.getFullName)
