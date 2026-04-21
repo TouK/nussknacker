@@ -55,7 +55,7 @@ crossScalaVersions := Nil
 
 ThisBuild / isSnapshot := version(_ contains "-SNAPSHOT").value
 
-// Workaround for sbt-git not supporting git worktrees (see https://github.com/sbt/sbt-git/issues/#worktrees).
+// Workaround for sbt-git not supporting git worktrees (see https://github.com/sbt/sbt-git/pull/243).
 // In a worktree `.git` is a regular file (containing `gitdir: ...` pointing at the main repo's
 // per-worktree git dir), not a directory — and sbt-git's embedded JGit cannot parse that layout,
 // which breaks read-only git operations such as gitCurrentBranch / gitHeadCommit used below.
