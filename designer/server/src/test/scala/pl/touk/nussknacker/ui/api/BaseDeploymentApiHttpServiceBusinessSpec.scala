@@ -154,7 +154,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   }
 
   protected def listJobManagerFiles(containerPath: String): List[String] = {
-    val result = jobManagerContainer.container.execInContainer("ls", "-Atr1p", containerPath)
+    val result = jobManagerContainer.container.execInContainer("ls", "-A1", containerPath)
     if (result.getExitCode != 0) {
       throw new IllegalStateException(
         s"Failed to list $containerPath in JobManager container: ${result.getStderr}"
