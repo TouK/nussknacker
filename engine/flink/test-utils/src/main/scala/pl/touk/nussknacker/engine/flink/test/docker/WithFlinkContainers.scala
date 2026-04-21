@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.containers.{ContainerVolume, WithDockerContainers}
 
-import java.nio.file.Path
-
 trait WithFlinkContainers extends WithDockerContainers with BeforeAndAfterAll { self: Suite with StrictLogging =>
 
   private val FlinkJobManagerRestPort = 8081
@@ -80,22 +78,6 @@ trait WithFlinkContainers extends WithDockerContainers with BeforeAndAfterAll { 
 
       image.withFileFromString(file, withFlinkLibTweaks)
     }
-  }
-
-  protected def listJobManagerFiles(containerPath: String): List[String] = {
-    val result = jobManagerContainer.container.execInContainer("ls", "-Atr1p", containerPath)
-    if (result.getExitCode != 0) {
-      throw new IllegalStateException(
-        s"Failed to list $containerPath in JobManager container: ${result.getStderr}"
-      )
-    }
-    result.getStdout.split("\n").iterator.map(_.trim).filter(_.nonEmpty).toList
-  }
-
-  protected def copyLastSavepointFromJobManager(target: Path): Unit = {
-    val savepointDirName = listJobManagerFiles(jobManagerContainerSavepointDir).headOption
-      .getOrElse(throw new IllegalStateException(s"There are no savepoints under $jobManagerContainerSavepointDir"))
-    copyDirectoryFromContainer(jobManagerContainer.container, savepointDirName, target)
   }
 
 }

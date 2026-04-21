@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.flink.test.docker.{WithFlinkContainers, WithKafkaContainer}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.WithProcessingTypeConfig
-import pl.touk.nussknacker.engine.management.savepoint.FlinkSavepointLocator
+import pl.touk.nussknacker.engine.management.savepoint.{FlinkSavepointLocator, IdentitySavepointLocator}
 import pl.touk.nussknacker.engine.management.savepoint.FlinkSavepointLocator.LocalSavepoint
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
 
@@ -134,7 +134,7 @@ trait FlinkKafkaDockerSpec
     FlinkDeploymentManagerProviderHelper.createDeploymentManager(
       ConfigWithUnresolvedVersion(rawProcessingTypeConfig),
       deploymentManagerClassLoader,
-      new JobManagerSavepointLocator
+      if (useMiniClusterForDeployment) new IdentitySavepointLocator else new JobManagerSavepointLocator
     )
 
   override def afterAll(): Unit = {
@@ -219,9 +219,9 @@ trait FlinkKafkaDockerSpec
       if (uri.getScheme != "file") {
         throw new IllegalArgumentException(s"Invalid savepoint path, expected file URI but got: $path")
       }
-      val targetDir = savepointDir.resolve(uri.getPath.split("/").last)
-      copyDirectoryFromContainer(jobManagerContainer.container, uri.getPath, targetDir)
-      LocalSavepoint(targetDir.toUri.toURL.toString)
+      copyDirectoryFromContainer(jobManagerContainer.container, uri.getPath, savepointDir)
+      val resolvedSavepointDir = savepointDir.resolve(uri.getPath.split("/").last)
+      LocalSavepoint(resolvedSavepointDir.toUri.toURL.toString)
     }
 
   }

@@ -222,6 +222,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Use `setUidAndNameToNodeId` extension method available in `DataStreamImplicits` instead 
 * [#8786](https://github.com/TouK/nussknacker/pull/8786) `StandardFlinkSource`, `BaseFlinkSource` and `CustomizableWatermarkStrategySource` traits were removed.
   Use `setUidAndNameToNodeId`, `assignTimestampsAndWatermarks` and context initialization (`FlinkContextInitializingFunction`) directly
+* [#9327](https://github.com/TouK/nussknacker/pull/9327) `FileSystemBind` and associated bind mounting helpers in Docker tests were removed.
+  Use `ContainerVolume` instead.
 
 ### Other changes
 
