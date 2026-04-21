@@ -1,13 +1,17 @@
 package pl.touk.nussknacker.test.containers
 
+import com.github.dockerjava.api.model.{Bind, Volume}
+import com.typesafe.scalalogging.Logger
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.scalatest.Suite
-import org.testcontainers.containers.{BindMode, Network}
+import org.testcontainers.containers.{BindMode, GenericContainer, Network}
 import pl.touk.nussknacker.test.containers.LogLevelConfigurableScalaLoggingConsumer.LoggerLevel
 
-import java.nio.file.{Files, FileSystems, Path}
-import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.{Files, Path}
 
 trait WithDockerContainers { self: Suite =>
+
+  protected val logger: Logger
 
   // dedicated method because withPrefix is mutable
   protected def logConsumer(prefix: String): LogLevelConfigurableScalaLoggingConsumer =
@@ -18,40 +22,39 @@ trait WithDockerContainers { self: Suite =>
 
   protected val network: Network = Network.newNetwork
 
-  /**
-   * Creates a temporary directory with possibly insecure permissions.
-   * If your directory is writable you may need to also use `chmod` in Docker container.
-   *
-   * Instead of mounting prefer [[com.dimafeng.testcontainers.GenericContainer.copyFileFromContainer()]]
-   * and [[com.dimafeng.testcontainers.GenericContainer.copyFileToContainer()]].
-   */
-  protected def createMountableTempDirectory(prefix: String, mode: BindMode): Path = {
-    val posixPerms = mode match {
-      case BindMode.READ_WRITE => "rwxrwxrwx"
-      case BindMode.READ_ONLY  => "rwxr-xr-x"
-    }
+  protected def bindTempVolume(container: GenericContainer[_], volume: ContainerVolume): Unit = {
+    container.getBinds.add(new Bind(volume.volumeName, new Volume(volume.containerPath), volume.mode.accessMode))
+    VolumeReaper.registerVolume(volume.volumeName)
+  }
 
-    val tempDirectoryAttributes = {
-      if (FileSystems.getDefault.supportedFileAttributeViews().contains("posix")) {
-        val allPermissions = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(posixPerms))
-        List(allPermissions)
-      } else {
-        Nil // Windows
+  protected def removeVolumesQuietly(volumeNames: Seq[String]): Unit =
+    VolumeReaper.removeVolumesQuietly(volumeNames, logger)
+
+  protected def copyDirectoryFromContainer(
+      container: GenericContainer[_],
+      containerPath: String,
+      destinationPath: Path
+  ): Unit = {
+    container.copyFileFromContainer(
+      containerPath,
+      (stream: java.io.InputStream) => {
+        // Leverage the fact that we got a TarArchiveInputStream
+        // Other possible approaches: https://github.com/testcontainers/testcontainers-java/issues/1647
+        val tar = stream.asInstanceOf[TarArchiveInputStream]
+        Iterator.continually(tar.getNextEntry).takeWhile(_ != null).foreach { entry =>
+          val entryPath = destinationPath.resolve(entry.getName)
+          if (entry.isDirectory) {
+            Files.createDirectories(entryPath)
+          } else {
+            Files.createDirectories(entryPath.getParent)
+            Files.copy(tar, entryPath)
+          }
+        }
+        tar.close()
       }
-    }
-    val tempPath = Files.createTempDirectory(prefix, tempDirectoryAttributes: _*)
-    tempPath.toFile.deleteOnExit()
-    tempPath
+    )
   }
 
 }
 
-final case class FileSystemBind(hostPath: Path, containerPath: String, mode: BindMode) {
-
-  def subdirectory(name: String): FileSystemBind = this.copy(
-    hostPath = hostPath.resolve(name),
-    containerPath = containerPath + "/" + name,
-    mode
-  )
-
-}
+final case class ContainerVolume(volumeName: String, containerPath: String, mode: BindMode = BindMode.READ_WRITE)

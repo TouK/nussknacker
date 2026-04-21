@@ -4,11 +4,10 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusName
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
@@ -17,10 +16,6 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
-
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
-import scala.jdk.CollectionConverters._
 
 class DeploymentApiHttpServiceDeploymentCommentSpec
     extends AnyFreeSpecLike
@@ -43,28 +38,20 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
       .withValue("deploymentCommentSettings.validationPattern", ConfigValueFactory.fromAnyRef(s".*$configuredPhrase.*"))
   }
 
-  override protected def populateInputTransactionsDirectory(rootDirectory: Path): Unit = {
-    val firstPartition = rootDirectory.resolve("date=2024-01-01")
-    firstPartition.toFile.mkdir()
-    FileUtils.write(
-      firstPartition.resolve("transaction-1.csv").toFile,
+  override protected def inputTransactionsFiles: Map[String, String] = Map(
+    // first partition
+    "date=2024-01-01/transaction-1.csv" ->
       """"2024-01-01 10:00:00",client1,1
         |"2024-01-01 10:01:00",client2,2
         |"2024-01-01 10:02:00",client1,3
         |""".stripMargin,
-      StandardCharsets.UTF_8
-    )
-    val secondPartition = rootDirectory.resolve("date=2024-01-02")
-    secondPartition.toFile.mkdir()
-    FileUtils.write(
-      secondPartition.resolve("transaction-1.csv").toFile,
+    // second partition
+    "date=2024-01-02/transaction-1.csv" ->
       """"2024-01-02 10:00:00",client1,1
         |"2024-01-02 10:01:00",client2,2
         |"2024-01-02 10:02:00",client1,3
         |""".stripMargin,
-      StandardCharsets.UTF_8
-    )
-  }
+  )
 
   "The deployment requesting endpoint" - {
     "With validationPattern configured in deploymentCommentSettings" - {
@@ -132,8 +119,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
               waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatusName.finishedStatusName)
             }
             .verifyExternalState {
-              val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
-              FileUtils.readLines(resultFile, StandardCharsets.UTF_8).asScala.toSet shouldBe Set(
+              readLinesFromLoneOutputTransactionsSummaryPartition("date=2024-01-01").toSet shouldBe Set(
                 "client1,4",
                 "client2,2"
               )

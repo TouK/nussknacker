@@ -4,7 +4,6 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
@@ -19,12 +18,9 @@ import pl.touk.nussknacker.test.{
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -40,28 +36,20 @@ class DeploymentApiHttpServiceBusinessSpec
     with Matchers
     with LoneElement {
 
-  override protected def populateInputTransactionsDirectory(rootDirectory: Path): Unit = {
-    val firstPartition = rootDirectory.resolve("date=2024-01-01")
-    firstPartition.toFile.mkdir()
-    FileUtils.write(
-      firstPartition.resolve("transaction-1.csv").toFile,
+  override protected def inputTransactionsFiles: Map[String, String] = Map(
+    // first partition
+    "date=2024-01-01/transaction-1.csv" ->
       """"2024-01-01 10:00:00",client1,1.11
         |"2024-01-01 10:01:00",client2,2.22
         |"2024-01-01 10:02:00",client1,3.33
         |""".stripMargin,
-      StandardCharsets.UTF_8
-    )
-    val secondPartition = rootDirectory.resolve("date=2024-01-02")
-    secondPartition.toFile.mkdir()
-    FileUtils.write(
-      secondPartition.resolve("transaction-1.csv").toFile,
+    // second partition
+    "date=2024-01-02/transaction-1.csv" ->
       """"2024-01-02 10:00:00",client1,1.11
         |"2024-01-02 10:01:00",client2,2.22
         |"2024-01-02 10:02:00",client1,3.33
         |""".stripMargin,
-      StandardCharsets.UTF_8
-    )
-  }
+  )
 
   private val correctDeploymentRequest = s"""{
                                             |  "scenarioName": "$scenarioName",
@@ -89,8 +77,7 @@ class DeploymentApiHttpServiceBusinessSpec
               waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatusName.finishedStatusName)
             }
             .verifyExternalState {
-              val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
-              FileUtils.readLines(resultFile, StandardCharsets.UTF_8).asScala.toSet shouldBe Set(
+              readLinesFromLoneOutputTransactionsSummaryPartition("date=2024-01-01").toSet shouldBe Set(
                 "client1,4.44",
                 "client2,2.22"
               )

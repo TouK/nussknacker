@@ -7,6 +7,7 @@ import com.dimafeng.testcontainers.{Container, ForAllTestContainer, LazyContaine
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
+import org.apache.flink.util.FileUtils
 import org.scalatest.{BeforeAndAfterAll, OptionValues, Suite}
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -21,10 +22,16 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.flink.test.docker.{WithFlinkContainers, WithKafkaContainer}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.WithProcessingTypeConfig
+import pl.touk.nussknacker.engine.management.savepoint.FlinkSavepointLocator
+import pl.touk.nussknacker.engine.management.savepoint.FlinkSavepointLocator.LocalSavepoint
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
 
+import java.net.URI
+import java.nio.file.{Files, Path}
 import java.util.UUID
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.util.control.NonFatal
 
 trait FlinkKafkaDockerSpec
     extends BeforeAndAfterAll
@@ -45,6 +52,15 @@ trait FlinkKafkaDockerSpec
   override lazy val container: Container = MultipleContainers(
     (kafkaContainer: LazyContainer[_]) :: (if (useMiniClusterForDeployment) Nil else flinkContainers): _*
   )
+
+  private var savepointDirInitialized: Boolean = false
+
+  protected lazy val savepointDir: Path = {
+    savepointDirInitialized = true
+    val tempPath = Files.createTempDirectory(getClass.getSimpleName)
+    tempPath.toFile.deleteOnExit()
+    tempPath
+  }
 
   protected val kafkaComponentsConfigPrefix = "modelConfig.components.kafka.config"
 
@@ -68,7 +84,7 @@ trait FlinkKafkaDockerSpec
         .withValue("deploymentConfig.useMiniClusterForDeployment", fromAnyRef(true))
         .withValue(
           "deploymentConfig.miniCluster.config.\"execution.checkpointing.savepoint-dir\"",
-          fromAnyRef(savepointBind.hostPath.toFile.toURI.toString)
+          fromAnyRef(savepointDir.toFile.toURI.toString)
         )
         .withValue(
           KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
@@ -117,13 +133,21 @@ trait FlinkKafkaDockerSpec
   protected lazy val deploymentManager: DeploymentManager =
     FlinkDeploymentManagerProviderHelper.createDeploymentManager(
       ConfigWithUnresolvedVersion(rawProcessingTypeConfig),
-      deploymentManagerClassLoader
+      deploymentManagerClassLoader,
+      new JobManagerSavepointLocator
     )
 
   override def afterAll(): Unit = {
     releaseKafkaClient.unsafeRunSync()
     deploymentManager.close()
     releaseDeploymentManagerClassLoaderResources.unsafeRunSync()
+    if (savepointDirInitialized) {
+      try {
+        FileUtils.deleteDirectory(savepointDir.toFile)
+      } catch {
+        case NonFatal(e) => logger.warn(s"Failed to delete temp savepoint directory $savepointDir (${e.getMessage})")
+      }
+    }
     super.afterAll()
   }
 
@@ -186,6 +210,20 @@ trait FlinkKafkaDockerSpec
         throw new IllegalStateException("Job still exists")
       }
     }
+  }
+
+  private class JobManagerSavepointLocator extends FlinkSavepointLocator {
+
+    override def locateSavepoint(path: String): Future[FlinkSavepointLocator.Savepoint] = Future.successful {
+      val uri = URI.create(path)
+      if (uri.getScheme != "file") {
+        throw new IllegalArgumentException(s"Invalid savepoint path, expected file URI but got: $path")
+      }
+      val targetDir = savepointDir.resolve(uri.getPath.split("/").last)
+      copyDirectoryFromContainer(jobManagerContainer.container, uri.getPath, targetDir)
+      LocalSavepoint(targetDir.toUri.toURL.toString)
+    }
+
   }
 
 }
