@@ -17,10 +17,6 @@ trait SchemaRegistryClient {
 
   /**
     * Latest fresh schema by topic - it should be always fresh schema
-    *
-    * @param topic
-    * @param isKey
-    * @return
     */
   protected def getLatestFreshSchema(
       topic: UnspecializedTopicName,
@@ -53,9 +49,9 @@ trait SchemaRegistryClient {
 
 }
 
-object EmptySchemaRegistry extends SchemaRegistryClient {
+object EmptySchemaRegistry extends SchemaRegistryClientWithRegistration {
 
-  private val errorMessage = "There is no schema in empty schema registry";
+  private val errorMessage = "There is no schema in empty schema registry"
   private val error        = SchemaError(errorMessage)
 
   override def getSchemaById(id: SchemaId): SchemaWithMetadata = throw new IllegalStateException(errorMessage)
@@ -77,6 +73,9 @@ object EmptySchemaRegistry extends SchemaRegistryClient {
       topic: UnspecializedTopicName,
       isKey: Boolean
   ): Validated[SchemaRegistryError, List[Integer]] = Validated.Invalid(error)
+
+  override def registerSchema(topic: UnspecializedTopicName, isKey: Boolean, schema: ParsedSchema): SchemaId =
+    throw new IllegalStateException(errorMessage)
 
 }
 

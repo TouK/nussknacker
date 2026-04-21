@@ -20,9 +20,17 @@ class MockConfluentSchemaRegistryClientBuilder {
       schema: Schema,
       version: Int,
       isKey: Boolean
+  ): MockConfluentSchemaRegistryClientBuilder = registerWithId(topic, schema, version, isKey, AutoIncId)
+
+  def registerWithId(
+      topic: String,
+      schema: Schema,
+      version: Int,
+      isKey: Boolean,
+      schemaId: Int
   ): MockConfluentSchemaRegistryClientBuilder = {
     val avroSchema = ConfluentUtils.convertToAvroSchema(schema)
-    registry.append(RegistryItem(topic, avroSchema, version, isKey, AutoIncId))
+    registry.append(RegistryItem(topic, avroSchema, version, isKey, schemaId))
     this
   }
 
@@ -31,9 +39,17 @@ class MockConfluentSchemaRegistryClientBuilder {
       schema: JsonSchema,
       version: Int,
       isKey: Boolean
+  ): MockConfluentSchemaRegistryClientBuilder = registerWithId(topic, schema, version, isKey, AutoIncId)
+
+  def registerWithId(
+      topic: String,
+      schema: JsonSchema,
+      version: Int,
+      isKey: Boolean,
+      schemaId: Int
   ): MockConfluentSchemaRegistryClientBuilder = {
     val avroSchema = ConfluentUtils.convertToJsonSchema(schema)
-    registry.append(RegistryItem(topic, avroSchema, version, isKey, AutoIncId))
+    registry.append(RegistryItem(topic, avroSchema, version, isKey, schemaId))
     this
   }
 

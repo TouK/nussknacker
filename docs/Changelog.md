@@ -360,6 +360,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   Can be configured by implementing TypingConfigurationProvider and registering it as SPI.
   By default, the existing permissive behavior is preserved.
 * [#9286](https://github.com/TouK/nussknacker/pull/9286) Fixed handling of Avro records in Flink SQL component.
+* [#9322](https://github.com/TouK/nussknacker/pull/9322) Added mockable Azure Schema Registry client
 * [#9327](https://github.com/TouK/nussknacker/pull/9327) Remove bind mounts from Docker tests
 
 ## 1.18
