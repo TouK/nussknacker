@@ -16,6 +16,10 @@ trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { 
     "CONFIG_FORCE_pekko_management_http_hostname=127.0.0.1"
   )
 
+  protected val defaultEnvs: Array[String] = Array(
+    "PATH=" + System.getenv("PATH")
+  )
+
   protected def withProcessExecutedInBackground(
       shellScriptArgs: Array[String],
       shellScriptEnvs: Array[String],

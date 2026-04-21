@@ -19,7 +19,7 @@ class NuKafkaRuntimeBinTest
   test("should run scenario and pass data to output ") {
     val shellScriptArgs =
       Array(shellScriptPath.toString, fixture.scenarioFile.toString, NuRuntimeTestUtils.deploymentDataFile.toString)
-    val shellScriptEnvs = Array(
+    val shellScriptEnvs = defaultEnvs ++ Array(
       s"KAFKA_ADDRESS=$kafkaBoostrapServer",
       "KAFKA_AUTO_OFFSET_RESET=earliest",
       s"SCHEMA_REGISTRY_URL=$mappedSchemaRegistryAddress",

@@ -25,7 +25,7 @@ class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin
       NuRuntimeTestUtils.deploymentDataFile.toString
     )
     val port = AvailablePortFinder.findAvailablePorts(1).head
-    val shellScriptEnvs = Array(
+    val shellScriptEnvs = defaultEnvs ++ Array(
       "CONFIG_FORCE_http_interface=localhost",
       s"CONFIG_FORCE_http_port=$port",
     ) ++ pekkoManagementEnvs
