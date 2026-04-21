@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.sql.utils
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
-
-import scala.jdk.CollectionConverters._
 
 trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithHsqlDB {
 
@@ -14,16 +11,6 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
     username = hsqlConfigValues("username"),
     password = hsqlConfigValues("password")
   )
-
-  val dbEnricherConfig: Config = ConfigFactory
-    .load()
-    .withValue("name", ConfigValueFactory.fromAnyRef("db-enricher"))
-    .withValue(
-      "dbPool",
-      ConfigValueFactory.fromMap(
-        hsqlConfigValues.asJava
-      )
-    )
 
   override def beforeAll(): Unit = {
     service.open(LiteEngineRuntimeContextPreparer.noOp.prepare(jobData))
