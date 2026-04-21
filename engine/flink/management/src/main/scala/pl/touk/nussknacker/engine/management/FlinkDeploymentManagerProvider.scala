@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 import pl.touk.nussknacker.engine.management.jobrunner.{FlinkMiniClusterScenarioJobRunner, RemoteFlinkScenarioJobRunner}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
+import pl.touk.nussknacker.engine.management.savepoint.{FlinkSavepointLocator, IdentitySavepointLocator}
 
-import scala.collection.compat._
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration.FiniteDuration
@@ -41,10 +41,30 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager] = createDeploymentManager(
+    modelDataProvider,
+    dependencies,
+    deploymentConfig,
+    scenarioStateCacheTTL,
+    new IdentitySavepointLocator,
+  )
+
+  def createDeploymentManager(
+      modelDataProvider: BaseModelDataProvider,
+      dependencies: DeploymentManagerDependencies,
+      deploymentConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration],
+      savepointLocator: FlinkSavepointLocator,
   ): ValidatedNel[String, DeploymentManager] = {
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     FlinkDeploymentManagerProvider
-      .createDeploymentManager(modelDataProvider, dependencies, flinkConfig, scenarioStateCacheTTL)
+      .createDeploymentManager(
+        modelDataProvider,
+        dependencies,
+        flinkConfig,
+        scenarioStateCacheTTL,
+        savepointLocator,
+      )
       .toValidatedNel
   }
 
@@ -77,7 +97,8 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
       modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       flinkConfig: FlinkConfig,
-      scenarioStateCacheTTL: Option[FiniteDuration]
+      scenarioStateCacheTTL: Option[FiniteDuration],
+      savepointLocator: FlinkSavepointLocator,
   ): Validated[String, DeploymentManager] = {
     logger.info("Creating FlinkStreamingDeploymentManager")
     import dependencies._
@@ -112,6 +133,7 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
             miniClusterWithServices,
             client,
             jobRunner,
+            savepointLocator,
             liveDataPreviewSupport,
           )
         CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)

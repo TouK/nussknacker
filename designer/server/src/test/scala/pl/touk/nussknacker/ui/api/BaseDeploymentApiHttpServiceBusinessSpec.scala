@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.apache.commons.io.FileUtils
 import org.hamcrest.Matchers.{anyOf, equalTo}
 import org.scalatest.{LoneElement, Suite}
 import org.scalatest.concurrent.Eventually
@@ -11,6 +10,7 @@ import org.scalatest.concurrent.PatienceConfiguration.{Interval, Timeout}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import org.testcontainers.containers.BindMode
+import org.testcontainers.images.builder.Transferable
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -21,10 +21,12 @@ import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithFlinkContainersDeploymentManager
 }
-import pl.touk.nussknacker.test.containers.FileSystemBind
+import pl.touk.nussknacker.test.containers.ContainerVolume
 
-import java.io.File
-import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.util.UUID
+import scala.jdk.CollectionConverters._
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: NuItTest
@@ -70,49 +72,43 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     .fragment(scenarioName)
     .fragmentOutput("out", "out")
 
-  private lazy val inputDirectory = {
-    val directory =
-      createMountableTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions-", BindMode.READ_ONLY)
-    populateInputTransactionsDirectory(directory)
-    directory
-  }
+  protected def inputTransactionsFiles: Map[String, String]
 
-  protected def populateInputTransactionsDirectory(rootDirectory: Path): Unit
+  private val inputContainerPath  = "/transactions"
+  private val outputContainerPath = "/output/transactions_summary"
 
-  private lazy val outputDirectory =
-    createMountableTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-", BindMode.READ_WRITE)
+  private val volumeNameSuffix = s"${getClass.getSimpleName}-${UUID.randomUUID()}"
+  private val inputVolumeName  = s"nussknacker-test-transactions-$volumeNameSuffix"
+  private val outputVolumeName = s"nussknacker-test-transactions-summary-$volumeNameSuffix"
 
-  private lazy val inputTransactionsBind = FileSystemBind(
-    inputDirectory,
-    "/transactions",
-    BindMode.READ_ONLY
+  private val sharedVolumeMounts: List[ContainerVolume] = List(
+    ContainerVolume(inputVolumeName, inputContainerPath, BindMode.READ_WRITE),
+    ContainerVolume(outputVolumeName, outputContainerPath, BindMode.READ_WRITE)
   )
 
-  private lazy val outputTransactionsSummaryBind = FileSystemBind(
-    outputDirectory,
-    "/output/transactions_summary",
-    BindMode.READ_WRITE
-  )
+  override protected def jobManagerExtraVolumes: List[ContainerVolume]  = sharedVolumeMounts
+  override protected def taskManagerExtraVolumes: List[ContainerVolume] = sharedVolumeMounts
 
-  override protected def jobManagerExtraFSBinds: List[FileSystemBind] =
-    List(
-      // input must be also available on the JM side to allow their to split work into multiple subtasks
-      inputTransactionsBind,
-      // output directory has to be available on JM to allow writing the final output file and deleting the temp files
-      outputTransactionsSummaryBind
-    )
-
-  override protected def taskManagerExtraFSBinds: List[FileSystemBind] = {
-    List(
-      inputTransactionsBind,
-      outputTransactionsSummaryBind
-    )
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    seedInputTransactionsFiles()
   }
 
-  override protected def afterAll(): Unit = {
-    FileUtils.deleteQuietly(inputDirectory.toFile)
-    FileUtils.deleteQuietly(outputDirectory.toFile) // it might not work because docker user can has other uid
-    super.afterAll()
+  private def seedInputTransactionsFiles(): Unit = {
+    inputTransactionsFiles.foreach { case (relativePath, content) =>
+      val targetPath  = s"$inputContainerPath/$relativePath"
+      val parentPath  = targetPath.substring(0, targetPath.lastIndexOf('/'))
+      val mkdirResult = jobManagerContainer.container.execInContainer("mkdir", "-p", parentPath)
+      if (mkdirResult.getExitCode != 0) {
+        throw new IllegalStateException(
+          s"Failed to create directory $parentPath in JobManager container: ${mkdirResult.getStderr}"
+        )
+      }
+      jobManagerContainer.container.copyFileToContainer(
+        Transferable.of(content.getBytes(StandardCharsets.UTF_8)),
+        targetPath
+      )
+    }
   }
 
   protected def waitForDeploymentStatusNameMatches(
@@ -140,15 +136,31 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
       .body("name", anyOf(expectedStatusNames.map(statusName => equalTo[String](statusName.value)): _*))
   }
 
-  protected def getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName(
-      expectedLonePartitionName: String
-  ): File = {
-    val transactionSummaryDirectories = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
-    val matchingPartitionDirectory    = transactionSummaryDirectories.loneElement
-    matchingPartitionDirectory.getName shouldEqual expectedLonePartitionName
+  protected def readLinesFromLoneOutputTransactionsSummaryPartition(expectedLonePartitionName: String): List[String] = {
+    val partitionName = listJobManagerFiles(outputContainerPath).loneElement
+    partitionName shouldEqual expectedLonePartitionName
 
-    val partitionFiles = Option(matchingPartitionDirectory.listFiles(!_.isHidden)).toList.flatten
-    partitionFiles.loneElement
+    val partitionPath     = s"$outputContainerPath/$partitionName"
+    val fileName          = listJobManagerFiles(partitionPath).loneElement
+    val containerFilePath = s"$partitionPath/$fileName"
+
+    val localTempFile = Files.createTempFile(s"nussknacker-${getClass.getSimpleName}-output-", ".csv")
+    try {
+      jobManagerContainer.container.copyFileFromContainer(containerFilePath, localTempFile.toString)
+      Files.readAllLines(localTempFile, StandardCharsets.UTF_8).asScala.toList
+    } finally {
+      Files.deleteIfExists(localTempFile)
+    }
+  }
+
+  protected def listJobManagerFiles(containerPath: String): List[String] = {
+    val result = jobManagerContainer.container.execInContainer("ls", "-A1", containerPath)
+    if (result.getExitCode != 0) {
+      throw new IllegalStateException(
+        s"Failed to list $containerPath in JobManager container: ${result.getStderr}"
+      )
+    }
+    result.getStdout.split("\n").iterator.map(_.trim).filter(_.nonEmpty).toList
   }
 
 }
