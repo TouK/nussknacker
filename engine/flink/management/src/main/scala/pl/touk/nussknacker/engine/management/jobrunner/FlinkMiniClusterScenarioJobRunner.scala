@@ -44,7 +44,7 @@ class FlinkMiniClusterScenarioJobRunner(
         val jobID = jobInvoker
           .invokeStaticMethod(
             modelDataProvider.getCurrentModelData(),
-            command.canonicalProcess.withoutUnsafeFields,
+            command.canonicalProcess,
             command.processVersion,
             command.deploymentData,
             env,
