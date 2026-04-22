@@ -189,7 +189,7 @@ class ScenarioDeploymentReconciler(
             scenario.processingType -> DMRunDeploymentCommand(
               scenario.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
               deploymentData,
-              resolvedScenario.withoutUnsafeFields,
+              resolvedScenario,
               // This strategy has no sense in our case, see notice next to DeploymentUpdateStrategy
               DeploymentUpdateStrategy
                 .ReplaceDeploymentWithSameScenarioName(RestoreStateFromReplacedJobSavepoint)

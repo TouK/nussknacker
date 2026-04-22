@@ -272,7 +272,7 @@ class DeploymentService(
         DMRunDeploymentCommand(
           runtimeVersionData,
           deploymentData,
-          scenarioGraphVersion.jsonUnsafe.withoutUnsafeFields,
+          scenarioGraphVersion.jsonUnsafe,
           deploymentUpdateStrategy
         )
       )

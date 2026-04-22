@@ -37,13 +37,29 @@ case class DMValidateScenarioCommand(
   * We assume that validate was already called and was successful, currently savepointPath is flink specific, but we could
   * leverage this concept also for other engines
   */
-case class DMRunDeploymentCommand(
+case class DMRunDeploymentCommand private (
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     canonicalProcess: CanonicalProcess,
     // TODO: job update strategy should be a part of deployment service logic, instead of DeploymentManager's
     updateStrategy: DeploymentUpdateStrategy
 ) extends DMScenarioCommand[Option[ExternalDeploymentId]]
+
+object DMRunDeploymentCommand {
+
+  // `_unsafe_*` fields are frontend-only metadata (layout, UX, render hints) that must be persisted
+  // in the saved scenario but never leak into the Flink/Lite job graph. Stripping them here — at the
+  // single boundary where we build the command — keeps every DeploymentManager honest without
+  // per-engine plumbing.
+  def apply(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess,
+      updateStrategy: DeploymentUpdateStrategy
+  ): DMRunDeploymentCommand =
+    new DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess.withoutUnsafeFields, updateStrategy)
+
+}
 
 case class DMCancelDeploymentCommand(scenarioName: ProcessName, deploymentId: DeploymentId, user: User)
     extends DMScenarioCommand[Unit]
