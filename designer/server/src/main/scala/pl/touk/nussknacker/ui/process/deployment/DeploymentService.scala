@@ -240,7 +240,7 @@ class DeploymentService(
       dmCommand = DMRunDeploymentCommand(
         scenarioDetails.toEngineProcessVersion,
         deploymentData,
-        resolvedCanonicalScenario.withoutUnsafeFields,
+        resolvedCanonicalScenario,
         updateStrategy
       )
     } yield dmCommand
