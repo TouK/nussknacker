@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.test.testcase.EnricherMock
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.testcase.EnricherMockValidationError
-import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator.NodeTyping
+import pl.touk.nussknacker.ui.process.test.testcase
 
 private class EnricherMockValidator(
     expressionCompiler: ExpressionCompiler,
@@ -27,7 +27,7 @@ private class EnricherMockValidator(
   def validateForNode(
       nodeData: NodeData,
       enricherMock: Option[EnricherMock],
-      nodeTyping: NodeTyping,
+      nodeTyping: testcase.NodeTyping,
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Option[NonEmptyList[EnricherMockValidationError]] = {
@@ -47,7 +47,7 @@ private class EnricherMockValidator(
   private def validateEnricherMockType(
       enricher: Enricher,
       mockExpression: Expression,
-      nodeTyping: NodeTyping,
+      nodeTyping: testcase.NodeTyping,
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[EnricherMockValidationError, Unit] = {
@@ -63,11 +63,11 @@ private class EnricherMockValidator(
 
   private def determineEnricherOutputVariableType(
       enricher: Enricher,
-      outputVariableTypes: Map[String, TypingResult],
+      outputVariableTypes: Option[Map[String, TypingResult]],
   ): ValidatedNel[EnricherMockValidationError, TypingResult] = {
     Validated
       .fromOption(
-        outputVariableTypes.get(enricher.output),
+        outputVariableTypes.flatMap(_.get(enricher.output)),
         errors.missingEnricherOutputVariable(enricher)
       )
       .toValidatedNel

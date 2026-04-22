@@ -51,8 +51,8 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.test.{testcase, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
 import pl.touk.nussknacker.ui.process.test.testcase.{EnricherMockGenerator, TestCaseVariables}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -167,10 +167,11 @@ class NodesApiHttpService(
     nodesApiEndpoints.testCaseAdditionalVariablesEndpoint
       .serverSecurityLogic(authorizeKnownUser[NodesError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (processingType, request) =>
+        { case (scenarioName, request) =>
           for {
-            modelData <- getModelData(processingType)
-            variableTypes <- EitherT
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            modelData           <- getModelData(scenarioWithDetails.processingType)
+            inputVariableTypes <- EitherT
               .fromEither[Future](
                 decodeVariableTypes(
                   request.variableTypes,
@@ -178,7 +179,14 @@ class NodesApiHttpService(
                 )
               )
               .leftMap[NodesError](identity)
-            additionalVariables = prepareTestCaseAdditionalVariables(variableTypes)
+            nodeValidator  = processingTypeToNodeValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+            processVersion = scenarioWithDetails.processVersionUnsafe
+            jobData        = JobData(request.scenarioProperties.toMetaData(processVersion.processName), processVersion)
+            outputVariableTypes = nodeValidator
+              .getOutputVariableTypes(inputVariableTypes, request.nodeData, jobData)
+            additionalVariables = prepareTestCaseAdditionalVariables(
+              testcase.NodeTyping(inputVariableTypes, outputVariableTypes)
+            )
           } yield additionalVariables
         }
       }
@@ -389,10 +397,10 @@ class NodesApiHttpService(
   }
 
   private def prepareTestCaseAdditionalVariables(
-      variableTypes: Map[String, TypingResult]
+      nodeTyping: testcase.NodeTyping
   ): TestCaseAdditionalVariablesResponseDto =
     TestCaseAdditionalVariablesResponseDto(
-      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
+      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(nodeTyping)
     )
 
   private def parametersValidationRequestFromDto(

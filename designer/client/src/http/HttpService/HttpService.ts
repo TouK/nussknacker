@@ -702,11 +702,11 @@ export class HttpService {
     }
 
     fetchTestCaseNodeAdditionalVariables(
-        processingType: string,
+        scenarioName: string,
         request: TestCaseNodeAdditionalVariablesRequest,
     ): Promise<TestCaseNodeAdditionalVariablesResponse | null> {
         return api
-            .post(`/parameters/${encodeURIComponent(processingType)}/testCase/additionalVariables`, request)
+            .post(`/nodes/${encodeURIComponent(scenarioName)}/testCase/additionalVariables`, request)
             .then((res) => res.data)
             .catch((error) => {
                 this.#addError(

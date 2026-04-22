@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   WrongParameters
 }
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
   EngineScenarioCompilationDependencies,
   Parameter,
@@ -457,6 +458,26 @@ class GenericTransformationValidationSpec
     )
 
     result.result shouldBe Validated.invalidNel(WrongParameters(Set.empty, Set.empty)(NodeId("generic")))
+  }
+
+  test("should produce empty output validation context for dynamic sink") {
+    val result = validate(
+      processBase
+        .buildSimpleVariable("var1", "someVar", "'value'".spel)
+        .emptySink("sink1", "genericParametersSink")
+    )
+
+    result.typing("sink1").outputValidationContext shouldBe Some(ValidationContext.empty)
+  }
+
+  test("should produce empty output validation context for static sink") {
+    val result = validate(
+      processBase
+        .buildSimpleVariable("var1", "someVar", "'value'".spel)
+        .emptySink("sink1", "dummySink")
+    )
+
+    result.typing("sink1").outputValidationContext shouldBe Some(ValidationContext.empty)
   }
 
 }

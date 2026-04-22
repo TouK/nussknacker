@@ -4,7 +4,6 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.test.testcase.{TestCase, TestCaseName}
@@ -22,6 +21,7 @@ import pl.touk.nussknacker.restmodel.validation.testcase.{
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.config.TestCasesSettings
+import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionsCompiler
 
 class TestCaseValidator(
@@ -73,7 +73,7 @@ class TestCaseValidator(
 
   def validateScenarioTestCases(
       nodes: List[NodeData],
-      nodesTyping: Map[String, TestCaseValidator.NodeTyping],
+      nodesTyping: Map[String, testcase.NodeTyping],
       testCases: List[TestCase],
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ValidationResult = {
     val testCasesValidationErrors = validateScenarioTestCasesByNode(nodes, nodesTyping, testCases)
@@ -84,13 +84,13 @@ class TestCaseValidator(
 
   private def validateScenarioTestCasesByNode(
       nodes: List[NodeData],
-      nodesTyping: Map[String, TestCaseValidator.NodeTyping],
+      nodesTyping: Map[String, testcase.NodeTyping],
       testCases: List[TestCase]
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ScenarioTestCasesValidationErrors = {
     val nodesById = nodes.map(n => n.id -> n).toMap
     val testCasesErrorsByNode = nodesById.flatMap { case (nodeId, node) =>
       val nodeTestCases = prepareNodeTestCases(testCases, nodeId)
-      val nodeTyping    = nodesTyping.getOrElse(nodeId.value, NodeTyping.empty)
+      val nodeTyping    = nodesTyping.getOrElse(nodeId.value, testcase.NodeTyping.empty)
       val errors        = validateNodeTestCases(node, nodeTestCases, nodeTyping)
       if (errors.isEmpty) None else Some(nodeId -> errors)
     }
@@ -112,7 +112,7 @@ class TestCaseValidator(
   def validateNodeTestCases(
       nodeData: NodeData,
       nodeTestCases: NodeTestCases,
-      nodeTyping: NodeTyping
+      nodeTyping: testcase.NodeTyping
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): NodeTestCasesValidationErrors = {
     nodeTestCases.flatMap { case (testCaseName, nodeTestCase) =>
       validateSingleNodeTestCase(
@@ -129,7 +129,7 @@ class TestCaseValidator(
   private def validateSingleNodeTestCase(
       nodeData: NodeData,
       nodeTestCase: NodeTestCase,
-      nodeTyping: NodeTyping
+      nodeTyping: testcase.NodeTyping
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Either[NodeTestCaseValidationErrors, Unit] = {
@@ -140,7 +140,7 @@ class TestCaseValidator(
     )
     val assertionsErrors = assertionValidator.validateForNode(
       nodeTestCase.assertions,
-      nodeTyping.inputVariables,
+      nodeTyping,
       scenarioCompilationDependencies.jobData
     )(nodeData.id, nodeData.name)
 
@@ -156,15 +156,6 @@ class TestCaseValidator(
 object TestCaseValidator {
 
   val MaxTestCaseNameLength = 100
-
-  final case class NodeTyping(
-      inputVariables: Map[String, TypingResult],
-      outputVariables: Map[String, TypingResult],
-  )
-
-  object NodeTyping {
-    val empty = NodeTyping(Map.empty, Map.empty)
-  }
 
   def apply(modelData: ModelData, testCasesSettings: TestCasesSettings): TestCaseValidator = {
     val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper

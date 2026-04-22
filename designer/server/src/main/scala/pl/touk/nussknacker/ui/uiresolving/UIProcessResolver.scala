@@ -11,6 +11,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.validation.UIProcessValidator.ValidationResultWithDetails
 
 /**
   * This class handles resolving of expression (e.g. dict labels resolved to keys) which should be done before
@@ -51,6 +52,16 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       implicit loggedUser: LoggedUser
   ): ValidationResult = {
     beforeUiResolvingValidator.validate(scenarioGraph, processName, isFragment, labels)
+  }
+
+  def validateBeforeUiResolvingWithDetails(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(
+      implicit loggedUser: LoggedUser
+  ): ValidationResultWithDetails = {
+    beforeUiResolvingValidator.validateWithDetails(scenarioGraph, processVersion, isFragment)
   }
 
   def resolveExpressions(

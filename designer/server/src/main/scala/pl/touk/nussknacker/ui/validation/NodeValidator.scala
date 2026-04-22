@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
@@ -13,12 +14,14 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationPerformed
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.testcase.NodeTestCasesValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -91,11 +94,37 @@ class NodeValidator(
       testCasesValidator.validateNodeTestCases(
         validationRequest.nodeData,
         _,
-        TestCaseValidator.NodeTyping(
+        testcase.NodeTyping(
           inputVariables = validationRequest.variableTypes,
-          outputVariables = outputValidationContext.map(_.localVariables).getOrElse(Map.empty)
+          outputVariables = outputValidationContext.map(_.localVariables)
         )
       )
     )
+
+  def getOutputVariableTypes(
+      inputVariableTypes: Map[String, TypingResult],
+      nodeData: NodeData,
+      jobData: JobData
+  ): Option[Map[String, TypingResult]] = {
+    engineScenarioCompilationDependenciesResource
+      .use { engineScenarioCompilationDependencies =>
+        SyncIO {
+          implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+            new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+          new NodeDataValidator(modelData).validate(
+            nodeData,
+            inputVariableTypes,
+            branchVariableTypes = None,
+            outgoingEdges = Nil,
+            fragmentResolver = FragmentResolver(_ => None)
+          ) match {
+            case ValidationPerformed(_, _, _, outputValidationContext) =>
+              outputValidationContext.map(_.localVariables)
+            case ValidationNotPerformed => None
+          }
+        }
+      }
+      .unsafeRunSync()
+  }
 
 }

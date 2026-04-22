@@ -1507,7 +1507,7 @@ class ProcessesResourcesSpec
         NodeId("someEnricher") -> EnricherMock("'b'".spel)
       ),
       assertions = Map(
-        NodeId("endsuffix") -> List(
+        NodeId("end") -> List(
           PredicateAssertion(
             testcase.Assertion.AssertionOperator.Equals,
             "'ala'".spel,
