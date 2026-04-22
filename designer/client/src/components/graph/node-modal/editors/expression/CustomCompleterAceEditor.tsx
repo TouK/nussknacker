@@ -1,10 +1,9 @@
 import { cx } from "@emotion/css";
 import { Box, Fade, LinearProgress, styled } from "@mui/material";
-import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
-import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
-import { useDebouncedValue, useMergeRefs, usePreviousImmediate } from "rooks";
+import { useMergeRefs } from "rooks";
 
 import { useUserSettings } from "../../../../../common/useUserSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
@@ -17,6 +16,8 @@ import type { AceWrapperInputProps } from "./AceWrapper";
 import type { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import type { ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
+import { useCompletionsVisible } from "./useCompletionsVisible";
+import { useValidationErrorVisibility } from "./useValidationErrorVisibility";
 
 type InputProps = AceWrapperInputProps & {
     language: ExpressionLang | string;
@@ -38,13 +39,6 @@ export type CustomCompleterAceEditorProps = {
     className?: string;
     enableLiveAutocompletion?: boolean;
 };
-
-function getCompletionsActivated(editorRef: React.MutableRefObject<ReactAce | undefined>) {
-    const completer = editorRef.current?.editor.completer;
-    if (!completer) return false;
-
-    return Boolean(completer.activated && completer.getPopup?.()?.isOpen);
-}
 
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): React.JSX.Element {
     const {
@@ -68,9 +62,11 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
 
     const [showLines] = useUserSettings(`editor.${props.inputProps.language}.showLines`);
 
-    const [completionsVisible, setCompletionsVisible] = useState(false);
-
-    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
+    const completionsVisible = useCompletionsVisible({
+        editorRef,
+        isLoading,
+        onInternalValueChange: setInternalValue,
+    });
 
     useEffect(
         function updateValueWhenCompletionsClosed() {
@@ -81,42 +77,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         [internalValue, completionsVisible, onValueChange, props.inputProps?.readOnly],
     );
 
-    const previousLoadingState = usePreviousImmediate(isLoading);
-
-    useEffect(() => {
-        const completionsPopupIsVisible = previousLoadingState && !isLoading;
-
-        if (completionsPopupIsVisible) {
-            setTimeout(() => setCompletionsVisible(getCompletionsActivated(editorRef)), 0);
-        }
-    }, [isLoading, previousLoadingState]);
-
-    useEffect(() => {
-        const editor = editorRef.current?.editor;
-        if (!editor) return;
-        if (!completionsVisible) return;
-        const updateCompletionsVisible = (callback?: () => void) => {
-            setTimeout(() => {
-                setCompletionsVisible(getCompletionsActivated(editorRef));
-                callback?.();
-            }, 0);
-        };
-        const onBlur = () => {
-            updateCompletionsVisible(() => {
-                setInternalValue(editor.getValue());
-            });
-        };
-        const onChange = () => updateCompletionsVisible();
-
-        editor.on("keyboardActivity" as any, updateCompletionsVisible);
-        editor.on("change", onChange);
-        editor.on("blur", onBlur);
-        return () => {
-            editor.off("keyboardActivity" as any, updateCompletionsVisible);
-            editor.off("change", onChange);
-            editor.off("blur", onBlur);
-        };
-    }, [completionsVisible]);
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
     useEffect(() => {
         if (!editorFocused) {
@@ -124,29 +85,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         }
     }, [editorFocused, value]);
 
-    // When popup opens, hide errors and wait for a completed validation cycle (true→false transition)
-    // before showing them again. This prevents stale errors from flashing after suggestion selection.
-    // Outside of popup interactions, old errors stay visible while re-validating (no blink).
-    const [waitingForFreshValidation, setWaitingForFreshValidation] = useState(false);
-    useEffect(() => {
-        if (completionsVisible) {
-            setWaitingForFreshValidation(true);
-        }
-    }, [completionsVisible]);
-
-    const prevIsValidating = usePreviousImmediate(isValidating);
-    useEffect(() => {
-        if (prevIsValidating && !isValidating && !completionsVisible) {
-            setWaitingForFreshValidation(false);
-        }
-    }, [completionsVisible, isValidating, prevIsValidating]);
-
-    const validationErrorVisible = useMemo(
-        () => showValidation && !isEmpty(fieldErrors) && !completionsVisible && !waitingForFreshValidation,
-        [completionsVisible, fieldErrors, showValidation, waitingForFreshValidation],
-    );
-
-    const [debouncedVisible] = useDebouncedValue(validationErrorVisible, 100);
+    const validationErrorVisible = useValidationErrorVisibility({ fieldErrors, showValidation, completionsVisible, isValidating });
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -154,7 +93,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                 <Box
                     className={cx([
                         rowAceEditor,
-                        debouncedVisible && nodeInputWithError,
+                        validationErrorVisible && nodeInputWithError,
                         isMarked && "marked",
                         editorFocused && "focused",
                         inputProps.readOnly && "read-only",
@@ -193,7 +132,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     <LoadingFeedback color="warning" inflate={0.25} />
                 </Fade>
             </Box>
-            {debouncedVisible && !hasRangeText ? (
+            {validationErrorVisible && !hasRangeText ? (
                 <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />
             ) : null}
         </Box>
