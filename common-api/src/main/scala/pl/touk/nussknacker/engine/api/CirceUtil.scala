@@ -127,8 +127,13 @@ object CirceUtil {
         .flatMap(k => c.downField(k).as[Json].toOption.map(k -> _))
         .toMap
 
+    // Only entries whose key already starts with [[Prefix]] are merged in — keeps a stray entry in
+    // the map (e.g. `"description" -> ...`) from clobbering a real top-level field during encode.
     def merge(base: JsonObject, unsafeFields: Map[String, Json]): JsonObject =
-      unsafeFields.foldLeft(base) { case (obj, (k, v)) => obj.add(k, v) }
+      unsafeFields.foldLeft(base) {
+        case (obj, (k, v)) if k.startsWith(Prefix) => obj.add(k, v)
+        case (obj, _)                              => obj
+      }
 
     // Recursively removes every object key starting with [[Prefix]] from the JSON tree — used to
     // keep the extension data local (e.g. scrubbed before the scenario is handed off to Flink).

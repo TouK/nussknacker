@@ -245,6 +245,17 @@ class ProcessMarshallerSpec
     nodeFields.asJson.as[UserDefinedAdditionalNodeFields].toOption.value shouldBe nodeFields
   }
 
+  it should "refuse to let a non-prefixed key in unsafeFields clobber a real top-level field on encode" in {
+    val fields = ProcessAdditionalFields(
+      description = Some("real description"),
+      properties = Map.empty,
+      metaDataType = StreamMetaData.typeName,
+      unsafeFields = Map("description" -> Json.fromString("hijacked"))
+    )
+    val encoded = fields.asJson
+    encoded.hcursor.get[Option[String]]("description").toOption.value shouldBe Some("real description")
+  }
+
   it should "drop non-prefixed extra fields on process and node additional fields" in {
     val processJson = io.circe.parser
       .parse("""{
