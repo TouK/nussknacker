@@ -124,9 +124,26 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         }
     }, [editorFocused, value]);
 
+    // When popup opens, hide errors and wait for a completed validation cycle (true→false transition)
+    // before showing them again. This prevents stale errors from flashing after suggestion selection.
+    // Outside of popup interactions, old errors stay visible while re-validating (no blink).
+    const [waitingForFreshValidation, setWaitingForFreshValidation] = useState(false);
+    useEffect(() => {
+        if (completionsVisible) {
+            setWaitingForFreshValidation(true);
+        }
+    }, [completionsVisible]);
+
+    const prevIsValidating = usePreviousImmediate(isValidating);
+    useEffect(() => {
+        if (prevIsValidating && !isValidating && !completionsVisible) {
+            setWaitingForFreshValidation(false);
+        }
+    }, [completionsVisible, isValidating, prevIsValidating]);
+
     const validationErrorVisible = useMemo(
-        () => showValidation && !isEmpty(fieldErrors) && !isValidating && !completionsVisible,
-        [completionsVisible, fieldErrors, isValidating, showValidation],
+        () => showValidation && !isEmpty(fieldErrors) && !completionsVisible && !waitingForFreshValidation,
+        [completionsVisible, fieldErrors, showValidation, waitingForFreshValidation],
     );
 
     const [debouncedVisible] = useDebouncedValue(validationErrorVisible, 100);
