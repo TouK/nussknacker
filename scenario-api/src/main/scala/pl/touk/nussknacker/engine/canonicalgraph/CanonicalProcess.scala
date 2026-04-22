@@ -109,9 +109,9 @@ case class CanonicalProcess(
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
 
-  // Strips `_unsafe_*` extension fields from metadata and every node's additionalFields. We use a
-  // JSON round-trip because there is no common `additionalFields` setter across the node ADT;
-  // walking the JSON keeps us future-proof against new node types.
+  // Strips `_unsafe_*` extension fields from metadata and every node's additionalFields via a
+  // JSON round-trip — deploy-time, not hot path, and structure-agnostic (no pattern match on the
+  // node ADT, future-proof against new node types).
   lazy val withoutUnsafeFields: CanonicalProcess =
     CanonicalProcess.canonicalProcessDecoder
       .decodeJson(CirceUtil.UnsafePrefixedFields.deepStrip(this.asJson))
