@@ -29,7 +29,10 @@ class K8sTestUtils(k8s: KubernetesClient)
     with ExtremelyPatientScalaFutures
     with LazyLogging {
 
-  val clusterHost: String = URI.create(k8s.clusterServer).getHost
+  val clusterHost: String = URI.create(k8s.clusterServer).getHost match {
+    case "0.0.0.0" => "localhost" // Kafka rejects 0.0.0.0 in advertised listeners
+    case other     => other
+  }
 
   val reverseProxyPodRemotePort = 8080
 
