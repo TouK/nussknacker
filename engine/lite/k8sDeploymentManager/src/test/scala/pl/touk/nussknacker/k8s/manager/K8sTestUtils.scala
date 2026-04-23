@@ -30,11 +30,11 @@ class K8sTestUtils(k8s: KubernetesClient)
     with LazyLogging {
 
   val clusterHost: String = URI.create(k8s.clusterServer).getHost match {
-    case "0.0.0.0" => "localhost" // Kafka rejects 0.0.0.0 in advertised listeners
+    case "0.0.0.0" => "localhost" // 0.0.0.0 is a bind address, not a routable host for test HTTP clients
     case other     => other
   }
 
-  val localPortForwardHost = "127.0.0.1"
+  val portForwardHost = "127.0.0.1"
 
   val reverseProxyPodRemotePort = 8080
 
@@ -85,7 +85,7 @@ class K8sTestUtils(k8s: KubernetesClient)
     ensureRunningStatus(obj)
 
     val localPort = AvailablePortFinder.findAvailablePorts(1).head
-    Using.resource(new K8sPortForwarder(obj, remotePort, localPortForwardHost, localPort).start()) { _ =>
+    Using.resource(new K8sPortForwarder(obj, remotePort, portForwardHost, localPort).start()) { _ =>
       action(localPort)
     }
   }
