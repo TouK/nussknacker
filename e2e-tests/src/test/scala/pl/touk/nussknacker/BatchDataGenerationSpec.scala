@@ -30,7 +30,6 @@ class BatchDataGenerationSpec
     .emptySink("end", "dead-end")
 
   private val simpleBatchTableScenarioLiveMode = simpleBatchTableScenario("live-test-mode-table")
-  private val designerServiceUrl               = "http://localhost:8080"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
