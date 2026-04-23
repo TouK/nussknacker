@@ -3,12 +3,14 @@ package pl.touk.nussknacker.engine.kafka.validator
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.dimafeng.testcontainers.{ForAllTestContainer, KafkaContainer}
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.test.containers.WithDockerContainers
+import pl.touk.nussknacker.test.containers.kafka.WithKafkaContainer
 
 import java.util.{Collections, UUID}
 import java.util.concurrent.TimeUnit
@@ -118,17 +120,17 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
 abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Boolean)
     extends AnyFunSuite
     with ForAllTestContainer
-    with Matchers {
+    with WithDockerContainers
+    with WithKafkaContainer
+    with Matchers
+    with LazyLogging {
 
-  override val container: KafkaContainer =
-    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.2")).configure { self =>
-      // can segfault on startup, we need retries - https://issues.apache.org/jira/browse/KAFKA-20314
-      self.withStartupAttempts(3)
-      self.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", kafkaAutoCreateEnabled.toString.toLowerCase)
-    }
+  override protected val kafkaAutoCreateTopics: Boolean = kafkaAutoCreateEnabled
+
+  override val container: KafkaContainer = kafkaContainer
 
   lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
-    kafkaProperties = Map("bootstrap.servers" -> container.bootstrapServers),
+    kafkaProperties = Map("bootstrap.servers" -> kafkaContainer.bootstrapServers),
     kafkaEspProperties = None,
     consumerGroupNamingStrategy = None,
     // longer timeout, as container might need some time to make initial assignments etc.

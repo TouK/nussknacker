@@ -20,7 +20,7 @@ trait WithFlinkContainers extends WithDockerContainers with BeforeAndAfterAll { 
   protected def taskManagerExtraVolumes: List[ContainerVolume] = List.empty
 
   protected def jobManagerRestUrl =
-    s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"
+    s"http://${jobManagerContainer.host}:${jobManagerContainer.mappedPort(FlinkJobManagerRestPort)}"
 
   protected def flinkContainers: List[LazyContainer[GenericContainer]] = List(jobManagerContainer, taskManagerContainer)
 

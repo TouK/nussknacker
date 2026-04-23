@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.test.docker
+package pl.touk.nussknacker.test.containers.kafka
 
 import com.dimafeng.testcontainers.GenericContainer
 import org.scalatest.Suite
@@ -6,7 +6,7 @@ import pl.touk.nussknacker.test.containers.WithDockerContainers
 
 import java.util.Arrays.asList
 
-trait WithSchemaRegistryContainer { self: Suite with WithDockerContainers with WithKafkaContainer =>
+trait WithSchemaRegistryContainer { self: Suite with WithDockerContainers =>
 
   private val schemaRegistryPort         = 8081
   private val schemaRegistryNetworkAlias = "schema-registry"
