@@ -39,13 +39,13 @@ object VolumeReaper extends LazyLogging {
   def removeVolumesQuietly(volumeNames: Seq[String], rmLogger: Logger = logger): Unit = this.synchronized {
     if (volumeNames.nonEmpty) {
       try {
-        val client              = DockerClientFactory.lazyClient()
+        val client              = DockerClientFactory.instance().client()
         val existingVolumes     = client.listVolumesCmd().exec().getVolumes.asScala.map(_.getName)
         val (toRemove, missing) = existingVolumes.partition(volumeNames.contains)
         missing.foreach(unregisterVolume)
         toRemove.foreach { volumeName =>
           try {
-            DockerClientFactory.lazyClient().removeVolumeCmd(volumeName).exec()
+            client.removeVolumeCmd(volumeName).exec()
             unregisterVolume(volumeName)
           } catch {
             case NonFatal(e) => rmLogger.warn(s"Failed to remove Docker volume $volumeName: ${e.getMessage}")

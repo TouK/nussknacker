@@ -9,7 +9,7 @@ import pl.touk.nussknacker.utils.BasicScenarioInformationFetching.ScenarioBasicI
 
 trait BasicScenarioInformationFetching extends WithE2EInstallationExampleRestAssuredUsersExtensions {
 
-  private val designerServiceUrl = "http://localhost:8080"
+  protected val designerServiceUrl: String
 
   protected def fetchScenariosBasicInformation(): List[ScenarioBasicInformation] = {
     val responseBodyString =

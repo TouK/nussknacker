@@ -18,8 +18,6 @@ class DetectLargeTransactionSpec
     with Matchers
     with VeryPatientScalaFutures {
 
-  private val designerServiceUrl = "http://localhost:8080"
-
   "Large transactions should be properly detected" in {
     val smallAmountTransactions = List(
       transactionJson(amount = 1),

@@ -3,6 +3,7 @@ package pl.touk.nussknacker
 import better.files._
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
+import org.testcontainers.DockerClientFactory
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.installationexample.{
   DockerBasedInstallationExampleClient,
@@ -19,6 +20,8 @@ trait BaseE2ESpec extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLog
 
   lazy val client: DockerBasedInstallationExampleClient =
     BaseE2ESpec.dockerBasedInstallationExampleNuEnvironmentSingleton.client
+
+  lazy val designerServiceUrl = s"http://${DockerClientFactory.instance().dockerHostIpAddress}:8080"
 
   override def beforeAll(): Unit = {
     client // initialize lazy client
