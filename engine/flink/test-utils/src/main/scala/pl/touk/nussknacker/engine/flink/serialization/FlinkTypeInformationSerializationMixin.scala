@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.serialization
 
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.configuration.{Configuration, PipelineOptions}
@@ -12,20 +13,20 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 trait FlinkTypeInformationSerializationMixin extends Matchers {
 
-  protected val executionConfigWithoutKryo: ExecutionConfig = new ExecutionConfig(
+  protected val serializerConfigWithoutKryo: SerializerConfig = new ExecutionConfig(
     new Configuration().set[java.lang.Boolean](PipelineOptions.GENERIC_TYPES, false)
-  )
+  ).getSerializerConfig
 
-  protected val executionConfigWithKryo: ExecutionConfig = new ExecutionConfig(
+  protected val serializerConfigWithKryo: SerializerConfig = new ExecutionConfig(
     new Configuration().set[java.lang.Boolean](PipelineOptions.GENERIC_TYPES, true)
-  )
+  ).getSerializerConfig
 
   protected def getSerializeRoundTrip[T](
       record: T,
       typeInfo: TypeInformation[T],
-      executionConfig: ExecutionConfig = executionConfigWithoutKryo
+      serializerConfig: SerializerConfig = serializerConfigWithoutKryo
   ): T = {
-    val serializer = typeInfo.createSerializer(executionConfig.getSerializerConfig)
+    val serializer = typeInfo.createSerializer(serializerConfig)
     getSerializeRoundTripWithSerializers(record, serializer, serializer)
   }
 
@@ -43,9 +44,9 @@ trait FlinkTypeInformationSerializationMixin extends Matchers {
   protected def serializeRoundTrip[T](
       record: T,
       typeInfo: TypeInformation[T],
-      executionConfig: ExecutionConfig = executionConfigWithoutKryo
+      serializerConfig: SerializerConfig = serializerConfigWithoutKryo
   )(expected: T = record): Assertion = {
-    getSerializeRoundTrip(record, typeInfo, executionConfig) shouldBe expected
+    getSerializeRoundTrip(record, typeInfo, serializerConfig) shouldBe expected
   }
 
   protected def serializeRoundTripWithSerializers[T](

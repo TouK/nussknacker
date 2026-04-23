@@ -29,8 +29,8 @@ class InputMetaDeserializationSpec extends AnyFunSuite with Matchers with FlinkT
       Map("one" -> "header value", "two" -> null).asJava,
       6
     )
-    serializeRoundTrip(givenObj, typeInformation, executionConfigWithoutKryo)()
-    serializeRoundTrip(givenObj, typeInformation, executionConfigWithKryo)()
+    serializeRoundTrip(givenObj, typeInformation, serializerConfigWithoutKryo)()
+    serializeRoundTrip(givenObj, typeInformation, serializerConfigWithKryo)()
   }
 
 }
