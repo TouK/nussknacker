@@ -15,6 +15,7 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 
+import java.net.URI
 import scala.collection.mutable
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,6 +28,8 @@ class K8sTestUtils(k8s: KubernetesClient)
     with OptionValues
     with ExtremelyPatientScalaFutures
     with LazyLogging {
+
+  val clusterHost: String = URI.create(k8s.clusterServer).getHost
 
   val reverseProxyPodRemotePort = 8080
 
@@ -77,7 +80,7 @@ class K8sTestUtils(k8s: KubernetesClient)
     ensureRunningStatus(obj)
 
     val localPort = AvailablePortFinder.findAvailablePorts(1).head
-    Using.resource(new K8sPortForwarder(obj, remotePort, localPort).start()) { _ =>
+    Using.resource(new K8sPortForwarder(obj, remotePort, localPort, clusterHost).start()) { _ =>
       action(localPort)
     }
   }

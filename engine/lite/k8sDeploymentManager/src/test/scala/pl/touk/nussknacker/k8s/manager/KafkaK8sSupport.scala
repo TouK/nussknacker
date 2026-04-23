@@ -37,7 +37,8 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
 
   private var kafkaPortForwarder: K8sPortForwarder = _
 
-  private val kafkaClient = new KafkaClient(s"localhost:$kafkaPodExposedPort", getClass.getSimpleName)
+  private val kafkaClient =
+    new KafkaClient(s"${k8sUtils.clusterHost}:$kafkaPodExposedPort", getClass.getSimpleName)
 
   def start()(implicit ec: ExecutionContext): Unit = if (k8s.getOption[Pod](kafkaPodName).futureValue.isEmpty) {
     val kafkaContainer = Container(
@@ -53,7 +54,7 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
         EnvVar("KAFKA_LISTENERS", s"BROKER://:9092,CONTROLLER://localhost:9093,LOCALHOST://:$kafkaPodExposedPort"),
         EnvVar(
           "KAFKA_ADVERTISED_LISTENERS",
-          s"BROKER://$kafkaServiceName:9092,CONTROLLER://localhost:9093,LOCALHOST://localhost:$kafkaPodExposedPort"
+          s"BROKER://$kafkaServiceName:9092,CONTROLLER://localhost:9093,LOCALHOST://${k8sUtils.clusterHost}:$kafkaPodExposedPort"
         ),
         EnvVar("KAFKA_CONTROLLER_LISTENER_NAMES", "CONTROLLER"),
         EnvVar("KAFKA_INTER_BROKER_LISTENER_NAME", "BROKER"),
@@ -127,7 +128,8 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
         throw e
     }
 
-    kafkaPortForwarder = new K8sPortForwarder(kafkaPod, kafkaPodExposedPort, kafkaPodExposedPort).start()
+    kafkaPortForwarder =
+      new K8sPortForwarder(kafkaPod, kafkaPodExposedPort, kafkaPodExposedPort, k8sUtils.clusterHost).start()
   }
 
   def stop()(implicit ec: ExecutionContext): Unit = {
