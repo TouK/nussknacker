@@ -30,7 +30,7 @@ trait BaseNuKafkaRuntimeDockerTest
 
   override protected val kafkaAutoCreateTopics: Boolean = false
 
-  protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(hostSchemaRegistryUrl, 10)
+  protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryContainer.url, 10)
 
   protected var fixture: NuKafkaRuntimeTestTestCaseFixture = _
 
@@ -42,10 +42,10 @@ trait BaseNuKafkaRuntimeDockerTest
       additionalEnvs: Map[String, String] = Map.empty
   ): Unit = {
     val kafkaEnvs = Map(
-      "KAFKA_ADDRESS"           -> containerKafkaAddress,
+      "KAFKA_ADDRESS"           -> kafkaContainer.bootstrapServersForContainers,
       "KAFKA_AUTO_OFFSET_RESET" -> "earliest",
       "KAFKA_ERROR_TOPIC"       -> fixture.errorTopic,
-      "SCHEMA_REGISTRY_URL"     -> containerSchemaRegistryUrl
+      "SCHEMA_REGISTRY_URL"     -> schemaRegistryContainer.urlForContainers
     )
     runtimeContainer = NuRuntimeDockerTestUtils.startRuntimeContainer(
       scenarioFile,

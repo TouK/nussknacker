@@ -60,7 +60,12 @@ class SchemedKafkaTestingApiHttpServiceSpec
     .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaProperties",
-      fromMap(Map("bootstrap.servers" -> hostKafkaAddress, "schema.registry.url" -> hostSchemaRegistryUrl).asJava)
+      fromMap(
+        Map(
+          "bootstrap.servers"   -> kafkaContainer.bootstrapServers,
+          "schema.registry.url" -> schemaRegistryContainer.url
+        ).asJava
+      )
     )
 
   private val sourceTopicName = "source-topic"
@@ -76,9 +81,9 @@ class SchemedKafkaTestingApiHttpServiceSpec
 
   private var sourceTopicAvroSchemaId: SchemaId = _
 
-  private lazy val schemaRegistryClient = new CachedSchemaRegistryClient(hostSchemaRegistryUrl, 10)
+  private lazy val schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryContainer.url, 10)
 
-  private lazy val kafkaClient = new KafkaClient(hostKafkaAddress, getClass.getSimpleName)
+  private lazy val kafkaClient = new KafkaClient(kafkaContainer.bootstrapServers, getClass.getSimpleName)
 
   override protected def beforeAll(): Unit = {
     kafkaClient.createTopic(sourceTopicName, partitions = 1)

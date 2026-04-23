@@ -59,7 +59,7 @@ class SchemalessKafkaJsonTypeTests
     with NuRestAssureExtensions {
 
   private lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
-    kafkaProperties = Map("bootstrap.servers" -> hostKafkaAddress),
+    kafkaProperties = Map("bootstrap.servers" -> kafkaContainer.bootstrapServers),
     kafkaEspProperties = None,
   )
 
@@ -526,7 +526,7 @@ class SchemalessKafkaJsonTypeTests
     .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaProperties",
-      fromMap(Map("bootstrap.servers" -> hostKafkaAddress).asJava)
+      fromMap(Map("bootstrap.servers" -> kafkaContainer.bootstrapServers).asJava)
     )
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",

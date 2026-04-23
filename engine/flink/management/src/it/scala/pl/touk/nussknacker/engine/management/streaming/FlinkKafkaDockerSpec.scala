@@ -80,7 +80,7 @@ trait FlinkKafkaDockerSpec
         ConfigValueFactory.fromAnyRef("false")
       )
     if (useMiniClusterForDeployment) {
-      logger.debug(s"Using Flink MiniCluster - setting Kafka's bootstrap.servers to $hostKafkaAddress")
+      logger.debug(s"Using Flink MiniCluster - setting Kafka's bootstrap.servers to ${kafkaContainer.bootstrapServers}")
       baseConfig
         .withValue("deploymentConfig.useMiniClusterForDeployment", fromAnyRef(true))
         .withValue(
@@ -89,20 +89,20 @@ trait FlinkKafkaDockerSpec
         )
         .withValue(
           KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
-          fromAnyRef(hostKafkaAddress)
+          fromAnyRef(kafkaContainer.bootstrapServers)
         )
     } else {
       logger.debug(
-        s"Using Flink from docker - setting restUrl to $jobManagerRestUrl and Kafka's bootstrap.servers to $containerKafkaAddress"
+        s"Using Flink from docker - setting restUrl to $jobManagerRestUrl and Kafka's bootstrap.servers to ${kafkaContainer.bootstrapServersForContainers}"
       )
       baseConfig
         .withValue("deploymentConfig.restUrl", fromAnyRef(jobManagerRestUrl))
         .withValue(
           KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
-          fromAnyRef(containerKafkaAddress)
+          fromAnyRef(kafkaContainer.bootstrapServersForContainers)
         )
         // We have to turn on this flag, because DM is created locally, and during scenario state verification,
-        // it can't connect to Kafka at containerKafkaAddress which is in docker network.
+        // it can't connect to Kafka at kafkaContainer.bootstrapServersForContainers which is in docker network.
         .withValue(
           s"$kafkaComponentsConfigPrefix.allowNotSuggestedTopicUsage",
           ConfigValueFactory.fromAnyRef("true")
@@ -117,7 +117,7 @@ trait FlinkKafkaDockerSpec
   protected lazy val (kafkaClient, releaseKafkaClient) =
     Resource
       .make(
-        acquire = IO(new KafkaClient(hostKafkaAddress, self.suiteName))
+        acquire = IO(new KafkaClient(kafkaContainer.bootstrapServers, self.suiteName))
           .map { client =>
             logger.info("Kafka client created")
             client
