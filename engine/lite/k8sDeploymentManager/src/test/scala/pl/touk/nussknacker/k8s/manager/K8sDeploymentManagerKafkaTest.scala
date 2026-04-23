@@ -355,10 +355,10 @@ class K8sDeploymentManagerKafkaTest
       val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
       pod.spec.get.containers.head.ports should contain theSameElementsAs List(Port(port, name = "prometheus"))
 
-      k8sTestUtils.withPortForwarded(pod, port) { localPort =>
+      k8sTestUtils.withPortForwarded(pod, port) { forwardedPort =>
         eventually {
           basicRequest
-            .get(uri"http://${k8sTestUtils.localPortForwardHost}:$localPort")
+            .get(uri"http://${k8sTestUtils.localPortForwardHost}:$forwardedPort")
             .send(backend)
             .futureValue
             .body
