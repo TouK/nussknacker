@@ -20,10 +20,9 @@ class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val 
     }
 
     val typeAndName = s"${fixedKind(resource)}/${resource.name}"
-    portForwardProcess =
-      new ProcessBuilder("kubectl", "port-forward", "--address", "0.0.0.0", typeAndName, s"$port:$resourcePort")
-        .directory(new File("/tmp"))
-        .start()
+    portForwardProcess = new ProcessBuilder("kubectl", "port-forward", typeAndName, s"$port:$resourcePort")
+      .directory(new File("/tmp"))
+      .start()
 
     try {
       val name              = s"port-forward($port)"
