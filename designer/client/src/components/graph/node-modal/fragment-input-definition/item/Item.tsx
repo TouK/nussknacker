@@ -25,13 +25,14 @@ type CommonItemProps = {
     readOnly?: boolean;
     onChange: (path: string, value: onChangeType) => void;
     errors: NodeValidationError[];
+    isValidating: boolean;
 };
 
 type ItemSettingsProps = CommonItemProps & {
     variableTypes: VariableTypes;
 };
 
-function ItemSettings({ index, item, namespace, variableTypes, readOnly, onChange, errors }: ItemSettingsProps) {
+function ItemSettings({ index, item, namespace, variableTypes, readOnly, onChange, errors, isValidating }: ItemSettingsProps) {
     const path = `${namespace}[${index}]`;
 
     return (
@@ -46,6 +47,7 @@ function ItemSettings({ index, item, namespace, variableTypes, readOnly, onChang
                 variableTypes={variableTypes}
                 readOnly={readOnly}
                 errors={errors}
+                isValidating={isValidating}
                 data-testid={`settings:${index}`}
             />
         </SettingsProvider>

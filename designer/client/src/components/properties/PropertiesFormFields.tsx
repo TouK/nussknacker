@@ -18,6 +18,7 @@ export const PropertiesFormFields = ({
     editedProperties,
     readOnly,
     pick,
+    isValidating,
 }: PropertiesFormFieldsProps) => {
     const { properties, order } = useAppSelector(getScenarioPropertiesConfig);
     return (
@@ -38,6 +39,7 @@ export const PropertiesFormFields = ({
                             errors={errors}
                             showSwitch={showSwitch}
                             readOnly={readOnly}
+                            isValidating={isValidating}
                         />
                     </FieldLabelProvider>
                 ))}

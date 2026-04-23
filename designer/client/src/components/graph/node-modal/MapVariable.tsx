@@ -20,6 +20,7 @@ export interface MapVariableProps<F extends Field> {
     addElement: (property: string, element: F) => void;
     variableTypes: VariableTypes;
     expressionType?: Partial<TypedObjectTypingResult>;
+    isValidating: boolean;
 }
 
 function MapVariable<F extends Field>(props: MapVariableProps<F>): React.JSX.Element {

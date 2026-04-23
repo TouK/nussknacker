@@ -24,10 +24,24 @@ interface FieldsSelectProps {
     showValidation?: boolean;
     variableTypes: VariableTypes;
     errors: NodeValidationError[];
+    isValidating: boolean;
 }
 
 export function FieldsSelect(props: FieldsSelectProps): React.JSX.Element {
-    const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation, errors } = props;
+    const {
+        fields,
+        label,
+        namespace,
+        options,
+        onChange,
+        variableTypes,
+        removeField,
+        addField,
+        readOnly,
+        showValidation,
+        errors,
+        isValidating,
+    } = props;
 
     const ItemElement = useCallback(
         ({ index, item, errors }: { index: number; item: FragmentInputParameter; errors: NodeValidationError[] }) => (
@@ -41,9 +55,10 @@ export function FieldsSelect(props: FieldsSelectProps): React.JSX.Element {
                 variableTypes={variableTypes}
                 showValidation={showValidation}
                 errors={errors}
+                isValidating={isValidating}
             />
         ),
-        [namespace, onChange, options, readOnly, variableTypes, showValidation],
+        [namespace, onChange, options, readOnly, variableTypes, showValidation, isValidating],
     );
 
     const changeOrder = useCallback((value) => onChange(namespace, value), [namespace, onChange]);

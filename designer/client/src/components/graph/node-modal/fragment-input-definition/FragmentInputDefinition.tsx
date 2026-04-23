@@ -61,6 +61,7 @@ export default function FragmentInputDefinition(props: Props): React.JSX.Element
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 errors={passProps.errors}
+                isValidating={passProps.isValidating}
             />
         </NodeCommonDetailsDefinition>
     );

@@ -17,10 +17,11 @@ interface MapValueProps {
     readOnly?: boolean;
     isMarked?: boolean;
     validationLabelInfo?: string;
+    isValidating: boolean;
 }
 
 export default React.memo(function MapValue(props: MapValueProps): React.JSX.Element {
-    const { value, isMarked, showValidation, readOnly, onChange, fieldErrors, variableTypes, validationLabelInfo } = props;
+    const { value, isMarked, showValidation, readOnly, onChange, fieldErrors, variableTypes, validationLabelInfo, isValidating } = props;
 
     return (
         <NodeValue className="field">
@@ -34,6 +35,7 @@ export default React.memo(function MapValue(props: MapValueProps): React.JSX.Ele
                 variableTypes={variableTypes}
                 validationLabelInfo={validationLabelInfo}
                 showSwitch={false}
+                isValidating={isValidating}
             />
         </NodeValue>
     );

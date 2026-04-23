@@ -16,10 +16,11 @@ interface Props {
     parameterValue: string;
     onChange: (nodeIds: string[], parameterName: ActionParameterName, newValue: string) => void;
     errors: NodeValidationError[];
+    isValidating: boolean;
 }
 
 export function GroupedActionParameter(props: Props): React.JSX.Element {
-    const { nodeIds, parameterName, parameterConfig, errors, parameterValue, onChange } = props;
+    const { nodeIds, parameterName, parameterConfig, errors, parameterValue, onChange, isValidating } = props;
 
     const expressionObj = { expression: parameterValue, value: parameterValue, language: ExpressionLang.String };
     const onValueChange = useCallback(
@@ -43,6 +44,7 @@ export function GroupedActionParameter(props: Props): React.JSX.Element {
                 //ScenarioProperties do not use any variables
                 variableTypes={{}}
                 fieldErrors={getValidationErrorsForField(errors, parameterName)}
+                isValidating={isValidating}
             />
         </FieldLabelProvider>
     );

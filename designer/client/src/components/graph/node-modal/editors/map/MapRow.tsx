@@ -16,7 +16,7 @@ type TypedField = Field & {
 };
 
 export default function MapRow<F extends TypedField>({ index, item }: MapRowProps<F>) {
-    const { errors, isMarked, readOnly, setProperty, showValidation, variableTypes } = useContext(MapItemsCtx);
+    const { errors, isMarked, readOnly, setProperty, showValidation, variableTypes, isValidating } = useContext(MapItemsCtx);
     const setItemProperty = (field: string, value) => setProperty(`[${index}].${field}`, value);
     const isPropertyMarked = (field: string) => isMarked(`[${index}].${field}`);
     const { typeInfo, name, expression } = item;
@@ -39,6 +39,7 @@ export default function MapRow<F extends TypedField>({ index, item }: MapRowProp
                 validationLabelInfo={typeInfo}
                 fieldErrors={getValidationErrorsForField(errors, `$fields-${index}-$value`)}
                 variableTypes={variableTypes}
+                isValidating={isValidating}
             />
         </>
     );

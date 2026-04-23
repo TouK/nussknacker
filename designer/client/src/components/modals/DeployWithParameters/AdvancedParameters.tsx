@@ -91,6 +91,7 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({
                                     parameterName={paramName}
                                     parameterConfig={paramConfig}
                                     errors={[]}
+                                    isValidating={false}
                                     onChange={(nodeIds, parameterName, newValue) => {
                                         setParametersValues({
                                             ...parametersValues,

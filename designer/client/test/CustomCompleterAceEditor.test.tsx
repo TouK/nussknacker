@@ -146,6 +146,7 @@ function buildProps(onValueChange: jest.Mock, initialValue = ""): CustomComplete
         },
         fieldErrors: [],
         showValidation: true,
+        isValidating: false,
     };
 }
 

@@ -93,6 +93,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
+                    isValidating={isValidating}
                 />
             );
         case "FragmentOutputDefinition":
@@ -106,6 +107,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
+                    isValidating={isValidating}
                 />
             );
         case "Filter":
@@ -121,6 +123,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
+                    isValidating={isValidating}
                 />
             );
         case "Enricher":
@@ -183,6 +186,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
+                    isValidating={isValidating}
                 />
             );
         }
@@ -213,6 +217,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     showSwitch={showSwitch}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
+                    isValidating={isValidating}
                 />
             );
         case "Split":

@@ -19,9 +19,10 @@ interface Props {
     variableTypes: VariableTypes;
     readOnly: boolean;
     errors: NodeValidationError[];
+    isValidating: boolean;
 }
 
-export const PermittedTypeVariant = ({ item, path, variableTypes, onChange, readOnly, errors, ...props }: Props) => {
+export const PermittedTypeVariant = ({ item, path, variableTypes, onChange, readOnly, errors, isValidating, ...props }: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -61,6 +62,7 @@ export const PermittedTypeVariant = ({ item, path, variableTypes, onChange, read
                     variableTypes={variableTypes}
                     readOnly={readOnly}
                     errors={errors}
+                    isValidating={isValidating}
                 />
             )}
             {isFixedListParameter(item) && (
@@ -81,6 +83,7 @@ export const PermittedTypeVariant = ({ item, path, variableTypes, onChange, read
                     variableTypes={variableTypes}
                     readOnly={readOnly}
                     errors={errors}
+                    isValidating={isValidating}
                 />
             )}
         </SettingsWrapper>

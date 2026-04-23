@@ -171,3 +171,11 @@ export const getIsParameterStable = createSelector(
         return !changingDynamicParameters?.length || changingDynamicParameters.includes(paramName);
     },
 );
+
+export const getNodeIsValidating = createSelector(
+    getNodesDetails,
+    (_: RootState, { node }: { node: NodeType }) => node.id,
+    (nodeDetails, nodeId) => {
+        return nodeDetails[nodeId]?.isValidating;
+    },
+);

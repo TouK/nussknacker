@@ -31,6 +31,7 @@ interface Props {
     ordered?: boolean;
     variableTypes?: VariableTypes;
     errors: NodeValidationError[];
+    isValidating: boolean;
 }
 
 function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
@@ -57,7 +58,7 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 }
 
 export function EdgesDndComponent(props: Props): React.JSX.Element {
-    const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
+    const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors, isValidating } = props;
 
     const lastEmittedValueRef = useRef<Edge[]>();
     const [onChangeRef] = useCallbackRef(
@@ -153,11 +154,12 @@ export function EdgesDndComponent(props: Props): React.JSX.Element {
                         types={types}
                         variableTypes={variableTypes}
                         fieldErrors={getValidationErrorsForField(errors, edge._id || edge.to)}
+                        isValidating={isValidating}
                     />
                 ),
             };
         });
-    }, [edgeTypes, edges, errors, readOnly, replaceEdge, variableTypes]);
+    }, [edgeTypes, edges, errors, isValidating, readOnly, replaceEdge, variableTypes]);
 
     const namespace = `edges`;
 

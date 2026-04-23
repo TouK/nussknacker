@@ -45,12 +45,13 @@ type Props = {
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     errors: NodeValidationError[];
     defaultValue: ExpressionObj;
+    isValidating: boolean;
 };
 
 function MockExpressionField(props: Props): React.JSX.Element {
     const dispatch = useAppDispatch();
 
-    const { editedNode, isEditMode, showValidation, showSwitch, variableTypes, errors, defaultValue } = props;
+    const { editedNode, isEditMode, showValidation, showSwitch, variableTypes, errors, defaultValue, isValidating } = props;
     const mockExpression = useAppSelector((state) => getTestCaseMockForNode(state, editedNode.id));
 
     const editMock: OnValueChange = useCallback(
@@ -77,6 +78,7 @@ function MockExpressionField(props: Props): React.JSX.Element {
                 onValueChange={editMock}
                 fieldErrors={errors}
                 defaultValue={defaultValue}
+                isValidating={isValidating}
             />
         </NodeTable>
     );

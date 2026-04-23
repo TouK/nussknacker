@@ -30,7 +30,7 @@ interface Props {
     values?: Array<PossibleValue>;
     isMarked?: boolean;
     showValidation?: boolean;
-    isValidating?: boolean;
+    isValidating: boolean;
     onValueChange: OnValueChange;
     fieldErrors?: FieldError[];
     variableTypes: VariableTypes;

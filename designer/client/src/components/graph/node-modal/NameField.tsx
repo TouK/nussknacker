@@ -10,7 +10,7 @@ import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableSty
 import { useDiffMark } from "./PathsToMark";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
-const FIELD_NAME = "name";
+const FIELD_NAME = "$name";
 
 interface NameFieldProps {
     isEditMode?: boolean;

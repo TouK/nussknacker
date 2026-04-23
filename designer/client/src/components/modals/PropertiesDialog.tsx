@@ -13,7 +13,7 @@ import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { EditStateFeedback } from "../graph/node-modal/node/EditStateFeedback";
-import { getCurrentPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
+import { getCurrentPropertiesErrors, getIsPropertiesValidating, getReadOnly } from "../graph/node-modal/node/selectors";
 import { useDialogActions } from "../graph/node-modal/node/useDialogActions";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
@@ -54,6 +54,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
     });
 
     const errors = usePropertiesValidation(isEditMode, editedProperties);
+    const isValidating = useAppSelector((state) => getIsPropertiesValidating(state));
 
     useOnToolWindow(ToolId.properties);
 
@@ -78,6 +79,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
                             handleSetEditedProperties={isEditMode ? handleSetEditedProperties : undefined}
                             errors={errors}
                             showSwitch={showSwitch}
+                            isValidating={isValidating}
                         />
                     </ContentSize>
                 </div>

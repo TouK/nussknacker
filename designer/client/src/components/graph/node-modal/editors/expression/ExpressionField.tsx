@@ -7,7 +7,7 @@ import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { UIParameter } from "../../../../../types/definition";
 import type { NodeType } from "../../../../../types/node";
 import type { VariableTypes } from "../../../../../types/validation";
-import { getNodesDetails } from "../../NodeDetailsContent/getNodeDetails";
+import { getNodeIsValidating } from "../../NodeDetailsContent/selectors";
 import { useDiffMark } from "../../PathsToMark";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
@@ -51,7 +51,7 @@ function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
         inputAdornmentEnd,
     } = props;
     const [isMarked] = useDiffMark();
-    const isValidating = useAppSelector((state) => getNodesDetails(state)[editedNode.id]?.isValidating ?? false);
+    const isValidating = useAppSelector((state) => getNodeIsValidating(state, { node: editedNode }));
     const readOnly = !isEditMode;
     const exprTextPath = `${exprPath}.expression`;
     const expressionObj = useMemo(() => get(editedNode, exprPath), [editedNode, exprPath]);

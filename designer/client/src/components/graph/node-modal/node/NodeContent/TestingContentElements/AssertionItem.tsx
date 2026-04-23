@@ -23,7 +23,7 @@ import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 import type { Option } from "../../../fragment-input-definition/TypeSelect";
-import { getNodesDetails } from "../../../NodeDetailsContent/getNodeDetails";
+import { getNodeIsValidating } from "../../../NodeDetailsContent/selectors";
 import { OverrideKeys } from "../../../parameterHelpers";
 import { AssertionStatus } from "./AssertionStatus";
 
@@ -132,7 +132,7 @@ const AssertionItemComponent = ({
         return errors.filter((error) => error.fieldName === "description") || [];
     }, [errors]);
 
-    const isValidating = useAppSelector((state) => getNodesDetails(state)[node.id]?.isValidating ?? false);
+    const isValidating = useAppSelector((state) => getNodeIsValidating(state, { node }));
     const recordsHint = t(RECORDS_HINT_KEY, RECORDS_HINT_DEFAULT);
 
     const handleOpenBuilder = useCallback(() => setBuilderOpen(true), []);
