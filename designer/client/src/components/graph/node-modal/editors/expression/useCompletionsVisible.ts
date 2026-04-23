@@ -54,12 +54,13 @@ export function useCompletionsVisible({
         };
         const onBlur = () => updateCompletionsVisible(() => onInternalValueChange(editor.getValue()));
         const onChange = () => updateCompletionsVisible();
+        const keyboardActivity = () => updateCompletionsVisible();
 
-        editor.on("keyboardActivity" as any, updateCompletionsVisible);
+        editor.on("keyboardActivity" as any, keyboardActivity);
         editor.on("change", onChange);
         editor.on("blur", onBlur);
         return () => {
-            editor.off("keyboardActivity" as any, updateCompletionsVisible);
+            editor.off("keyboardActivity" as any, keyboardActivity);
             editor.off("change", onChange);
             editor.off("blur", onBlur);
         };

@@ -41,11 +41,12 @@ export type NodeTypeDetailsContentProps = {
     showValidation?: boolean;
     showSwitch?: boolean;
     errors: NodeValidationError[];
+    isValidating: boolean;
 };
 
 type NodeDetailsProps = Prettify<NodeTypeDetailsContentProps>;
 
-function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange }: NodeDetailsProps) {
+function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange, isValidating }: NodeDetailsProps) {
     const variableTypes = useVariableTypes({ node });
     const parameterDefinitions = useParameterDefinitions({ node });
     const setProperty = useSetProperty({ onChange, node });
@@ -196,6 +197,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
+                    isValidating={isValidating}
                 />
             );
         case "Switch":
@@ -229,7 +231,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
 }
 
 export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): React.JSX.Element {
-    const { errors, showSwitch, onChange, edges, node, showValidation } = props;
+    const { errors, showSwitch, onChange, edges, node, showValidation, isValidating } = props;
     const renderFieldLabel = useRenderFieldLabel({ node });
     return (
         <FieldLabelProvider value={renderFieldLabel}>
@@ -240,6 +242,7 @@ export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): Reac
                 showSwitch={showSwitch}
                 showValidation={showValidation}
                 onChange={onChange}
+                isValidating={isValidating}
             />
         </FieldLabelProvider>
     );

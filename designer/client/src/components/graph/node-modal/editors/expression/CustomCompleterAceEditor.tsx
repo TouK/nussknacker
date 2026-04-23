@@ -17,7 +17,7 @@ import type { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import type { ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 import { useCompletionsVisible } from "./useCompletionsVisible";
-import { useValidationErrorVisibility } from "./useValidationErrorVisibility";
+import { useValidationInfoVisibility } from "./useValidationInfoVisibility";
 
 type InputProps = AceWrapperInputProps & {
     language: ExpressionLang | string;
@@ -85,7 +85,14 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         }
     }, [editorFocused, value]);
 
-    const validationErrorVisible = useValidationErrorVisibility({ fieldErrors, showValidation, completionsVisible, isValidating });
+    const { visibleValidationErrors, visibleValidationLabelInfo } = useValidationInfoVisibility({
+        fieldErrors,
+        showValidation,
+        completionsVisible,
+        isValidating,
+        isLoading,
+        validationLabelInfo,
+    });
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -93,7 +100,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                 <Box
                     className={cx([
                         rowAceEditor,
-                        validationErrorVisible && nodeInputWithError,
+                        visibleValidationErrors.length > 0 && nodeInputWithError,
                         isMarked && "marked",
                         editorFocused && "focused",
                         inputProps.readOnly && "read-only",
@@ -117,7 +124,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                         }}
                         customAceEditorCompleter={completer}
                         enableLiveAutocompletion={enableLiveAutocompletion}
-                        fieldErrors={fieldErrors}
+                        fieldErrors={visibleValidationErrors}
                         annotations={annotations}
                         markers={markers}
                     />
@@ -132,8 +139,8 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     <LoadingFeedback color="warning" inflate={0.25} />
                 </Fade>
             </Box>
-            {validationErrorVisible && !hasRangeText ? (
-                <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />
+            {showValidation && !hasRangeText ? (
+                <ValidationLabels fieldErrors={visibleValidationErrors} validationLabelInfo={visibleValidationLabelInfo} />
             ) : null}
         </Box>
     );
