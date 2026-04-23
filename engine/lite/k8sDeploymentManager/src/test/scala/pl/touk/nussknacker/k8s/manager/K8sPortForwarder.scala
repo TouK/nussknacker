@@ -8,7 +8,7 @@ import java.io.{File, IOException}
 import java.net.Socket
 import scala.util.control.NonFatal
 
-class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val port: Int, val host: String)
+class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val host: String, val port: Int)
     extends AutoCloseable
     with LazyLogging {
 

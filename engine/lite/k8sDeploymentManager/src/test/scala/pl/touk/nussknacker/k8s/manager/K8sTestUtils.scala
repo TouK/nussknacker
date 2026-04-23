@@ -85,7 +85,7 @@ class K8sTestUtils(k8s: KubernetesClient)
     ensureRunningStatus(obj)
 
     val localPort = AvailablePortFinder.findAvailablePorts(1).head
-    Using.resource(new K8sPortForwarder(obj, remotePort, localPort, localPortForwardHost).start()) { _ =>
+    Using.resource(new K8sPortForwarder(obj, remotePort, localPortForwardHost, localPort).start()) { _ =>
       action(localPort)
     }
   }

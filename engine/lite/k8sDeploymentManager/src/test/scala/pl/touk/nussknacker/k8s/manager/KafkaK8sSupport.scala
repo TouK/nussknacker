@@ -129,7 +129,7 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
     }
 
     kafkaPortForwarder =
-      new K8sPortForwarder(kafkaPod, kafkaPodExposedPort, kafkaPodExposedPort, k8sUtils.localPortForwardHost).start()
+      new K8sPortForwarder(kafkaPod, kafkaPodExposedPort, k8sUtils.localPortForwardHost, kafkaPodExposedPort).start()
   }
 
   def stop()(implicit ec: ExecutionContext): Unit = {
