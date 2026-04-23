@@ -34,6 +34,8 @@ class K8sTestUtils(k8s: KubernetesClient)
     case other     => other
   }
 
+  val localPortForwardHost = "127.0.0.1"
+
   val reverseProxyPodRemotePort = 8080
 
   private val reverseProxyPodName = "reverse-proxy"
@@ -83,7 +85,7 @@ class K8sTestUtils(k8s: KubernetesClient)
     ensureRunningStatus(obj)
 
     val localPort = AvailablePortFinder.findAvailablePorts(1).head
-    Using.resource(new K8sPortForwarder(obj, remotePort, localPort, clusterHost).start()) { _ =>
+    Using.resource(new K8sPortForwarder(obj, remotePort, localPort, localPortForwardHost).start()) { _ =>
       action(localPort)
     }
   }

@@ -358,7 +358,7 @@ class K8sDeploymentManagerKafkaTest
       k8sTestUtils.withPortForwarded(pod, port) { localPort =>
         eventually {
           basicRequest
-            .get(uri"http://${k8sTestUtils.clusterHost}:$localPort")
+            .get(uri"http://${k8sTestUtils.localPortForwardHost}:$localPort")
             .send(backend)
             .futureValue
             .body
