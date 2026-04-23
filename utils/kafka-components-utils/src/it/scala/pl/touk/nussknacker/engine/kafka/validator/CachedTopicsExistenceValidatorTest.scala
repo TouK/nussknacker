@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.validator
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import com.dimafeng.testcontainers.{ForAllTestContainer, KafkaContainer}
+import com.dimafeng.testcontainers.ForAllTestContainer
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.funsuite.AnyFunSuite
@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.test.containers.WithDockerContainers
-import pl.touk.nussknacker.test.containers.kafka.WithKafkaContainer
+import pl.touk.nussknacker.test.containers.kafka.{KafkaContainer, WithKafkaContainer}
 
 import java.util.{Collections, UUID}
 import java.util.concurrent.TimeUnit

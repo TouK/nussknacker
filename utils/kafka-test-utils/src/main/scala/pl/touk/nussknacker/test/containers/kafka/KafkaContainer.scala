@@ -29,8 +29,8 @@ class KafkaContainer(
 }
 
 object KafkaContainer {
-  val defaultImage = "apache/kafka-native:"
-  val defaultTag   = "4.1"
+  val defaultImage = "apache/kafka-native"
+  val defaultTag   = "4.1.2"
 
   def apply(
       imageName: String = defaultImage,
