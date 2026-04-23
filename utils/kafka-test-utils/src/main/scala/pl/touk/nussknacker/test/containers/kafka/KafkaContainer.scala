@@ -5,7 +5,7 @@ import org.testcontainers.kafka.{KafkaContainer => JavaKafkaContainer}
 
 import scala.jdk.CollectionConverters._
 
-case class KafkaContainer(
+class KafkaContainer(
     dockerImageName: String
 ) extends SingleContainer[JavaKafkaContainer] {
 

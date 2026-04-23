@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters._
 /**
  * Lighter version of [[com.dimafeng.testcontainers.SchemaRegistryContainer]]
  */
-case class SchemaRegistryContainer(
+class SchemaRegistryContainer(
     dockerImageName: String
 ) extends SingleContainer[JavaGenericContainer[?]] {
 
