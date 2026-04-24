@@ -17,20 +17,21 @@ import type { FieldError } from "../Validators";
  *
  * 2. Autocomplete popup opens
  *    Errors are hidden immediately so they do not overlap the suggestion list.
- *    `waitingForFreshValidation` is set to true and remains set until a full
- *    validation cycle completes after the popup closes (see use case 3).
+ *    Phase moves to `waitingForFreshResult` and stays there until a full validation
+ *    cycle completes after the popup closes.
  *
- * 3. Autocomplete popup closes, validation in flight
- *    `waitingForFreshValidation` keeps errors hidden until `isValidating`
- *    transitions true→false *while the popup is closed*.
- *    Guards against showing stale errors between "popup closed" and
- *    "new validation response arrived".
+ * 3. Autocomplete popup closes, validation in flight at close time
+ *    Errors stay hidden until `isValidating` transitions true→false while popup is closed.
+ *    Guards against showing stale errors between "popup closed" and "new result arrived".
  *
- * 4. Autocomplete popup closes, validation already completed while popup was open
- *    Without the `!completionsVisible` guard the transition would be detected
- *    while the popup is still open, clearing suppression too early. The guard
- *    ensures suppression is only lifted after popup is gone and the next
- *    validation cycle (triggered by onValueChange) finishes.
+ * 4. Autocomplete popup closes, no validation running at close time
+ *    Phase moves to `watchingForValidationStart`.
+ *    — If `isValidating` goes true within ~150 ms (value changed → parent re-validates):
+ *      phase moves back to `waitingForFreshResult` and resolves via use case 3.
+ *    — If nothing starts within ~150 ms (value unchanged → no new cycle):
+ *      phase moves to `idle` so the still-valid pre-popup errors are shown.
+ *    This prevents both the flash (clearing too early) and getting stuck
+ *    (clearing never happening when value is unchanged).
  *
  * 5. Visibility transitions are debounced (100 ms)
  *    Prevents a single-frame flicker when multiple state updates land in the
@@ -51,16 +52,16 @@ export function useValidationInfoVisibility({
     isLoading?: boolean;
     validationLabelInfo?: ReactNode;
 }): { visibleValidationErrors: FieldError[]; visibleValidationLabelInfo: ReactNode } {
-    const [debouncedLoading] = useDebouncedValue(isLoading, 100);
-
+    const [debouncedLoading] = useDebouncedValue(isLoading, 200);
     const [snapshot, setSnapshot] = useState({
         errors: fieldErrors,
         info: validationLabelInfo,
     });
 
-    const [state, dispatch] = useReducer(reducer, { waiting: false });
+    const [state, dispatch] = useReducer(reducer, { phase: "idle" });
 
     const prevIsValidating = usePreviousImmediate(isValidating);
+    const prevIsCompletionsVisible = usePreviousImmediate(completionsVisible);
 
     useEffect(() => {
         if (!debouncedLoading && !completionsVisible) {
@@ -71,27 +72,41 @@ export function useValidationInfoVisibility({
         }
     }, [debouncedLoading, completionsVisible, fieldErrors, validationLabelInfo]);
 
+    const hasValidation = isValidating !== undefined;
     useEffect(() => {
         if (completionsVisible) {
-            dispatch({
-                type: "POPUP_OPEN",
-                hasValidation: typeof isValidating !== "undefined",
-            });
+            dispatch({ type: "POPUP_OPEN", hasValidation });
         }
-    }, [completionsVisible, isValidating]);
+    }, [completionsVisible, hasValidation]);
 
     useEffect(() => {
-        if (typeof isValidating === "undefined") return;
+        if (isValidating === undefined) return;
 
         if (prevIsValidating && !isValidating) {
-            dispatch({
-                type: "VALIDATION_FINISHED",
-                completionsVisible,
-            });
+            dispatch({ type: "VALIDATION_FINISHED", completionsVisible });
+        } else if (prevIsCompletionsVisible && !completionsVisible && !prevIsValidating && !isValidating) {
+            dispatch({ type: "POPUP_CLOSED_NO_VALIDATION" });
         }
-    }, [prevIsValidating, isValidating, completionsVisible]);
+    }, [prevIsValidating, isValidating, completionsVisible, prevIsCompletionsVisible]);
 
-    const waitingForFreshValidation = state.waiting;
+    // When watching for a new validation cycle to start: if isValidating goes true,
+    // transition back to waitingForFreshResult and let VALIDATION_FINISHED resolve it.
+    useEffect(() => {
+        if (state.phase !== "watchingForValidationStart" || !isValidating) return;
+        dispatch({ type: "VALIDATION_STARTED_AFTER_POPUP_CLOSE" });
+    }, [state.phase, isValidating]);
+
+    // Fallback: if no validation starts within ~150 ms (value unchanged),
+    // clear waiting so the still-valid pre-popup errors are shown.
+    useEffect(() => {
+        if (state.phase !== "watchingForValidationStart") return;
+        const timer = setTimeout(() => {
+            dispatch({ type: "TIMEOUT_NO_VALIDATION_AFTER_POPUP_CLOSE" });
+        }, 150);
+        return () => clearTimeout(timer);
+    }, [state.phase]);
+
+    const waitingForFreshValidation = state.phase !== "idle";
 
     const validationState = useMemo(() => {
         if (!showValidation || waitingForFreshValidation) {
@@ -117,24 +132,40 @@ export function useValidationInfoVisibility({
     };
 }
 
+type Phase = "idle" | "waitingForFreshResult" | "watchingForValidationStart";
+
 type State = {
-    waiting: boolean;
+    phase: Phase;
 };
 
 type Action =
     | { type: "POPUP_OPEN"; hasValidation: boolean }
     | { type: "VALIDATION_FINISHED"; completionsVisible: boolean }
-    | { type: "RESET" };
+    | { type: "POPUP_CLOSED_NO_VALIDATION" }
+    | { type: "VALIDATION_STARTED_AFTER_POPUP_CLOSE" }
+    | { type: "TIMEOUT_NO_VALIDATION_AFTER_POPUP_CLOSE" };
 
 function reducer(state: State, action: Action): State {
     switch (action.type) {
         case "POPUP_OPEN":
             if (!action.hasValidation) return state;
-            return { waiting: true };
+            return { phase: "waitingForFreshResult" };
 
         case "VALIDATION_FINISHED":
             if (action.completionsVisible) return state;
-            return { waiting: false };
+            return { phase: "idle" };
+
+        case "POPUP_CLOSED_NO_VALIDATION":
+            if (state.phase !== "waitingForFreshResult") return state;
+            return { phase: "watchingForValidationStart" };
+
+        case "VALIDATION_STARTED_AFTER_POPUP_CLOSE":
+            if (state.phase !== "watchingForValidationStart") return state;
+            return { phase: "waitingForFreshResult" };
+
+        case "TIMEOUT_NO_VALIDATION_AFTER_POPUP_CLOSE":
+            if (state.phase !== "watchingForValidationStart") return state;
+            return { phase: "idle" };
 
         default:
             return state;

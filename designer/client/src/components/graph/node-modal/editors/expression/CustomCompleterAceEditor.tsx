@@ -68,6 +68,17 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         onInternalValueChange: setInternalValue,
     });
 
+    const { visibleValidationErrors, visibleValidationLabelInfo } = useValidationInfoVisibility({
+        fieldErrors,
+        showValidation,
+        completionsVisible,
+        isValidating,
+        isLoading,
+        validationLabelInfo,
+    });
+
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(visibleValidationErrors, showLines);
+
     useEffect(
         function updateValueWhenCompletionsClosed() {
             if (props.inputProps?.readOnly) return;
@@ -77,22 +88,11 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         [internalValue, completionsVisible, onValueChange, props.inputProps?.readOnly],
     );
 
-    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
-
     useEffect(() => {
         if (!editorFocused) {
             setInternalValue((current) => (current !== value ? value : current));
         }
     }, [editorFocused, value]);
-
-    const { visibleValidationErrors, visibleValidationLabelInfo } = useValidationInfoVisibility({
-        fieldErrors,
-        showValidation,
-        completionsVisible,
-        isValidating,
-        isLoading,
-        validationLabelInfo,
-    });
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
