@@ -135,22 +135,6 @@ object CirceUtil {
         case (obj, _)                              => obj
       }
 
-    // Recursively removes every object key starting with [[Prefix]] from the JSON tree — used to
-    // keep the extension data local (e.g. scrubbed before the scenario is handed off to Flink).
-    def deepStrip(json: Json): Json =
-      json.arrayOrObject(
-        json,
-        arr => Json.fromValues(arr.map(deepStrip)),
-        obj =>
-          Json.fromJsonObject(
-            JsonObject.fromIterable(
-              obj.toIterable
-                .filterNot { case (k, _) => k.startsWith(Prefix) }
-                .map { case (k, v) => (k, deepStrip(v)) }
-            )
-          )
-      )
-
   }
 
 }
