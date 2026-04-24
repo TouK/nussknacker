@@ -8,7 +8,7 @@ import java.io.{File, IOException}
 import java.net.Socket
 import scala.util.control.NonFatal
 
-class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val host: String, val port: Int)
+class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val port: Int)
     extends AutoCloseable
     with LazyLogging {
 
@@ -29,7 +29,7 @@ class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val 
       val processExitFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(name, portForwardProcess)
       ProcessUtils.checkIfFailedInstantly(processExitFuture)
       waitForPortOpen(portForwardProcess)
-      logger.info(s"Started port forwarder: $host:$port -> $typeAndName:$resourcePort")
+      logger.info(s"Started port forwarder: localhost:$port -> $typeAndName:$resourcePort")
     } catch {
       case NonFatal(ex) =>
         close()
@@ -43,7 +43,7 @@ class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val 
     val startTs = System.currentTimeMillis()
     while (process.isAlive) {
       try {
-        new Socket(host, port).close()
+        new Socket("localhost", port).close()
         return
       } catch {
         case e: IOException =>
