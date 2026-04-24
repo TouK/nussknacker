@@ -222,6 +222,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Use `setUidAndNameToNodeId` extension method available in `DataStreamImplicits` instead 
 * [#8786](https://github.com/TouK/nussknacker/pull/8786) `StandardFlinkSource`, `BaseFlinkSource` and `CustomizableWatermarkStrategySource` traits were removed.
   Use `setUidAndNameToNodeId`, `assignTimestampsAndWatermarks` and context initialization (`FlinkContextInitializingFunction`) directly
+* [#9327](https://github.com/TouK/nussknacker/pull/9327) `FileSystemBind` and associated bind mounting helpers in Docker tests were removed.
+  Use `ContainerVolume` instead.
 
 ### Other changes
 
@@ -294,6 +296,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#8478](https://github.com/TouK/nussknacker/pull/8478) The behavior of `enum` to json encoding has been changed - now it uses `.name()` instead of `.toString()`
 * [#8842](https://github.com/TouK/nussknacker/pull/8842) `SerializersRegistrar` SPI was removed
 * [#8943](https://github.com/TouK/nussknacker/pull/8943) `spring-jcl` was replaced with `commons-logging` - projects depending on Nu should update their exclusion rules
+* [#9336](https://github.com/TouK/nussknacker/pull/9336) `WithKafkaContainer` and `WithSchemaRegistryContainer` test traits
+  were moved from Flink-specific `nussknacker-flink-test-utils` to `nussknacker-kafka-test-utils`, methods for accessing
+  service addresses were moved into proper `Container` objects
 
 ## In version 1.18.0
 

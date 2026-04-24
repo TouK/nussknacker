@@ -3,36 +3,40 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.test.testcase.Assertion.AssertionOperator
-import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExternalServiceInvocationResult, NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionVerifier.deepConvertToJava
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
   CompiledExpressionAssertion,
   CompiledPredicateAssertion,
   EmptyCompiledAssertion
 }
 
+import java.util
 import scala.jdk.CollectionConverters._
 
 class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
 
+  import AssertionVerifier.TestResults
+
   def verify(
       compiledAssertions: CompiledAssertions,
-      results: Map[NodeId, List[ResultContext[Any]]],
+      testResults: TestResults,
       jobData: JobData
   ): Map[NodeId, List[AssertionResult]] = {
     compiledAssertions.assertions.map { case (nodeId, assertions) =>
-      nodeId -> assertions.map(assertion => verifySingleAssertions(assertion, nodeId, results, jobData))
+      nodeId -> assertions.map(assertion => verifySingleAssertions(assertion, nodeId, testResults, jobData))
     }
   }
 
   private def verifySingleAssertions(
       assertion: CompiledAssertion,
       nodeId: NodeId,
-      results: Map[NodeId, List[ResultContext[Any]]],
+      testResults: TestResults,
       jobData: JobData
   ): AssertionResult = {
-    val context = prepareEvaluationContext(nodeId, results)
+    val context = prepareEvaluationContext(nodeId, testResults)
     val globalVariables = TestCaseVariables
       .extendGlobalVariables(
         globalVariablesPreparer.prepareGlobalVariables(jobData)
@@ -61,13 +65,50 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
 
   private def prepareEvaluationContext(
       nodeId: NodeId,
-      results: Map[NodeId, List[ResultContext[Any]]]
+      testResults: TestResults
   ): Context = {
-    val resultsForNode = results
+    Context(
+      ContextId.dummy,
+      Map(
+        TestCaseVariables.RecordsNodeVariableName -> prepareEvaluationContextForIncomingRecords(nodeId, testResults),
+        TestCaseVariables.OutgoingRecordsNodeVariableName -> prepareEvaluationContextForOutgoingRecords(
+          nodeId,
+          testResults
+        ),
+      )
+    )
+  }
+
+  private def prepareEvaluationContextForIncomingRecords(
+      nodeId: NodeId,
+      testResults: TestResults
+  ): util.List[util.Map[String, Any]] = {
+    testResults.originalNodeResults
       .getOrElse(nodeId, List.empty)
       .map(_.variables.asJava)
       .asJava
-    Context(ContextId.dummy, Map(TestCaseVariables.RecordsNodeVariableName -> resultsForNode))
+  }
+
+  private def prepareEvaluationContextForOutgoingRecords(
+      nodeId: NodeId,
+      testResults: TestResults
+  ): util.List[util.Map[String, Any]] = {
+    val transitionResults = testResults.originalNodeTransitionResults
+      .collect { case (NodeTransition(sourceNodeId, _), results) if sourceNodeId == nodeId => results }
+      .flatten
+      .map(_.variables.asJava)
+      .toList
+    if (transitionResults.nonEmpty) {
+      transitionResults.asJava
+    } else {
+      // For ending nodes (sinks), use external service invocation results as outgoing records.
+      // Each record contains the sink's displayable output value encoded via variableEncoder.
+      testResults.originalExternalServiceInvocationResults
+        .getOrElse(nodeId, List.empty)
+        // Convert to Java collections because values produced by SinkDisplayableValue can contain Scala ones.
+        .map(invocation => Map(invocation.name -> deepConvertToJava(invocation.value)).asJava)
+        .asJava
+    }
   }
 
   private def evaluateExpressionAssertion(
@@ -116,6 +157,24 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
           AssertionResult.produceFailedHasSizeAssertion(expectedValue, actualValue)
       }
     }
+  }
+
+}
+
+object AssertionVerifier {
+
+  final case class TestResults(
+      originalNodeResults: Map[NodeId, List[ResultContext[Any]]],
+      originalNodeTransitionResults: Map[NodeTransition, List[ResultContext[Any]]],
+      originalExternalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Any]]],
+  )
+
+  private def deepConvertToJava(value: Any): Any = value match {
+    case m: scala.collection.Map[_, _] =>
+      m.view.mapValues(deepConvertToJava).toMap.asJava
+    case l: Iterable[_] =>
+      l.map(deepConvertToJava).toList.asJava
+    case other => other
   }
 
 }

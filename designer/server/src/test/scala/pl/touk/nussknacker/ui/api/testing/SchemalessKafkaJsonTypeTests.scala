@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.docker.WithKafkaContainer
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
@@ -33,6 +32,7 @@ import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.containers.WithDockerContainers
+import pl.touk.nussknacker.test.containers.kafka.WithKafkaContainer
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
@@ -59,7 +59,7 @@ class SchemalessKafkaJsonTypeTests
     with NuRestAssureExtensions {
 
   private lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
-    kafkaProperties = Map("bootstrap.servers" -> hostKafkaAddress),
+    kafkaProperties = Map("bootstrap.servers" -> kafkaContainer.bootstrapServers),
     kafkaEspProperties = None,
   )
 
@@ -526,7 +526,7 @@ class SchemalessKafkaJsonTypeTests
     .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaProperties",
-      fromMap(Map("bootstrap.servers" -> hostKafkaAddress).asJava)
+      fromMap(Map("bootstrap.servers" -> kafkaContainer.bootstrapServers).asJava)
     )
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",

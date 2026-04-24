@@ -2,11 +2,11 @@
 set -eu
 
 if [[ -n "${SAVEPOINT_DIR_PATH:-}" ]]; then
-  chmod -R 777 "$SAVEPOINT_DIR_PATH"
+  chown -cR flink:flink "$SAVEPOINT_DIR_PATH"
 fi
 
 if [[ -d /output ]]; then
-  chmod -R 777 /output
+  chown -cR flink:flink /output
 fi
 
 cat /config.overrides.yml >> $FLINK_HOME/conf/config.yaml

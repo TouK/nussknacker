@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
+import pl.touk.nussknacker.engine.management.savepoint.IdentitySavepointLocator
 import pl.touk.nussknacker.engine.management.utils.JobIdGenerator.generateJobId
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -467,7 +468,8 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
         LocalModelData(ConfigFactory.empty, List.empty).toModelDataProvider,
         deploymentManagerDependencies,
         config,
-        scenarioStateCacheTTL = None
+        scenarioStateCacheTTL = None,
+        savepointLocator = new IdentitySavepointLocator
       )
       .valueOr(message => throw new IllegalStateException(message))
   }

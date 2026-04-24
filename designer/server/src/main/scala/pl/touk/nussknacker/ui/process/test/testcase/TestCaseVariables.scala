@@ -10,13 +10,13 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionSet
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.ObjectWithType
-import pl.touk.nussknacker.engine.extension.ExtensionMethods
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
+import pl.touk.nussknacker.ui.process.test.testcase
 
 object TestCaseVariables {
 
-  final val TestsGlobalVariableName = "TESTS"
-  final val RecordsNodeVariableName = "records"
+  final val TestsGlobalVariableName         = "TESTS"
+  final val RecordsNodeVariableName         = "records"
+  final val OutgoingRecordsNodeVariableName = "outgoingRecords"
 
   def extendClassDefinitionSet(
       classDefinitionSet: ClassDefinitionSet,
@@ -32,19 +32,23 @@ object TestCaseVariables {
 
   def extendNodeVariablesValidationContext(
       validationContext: ValidationContext,
-      variableTypes: Map[String, TypingResult]
-  ): ValidationContext =
-    validationContext
-      .withVariablesUnsafe(
-        TestsGlobalVariableName -> testsGlobalVariableType,
-        RecordsNodeVariableName -> recordsNodeVariableType(variableTypes),
-      )
+      nodeTyping: testcase.NodeTyping
+  ): ValidationContext = {
+    validationContext.withVariablesUnsafe(getNodeVariablesTyping(nodeTyping).toList: _*)
+  }
 
-  def getNodeVariablesTyping(variablesForNode: Map[String, TypingResult]): Map[String, TypingResult] =
+  def getNodeVariablesTyping(nodeTyping: testcase.NodeTyping): Map[String, TypingResult] = {
     Map(
       TestsGlobalVariableName -> testsGlobalVariableType,
-      RecordsNodeVariableName -> recordsNodeVariableType(variablesForNode),
+      RecordsNodeVariableName -> recordsNodeVariableType(nodeTyping.inputVariables),
+      OutgoingRecordsNodeVariableName -> (nodeTyping.outputVariables match {
+        // In case of missing output variables information or empty output variables (e.g. for a sink), we provide a list of unknown records
+        case None                                   => listOfUnknownType
+        case Some(outputVars) if outputVars.isEmpty => listOfUnknownType
+        case Some(outputVars)                       => recordsNodeVariableType(outputVars)
+      })
     )
+  }
 
   def extendGlobalVariables(globalVariables: Map[String, ObjectWithType]): Map[String, ObjectWithType] =
     globalVariables +
@@ -56,6 +60,12 @@ object TestCaseVariables {
     Typed.genericTypeClass(
       classOf[java.util.List[_]],
       List(Typed.record(variablesForNode))
+    )
+
+  private def listOfUnknownType: typing.TypingResult =
+    Typed.genericTypeClass(
+      classOf[java.util.List[_]],
+      List(typing.Unknown)
     )
 
 }

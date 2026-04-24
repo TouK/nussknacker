@@ -40,6 +40,8 @@ class ResultsWithCountsDtoSpec extends AnyFunSuite with Matchers with OptionValu
       ),
       exceptions = List.empty,
       originalNodeResults = Map.empty,
+      originalNodeTransitionResults = Map.empty,
+      originalExternalServiceInvocationResults = Map.empty,
     )
 
     val dto = ResultsWithCountsDto.from(
@@ -77,6 +79,8 @@ class ResultsWithCountsDtoSpec extends AnyFunSuite with Matchers with OptionValu
       externalServiceInvocationResults = Map(processorNode -> List(serviceCall)),
       exceptions = List.empty,
       originalNodeResults = Map.empty,
+      originalNodeTransitionResults = Map.empty,
+      originalExternalServiceInvocationResults = Map.empty,
     )
 
     val dto = ResultsWithCountsDto.from(

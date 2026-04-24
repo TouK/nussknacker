@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStat
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
+import pl.touk.nussknacker.engine.management.savepoint.IdentitySavepointLocator
 import pl.touk.nussknacker.test.mock.MockDeploymentManager.{sampleDeploymentId, sampleDeploymentStatusDetails}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
@@ -48,6 +49,7 @@ class MockDeploymentManager private (
       FlinkMiniClusterFactory.createMiniClusterWithServices(modelData.modelClassLoader, new Configuration),
       FlinkClientStub,
       FlinkScenarioJobRunnerStub,
+      new IdentitySavepointLocator,
       NoLiveDataPreviewSupport,
     ) {
 

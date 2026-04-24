@@ -16,12 +16,14 @@ import pl.touk.nussknacker.engine.classloader.{
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManagerProvider
+import pl.touk.nussknacker.engine.management.savepoint.{FlinkSavepointLocator, IdentitySavepointLocator}
 
 object FlinkDeploymentManagerProviderHelper {
 
   def createDeploymentManager(
       processingTypeConfig: ConfigWithUnresolvedVersion,
-      deploymentManagerClassLoader: DeploymentManagersClassLoader
+      deploymentManagerClassLoader: DeploymentManagersClassLoader,
+      savepointLocator: FlinkSavepointLocator,
   ): DeploymentManager = {
     val typeConfig       = ProcessingTypeConfig.read(processingTypeConfig)
     val modelClassLoader = ModelClassLoaderFactory.create(typeConfig.classPath, None, deploymentManagerClassLoader)
@@ -49,7 +51,8 @@ object FlinkDeploymentManagerProviderHelper {
         modelData.toModelDataProvider,
         deploymentManagerDependencies,
         typeConfig.deploymentConfig,
-        None
+        None,
+        savepointLocator
       )
       .valueOr(err => throw new IllegalStateException(s"Invalid Deployment Manager: ${err.toList.mkString(", ")}"))
   }
@@ -60,7 +63,7 @@ object FlinkDeploymentManagerProviderHelper {
     DeploymentManagersClassLoaderFactory
       .create(List.empty)
       .map { deploymentManagerClassLoader =>
-        createDeploymentManager(processingTypeConfig, deploymentManagerClassLoader)
+        createDeploymentManager(processingTypeConfig, deploymentManagerClassLoader, new IdentitySavepointLocator)
       }
   }
 

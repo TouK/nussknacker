@@ -5,6 +5,7 @@ import org.slf4j.Logger
 import org.testcontainers.containers.{BindMode, Network}
 import org.testcontainers.containers.output.{OutputFrame, Slf4jLogConsumer}
 import org.testcontainers.containers.wait.strategy.{Wait, WaitStrategy, WaitStrategyTarget}
+import org.testcontainers.utility.MountableFile
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -34,15 +35,13 @@ object NuRuntimeDockerTestUtils {
       env = sys.env.get("NUSSKNACKER_LOG_LEVEL").map("NUSSKNACKER_LOG_LEVEL" -> _).toMap ++ additionalEnvs
     )
     networkOpt.foreach(runtimeContainer.underlyingUnsafeContainer.withNetwork)
-    runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(
-      scenarioFile.toString,
-      "/opt/nussknacker/conf/scenario.json",
-      BindMode.READ_ONLY
+    runtimeContainer.underlyingUnsafeContainer.withCopyFileToContainer(
+      MountableFile.forHostPath(scenarioFile.toPath),
+      "/opt/nussknacker/conf/scenario.json"
     )
-    runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(
-      NuRuntimeTestUtils.deploymentDataFile.toString,
-      "/opt/nussknacker/conf/deploymentData.json",
-      BindMode.READ_ONLY
+    runtimeContainer.underlyingUnsafeContainer.withCopyFileToContainer(
+      MountableFile.forHostPath(NuRuntimeTestUtils.deploymentDataFile.toPath),
+      "/opt/nussknacker/conf/deploymentData.json"
     )
     val waitStrategy = if (checkReady) Wait.forHttp("/ready").forPort(runtimeApiPort) else DummyWaitStrategy
     runtimeContainer.underlyingUnsafeContainer.setWaitStrategy(waitStrategy)

@@ -16,14 +16,15 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExternalServiceInvocationResult, NodeTransition, ResultContext}
 import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
+import pl.touk.nussknacker.ui.process.test.testcase
 
 import java.time.Instant
 import java.util
 import java.util.UUID
+import scala.jdk.CollectionConverters._
 
 class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
@@ -53,28 +54,30 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   private val assertionsCompiler = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   private val assertionVerifier  = new AssertionVerifier(globalVariablesPreparer)
 
-  private val nodeId = NodeId("someNode")
+  private val nodeId   = NodeId("someNode-123")
+  private val nodeName = NodeName("someName")
 
-  private val scenarioTyping: Map[String, NodeTypingData] = Map(
-    nodeId.value -> NodeTypingData(
-      variableTypes = Map(
-        "someVariable"   -> Typed.fromInstance("bar"),
-        "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),
-        "someArray"      -> Typed.fromInstance(new Array[String](1)),
-        "someBigDecimal" -> Typed[java.math.BigDecimal],
-        "someNumber"     -> Typed[java.lang.Integer],
-        "someCollection" -> Typed.fromInstance(new util.ArrayList[String]()),
-      ),
-      parameters = None,
-      typingInfo = Map.empty
+  private val inputVariableTypes = Map(
+    "someVariable"   -> Typed.fromInstance("bar"),
+    "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),
+    "someArray"      -> Typed.fromInstance(new Array[String](1)),
+    "someBigDecimal" -> Typed[java.math.BigDecimal],
+    "someNumber"     -> Typed[java.lang.Integer],
+    "someCollection" -> Typed.fromInstance(new util.ArrayList[String]()),
+  )
+
+  private val scenarioTyping: Map[String, NodeTyping] = Map(
+    nodeId.value -> testcase.NodeTyping(
+      inputVariables = inputVariableTypes,
+      outputVariables = inputVariableTypes + ("enricherOutput" -> Typed[String]),
     )
   )
 
   test("should run assertions on test nodes results and return assertion result for each assertion") {
     val testCase = prepareTestCase(
       List(
-        ExpressionAssertion("#TESTS.assertEquals('valid', #records[0].someVariable)".spel, description = None),
-        ExpressionAssertion("#TESTS.assertEquals('valid', #records[1].someVariable)".spel, description = None),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #records[0].someVariable)".spel),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #records[1].someVariable)".spel),
         PredicateAssertion(
           AssertionOperator.Equals,
           "'valid'".spel,
@@ -97,7 +100,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         ),
       )
     )
-    val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = prepareNodeResults(
+    val nodesResultsAfterTestRun = prepareNodeResults(
       List(
         Map("someVariable" -> "valid"),
         Map("someVariable" -> "invalid"),
@@ -114,6 +117,77 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       FailedAssertion("Expected value different from: ['valid']"),
       SuccessfulAssertion,
     )
+  }
+
+  test("should run assertions on outgoing records") {
+    val testCase = prepareTestCase(
+      List(
+        PredicateAssertion(AssertionOperator.HasSize, "2".spel, "#outgoingRecords".spel),
+        PredicateAssertion(AssertionOperator.Equals, "'a'".spel, "#outgoingRecords[0].someVariable".spel),
+        PredicateAssertion(AssertionOperator.Equals, "'b'".spel, "#outgoingRecords[1].someVariable".spel),
+        PredicateAssertion(AssertionOperator.Equals, "'y'".spel, "#outgoingRecords[0].enricherOutput".spel),
+        PredicateAssertion(AssertionOperator.Equals, "'z'".spel, "#outgoingRecords[1].enricherOutput".spel),
+      )
+    )
+    val nodesResultsAfterTestRun = prepareNodeResults(
+      inputVariablesForEachRun = List(
+        Map("someVariable" -> "a"),
+        Map("someVariable" -> "b"),
+      ),
+      outputVariablesForEachRun = List(
+        Map("someVariable" -> "a", "enricherOutput" -> "y"),
+        Map("someVariable" -> "b", "enricherOutput" -> "z"),
+      )
+    )
+
+    val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+
+    results should contain only SuccessfulAssertion
+  }
+
+  test("should run assertions on outgoing records for sink using external service invocation results") {
+    val scenarioTyping = Map(
+      nodeId.value -> testcase.NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = None,
+      )
+    )
+    val testCase = prepareTestCase(
+      List(
+        PredicateAssertion(AssertionOperator.HasSize, "3".spel, "#outgoingRecords".spel),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          s"{'$nodeName': {key1: 'first record', key2: 42L}}".spel,
+          "#outgoingRecords[0]".spel
+        ),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          "43L".spel,
+          s"#outgoingRecords[1]['$nodeName']['key2']".spel
+        ),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          s"{'$nodeName': {key1: 'third record', key2: 44L, complex: {nestedKey: 'nestedValue', nestedList: {1, 2, 3}}}}".spel,
+          "#outgoingRecords[2]".spel
+        ),
+      )
+    )
+    val nodesResultsAfterTestRun = prepareNodeResults(
+      externalServiceInvocations = List(
+        Map("key1" -> "first record", "key2" -> 42L).asJava,
+        Map("key1" -> "second record", "key2" -> 43L).asJava,
+        // with Scala collections
+        Map(
+          "key1"    -> "third record",
+          "key2"    -> 44L,
+          "complex" -> Map("nestedKey" -> "nestedValue", "nestedList" -> List(1, 2, 3))
+        ),
+      )
+    )
+
+    val results = verifyForTestCase(testCase, nodesResultsAfterTestRun, scenarioTyping)
+
+    results should contain only SuccessfulAssertion
   }
 
   test("should properly compare various types used in SpEL") {
@@ -141,7 +215,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     ) { (actualExpression, expectedExpression, expectedResult) =>
       val testCase = prepareTestCase(
         List(
-          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel, description = None),
+          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel),
           PredicateAssertion(
             AssertionOperator.Equals,
             expectedExpression.spel,
@@ -347,7 +421,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private def verifyForTestCase(
       testCase: TestCase,
-      nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]
+      testResults: AssertionVerifier.TestResults,
+      scenarioTyping: Map[String, testcase.NodeTyping] = scenarioTyping,
   ): List[AssertionResult] = {
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
     val compiledTestCase = assertionsCompiler
@@ -355,7 +430,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), compiled => compiled)
     val results = assertionVerifier.verify(
       compiledTestCase,
-      nodesResultsAfterTestRun,
+      testResults,
       jobData
     )
     results(nodeId)
@@ -371,8 +446,24 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  private def prepareNodeResults(variablesForEachRun: List[Map[String, Any]]): Map[NodeId, List[ResultContext[Any]]] = {
-    Map(nodeId -> variablesForEachRun.map(variables => ResultContext[Any](ContextId.dummy, Instant.now(), variables)))
+  private def prepareNodeResults(
+      inputVariablesForEachRun: List[Map[String, Any]] = Nil,
+      outputVariablesForEachRun: List[Map[String, Any]] = Nil,
+      externalServiceInvocations: List[Any] = Nil,
+  ): AssertionVerifier.TestResults = {
+    AssertionVerifier.TestResults(
+      originalNodeResults = Map(nodeId -> inputVariablesForEachRun.map(dummyResultContext)),
+      originalNodeTransitionResults =
+        Map(NodeTransition(nodeId, Some(NodeId("someOtherNode"))) -> outputVariablesForEachRun.map(dummyResultContext)),
+      originalExternalServiceInvocationResults = Map(
+        nodeId ->
+          externalServiceInvocations.map(
+            ExternalServiceInvocationResult(ContextId.dummy, Instant.now, nodeName.value, _)
+          )
+      ),
+    )
   }
 
+  private def dummyResultContext(variables: Map[String, Any]): ResultContext[Any] =
+    ResultContext(ContextId.dummy, Instant.now(), variables)
 }

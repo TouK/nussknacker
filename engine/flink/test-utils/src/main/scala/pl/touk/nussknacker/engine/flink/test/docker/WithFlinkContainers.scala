@@ -2,16 +2,12 @@ package pl.touk.nussknacker.engine.flink.test.docker
 
 import com.dimafeng.testcontainers.{GenericContainer, LazyContainer}
 import com.typesafe.scalalogging.StrictLogging
-import org.apache.flink.util.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.images.builder.ImageFromDockerfile
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.test.containers.{FileSystemBind, WithDockerContainers}
-
-import scala.util.control.NonFatal
+import pl.touk.nussknacker.test.containers.{ContainerVolume, WithDockerContainers}
 
 trait WithFlinkContainers extends WithDockerContainers with BeforeAndAfterAll { self: Suite with StrictLogging =>
 
@@ -19,43 +15,34 @@ trait WithFlinkContainers extends WithDockerContainers with BeforeAndAfterAll { 
 
   protected lazy val taskManagerSlotCount = 32
 
-  protected def jobManagerExtraFSBinds: List[FileSystemBind] = List.empty
+  protected def jobManagerExtraVolumes: List[ContainerVolume] = List.empty
 
-  protected def taskManagerExtraFSBinds: List[FileSystemBind] = List.empty
+  protected def taskManagerExtraVolumes: List[ContainerVolume] = List.empty
 
   protected def jobManagerRestUrl =
-    s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"
+    s"http://${jobManagerContainer.host}:${jobManagerContainer.mappedPort(FlinkJobManagerRestPort)}"
 
   protected def flinkContainers: List[LazyContainer[GenericContainer]] = List(jobManagerContainer, taskManagerContainer)
 
-  private var savepointBindInitialized = false
-
-  protected lazy val savepointBind: FileSystemBind = {
-    savepointBindInitialized = true
-    val tempPath = createMountableTempDirectory("nussknackerFlinkSavepointTest", BindMode.READ_WRITE)
-    FileSystemBind(tempPath, s"/tmp/${tempPath.getFileName}", BindMode.READ_WRITE)
-  }
-
   private lazy val flinkImage = prepareFlinkImage()
 
-  private lazy val jobManagerContainer: GenericContainer = {
+  protected val jobManagerContainerSavepointDir = "/tmp/savepoints/"
+
+  protected lazy val jobManagerContainer: GenericContainer = {
     new GenericContainer(
       dockerImage = flinkImage,
       command = "jobmanager" :: Nil,
       exposedPorts = FlinkJobManagerRestPort :: Nil,
       env = Map(
-        "SAVEPOINT_DIR_PATH" -> savepointBind.containerPath,
         "FLINK_PROPERTIES" ->
-          s"""execution.checkpointing.savepoint-dir: file:${savepointBind.containerPath}
+          s"""execution.checkpointing.savepoint-dir: file:$jobManagerContainerSavepointDir
              |""".stripMargin,
       ),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
     ).configure { self =>
       self.withNetwork(network)
       self.withLogConsumer(logConsumer(prefix = "jobmanager"))
-      (savepointBind :: jobManagerExtraFSBinds).foreach { bind =>
-        self.withFileSystemBind(bind.hostPath.toString, bind.containerPath, bind.mode)
-      }
+      taskManagerExtraVolumes.foreach { bindTempVolume(self, _) }
     }
   }
 
@@ -72,21 +59,13 @@ trait WithFlinkContainers extends WithDockerContainers with BeforeAndAfterAll { 
     ).configure { self =>
       self.setNetwork(network)
       self.withLogConsumer(logConsumer(prefix = "taskmanager"))
-      taskManagerExtraFSBinds.foreach { bind =>
-        self.withFileSystemBind(bind.hostPath.toString, bind.containerPath, bind.mode)
-      }
+      taskManagerExtraVolumes.foreach { bindTempVolume(self, _) }
     }
   }
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    if (savepointBindInitialized) {
-      try {
-        FileUtils.deleteDirectory(savepointBind.hostPath.toFile)
-      } catch {
-        case NonFatal(e) => logger.warn(s"Failed to delete temp savepoint directory $savepointBind (${e.getMessage})")
-      }
-    }
+    removeVolumesQuietly((jobManagerExtraVolumes ++ taskManagerExtraVolumes).map(_.volumeName))
   }
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
