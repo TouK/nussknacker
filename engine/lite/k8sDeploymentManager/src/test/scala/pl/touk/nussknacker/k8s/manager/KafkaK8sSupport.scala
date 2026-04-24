@@ -37,8 +37,7 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
 
   private var kafkaPortForwarder: K8sPortForwarder = _
 
-  private val kafkaClient =
-    new KafkaClient(s"localhost:$kafkaPodExposedPort", getClass.getSimpleName)
+  private val kafkaClient = new KafkaClient(s"localhost:$kafkaPodExposedPort", getClass.getSimpleName)
 
   def start()(implicit ec: ExecutionContext): Unit = if (k8s.getOption[Pod](kafkaPodName).futureValue.isEmpty) {
     val kafkaContainer = Container(

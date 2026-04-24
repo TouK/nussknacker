@@ -92,8 +92,7 @@ class K8sDeploymentManagerReqRespTest
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
-      val request =
-        basicRequest.post(uri"http://${k8sTestUtils.clusterHost}".port(8081).withPath(givenScenarioName))
+      val request = basicRequest.post(uri"http://${k8sTestUtils.clusterHost}".port(8081).withPath(givenScenarioName))
       val response =
         eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
           request.body(pingMessage).send(backend).futureValue.body.rightValue
