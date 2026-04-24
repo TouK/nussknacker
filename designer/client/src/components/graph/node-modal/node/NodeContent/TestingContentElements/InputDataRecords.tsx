@@ -17,7 +17,6 @@ import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecor
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { PasteRecordsButton } from "../../../../../modals/TestingDataRecords/PasteRecordsButton";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
-import type { TestingDataRecords } from "../../../../../modals/TestingDataRecords/types";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { buildDefaultVariables } from "../../../../../modals/TestingDataRecords/utils";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
@@ -47,6 +46,7 @@ export const InputDataRecords = ({ node }: Props) => {
     const {
         cellErrors,
         recordsErrors,
+        limitReached,
         handleRowsAdded,
         handleRowMoved,
         handleRowsDeleted,
@@ -109,7 +109,7 @@ export const InputDataRecords = ({ node }: Props) => {
     }, [testingDataRecordsForSource]);
 
     const hasRecords = (testingDataRecordsForSource ?? []).length > 0;
-    const addRecordDisabled = recordsToAddLimitExceeded;
+    const addRecordDisabled = limitReached;
 
     return (
         <StyledStack>
@@ -168,7 +168,7 @@ export const InputDataRecords = ({ node }: Props) => {
                                                 sourceId={node.id}
                                                 onRowsAdded={handleRowsAdded}
                                                 defaultVariables={defaultDataRecord?.variables}
-                                                disabled={recordsToAddLimitExceeded}
+                                                disabled={limitReached}
                                             />
                                         </span>
                                     </InfoTooltip>
@@ -185,7 +185,7 @@ export const InputDataRecords = ({ node }: Props) => {
                                         <AppendFromLiveDataButton
                                             handleGenerateTestData={handleGenerateTestDataForSingleSource}
                                             maxTestingRecords={maxTestingRecords}
-                                            recordsToAddLimitExceeded={recordsToAddLimitExceeded}
+                                            recordsToAddLimitExceeded={limitReached}
                                         />
                                     </span>
                                 </InfoTooltip>
@@ -242,13 +242,13 @@ export const InputDataRecords = ({ node }: Props) => {
                                 sourceId={node.id}
                                 onRowsAdded={handleRowsAdded}
                                 defaultVariables={defaultDataRecord?.variables}
-                                disabled={recordsToAddLimitExceeded}
+                                disabled={limitReached}
                                 variant="outlined"
                             />
                             <AppendFromLiveDataButton
                                 handleGenerateTestData={handleGenerateTestDataForSingleSource}
                                 maxTestingRecords={maxTestingRecords}
-                                recordsToAddLimitExceeded={recordsToAddLimitExceeded}
+                                recordsToAddLimitExceeded={limitReached}
                             />
                         </Box>
                     </Box>
