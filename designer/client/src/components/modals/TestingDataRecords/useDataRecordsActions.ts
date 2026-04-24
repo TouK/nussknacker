@@ -16,7 +16,7 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const dispatch = useAppDispatch();
-    const { recordsErrors, validateForCount, limitReached } = useDataRecordsValidation();
+    const { recordsErrors, validateForCount } = useDataRecordsValidation();
 
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
@@ -111,8 +111,12 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
                         return shift ? { ...e, y: e.y - shift } : e;
                     }),
             );
+
+            validateForCount((currentCount) => {
+                return Math.max(0, currentCount - deletedRows.length);
+            });
         },
-        [dispatch],
+        [dispatch, validateForCount],
     );
 
     const handleRowsAdded = React.useCallback(
@@ -148,7 +152,6 @@ export const useDataRecordsActions = (node: NodeType, scenarioProperties: Proper
     return {
         cellErrors,
         recordsErrors,
-        limitReached,
         handleRowsAdded,
         handleRowUpdated,
         handleRowsDeleted,

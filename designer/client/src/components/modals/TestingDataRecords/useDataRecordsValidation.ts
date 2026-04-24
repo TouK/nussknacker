@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
 import { getTestData } from "../../../reducers/selectors/testCases";
@@ -12,26 +12,20 @@ export const useDataRecordsValidation = () => {
 
     const [recordsErrors, setRecordsErrors] = useState<RecordError[]>([]);
 
-    useEffect(() => {
-        if (testingDataRecords.length < maxTestingRecords) {
-            setRecordsErrors([]);
-        }
-    }, [testingDataRecords.length, maxTestingRecords]);
-
     const validateForCount = React.useCallback(
         (nextCount: (currentCount: number) => number) => {
             const testDataLimitExceeded = nextCount(testingDataRecords.length) > maxTestingRecords;
+            const errors: RecordError[] = [];
 
             if (testDataLimitExceeded) {
-                setRecordsErrors([{ type: "TEST_DATA_LIMIT_EXCEEDED" }]);
+                errors.push({ type: "TEST_DATA_LIMIT_EXCEEDED" });
             }
 
-            return !testDataLimitExceeded;
+            setRecordsErrors(errors);
+            return errors.length === 0;
         },
         [maxTestingRecords, testingDataRecords.length],
     );
 
-    const limitReached = testingDataRecords.length >= maxTestingRecords;
-
-    return { recordsErrors, validateForCount, limitReached };
+    return { recordsErrors, validateForCount };
 };
