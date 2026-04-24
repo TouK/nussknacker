@@ -1,21 +1,21 @@
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { LoadingButton } from "@mui/lab";
 import { Box, inputBaseClasses, TextField } from "@mui/material";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
     handleGenerateTestData: (numberOfSamples: number) => void;
-    maxTestingRecords: number;
+    maxTestingRecordsToAdd: number;
     recordsToAddLimitExceeded: boolean;
 }
 
 const DEFAULT_APPEND_COUNT = 10;
-const APPEND_MIN = 0;
+const APPEND_MIN = 1;
 
-export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRecords, recordsToAddLimitExceeded }: Props) => {
+export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRecordsToAdd, recordsToAddLimitExceeded }: Props) => {
     const { t } = useTranslation();
-    const [recordsToAppend, setRecordsToAppend] = useState<number>(DEFAULT_APPEND_COUNT);
+    const [recordsToAppend, setRecordsToAppend] = useState<number>(Math.max(1, Math.min(DEFAULT_APPEND_COUNT, maxTestingRecordsToAdd)));
     const [loading, setLoading] = useState(false);
 
     const handleClick = useCallback(async () => {
@@ -31,10 +31,16 @@ export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRec
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const num = Number(e.target.value);
             if (!Number.isFinite(num)) return;
-            setRecordsToAppend(Math.max(APPEND_MIN, Math.min(maxTestingRecords, num)));
+            setRecordsToAppend(Math.max(APPEND_MIN, Math.min(maxTestingRecordsToAdd, num)));
         },
-        [maxTestingRecords],
+        [maxTestingRecordsToAdd],
     );
+
+    useEffect(() => {
+        if (maxTestingRecordsToAdd <= DEFAULT_APPEND_COUNT) {
+            setRecordsToAppend(maxTestingRecordsToAdd > 0 ? maxTestingRecordsToAdd : APPEND_MIN);
+        }
+    }, [maxTestingRecordsToAdd]);
 
     return (
         <Box display="flex" alignItems="center" gap={0.5}>
@@ -53,7 +59,11 @@ export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRec
                 type="number"
                 value={recordsToAppend}
                 onChange={handleChange}
-                inputProps={{ min: APPEND_MIN, max: maxTestingRecords, "data-testid": "numberOfRecords" }}
+                inputProps={{
+                    min: Math.max(1, Math.min(APPEND_MIN, maxTestingRecordsToAdd)),
+                    max: maxTestingRecordsToAdd,
+                    "data-testid": "numberOfRecords",
+                }}
                 size="small"
                 variant="filled"
                 InputProps={{ disableUnderline: true }}

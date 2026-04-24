@@ -4,8 +4,8 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { Box, Button, Divider, Typography } from "@mui/material";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { usePromise } from "rooks";
 import { useTranslation } from "react-i18next";
+import { usePromise } from "rooks";
 
 import { TestCapabilityStatus } from "../../../../../../common/TestResultUtils";
 import HttpService from "../../../../../../http/HttpService/instance";
@@ -110,6 +110,7 @@ export const InputDataRecords = ({ node }: Props) => {
 
     const hasRecords = (testingDataRecordsForSource ?? []).length > 0;
     const addRecordDisabled = recordsToAddLimitExceeded;
+    const maxTestingRecordsToAdd = maxTestingRecords - testingDataRecordsForSource.length;
 
     return (
         <StyledStack>
@@ -184,7 +185,7 @@ export const InputDataRecords = ({ node }: Props) => {
                                     <span>
                                         <AppendFromLiveDataButton
                                             handleGenerateTestData={handleGenerateTestDataForSingleSource}
-                                            maxTestingRecords={maxTestingRecords}
+                                            maxTestingRecordsToAdd={maxTestingRecordsToAdd}
                                             recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                                         />
                                     </span>
@@ -247,7 +248,7 @@ export const InputDataRecords = ({ node }: Props) => {
                             />
                             <AppendFromLiveDataButton
                                 handleGenerateTestData={handleGenerateTestDataForSingleSource}
-                                maxTestingRecords={maxTestingRecords}
+                                maxTestingRecordsToAdd={maxTestingRecordsToAdd}
                                 recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                             />
                         </Box>
