@@ -8,7 +8,7 @@ import java.io.{File, IOException}
 import java.net.Socket
 import scala.util.control.NonFatal
 
-class K8sPortForwarder(val obj: ObjectResource, val remotePort: Int, val localPort: Int)
+class K8sPortForwarder(val resource: ObjectResource, val resourcePort: Int, val port: Int)
     extends AutoCloseable
     with LazyLogging {
 
@@ -19,17 +19,17 @@ class K8sPortForwarder(val obj: ObjectResource, val remotePort: Int, val localPo
       throw new IllegalStateException("forwarder is already running")
     }
 
-    val typeAndName = s"${fixedKind(obj)}/${obj.name}"
-    portForwardProcess = new ProcessBuilder("kubectl", "port-forward", typeAndName, s"$localPort:$remotePort")
+    val typeAndName = s"${fixedKind(resource)}/${resource.name}"
+    portForwardProcess = new ProcessBuilder("kubectl", "port-forward", typeAndName, s"$port:$resourcePort")
       .directory(new File("/tmp"))
       .start()
 
     try {
-      val name              = s"port-forward($localPort)"
+      val name              = s"port-forward($port)"
       val processExitFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(name, portForwardProcess)
       ProcessUtils.checkIfFailedInstantly(processExitFuture)
       waitForPortOpen(portForwardProcess)
-      logger.info(s"Started port forwarder: localhost:$localPort -> $typeAndName:$remotePort")
+      logger.info(s"Started port forwarder: localhost:$port -> $typeAndName:$resourcePort")
     } catch {
       case NonFatal(ex) =>
         close()
@@ -43,7 +43,7 @@ class K8sPortForwarder(val obj: ObjectResource, val remotePort: Int, val localPo
     val startTs = System.currentTimeMillis()
     while (process.isAlive) {
       try {
-        new Socket("localhost", localPort).close()
+        new Socket("localhost", port).close()
         return
       } catch {
         case e: IOException =>

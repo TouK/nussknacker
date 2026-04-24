@@ -15,6 +15,7 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 
+import java.net.URI
 import scala.collection.mutable
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,6 +28,11 @@ class K8sTestUtils(k8s: KubernetesClient)
     with OptionValues
     with ExtremelyPatientScalaFutures
     with LazyLogging {
+
+  val clusterHost: String = URI.create(k8s.clusterServer).getHost match {
+    case "0.0.0.0" => "localhost" // 0.0.0.0 is a bind address, not a routable host for test HTTP clients
+    case other     => other
+  }
 
   val reverseProxyPodRemotePort = 8080
 

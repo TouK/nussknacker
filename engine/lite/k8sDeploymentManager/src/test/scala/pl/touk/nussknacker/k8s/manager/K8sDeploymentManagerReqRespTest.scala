@@ -60,12 +60,12 @@ class K8sDeploymentManagerReqRespTest
       ports should have length 1
       ports.head.port shouldEqual givenServicePort
 
-      k8sTestUtils.withForwardedProxyPod(s"http://${service.name}:$givenServicePort") { proxyLocalPort =>
+      k8sTestUtils.withForwardedProxyPod(s"http://${service.name}:$givenServicePort") { forwardedProxyPort =>
         val pingContent = """Nussknacker!"""
         val pingMessage = s"""{"ping":"$pingContent"}"""
         var instanceIds = Set.empty[String]
         eventually {
-          val request      = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
+          val request      = basicRequest.post(uri"http://localhost".port(forwardedProxyPort))
           val response     = request.body(pingMessage).send(backend).futureValue.body.rightValue
           val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
@@ -92,7 +92,7 @@ class K8sDeploymentManagerReqRespTest
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
-      val request     = basicRequest.post(uri"http://localhost".port(8081).withPath(givenScenarioName))
+      val request = basicRequest.post(uri"http://${k8sTestUtils.clusterHost}".port(8081).withPath(givenScenarioName))
       val response =
         eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
           request.body(pingMessage).send(backend).futureValue.body.rightValue
@@ -122,7 +122,7 @@ class K8sDeploymentManagerReqRespTest
       val pingMessage = s"""{"ping":"$pingContent"}"""
       val request = basicRequest.auth
         .basic("publisher", "rrPassword")
-        .post(uri"http://localhost".port(8081).withPath(givenScenarioName))
+        .post(uri"http://${k8sTestUtils.clusterHost}".port(8081).withPath(givenScenarioName))
       val response =
         eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
           request.body(pingMessage).send(backend).futureValue.body.rightValue
@@ -142,12 +142,12 @@ class K8sDeploymentManagerReqRespTest
     )
 
     f.withRunningScenario {
-      k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { proxyLocalPort =>
+      k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { forwardedProxyPort =>
         val pingContent = """Nussknacker!"""
         val pingMessage = s"""{"ping":"$pingContent"}"""
 
         def checkVersions() = (1 to 10).map { _ =>
-          val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
+          val request = basicRequest.post(uri"http://localhost".port(forwardedProxyPort))
           val response =
             eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
               request.body(pingMessage).send(backend).futureValue.body.rightValue
@@ -268,9 +268,9 @@ class K8sDeploymentManagerReqRespTest
     f.withRunningScenarioWithDeployParams(
       NodesDeploymentData(Map(NodeId("deployParamNodeId") -> Map("deployParam" -> givenDeployParamValue)))
     ) {
-      k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { proxyLocalPort =>
+      k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { forwardedProxyPort =>
         val pingMessage  = s"""{"ping":"foo"}"""
-        val request      = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
+        val request      = basicRequest.post(uri"http://localhost".port(forwardedProxyPort))
         val response     = request.body(pingMessage).send(backend).futureValue.body.rightValue
         val jsonResponse = parser.parse(response).rightValue
         jsonResponse.hcursor.downField("deployParam").as[String].rightValue shouldEqual givenDeployParamValue
