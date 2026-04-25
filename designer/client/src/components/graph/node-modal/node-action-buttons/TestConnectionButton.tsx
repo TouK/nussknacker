@@ -44,7 +44,7 @@ export const TestConnectionButton = ({ disabled, node }: Props) => {
         <Box display={"flex"} flexDirection={"column"} alignItems={"flex-end"} width={"100%"}>
             <StyledLoadingButton
                 disabled={disabled}
-                title={t("node.actions.testConnection", "Test Connection")}
+                title={t("node.actions.testConnection.buttonTitle", "Test Connection")}
                 action={handleTestConnection}
             />
             {result && (

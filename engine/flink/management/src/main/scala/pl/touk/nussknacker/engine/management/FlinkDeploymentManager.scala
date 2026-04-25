@@ -5,7 +5,6 @@ import cats.effect.{Resource, SyncIO}
 import cats.implicits._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.lang3.SystemUtils
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.{newdeployment, BaseModelDataProvider, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -29,6 +28,7 @@ import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.FlinkClient.ExecutionConfigOps
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
+import pl.touk.nussknacker.engine.management.savepoint.FlinkSavepointLocator
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 
@@ -36,6 +36,7 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 import java.time.Instant
 import scala.concurrent.Future
+import scala.util.Using
 
 class FlinkDeploymentManager(
     modelDataProvider: BaseModelDataProvider,
@@ -44,6 +45,7 @@ class FlinkDeploymentManager(
     miniClusterWithServices: FlinkMiniClusterWithServices,
     client: FlinkClient,
     jobRunner: FlinkScenarioJobRunner,
+    savepointLocator: FlinkSavepointLocator,
     override val liveDataPreviewSupport: LiveDataPreviewSupport,
 ) extends DeploymentManager
     with LazyLogging {
@@ -212,26 +214,21 @@ class FlinkDeploymentManager(
       processVersion: ProcessVersion
   ): Future[Unit] =
     if (flinkConfig.scenarioStateVerification.enabled) {
-      val adjustedSavepointPath = adjustWindowsTempPath(savepointPath)
-      if (!Files.isDirectory(Paths.get(URI.create(adjustedSavepointPath)))) {
-        return Future.failed(
-          new IllegalArgumentException(
-            s"Cannot run state verification, passed savepoint path '$savepointPath' does not exist"
-          )
-        )
+      savepointLocator.locateSavepoint(savepointPath).flatMap { locatedSavepoint =>
+        Using.resource(locatedSavepoint) { savepoint =>
+          if (!Files.isDirectory(Paths.get(URI.create(savepoint.path)))) {
+            Future.failed(
+              new IllegalArgumentException(
+                s"Cannot run state verification, passed savepoint path '$savepointPath' does not exist locally at '${savepoint.path}'"
+              )
+            )
+          } else {
+            verification.verify(processVersion, canonicalProcess, savepoint.path)
+          }
+        }
       }
-      verification.verify(processVersion, canonicalProcess, adjustedSavepointPath)
     } else {
       Future.successful(())
-    }
-
-  private def adjustWindowsTempPath(path: String): String =
-    if (SystemUtils.IS_OS_WINDOWS && path.startsWith("file:/tmp/") && !Files.isDirectory(Paths.get(URI.create(path)))) {
-      // we don't support running on Windows, but let's at least allow tests to pass
-      val windowsTempDir = SystemUtils.getJavaIoTmpDir.toURI.toURL.toString
-      windowsTempDir + path.stripPrefix("file:/tmp/")
-    } else {
-      path
     }
 
   override def getScenarioDeploymentsStatuses(

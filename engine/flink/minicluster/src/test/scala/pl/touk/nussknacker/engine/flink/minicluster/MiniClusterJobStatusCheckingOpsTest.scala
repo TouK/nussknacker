@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOpsTest.GeneratorFunctionStub
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import retry.Directly
 
 import java.lang.{Long => JLong}
@@ -24,7 +24,7 @@ import scala.jdk.CollectionConverters._
 
 class MiniClusterJobStatusCheckingOpsTest
     extends AnyFunSuiteLike
-    with PatientScalaFutures
+    with VeryPatientScalaFutures
     with BeforeAndAfterAll
     with Matchers {
 

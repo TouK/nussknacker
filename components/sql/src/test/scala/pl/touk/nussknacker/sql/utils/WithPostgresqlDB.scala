@@ -5,7 +5,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.testcontainers.utility.DockerImageName
 
 import java.sql.{Connection, DriverManager}
-import scala.jdk.CollectionConverters._
 
 trait WithPostgresqlDB {
   self: BeforeAndAfterAll with ForAllTestContainer =>
@@ -14,17 +13,16 @@ trait WithPostgresqlDB {
 
   override val container: PostgreSQLContainer = {
     val container = PostgreSQLContainer(DockerImageName.parse("postgres:18-alpine"))
-    container.container.setPortBindings(List("5432:5432").asJava)
+    container.container.withUrlParam("loggerLevel", "OFF")
     container
   }
 
   private val driverClassName = "org.postgresql.Driver"
   private val username        = container.username
   private val password        = container.password
-  // this url can be read as container.jdbcUrl when service is started, but it is hard to postpone this step until this service is started
-  private val url = "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF"
+  private lazy val url        = container.jdbcUrl
 
-  val postgresqlConfigValues: Map[String, String] = Map(
+  lazy val postgresqlConfigValues: Map[String, String] = Map(
     "driverClassName" -> driverClassName,
     "username"        -> username,
     "password"        -> password,

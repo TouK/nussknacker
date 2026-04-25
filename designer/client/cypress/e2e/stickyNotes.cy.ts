@@ -11,6 +11,7 @@ describe("Sticky notes", () => {
 
     const screenshotOptions: Cypress.MatchImageOptions = {
         screenshotConfig: { clip: { x: 0, y: 0, width: 1400, height: 600 } },
+        maxDiffThreshold: 0.02,
     };
 
     it("should allow to drag sticky note", () => {
@@ -48,7 +49,6 @@ describe("Sticky notes", () => {
         cy.get(".sticky-note-content").dblclick();
         cy.get(".sticky-note-content textarea").type("# Title\n- p1\n- p2\n\n[link](href)");
         cy.getNode("request").click();
-        //FIXME flaky screenshot
-        // cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
+        cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
     });
 });

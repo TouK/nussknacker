@@ -19,10 +19,10 @@ class NuKafkaRuntimeBinTest
   test("should run scenario and pass data to output ") {
     val shellScriptArgs =
       Array(shellScriptPath.toString, fixture.scenarioFile.toString, NuRuntimeTestUtils.deploymentDataFile.toString)
-    val shellScriptEnvs = Array(
+    val shellScriptEnvs = defaultEnvs ++ Array(
       s"KAFKA_ADDRESS=$kafkaBoostrapServer",
       "KAFKA_AUTO_OFFSET_RESET=earliest",
-      s"SCHEMA_REGISTRY_URL=$mappedSchemaRegistryAddress",
+      s"SCHEMA_REGISTRY_URL=${schemaRegistryContainer.url}",
       // random management port to avoid clashing of ports
       "CONFIG_FORCE_pekko_management_http_port=0",
       // It looks like github-actions doesn't look binding to 0.0.0.0, was problems like: Bind failed for TCP channel on endpoint [/10.1.0.183:0]

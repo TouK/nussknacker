@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import type { AssertionOperator } from "../../../../../../actions/nk/testCasesActions";
 import { clearTestCaseNodeAssertionResult, setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
 import httpService from "../../../../../../http/HttpService/instance";
-import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
@@ -22,6 +21,7 @@ import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { useInputOutputContext } from "../../../io/InputOutputContext";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
+import { getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { OverrideKeys } from "../../../parameterHelpers";
 import { useGetNodeTestCasesErrors, useValidation, useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
 import { AssertionItem } from "./AssertionItem";
@@ -63,18 +63,23 @@ export const Assertions = ({ node, edges }: Props) => {
     const testCasesErrors = useGetNodeTestCasesErrors(node);
 
     useValidation({ node, showValidation: true, edges });
-    const processingType = useAppSelector(getProcessingType);
+    const scenarioName = useAppSelector(getProcessName);
+    const processProperties = useAppSelector(getProcessProperties);
     const nodeVariableTypes = useVariableTypes({ node });
     const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
 
     useEffect(() => {
         const fetchAssertionVariableTypes = async () => {
-            const response = await httpService.fetchTestCaseNodeAdditionalVariables(processingType, { variableTypes: nodeVariableTypes });
+            const response = await httpService.fetchTestCaseNodeAdditionalVariables(scenarioName, {
+                variableTypes: nodeVariableTypes,
+                nodeData: node,
+                scenarioProperties: processProperties,
+            });
             setAssertionVariableTypes(omit(response.assertionsAdditionalVariables, "TESTS") || {});
         };
 
         fetchAssertionVariableTypes();
-    }, [processingType, nodeVariableTypes]);
+    }, [scenarioName, nodeVariableTypes, node, processProperties]);
 
     const addAssertion = useCallback(() => {
         dispatch(

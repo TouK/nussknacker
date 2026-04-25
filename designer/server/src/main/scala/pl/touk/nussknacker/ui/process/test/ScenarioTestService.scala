@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.api.test.{
 }
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.node
@@ -35,13 +35,10 @@ import pl.touk.nussknacker.engine.test.testcase.{EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeTypingData,
-  NodeValidationError,
-  ValidationErrors
-}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors}
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.config.TestCasesSettings
@@ -58,6 +55,7 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.validation.UIProcessValidator.ValidationResultWithDetails
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -350,12 +348,17 @@ class ScenarioTestService(
         performTestWithDeserializedRecords(processVersion, scenarioWithTyping.scenario, scenarioTestData)
       )
       jsonTestResults = JsonTestResults.from(testResults)
+      testResultsForAssertions = AssertionVerifier.TestResults(
+        testResults.originalNodeResults,
+        testResults.originalNodeTransitionResults,
+        testResults.originalExternalServiceInvocationResults,
+      )
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(jsonTestResults))
     } yield ResultsWithCounts(
       Instant.now(),
       jsonTestResults,
       computeCounts(scenarioWithTyping.scenario, isFragment, testResults),
-      assertionVerifier.verify(compiledAssertions, testResults.originalNodeResults, jobData)
+      assertionVerifier.verify(compiledAssertions, testResultsForAssertions, jobData)
     )).value
   }
 
@@ -390,24 +393,25 @@ class ScenarioTestService(
   private def validateScenario(scenarioGraph: ScenarioGraph, processVersion: ProcessVersion, isFragment: Boolean)(
       implicit user: LoggedUser
   ): Either[ScenarioValidationError, ScenarioWithTyping] = {
-    val validationResult = processResolver.validateBeforeUiResolving(scenarioGraph, processVersion, isFragment)
+    val ValidationResultWithDetails(validationResult, typing) =
+      processResolver.validateBeforeUiResolvingWithDetails(scenarioGraph, processVersion, isFragment)
     val canonicalProcess =
       processResolver.resolveExpressions(scenarioGraph, processVersion.processName, validationResult.typingInfo)
     if (validationResult.hasErrors) {
       Left(ScenarioValidationError(validationResult.errors))
     } else {
-      Right(ScenarioWithTyping(canonicalProcess, validationResult.nodeResults))
+      Right(ScenarioWithTyping(canonicalProcess, typing))
     }
   }
 
   private def compileAssertions(
       test: TestCase,
-      nodesTyping: Map[String, NodeTypingData],
+      nodesTyping: Map[String, NodeTypingInfo],
       jobData: JobData,
       nodeNamesById: Map[NodeId, NodeName]
   ): Either[PerformTestError, CompiledAssertions] = {
     assertionCompiler
-      .compile(test, nodesTyping, jobData, nodeNamesById)
+      .compile(test, nodesTyping.mapValuesNow(testcase.NodeTyping), jobData, nodeNamesById)
       .fold(
         errors => Left(AssertionErrors(errors)),
         Right(_)
@@ -646,7 +650,7 @@ class ScenarioTestService(
 
 object ScenarioTestService {
 
-  private final case class ScenarioWithTyping(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingData])
+  private final case class ScenarioWithTyping(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingInfo])
 
   sealed trait TestingCapabilitiesError
 

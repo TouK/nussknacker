@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient => CMockSchemaRegistryClient, SchemaMetadata}
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
 
 import java.util
 

@@ -871,6 +871,17 @@ class NodesApiHttpServiceBusinessSpec
              |            "language": "spel",
              |            "expression": "'value'"
              |          }
+             |        },
+             |        {
+             |          "operator": "equals",
+             |          "actual": {
+             |            "language": "spel",
+             |            "expression": "#outgoingRecords[0].enricherOutput"
+             |          },
+             |          "expected": {
+             |            "language": "spel",
+             |            "expression": "'a'"
+             |          }
              |        }
              |      ]
              |    },
@@ -1594,6 +1605,9 @@ class NodesApiHttpServiceBusinessSpec
   "The endpoint for test case additional variables should" - {
     "return assertions variables and their types" in {
       given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
         .basicAuthAllPermUser()
         .jsonBody(
           """
@@ -1651,12 +1665,30 @@ class NodesApiHttpServiceBusinessSpec
             |      "refClazzName": "java.lang.String",
             |      "params": []
             |    }
+            |  },
+            |  "nodeData": {
+            |    "id": "varNodeId",
+            |    "varName": "myVar",
+            |    "value": {
+            |      "language": "spel",
+            |      "expression": "'hello'"
+            |    },
+            |    "additionalFields": null,
+            |    "type": "Variable"
+            |  },
+            |  "scenarioProperties": {
+            |    "isFragment": false,
+            |    "additionalFields": {
+            |      "description": null,
+            |      "properties": {},
+            |      "metaDataType": "StreamMetaData"
+            |    }
             |  }
             |}
             |""".stripMargin
         )
         .when()
-        .post(s"$nuDesignerHttpAddress/api/parameters/streaming/testCase/additionalVariables")
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/additionalVariables")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -1758,9 +1790,107 @@ class NodesApiHttpServiceBusinessSpec
             |          ]
             |        }
             |      ]
+            |    },
+            |    "outgoingRecords": {
+            |      "display": "List[Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, myVar: String(hello), sampleVariable: String(sample value)}]",
+            |      "type": "TypedClass",
+            |      "refClazzName": "java.util.List",
+            |      "params": [
+            |        {
+            |          "display": "Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, myVar: String(hello), sampleVariable: String(sample value)}",
+            |          "type": "TypedObjectTypingResult",
+            |          "fields": {
+            |            "input": {
+            |              "display": "Record{dateTime: Instant, sampleField: String, type: String, value: Integer}",
+            |              "type": "TypedObjectTypingResult",
+            |              "fields": {
+            |                "sampleField": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "dateTime": {
+            |                  "display": "Instant",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.time.Instant",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "type": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "value": {
+            |                  "display": "Integer",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.Integer",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              },
+            |              "refClazzName": "java.util.Map",
+            |              "params": [
+            |                {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                {
+            |                  "display": "Unknown",
+            |                  "type": "Unknown",
+            |                  "refClazzName": "java.lang.Object",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              ]
+            |            },
+            |            "sampleVariable": {
+            |              "value": "sample value",
+            |              "display": "String(sample value)",
+            |              "type": "TypedObjectWithValue",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            },
+            |            "myVar": {
+            |              "value": "hello",
+            |              "display": "String(hello)",
+            |              "type": "TypedObjectWithValue",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            }
+            |          },
+            |          "refClazzName": "java.util.Map",
+            |          "params": [
+            |            {
+            |              "display": "String",
+            |              "type": "TypedClass",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            },
+            |            {
+            |              "display": "Unknown",
+            |              "type": "Unknown",
+            |              "refClazzName": "java.lang.Object",
+            |              "params": [
+            |              ]
+            |            }
+            |          ]
+            |        }
+            |      ]
             |    }
             |  }
-            |}""".stripMargin
+            |}
+            |""".stripMargin
         )
     }
   }

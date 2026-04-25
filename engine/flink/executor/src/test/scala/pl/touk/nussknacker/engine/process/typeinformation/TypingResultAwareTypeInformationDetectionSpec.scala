@@ -55,7 +55,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     serializeRoundTrip(map + ("unknown" -> "???"), typeInfo)(map)
 
     assertMapSerializers(
-      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
+      typeInfo.createSerializer(serializerConfigWithoutKryo),
       ("fixedLong", new LongSerializer),
       ("intF", new IntSerializer),
       ("longF", new LongSerializer),
@@ -72,11 +72,11 @@ class TypingResultAwareTypeInformationDetectionSpec
     val typeInfo: TypeInformation[Map[String, Any]] = detection.forType(typingResult)
 
     an[UnsupportedOperationException] shouldBe thrownBy(serializeRoundTrip(map, typeInfo)())
-    serializeRoundTrip(map, typeInfo, executionConfigWithKryo)()
+    serializeRoundTrip(map, typeInfo, serializerConfigWithKryo)()
 
     assertMapSerializers(
-      typeInfo.createSerializer(executionConfigWithKryo.getSerializerConfig),
-      ("obj", new KryoSerializer(classOf[SomeTestClass], executionConfigWithKryo.getSerializerConfig))
+      typeInfo.createSerializer(serializerConfigWithKryo),
+      ("obj", new KryoSerializer(classOf[SomeTestClass], serializerConfigWithKryo))
     )
   }
 
@@ -111,7 +111,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     checkContextAreSame(valueWithContextAfterRoundTrip.context, ctx)
 
     assertSerializersInContext(
-      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
+      typeInfo.createSerializer(serializerConfigWithoutKryo),
       ("arrayOfInts", _ shouldBe new GenericArraySerializer(classOf[Integer], new IntSerializer)),
       ("arrayOfStrings", _ shouldBe new StringArraySerializer),
       ("one", _ shouldBe new IntSerializer),
@@ -176,7 +176,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     intercept[ClassCastException](serializeRoundTrip(ctx, typeInfo)())
 
     assertSerializersInContext(
-      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
+      typeInfo.createSerializer(serializerConfigWithoutKryo),
       ("longField", _ shouldBe new LongSerializer)
     )
   }
@@ -192,16 +192,16 @@ class TypingResultAwareTypeInformationDetectionSpec
       Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
 
     val serializer =
-      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
+      detection.forType(typingResult).createSerializer(serializerConfigWithoutKryo)
 
     val compatibleSerializer =
       detection
         .forType(compatibleTypingResult)
-        .createSerializer(executionConfigWithoutKryo.getSerializerConfig)
+        .createSerializer(serializerConfigWithoutKryo)
     val incompatibleSerializer =
       detection
         .forType(incompatibleTypingResult)
-        .createSerializer(executionConfigWithoutKryo.getSerializerConfig)
+        .createSerializer(serializerConfigWithoutKryo)
     val serializerSnapshot = serializer.snapshotConfiguration()
 
     serializerSnapshot
@@ -228,11 +228,11 @@ class TypingResultAwareTypeInformationDetectionSpec
     )()
 
     val oldSerializer =
-      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
+      detection.forType(typingResult).createSerializer(serializerConfigWithoutKryo)
     val addFieldSerializer =
-      detection.forType(addField).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
+      detection.forType(addField).createSerializer(serializerConfigWithoutKryo)
     val removeFieldSerializer =
-      detection.forType(removeField).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
+      detection.forType(removeField).createSerializer(serializerConfigWithoutKryo)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     oldSerializerSnapshot

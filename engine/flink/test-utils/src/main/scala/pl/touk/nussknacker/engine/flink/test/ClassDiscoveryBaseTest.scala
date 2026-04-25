@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Paths
 import scala.util.Properties
 
 trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside with LazyLogging {
@@ -68,9 +69,9 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside with 
   test("check extracted class for model") {
     val types = model.modelDefinitionWithClasses.classDefinitions.all
     if (Option(System.getenv("CLASS_EXTRACTION_PRINT")).exists(_.toBoolean)) {
-      val fileName = s"${Properties.tmpDir}/${getClass.getSimpleName}-result.json"
-      logger.info(s"CLASS_EXTRACTION_PRINT is set. The file JSON file will be stored in '$fileName'")
-      FileUtils.write(new File(fileName), encode(types), StandardCharsets.UTF_8)
+      val filePath = Paths.get(Properties.tmpDir, s"${getClass.getSimpleName}-result.json")
+      logger.info(s"CLASS_EXTRACTION_PRINT is set. The file JSON file will be stored in '$filePath'")
+      FileUtils.write(filePath.toFile, encode(types), StandardCharsets.UTF_8)
     }
     val parsed  = parse(ResourceLoader.load(outputResource)).toOption.get
     val decoded = decode(parsed)

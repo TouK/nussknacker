@@ -906,13 +906,11 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils"))
     name := "nussknacker-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "javax.validation" % "validation-api"                 % javaxValidationApiV,
-        "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % IntegrationTest,
-        "com.dimafeng"    %% "testcontainers-scala-kafka"     % testContainersScalaV % IntegrationTest
+        "javax.validation" % "validation-api" % javaxValidationApiV,
       )
     }
   )
-  .dependsOn(kafkaUtils, componentsUtils % Provided, testUtils % "it, test")
+  .dependsOn(kafkaUtils, componentsUtils % Provided, testUtils % "it, test", kafkaTestUtils % "it")
 
 lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-components-utils"))
   .configs(ExternalDepsTests)
@@ -1006,9 +1004,11 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
     name := "nussknacker-kafka-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka"       %% "kafka"            % kafkaV,
-        "org.slf4j"               % "log4j-over-slf4j" % slf4jV,
-        "com.softwaremill.retry" %% "retry"            % retryV
+        "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV,
+        "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV,
+        "org.apache.kafka"       %% "kafka"                          % kafkaV,
+        "org.slf4j"               % "log4j-over-slf4j"               % slf4jV,
+        "com.softwaremill.retry" %% "retry"                          % retryV,
       )
     }
   )
@@ -1236,9 +1236,7 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
     name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-metrics-dropwizard"       % flinkV,
-        "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV,
-        "com.dimafeng"    %% "testcontainers-scala-kafka"     % testContainersScalaV,
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
   )
@@ -1381,10 +1379,6 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
         liteEngineRuntimeApp / Docker / publishLocal
       )
       .value,
-    libraryDependencies ++= Seq(
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % IntegrationTest,
-      "com.dimafeng" %% "testcontainers-scala-kafka"     % testContainersScalaV % IntegrationTest
-    )
   )
   .dependsOn(
     scenarioCompiler            % IntegrationTest,

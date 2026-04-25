@@ -5,7 +5,6 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{Inside, Inspectors, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -29,7 +28,7 @@ import pl.touk.nussknacker.restmodel.validation.testcase.{
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
 import pl.touk.nussknacker.ui.config.TestCasesSettings
-import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator.NodeTyping
+import pl.touk.nussknacker.ui.process.test.testcase
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -75,7 +74,12 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
             "'expected'".spel,
             "#records[0].input".spel,
           ),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'expected'".spel,
+            "#outgoingRecords[0].enricherOutput".spel,
+          ),
         )
       )
     )
@@ -83,9 +87,9 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
-        outputVariables = inputVariableTypes
+        outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
     )
 
@@ -103,7 +107,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -123,7 +127,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -164,7 +168,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       filter,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes
       )
@@ -204,7 +208,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes
       )
@@ -241,7 +245,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -261,7 +265,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -275,7 +279,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
       "validTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'valid mock'".spel)),
         assertions = List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel)
         )
       ),
       "invalidMockTest" -> NodeTestCase(
@@ -290,7 +294,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
             "1".spel,
             "#records[0].doesNotExist".spel,
           ),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel),
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "2".spel,
@@ -303,7 +307,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      NodeTyping(
+      testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       )
@@ -361,11 +365,11 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
 
     val nodes = List(enricher, filter)
     val nodesTyping = Map(
-      enricher.id.value -> NodeTyping(
+      enricher.id.value -> testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       ),
-      filter.id.value -> NodeTyping(
+      filter.id.value -> testcase.NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes
       )
@@ -379,14 +383,18 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
         mocks = Map(enricher.id -> EnricherMock("'valid mock'".spel)),
         assertions = Map(
           enricher.id -> List(
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel),
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'valid mock'".spel,
+              "#outgoingRecords[0].enricherOutput".spel,
+            ),
           ),
           filter.id -> List(
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "'test'".spel,
               "#records[0].input".spel,
-              description = None
             )
           )
         )
@@ -413,7 +421,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
               "1".spel,
               "#records[0].doesNotExist".spel,
             ),
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel),
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "2".spel,

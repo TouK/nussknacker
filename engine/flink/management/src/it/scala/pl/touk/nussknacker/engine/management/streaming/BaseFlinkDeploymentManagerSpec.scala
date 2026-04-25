@@ -5,7 +5,6 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import io.circe.syntax.EncoderOps
-import org.apache.commons.lang3.SystemUtils
 import org.apache.flink.api.common.JobID
 import org.scalatest.Inside.inside
 import org.scalatest.Inspectors.forAll
@@ -305,11 +304,10 @@ trait BaseFlinkDeploymentManagerSpec
       // we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
       messagesFromTopic(outTopic, 1) shouldBe List("[One element]")
 
-      val customSavepointBind = savepointBind.subdirectory("customSavepoint")
-      val customSavepointDir = if (useMiniClusterForDeployment || !SystemUtils.IS_OS_WINDOWS) {
-        customSavepointBind.hostPath.toUri
+      val customSavepointDir = if (useMiniClusterForDeployment) {
+        savepointDir.toUri
       } else {
-        URI.create(s"file:${customSavepointBind.containerPath}")
+        URI.create(s"file:$jobManagerContainerSavepointDir")
       }
       val savepointPath = deploymentManager
         .processCommand(

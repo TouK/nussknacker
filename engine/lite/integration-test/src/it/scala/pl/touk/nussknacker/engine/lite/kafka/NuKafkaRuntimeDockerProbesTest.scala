@@ -46,7 +46,7 @@ class NuKafkaRuntimeDockerProbesTest
   }
 
   private implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
-  private val baseManagementUrl                          = uri"http://localhost:$mappedRuntimeApiPort"
+  private val baseManagementUrl                          = uri"$hostRuntimeApiUrl"
 
   override protected def afterAll(): Unit = {
     backend.close()

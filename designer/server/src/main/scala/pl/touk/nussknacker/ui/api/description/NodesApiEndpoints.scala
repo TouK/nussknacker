@@ -752,8 +752,9 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
+  // Since this endpoint requires the node to be compiled, consider returning test case additional variables in nodesValidationEndpoint.
   lazy val testCaseAdditionalVariablesEndpoint: SecuredEndpoint[
-    (ProcessingType, TestCaseAdditionalVariablesRequestDto),
+    (ProcessName, TestCaseAdditionalVariablesRequestDto),
     NodesError,
     TestCaseAdditionalVariablesResponseDto,
     Any
@@ -762,14 +763,14 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Additional variables for a test case at node")
       .tag("Nodes")
       .post
-      .in("parameters" / path[ProcessingType]("processingType") / "testCase" / "additionalVariables")
+      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "additionalVariables")
       .in(
         jsonBody[TestCaseAdditionalVariablesRequestDto]
           .example(
             Example.of(
               summary = Some("Node variables"),
               value = TestCaseAdditionalVariablesRequestDto(
-                Map(
+                variableTypes = Map(
                   "amount" -> TypingResultInJson(
                     encoder.apply(
                       TypedObjectWithValue.apply(
@@ -786,7 +787,17 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                       )
                     )
                   ),
-                )
+                ),
+                nodeData = Filter(
+                  NodeId("filterId"),
+                  NodeName("filterId"),
+                  Expression(Language.Spel, "#amount > 0"),
+                  isDisabled = None,
+                  additionalFields = None
+                ),
+                scenarioProperties = ProcessProperties.apply(
+                  ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "StreamMetaData")
+                ),
               )
             )
           )
@@ -1825,6 +1836,8 @@ object NodesApiEndpoints {
     @derive(schema, encoder, decoder)
     final case class TestCaseAdditionalVariablesRequestDto(
         variableTypes: Map[String, TypingResultInJson],
+        nodeData: NodeData,
+        scenarioProperties: ProcessProperties,
     )
 
     @derive(schema, encoder, decoder)

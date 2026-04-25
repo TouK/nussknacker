@@ -146,6 +146,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-custom-full-outer-join",
     "streaming-custom-hidevariables",
     "streaming-custom-lastvariablewithfilter",
+    "streaming-custom-nonereturntypeendingtransformer",
     "streaming-custom-nonereturntypetransformer",
     "streaming-custom-previousvalue",
     "streaming-custom-sendcommunication",
