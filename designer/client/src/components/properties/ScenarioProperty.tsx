@@ -22,11 +22,10 @@ export interface ScenarioPropertyProps {
     ) => void;
     readOnly?: boolean;
     errors: NodeValidationError[];
-    isValidating: boolean;
 }
 
 export default function ScenarioProperty(props: ScenarioPropertyProps) {
-    const { showSwitch, showValidation, propertyName, propertyConfig, errors, editedNode, onChange, readOnly, isValidating } = props;
+    const { showSwitch, showValidation, propertyName, propertyConfig, errors, editedNode, onChange, readOnly } = props;
 
     const propertyPath = `additionalFields.properties.${propertyName}`;
     const current = get(editedNode, propertyPath) || "";
@@ -48,7 +47,6 @@ export default function ScenarioProperty(props: ScenarioPropertyProps) {
             //ScenarioProperties do not use any variables
             variableTypes={{}}
             fieldErrors={getValidationErrorsForField(errors, propertyName)}
-            isValidating={isValidating}
         />
     );
 }

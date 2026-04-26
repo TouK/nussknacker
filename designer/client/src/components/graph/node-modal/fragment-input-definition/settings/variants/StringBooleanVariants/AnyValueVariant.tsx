@@ -18,10 +18,9 @@ interface Props {
     variableTypes: VariableTypes;
     readOnly: boolean;
     errors: NodeValidationError[];
-    isValidating: boolean;
 }
 
-export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes, errors, isValidating }: Props) => {
+export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes, errors }: Props) => {
     const { t } = useTranslation();
 
     return (
@@ -51,7 +50,6 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
                 variableTypes={variableTypes}
                 readOnly={readOnly}
                 errors={errors}
-                isValidating={isValidating}
             />
         </>
     );

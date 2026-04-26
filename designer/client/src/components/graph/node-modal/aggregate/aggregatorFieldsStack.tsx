@@ -151,7 +151,6 @@ export function AggregatorFieldsStack({
                         readOnly={readOnly}
                         showValidation
                         fieldErrors={fieldErrors}
-                        isValidating={false}
                         showSwitch={false}
                     />
                 )}

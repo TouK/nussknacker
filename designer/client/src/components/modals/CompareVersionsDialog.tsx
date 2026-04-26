@@ -197,11 +197,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     };
 
     const printProperties = (property) => {
-        return property ? (
-            <PropertiesForm editedProperties={property} isValidating={false} />
-        ) : (
-            <div className="notPresent">Properties not present</div>
-        );
+        return property ? <PropertiesForm editedProperties={property} /> : <div className="notPresent">Properties not present</div>;
     };
 
     const versionOptions: Option[] = useMemo(() => {

@@ -13,7 +13,6 @@ interface Settings {
     onChange: (path: string, value: onChangeType) => void;
     readOnly: boolean;
     errors: NodeValidationError[];
-    isValidating: boolean;
 }
 
 export function Settings(props: Settings) {

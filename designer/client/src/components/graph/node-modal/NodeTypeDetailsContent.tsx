@@ -20,6 +20,7 @@ import { Source } from "./source";
 import { Split } from "./split";
 import { Switch } from "./switch";
 import type { Prettify } from "./useNodeTypeDetailsContentLogic";
+import { useValidation } from "./useNodeTypeDetailsContentLogic";
 import {
     useAddElement,
     useIsEditMode,
@@ -28,7 +29,6 @@ import {
     useRenderFieldLabel,
     useSetEditedEdges,
     useSetProperty,
-    useValidation,
     useVariableTypes,
 } from "./useNodeTypeDetailsContentLogic";
 import Variable from "./Variable";
@@ -41,12 +41,11 @@ export type NodeTypeDetailsContentProps = {
     showValidation?: boolean;
     showSwitch?: boolean;
     errors: NodeValidationError[];
-    isValidating: boolean;
 };
 
 type NodeDetailsProps = Prettify<NodeTypeDetailsContentProps>;
 
-function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange, isValidating }: NodeDetailsProps) {
+function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange }: NodeDetailsProps) {
     const variableTypes = useVariableTypes({ node });
     const parameterDefinitions = useParameterDefinitions({ node });
     const setProperty = useSetProperty({ onChange, node });
@@ -93,7 +92,6 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
-                    isValidating={isValidating}
                 />
             );
         case "FragmentOutputDefinition":
@@ -107,7 +105,6 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
-                    isValidating={isValidating}
                 />
             );
         case "Filter":
@@ -123,7 +120,6 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
-                    isValidating={isValidating}
                 />
             );
         case "Enricher":
@@ -186,7 +182,6 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
-                    isValidating={isValidating}
                 />
             );
         }
@@ -201,7 +196,6 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
-                    isValidating={isValidating}
                 />
             );
         case "Switch":
@@ -217,7 +211,6 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
                     showSwitch={showSwitch}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
-                    isValidating={isValidating}
                 />
             );
         case "Split":
@@ -236,7 +229,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
 }
 
 export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): React.JSX.Element {
-    const { errors, showSwitch, onChange, edges, node, showValidation, isValidating } = props;
+    const { errors, showSwitch, onChange, edges, node, showValidation } = props;
     const renderFieldLabel = useRenderFieldLabel({ node });
     return (
         <FieldLabelProvider value={renderFieldLabel}>
@@ -247,7 +240,6 @@ export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): Reac
                 showSwitch={showSwitch}
                 showValidation={showValidation}
                 onChange={onChange}
-                isValidating={isValidating}
             />
         </FieldLabelProvider>
     );

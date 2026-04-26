@@ -22,7 +22,6 @@ interface ValidationFields extends ValueCompileTimeValidation {
     errors: NodeValidationError[];
     name: string;
     typ: ReturnedType;
-    isValidating: boolean;
 }
 
 export default function ValidationFields({
@@ -35,7 +34,6 @@ export default function ValidationFields({
     errors,
     name,
     typ,
-    isValidating,
 }: ValidationFields) {
     const { t } = useTranslation();
     const definitionData = useAppSelector(getProcessDefinitionData);
@@ -65,7 +63,6 @@ export default function ValidationFields({
                     fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}
                     showValidation
                     showSwitch
-                    isValidating={isValidating}
                 />
             </FieldLabelProvider>
             <FormControl>

@@ -11,9 +11,7 @@ import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
 import { NodeAdditionalInfo } from "./NodeAdditionalInfo";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
-import { getNodesDetails } from "./NodeDetailsContent/getNodeDetails";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";
-import { getNodeIsValidating } from "./NodeDetailsContent/selectors";
 import NodeErrors from "./NodeErrors";
 import { NodeSwitcher } from "./NodeSwitcher";
 import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
@@ -36,7 +34,6 @@ export const NodeDetailsContent = ({
     showTestResults?: boolean;
 }): React.JSX.Element => {
     const [errors, diagramStructureErrors] = useGetNodeErrors(node);
-    const isValidating = useAppSelector((state) => getNodeIsValidating(state, { node }));
 
     const [showAggregateSwitcher, showIntegrationsCreators, showInputsAndOutputs, nodesAsJson] = useUserSettings(
         "node.showAggregateSwitcher",
@@ -86,7 +83,6 @@ export const NodeDetailsContent = ({
                     errors={errors}
                     showValidation={showValidation}
                     showSwitch={showSwitch}
-                    isValidating={isValidating}
                 />
             </TestResultsWrapper>
             <NodeAdditionalInfo node={node} />

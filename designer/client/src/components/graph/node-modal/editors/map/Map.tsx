@@ -22,7 +22,6 @@ interface MapProps<F extends Field> {
     addField: (namespace: string, field?: F) => void;
     removeField: (namespace: string, uuid: string) => void;
     expressionType?: Partial<TypedObjectTypingResult>;
-    isValidating: boolean;
 }
 
 export const MapItemsCtx = createContext<{
@@ -32,7 +31,6 @@ export const MapItemsCtx = createContext<{
     isMarked: (path: string) => boolean;
     errors: NodeValidationError[];
     variableTypes: VariableTypes;
-    isValidating: boolean;
 }>(null);
 
 export function Map<F extends Field>({
@@ -47,7 +45,6 @@ export function Map<F extends Field>({
     showValidation,
     variableTypes,
     errors,
-    isValidating,
 }: MapProps<F>): React.JSX.Element {
     const [isMarked] = useDiffMark();
 
@@ -93,7 +90,6 @@ export function Map<F extends Field>({
                     showValidation,
                     errors,
                     variableTypes,
-                    isValidating,
                 }}
             >
                 <DndItems disabled={readOnly} items={items} onChange={changeOrder} />

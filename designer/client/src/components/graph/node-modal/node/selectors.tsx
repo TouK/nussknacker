@@ -28,7 +28,3 @@ export const getReadOnly = createSelector(
     (state: RootState) => getCapabilities(state),
     (fromProps, capabilities) => fromProps || !capabilities.editFrontend,
 );
-
-export const getIsPropertiesValidating = createSelector(getPropertiesDetails, (propertiesDetails) => {
-    return propertiesDetails?.isValidating;
-});

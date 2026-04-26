@@ -8,12 +8,7 @@ import HttpService from "../../../../../../http/HttpService/instance";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import MockExpressionField from "../../../editors/expression/MockExpressionField";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
-import {
-    getFindAvailableVariables,
-    getNodeIsValidating,
-    getProcessName,
-    getProcessProperties,
-} from "../../../NodeDetailsContent/selectors";
+import { getFindAvailableVariables, getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { useGetNodeTestCasesErrors, useIsEditMode, useSetProperty, useValidation } from "../../../useNodeTypeDetailsContentLogic";
 import type { TestingContentProps } from "../TestingContent";
 import { StyledStack } from "./components/Styled";
@@ -36,7 +31,6 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
     const processProperties = useAppSelector(getProcessProperties);
     const [defaultValue, setDefaultValue] = useState(null);
     const [shouldGenerate] = useUserSettings("editor.showResetToDefaultButton");
-    const isValidating = useAppSelector((state) => getNodeIsValidating(state, { node }));
 
     useValidation({ node, showValidation: true, edges });
 
@@ -83,7 +77,6 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                     setNodeDataAt={setProperty}
                     errors={testCasesErrors.enricherMockErrors}
                     defaultValue={defaultValue}
-                    isValidating={isValidating}
                 />
             </TestingExpandable>
         </StyledStack>

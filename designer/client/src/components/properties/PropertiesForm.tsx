@@ -16,7 +16,6 @@ import type { ScenarioPropertyProps } from "./ScenarioProperty";
 
 export interface PropertiesFormProps {
     errors?: NodeValidationError[];
-    isValidating: boolean;
     handleSetEditedProperties?: ScenarioPropertyProps["onChange"];
     editedProperties: PropertiesType;
     showSwitch?: boolean;
@@ -29,7 +28,6 @@ export const PropertiesForm = ({
     handleSetEditedProperties,
     editedProperties,
     showSwitch = false,
-    isValidating,
 }: PropertiesFormProps) => {
     const readOnly = !handleSetEditedProperties;
     return (
@@ -43,7 +41,6 @@ export const PropertiesForm = ({
                     handleSetEditedProperties={handleSetEditedProperties}
                     editedProperties={editedProperties}
                     readOnly={readOnly}
-                    isValidating={isValidating}
                 />
                 <DescriptionField
                     isEditMode={!readOnly}

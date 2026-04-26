@@ -77,7 +77,6 @@ interface Props {
     errors: NodeValidationError[];
     showSwitch?: boolean;
     variableTypes: VariableTypes;
-    isValidating: boolean;
 }
 
 export default function Variable({
@@ -89,7 +88,6 @@ export default function Variable({
     showValidation,
     errors,
     variableTypes,
-    isValidating,
 }: Props): React.JSX.Element {
     const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value", value), [setProperty]);
     const [isMarked] = useDiffMark();
@@ -254,7 +252,6 @@ export default function Variable({
                         fieldErrors={getValidationErrorsForField(errors, "$expression")}
                         variableTypes={variableTypes}
                         validationLabelInfo={inferredVariableType}
-                        isValidating={isValidating}
                         inputAdornmentEnd={
                             isEditMode && showDataMapper ? <BuilderIconButton onClick={handleOpenMapper} label="Data Mapper" /> : undefined
                         }

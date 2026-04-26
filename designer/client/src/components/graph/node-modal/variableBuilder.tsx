@@ -18,7 +18,6 @@ export function VariableBuilder({
     setProperty,
     showValidation,
     variableTypes,
-    isValidating,
 }: {
     addElement: (...args: unknown[]) => unknown;
     errors: NodeValidationError[];
@@ -28,7 +27,6 @@ export function VariableBuilder({
     setProperty: SetProperty;
     showValidation?: boolean;
     variableTypes?: VariableTypes;
-    isValidating: boolean;
 }): React.JSX.Element {
     const nodeExpressionType = useAppSelector((state: RootState) => getNodeExpressionType(state)(node.id), isEqual);
     return (
@@ -42,7 +40,6 @@ export function VariableBuilder({
             variableTypes={variableTypes}
             errors={errors || []}
             expressionType={nodeExpressionType}
-            isValidating={isValidating}
         />
     );
 }

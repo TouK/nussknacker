@@ -34,7 +34,6 @@ type FieldProps = {
     showSwitch: boolean;
     variableTypes: VariableTypes;
     value: string;
-    isValidating: boolean;
 };
 
 export const NameField = ({ showLabels, value, onChangeItem, fieldErrors, ...props }: FieldProps) => (

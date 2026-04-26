@@ -24,11 +24,10 @@ interface Validation {
     variableTypes: VariableTypes;
     readOnly: boolean;
     errors: NodeValidationError[];
-    isValidating: boolean;
 }
 
 export function ValidationsFields(props: Validation) {
-    const { onChange, path, variableTypes, item, readOnly, errors, isValidating } = props;
+    const { onChange, path, variableTypes, item, readOnly, errors } = props;
 
     const validationEnabled = Boolean(item.valueCompileTimeValidation);
     const { temporaryValueCompileTimeValidation, handleTemporaryValueCompileTimeValidation } = useSettings();
@@ -85,7 +84,6 @@ export function ValidationsFields(props: Validation) {
                     errors={errors}
                     name={item.name}
                     typ={item.typ}
-                    isValidating={isValidating}
                 />
             )}
         </>

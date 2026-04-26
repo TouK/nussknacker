@@ -12,7 +12,6 @@ import type { Assertion, Mock } from "./testCasesActions";
 import { validateNode } from "./validationsActions";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
-type NodeValidationPending = { type: "NODE_VALIDATION_PENDING"; nodeId: string };
 type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string; windowId: string };
 type NodeDetailsClosed = { type: "NODE_DETAILS_RELOAD" | "NODE_DETAILS_CLOSED"; nodeId: string; windowId: string };
 type NodeValidationDynamicParametersLoading = {
@@ -26,7 +25,6 @@ type NodeValidationDynamicParametersLoaded = {
 };
 export type NodeDetailsActions =
     | NodeValidationUpdated
-    | NodeValidationPending
     | NodeDetailsOpened
     | NodeValidationDynamicParametersLoading
     | NodeValidationDynamicParametersLoaded
@@ -161,8 +159,6 @@ export function validateNodeData(
         nodeValidationControllers.get(nodeId)?.abort();
         const controller = new AbortController();
         nodeValidationControllers.set(nodeId, controller);
-
-        dispatch({ type: "NODE_VALIDATION_PENDING", nodeId });
 
         getOrCreateDebouncedForNode(nodeId)(dispatch, validationRequestData, controller, (data) => {
             const allowDataUpdate = data && getNodesDetails(getState())[nodeId];

@@ -64,7 +64,6 @@ export default function EdgeDetailsContent({
                             showSwitch={showSwitch}
                             onValueChange={({ expression }) => changeEdgeTypeCondition(expression)}
                             fieldErrors={[]}
-                            isValidating={false}
                         />
                     </FieldLabelProvider>
                 </BaseModalContent>

@@ -28,7 +28,6 @@ export function Filter({
     setProperty,
     showSwitch,
     showValidation,
-    isValidating,
 }: {
     edges: Edge[];
     errors: NodeValidationError[];
@@ -40,7 +39,6 @@ export function Filter({
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
-    isValidating: boolean;
 }): React.JSX.Element {
     const [, isCompareView] = useDiffMark();
     const [showBuilder] = useUserSettings("node.showFieldExpressionBuilder");
@@ -86,7 +84,6 @@ export function Filter({
                     edgeTypes={edgeTypes}
                     readOnly={!isEditMode}
                     errors={errors}
-                    isValidating={isValidating}
                 />
             ) : null}
             <DescriptionField

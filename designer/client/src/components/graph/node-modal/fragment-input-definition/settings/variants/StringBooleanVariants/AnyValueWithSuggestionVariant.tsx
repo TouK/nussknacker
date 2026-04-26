@@ -20,10 +20,9 @@ interface Props {
     variableTypes: VariableTypes;
     readOnly: boolean;
     errors: NodeValidationError[];
-    isValidating: boolean;
 }
 
-export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, readOnly, errors, isValidating }: Props) => {
+export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, readOnly, errors }: Props) => {
     const { t } = useTranslation();
 
     const fixedValuesList = item.valueEditor.fixedValuesList ?? [];
@@ -74,7 +73,6 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 variableTypes={variableTypes}
                 readOnly={readOnly}
                 errors={errors}
-                isValidating={isValidating}
             />
         </>
     );

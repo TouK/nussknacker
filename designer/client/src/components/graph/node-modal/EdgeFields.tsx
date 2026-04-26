@@ -34,12 +34,11 @@ interface Props {
     types?: EdgeTypeOption[];
     variableTypes?: VariableTypes;
     fieldErrors: FieldError[];
-    isValidating: boolean;
 }
 
 export function EdgeFields(props: Props): React.JSX.Element {
     const { t } = useTranslation();
-    const { edgeId, readOnly, value: edge, index, onChange, edges, types, variableTypes, fieldErrors, isValidating } = props;
+    const { edgeId, readOnly, value: edge, index, onChange, edges, types, variableTypes, fieldErrors } = props;
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
     const setEdge = useCallback(
@@ -179,7 +178,6 @@ export function EdgeFields(props: Props): React.JSX.Element {
                         showSwitch={false}
                         valueClassName={"edge-value"}
                         inputAdornmentEnd={conditionBuilderAdornment}
-                        isValidating={isValidating}
                     />
                 ) : null}
 

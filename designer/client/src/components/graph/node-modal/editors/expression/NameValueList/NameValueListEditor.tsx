@@ -134,7 +134,6 @@ export const NameValueListEditor = prepareEditor(
                     variableTypes,
                     showLabels: hovered == 0,
                     showSwitch: false,
-                    isValidating: false,
                 };
 
                 const el = (

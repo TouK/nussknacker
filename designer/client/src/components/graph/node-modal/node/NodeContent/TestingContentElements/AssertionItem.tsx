@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import type { AssertionOperator } from "../../../../../../actions/nk/testCasesActions";
 import { useUserSettings } from "../../../../../../common/useUserSettings";
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
-import { useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
 import type { ContextData } from "../../../../../dataMapper/DataMapper";
@@ -23,7 +22,6 @@ import { ParamKeyProvider } from "../../../editors/ParamKeyProvider";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 import type { Option } from "../../../fragment-input-definition/TypeSelect";
-import { getNodeIsValidating } from "../../../NodeDetailsContent/selectors";
 import { OverrideKeys } from "../../../parameterHelpers";
 import { AssertionStatus } from "./AssertionStatus";
 
@@ -132,7 +130,6 @@ const AssertionItemComponent = ({
         return errors.filter((error) => error.fieldName === "description") || [];
     }, [errors]);
 
-    const isValidating = useAppSelector((state) => getNodeIsValidating(state, { node }));
     const recordsHint = t(RECORDS_HINT_KEY, RECORDS_HINT_DEFAULT);
 
     const handleOpenBuilder = useCallback(() => setBuilderOpen(true), []);
@@ -169,7 +166,6 @@ const AssertionItemComponent = ({
                                 variableTypes={variableTypes}
                                 onValueChange={handleActualChange}
                                 showValidation
-                                isValidating={isValidating}
                                 fieldErrors={actualErrors}
                                 placeholder="#records.size()"
                                 inputAdornmentEnd={actualAdornment}
@@ -193,7 +189,6 @@ const AssertionItemComponent = ({
                             variableTypes={variableTypes}
                             onValueChange={handleExpectedChange}
                             showValidation
-                            isValidating={isValidating}
                             fieldErrors={expectedErrors}
                             placeholder="true, 12, 'xxxx'"
                         />

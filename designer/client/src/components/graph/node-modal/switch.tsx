@@ -30,7 +30,6 @@ interface Props {
     showSwitch?: boolean;
     showValidation?: boolean;
     variableTypes?: VariableTypes;
-    isValidating: boolean;
 }
 
 export function Switch({
@@ -44,7 +43,6 @@ export function Switch({
     showSwitch,
     showValidation,
     variableTypes,
-    isValidating,
 }: Props): React.JSX.Element {
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
     const definition = useMemo(
@@ -128,7 +126,6 @@ export function Switch({
                     readOnly={!isEditMode}
                     variableTypes={types}
                     errors={errors}
-                    isValidating={isValidating}
                 />
             ) : null}
             <DescriptionField

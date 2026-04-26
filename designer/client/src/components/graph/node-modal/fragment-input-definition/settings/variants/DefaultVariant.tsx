@@ -19,10 +19,9 @@ interface Props {
     variableTypes: VariableTypes;
     readOnly: boolean;
     errors: NodeValidationError[];
-    isValidating: boolean;
 }
 
-export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, errors, isValidating, ...props }: Props) => {
+export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, errors, ...props }: Props) => {
     const { t } = useTranslation();
 
     return (
@@ -59,7 +58,6 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                 variableTypes={variableTypes}
                 readOnly={readOnly}
                 errors={errors}
-                isValidating={isValidating}
             />
         </SettingsWrapper>
     );

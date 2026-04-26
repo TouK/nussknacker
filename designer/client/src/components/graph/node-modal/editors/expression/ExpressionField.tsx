@@ -3,11 +3,9 @@ import type { ReactNode } from "react";
 import React, { useCallback, useMemo } from "react";
 
 import type { NodeResultsForContext } from "../../../../../common/TestResultUtils";
-import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { UIParameter } from "../../../../../types/definition";
 import type { NodeType } from "../../../../../types/node";
 import type { VariableTypes } from "../../../../../types/validation";
-import { getNodeIsValidating } from "../../NodeDetailsContent/selectors";
 import { useDiffMark } from "../../PathsToMark";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
@@ -51,7 +49,6 @@ function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
         inputAdornmentEnd,
     } = props;
     const [isMarked] = useDiffMark();
-    const isValidating = useAppSelector((state) => getNodeIsValidating(state, { node: editedNode }));
     const readOnly = !isEditMode;
     const exprTextPath = `${exprPath}.expression`;
     const expressionObj = useMemo(() => get(editedNode, exprPath), [editedNode, exprPath]);
@@ -75,7 +72,6 @@ function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
                 fieldErrors={fieldErrors}
                 fieldLabel={fieldLabel}
                 isMarked={isMarked(exprTextPath)}
-                isValidating={isValidating}
                 onValueChange={onValueChange}
                 paramType={parameterDefinition?.typ}
                 readOnly={readOnly}
@@ -93,7 +89,6 @@ function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
             fieldErrors,
             fieldLabel,
             isMarked,
-            isValidating,
             onValueChange,
             parameterDefinition?.defaultValue,
             parameterDefinition?.typ,

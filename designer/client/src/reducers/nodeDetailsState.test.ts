@@ -18,7 +18,6 @@ const stateWithErrors = {
         validationPerformed: true,
         changingDynamicParameters: [],
         testCasesValidationErrors: {},
-        isValidating: false,
     },
 };
 
