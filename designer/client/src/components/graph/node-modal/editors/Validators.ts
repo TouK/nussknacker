@@ -83,15 +83,16 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
     handledErrorType: HandledErrorType.GreaterThanRequiredParameter,
 });
 
-export type FieldError = Pick<NodeValidationError, "message" | "description" | "details">;
+export type FieldError = Pick<NodeValidationError, "message" | "description" | "details" | "requestId">;
 
 export const getValidationErrorsForField = memoizeByArgsWithTTL((errors: NodeValidationError[], fieldName: string) => {
     const fieldErrors: FieldError[] = errors
         .filter((error) => error.fieldName === fieldName)
-        .map(({ message, description, details }) => ({
+        .map(({ message, description, details, requestId }) => ({
             message,
             description,
             details,
+            requestId,
         }));
     return fieldErrors;
 });

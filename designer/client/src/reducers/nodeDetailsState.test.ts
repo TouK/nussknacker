@@ -55,7 +55,7 @@ describe("nodeDetailsState reducer", () => {
                 },
             });
 
-            expect(result?.[nodeId]?.validationErrors).toEqual([newError]);
+            expect(result?.[nodeId]?.validationErrors[0]).toMatchObject({ message: "New error", fieldName: "output" });
         });
 
         it("clears errors when validation response contains no errors", () => {
@@ -70,6 +70,25 @@ describe("nodeDetailsState reducer", () => {
             });
 
             expect(result?.[nodeId]?.validationErrors).toEqual([]);
+        });
+
+        it("injects a unique string requestId into each error on every response", () => {
+            const applyUpdate = (s: typeof stateWithErrors) =>
+                reducer(s, {
+                    type: "NODE_VALIDATION_UPDATED",
+                    nodeId,
+                    validationData: { validationErrors: [existingError], validationPerformed: true, testCasesValidationErrors: {} },
+                }) as typeof stateWithErrors;
+
+            const after1 = applyUpdate(stateWithErrors);
+            const after2 = applyUpdate(after1);
+
+            const id1 = after1?.[nodeId]?.validationErrors[0].requestId;
+            const id2 = after2?.[nodeId]?.validationErrors[0].requestId;
+
+            expect(typeof id1).toBe("string");
+            expect(typeof id2).toBe("string");
+            expect(id1).not.toBe(id2); // each response gets a distinct uuid
         });
     });
 

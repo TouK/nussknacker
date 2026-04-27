@@ -30,7 +30,6 @@ type InputProps = AceWrapperInputProps & {
 export type CustomCompleterAceEditorProps = {
     completer?: CustomAceEditorCompleter;
     isLoading?: boolean;
-    isValidating?: boolean;
     inputProps: InputProps;
     fieldErrors?: FieldError[];
     validationLabelInfo?: ReactNode;
@@ -41,17 +40,7 @@ export type CustomCompleterAceEditorProps = {
 };
 
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): React.JSX.Element {
-    const {
-        className,
-        isMarked,
-        showValidation,
-        fieldErrors,
-        validationLabelInfo,
-        completer,
-        isLoading,
-        isValidating,
-        enableLiveAutocompletion,
-    } = props;
+    const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
     const editorRef = useRef<ReactAce>();
     const mergedRefs = useMergeRefs(ref, editorRef);
@@ -72,9 +61,9 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         fieldErrors,
         showValidation,
         completionsVisible,
-        isValidating,
         isLoading,
         validationLabelInfo,
+        internalValue,
     });
 
     const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(visibleValidationErrors, showLines);

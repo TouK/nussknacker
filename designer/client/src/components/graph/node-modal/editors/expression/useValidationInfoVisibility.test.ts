@@ -3,23 +3,27 @@ import { act, renderHook } from "@testing-library/react";
 import type { FieldError } from "../Validators";
 import { useValidationInfoVisibility } from "./useValidationInfoVisibility";
 
-// Bypass debounce delays so state is observable immediately in assertions.
 jest.mock("rooks", () => ({
-    useDebouncedValue: (value: unknown) => [value],
     usePreviousImmediate: jest.requireActual("rooks").usePreviousImmediate,
+    usePreviousDifferent: jest.requireActual("rooks").usePreviousDifferent,
 }));
 
 type Props = Parameters<typeof useValidationInfoVisibility>[0];
 
+// Errors without requestId — simulate contexts without node-modal Redux (e.g. data mapper)
 const error: FieldError = { message: "Type error", description: "Expression is invalid" };
+
+// Errors with requestId — simulate node-modal context where reducer injects a uuid per cycle
+const errorV1: FieldError = { ...error, requestId: "req-1" };
+const errorV2: FieldError = { ...error, requestId: "req-2" };
 
 const defaultProps: Props = {
     fieldErrors: [],
     showValidation: true,
     completionsVisible: false,
-    isValidating: false,
     isLoading: false,
     validationLabelInfo: undefined,
+    internalValue: "",
 };
 
 function makeProps(overrides: Partial<Props> = {}): Props {
@@ -27,189 +31,166 @@ function makeProps(overrides: Partial<Props> = {}): Props {
 }
 
 describe("useValidationInfoVisibility", () => {
-    beforeEach(() => {
-        jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-        jest.useRealTimers();
-    });
-
-    describe("without validation support (isValidating=undefined)", () => {
-        it("should show errors immediately regardless of popup state", () => {
-            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ isValidating: undefined, fieldErrors: [error] }),
+    describe("initial render", () => {
+        it("shows errors immediately on mount", () => {
+            const { result } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [error] }),
             });
-
-            expect(result.current.visibleValidationErrors).toHaveLength(1);
-
-            // Popup open → close should have no effect
-            rerender(makeProps({ isValidating: undefined, fieldErrors: [error], completionsVisible: true }));
-            rerender(makeProps({ isValidating: undefined, fieldErrors: [error], completionsVisible: false }));
-
             expect(result.current.visibleValidationErrors).toHaveLength(1);
         });
     });
 
-    describe("popup open", () => {
-        it("should hide errors when popup opens", () => {
+    describe("isLoading=true", () => {
+        it("suppresses snapshot updates while loading", () => {
             const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
+                initialProps: makeProps({ fieldErrors: [], isLoading: false }),
             });
-            expect(result.current.visibleValidationErrors).toHaveLength(1);
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
 
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true }));
-
+            rerender(makeProps({ fieldErrors: [error], isLoading: true }));
             expect(result.current.visibleValidationErrors).toHaveLength(0);
         });
-    });
 
-    describe("popup closed, no validation running at close time", () => {
-        it("should show errors after ~150 ms timeout when value is unchanged (no new validation cycle)", () => {
+        it("shows errors once loading finishes", () => {
             const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
+                initialProps: makeProps({ fieldErrors: [], isLoading: false }),
             });
 
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true }));
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0); // watchingForValidationStart
+            rerender(makeProps({ fieldErrors: [error], isLoading: true }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
 
-            act(() => {
-                jest.advanceTimersByTime(150);
-            });
+            rerender(makeProps({ fieldErrors: [error], isLoading: false }));
             expect(result.current.visibleValidationErrors).toHaveLength(1);
-        });
-
-        it("should wait for fresh result when validation starts before the 150 ms timeout (value changed)", () => {
-            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
-            });
-
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true }));
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false }));
-
-            // Parent starts re-validation within 150 ms
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false, isValidating: true }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0); // waitingForFreshResult
-
-            // Timeout fires but validation is in flight — timeout was cancelled, phase unchanged
-            act(() => {
-                jest.advanceTimersByTime(150);
-            });
-            expect(result.current.visibleValidationErrors).toHaveLength(0);
-
-            // Validation finishes with fresh (empty) result
-            rerender(makeProps({ fieldErrors: [], completionsVisible: false, isValidating: false }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0);
-        });
-    });
-
-    describe("popup closed, validation in flight at close time", () => {
-        it("should show errors once validation finishes after popup closes", () => {
-            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
-            });
-
-            // Open popup while validation is running
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true, isValidating: true }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0);
-
-            // Close popup — validation still running
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false, isValidating: true }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0);
-
-            // Validation finishes after popup close
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false, isValidating: false }));
-            expect(result.current.visibleValidationErrors).toHaveLength(1);
-        });
-    });
-
-    describe("popup closed, validation completed while popup was open", () => {
-        it("should show errors after ~150 ms timeout when value is unchanged after close", () => {
-            // This was the regression: validatedWhileOpen guard kept phase in
-            // waitingForFreshResult forever when no new validation cycle followed.
-            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
-            });
-
-            // Open popup
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true }));
-
-            // Validation runs and finishes while popup is open
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true, isValidating: true }));
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true, isValidating: false }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0);
-
-            // Popup closes — no new validation (value unchanged)
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false, isValidating: false }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0); // watchingForValidationStart
-
-            act(() => {
-                jest.advanceTimersByTime(150);
-            });
-            expect(result.current.visibleValidationErrors).toHaveLength(1);
-        });
-
-        it("should show fresh errors when value changed after close and new validation finishes", () => {
-            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
-            });
-
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true }));
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true, isValidating: true }));
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: true, isValidating: false }));
-
-            // Popup closes — value changed → new validation starts before timeout
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false, isValidating: false }));
-            rerender(makeProps({ fieldErrors: [error], completionsVisible: false, isValidating: true }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0); // waitingForFreshResult
-
-            // New validation finishes with no errors
-            rerender(makeProps({ fieldErrors: [], completionsVisible: false, isValidating: false }));
-            expect(result.current.visibleValidationErrors).toHaveLength(0);
-        });
-    });
-
-    describe("re-validation while typing (no popup)", () => {
-        it("should keep errors visible while re-validating", () => {
-            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
-            });
-            expect(result.current.visibleValidationErrors).toHaveLength(1);
-
-            rerender(makeProps({ fieldErrors: [error], isValidating: true }));
-            expect(result.current.visibleValidationErrors).toHaveLength(1);
-
-            rerender(makeProps({ fieldErrors: [error], isValidating: false }));
-            expect(result.current.visibleValidationErrors).toHaveLength(1);
-        });
-
-        it("should reflect updated errors once re-validation finishes", () => {
-            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error] }),
-            });
-
-            rerender(makeProps({ fieldErrors: [error], isValidating: true }));
-            rerender(makeProps({ fieldErrors: [], isValidating: false }));
-
-            expect(result.current.visibleValidationErrors).toHaveLength(0);
         });
     });
 
     describe("showValidation=false", () => {
-        it("should always return empty errors regardless of phase", () => {
+        it("suppresses snapshot updates from normal flow when showValidation is false", () => {
             const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
-                initialProps: makeProps({ fieldErrors: [error], showValidation: false }),
+                initialProps: makeProps({ fieldErrors: [], showValidation: false }),
             });
             expect(result.current.visibleValidationErrors).toHaveLength(0);
 
-            rerender(makeProps({ fieldErrors: [error], showValidation: false, completionsVisible: true }));
-            rerender(makeProps({ fieldErrors: [error], showValidation: false, completionsVisible: false }));
-            act(() => {
-                jest.advanceTimersByTime(150);
+            rerender(makeProps({ fieldErrors: [error], showValidation: false }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+        });
+    });
+
+    describe("popup open", () => {
+        it("clears errors when completionsVisible becomes true", () => {
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [error] }),
             });
+            expect(result.current.visibleValidationErrors).toHaveLength(1);
+
+            rerender(makeProps({ fieldErrors: [error], completionsVisible: true }));
 
             expect(result.current.visibleValidationErrors).toHaveLength(0);
+        });
+
+        it("keeps errors hidden while popup is open even when fieldErrors change", () => {
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [error] }),
+            });
+
+            rerender(makeProps({ fieldErrors: [error], completionsVisible: true }));
+
+            // Validation finishes with new errors while popup still open
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: true }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+        });
+    });
+
+    describe("popup closed — waitingForNextRequest flow", () => {
+        it("keeps errors hidden after popup closes until a new requestId arrives", () => {
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [errorV1] }),
+            });
+
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: true }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: false }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0); // still waiting
+
+            // New validation cycle: same message, different requestId
+            rerender(makeProps({ fieldErrors: [errorV2], completionsVisible: false }));
+            expect(result.current.visibleValidationErrors).toHaveLength(1);
+        });
+
+        it("shows cleared errors (empty) when validation returns no errors after popup closes", () => {
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [errorV1] }),
+            });
+
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: true }));
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: false }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+
+            // Validation clears errors
+            rerender(makeProps({ fieldErrors: [], completionsVisible: false }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0); // empty, but now correct
+        });
+    });
+
+    describe("special case: internalValue === '#'", () => {
+        it("force-restores snapshot when popup closes with internalValue='#' (no new requestId)", () => {
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [error], internalValue: "#" }),
+            });
+
+            // Popup opens → snapshot cleared
+            rerender(makeProps({ fieldErrors: [error], completionsVisible: true, internalValue: "#" }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+
+            // Popup closes with same value '#' and no new requestId — special case restores
+            rerender(makeProps({ fieldErrors: [error], completionsVisible: false, internalValue: "#" }));
+            expect(result.current.visibleValidationErrors).toHaveLength(1);
+        });
+
+        it("does not force-restore when internalValue is not '#'", () => {
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [errorV1], internalValue: "someExpr" }),
+            });
+
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: true, internalValue: "someExpr" }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: false, internalValue: "someExpr" }));
+            // No special case, still waiting for next requestId
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+        });
+    });
+
+    describe("normal typing (no popup)", () => {
+        it("always mirrors current fieldErrors when not loading and not waiting", () => {
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [] }),
+            });
+
+            rerender(makeProps({ fieldErrors: [error] }));
+            expect(result.current.visibleValidationErrors).toHaveLength(1);
+
+            rerender(makeProps({ fieldErrors: [] }));
+            expect(result.current.visibleValidationErrors).toHaveLength(0);
+        });
+    });
+
+    describe("validationLabelInfo", () => {
+        it("clears labelInfo when popup opens and restores it after the next validation cycle", () => {
+            const info = "Validation info";
+
+            const { result, rerender } = renderHook((props: Props) => useValidationInfoVisibility(props), {
+                initialProps: makeProps({ fieldErrors: [errorV1], validationLabelInfo: info }),
+            });
+            expect(result.current.visibleValidationLabelInfo).toBe(info);
+
+            rerender(makeProps({ fieldErrors: [errorV1], completionsVisible: true, validationLabelInfo: info }));
+            expect(result.current.visibleValidationLabelInfo).toBeUndefined();
+
+            // New validation cycle with new info
+            rerender(makeProps({ fieldErrors: [errorV2], completionsVisible: false, validationLabelInfo: "New info" }));
+            expect(result.current.visibleValidationLabelInfo).toBe("New info");
         });
     });
 });

@@ -89,12 +89,11 @@ function openPopup(rerender: (ui: React.ReactElement) => void, props: CustomComp
     act(() => {
         rerender(<CustomCompleterAceEditor {...props} isLoading />);
     });
-    // Drop isLoading — the isLoading effect fires (previousLoadingState=true && !isLoading=true)
-    // and checks getCompletionsActivated via a setTimeout.
+    // Drop isLoading — the effect fires (previousLoadingState=true && !isLoading=true)
+    // and reads getCompletionsActivated.
     act(() => {
         rerender(<CustomCompleterAceEditor {...props} isLoading={false} />);
     });
-    // Flush the setTimeout so setCompletionsVisible(true) runs.
     act(() => {
         jest.runAllTimers();
     });
@@ -121,16 +120,6 @@ function closePopupViaClick(insertedValue: string) {
     });
 }
 
-/**
- * Simulates a full isValidating true→false cycle (as if validateNodeData fired and
- * the HTTP response arrived). This is what clears waitingForFreshValidation after
- * the autocomplete popup closes, allowing validation errors to become visible again.
- */
-function simulateValidationCycle(rerender: (ui: React.ReactElement) => void, props: CustomCompleterAceEditorProps) {
-    act(() => rerender(<CustomCompleterAceEditor {...props} isValidating />));
-    act(() => rerender(<CustomCompleterAceEditor {...props} isValidating={false} />));
-}
-
 function typeInEditor(value: string) {
     act(() => capturedOnChange(value));
 }
@@ -146,11 +135,13 @@ function buildProps(onValueChange: jest.Mock, initialValue = ""): CustomComplete
         },
         fieldErrors: [],
         showValidation: true,
-        isValidating: false,
     };
 }
 
-const errors = [{ message: "Bad expression", description: "", typ: "", fieldName: "expression" }];
+// requestId simulates the uuid injected by the Redux reducer on each NODE_VALIDATION_UPDATED.
+// It must differ between `errors` and `errorsAfter` so the hook detects a new validation cycle.
+const errors = [{ message: "Bad expression", description: "", typ: "", fieldName: "expression", requestId: "req-1" }];
+const errorsAfter = [{ message: "Updated error", description: "", typ: "", fieldName: "expression", requestId: "req-2" }];
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -226,75 +217,86 @@ describe("CustomCompleterAceEditor", () => {
 
     // ─── Validation error visibility ─────────────────────────────────────────
 
-    it("shows errors when showValidation=true and isValidating=false", () => {
-        const { queryByText } = render(<CustomCompleterAceEditor {...buildProps(jest.fn())} fieldErrors={errors} isValidating={false} />);
+    it("shows errors when showValidation=true and isLoading=false", () => {
+        const { queryByText } = render(<CustomCompleterAceEditor {...buildProps(jest.fn())} fieldErrors={errors} isLoading={false} />);
 
-        act(() => jest.advanceTimersByTime(100));
         expect(queryByText("Bad expression")).not.toBeNull();
     });
 
-    it("shows existing errors while re-validating (isValidating=true does not hide errors)", () => {
+    it("shows existing errors while re-validating (isLoading=true does not hide errors)", () => {
         // Old errors stay visible while a fresh request is in flight — no blank flash.
-        const { queryByText } = render(<CustomCompleterAceEditor {...buildProps(jest.fn())} fieldErrors={errors} isValidating />);
+        const { queryByText } = render(<CustomCompleterAceEditor {...buildProps(jest.fn())} fieldErrors={errors} isLoading />);
 
-        act(() => jest.advanceTimersByTime(100));
         expect(queryByText("Bad expression")).not.toBeNull();
     });
 
     // ─── Popup + validation interaction ──────────────────────────────────────
 
-    it("hides errors when popup opens and shows them after popup closes and validation completes", () => {
+    it("hides errors when popup opens", () => {
         const onValueChange = jest.fn();
         const props = buildProps(onValueChange);
         const { queryByText, rerender } = render(<CustomCompleterAceEditor {...props} fieldErrors={errors} />);
 
         focusEditor();
-        act(() => jest.advanceTimersByTime(100));
         expect(queryByText("Bad expression")).not.toBeNull();
 
-        // Popup opens — errors disappear after debounce
         openPopup(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
-        expect(queryByText("Bad expression")).toBeNull();
 
-        // Popup closes — errors still hidden, waitingForFreshValidation blocks them
-        closePopupViaKeyboard(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
         expect(queryByText("Bad expression")).toBeNull();
-
-        // Validation cycle completes after popup close — errors reappear
-        simulateValidationCycle(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
-        expect(queryByText("Bad expression")).not.toBeNull();
     });
 
-    it("hides errors when popup opens and shows them after clicking a suggestion and validation completes", () => {
+    it("keeps errors hidden after popup closes when fieldErrors have not changed", () => {
+        // The snapshot was cleared on popup open and is only updated when fieldErrors change.
+        // If nothing was typed (same fieldErrors), errors stay hidden after close.
         const onValueChange = jest.fn();
         const props = buildProps(onValueChange);
         const { queryByText, rerender } = render(<CustomCompleterAceEditor {...props} fieldErrors={errors} />);
 
         focusEditor();
-        act(() => jest.advanceTimersByTime(100));
-        expect(queryByText("Bad expression")).not.toBeNull();
-
         openPopup(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
         expect(queryByText("Bad expression")).toBeNull();
 
-        // Popup closes via click — errors still hidden until validation completes
+        closePopupViaKeyboard(rerender, { ...props, fieldErrors: errors });
+
+        expect(queryByText("Bad expression")).toBeNull();
+    });
+
+    it("shows fresh errors when fieldErrors change after popup closes (keyboard dismiss)", () => {
+        const onValueChange = jest.fn();
+        const props = buildProps(onValueChange);
+        const { queryByText, rerender } = render(<CustomCompleterAceEditor {...props} fieldErrors={errors} />);
+
+        focusEditor();
+        openPopup(rerender, { ...props, fieldErrors: errors });
+        closePopupViaKeyboard(rerender, { ...props, fieldErrors: errors });
+        expect(queryByText("Bad expression")).toBeNull();
+
+        // New validation result arrives with different errors
+        rerender(<CustomCompleterAceEditor {...props} fieldErrors={errorsAfter} isLoading={false} />);
+
+        expect(queryByText("Updated error")).not.toBeNull();
+        expect(queryByText("Bad expression")).toBeNull();
+    });
+
+    it("shows fresh errors when fieldErrors change after popup closes (click dismiss)", () => {
+        const onValueChange = jest.fn();
+        const props = buildProps(onValueChange);
+        const { queryByText, rerender } = render(<CustomCompleterAceEditor {...props} fieldErrors={errors} />);
+
+        focusEditor();
+        openPopup(rerender, { ...props, fieldErrors: errors });
         closePopupViaClick("selectedSuggestion");
-        act(() => jest.advanceTimersByTime(100));
         expect(queryByText("Bad expression")).toBeNull();
 
-        simulateValidationCycle(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
-        expect(queryByText("Bad expression")).not.toBeNull();
+        // New validation result arrives with no errors
+        rerender(<CustomCompleterAceEditor {...props} fieldErrors={[]} isLoading={false} />);
+
+        expect(queryByText("Bad expression")).toBeNull(); // correctly cleared
     });
 
-    it("does not flash old errors when validation completes while popup is still open (race condition)", () => {
-        // Scenario: validation finishes while popup is open (isValidating: true→false).
-        // Without the !completionsVisible guard, waitingForFreshValidation would be cleared
-        // immediately, causing old errors to flash as soon as the popup closes.
+    it("keeps errors hidden while popup is open even when fieldErrors change (validation finishes during popup)", () => {
+        // Validation may finish while the popup is still open. The popup-open rule
+        // (clear snapshot) takes priority, so errors must not flash.
         const onValueChange = jest.fn();
         const props = buildProps(onValueChange);
         const { queryByText, rerender } = render(<CustomCompleterAceEditor {...props} fieldErrors={errors} />);
@@ -302,46 +304,34 @@ describe("CustomCompleterAceEditor", () => {
         focusEditor();
         openPopup(rerender, { ...props, fieldErrors: errors });
 
-        // Validation completes while popup is still open — errors must stay hidden
-        simulateValidationCycle(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
-        expect(queryByText("Bad expression")).toBeNull();
+        // Validation finishes with new errors while popup is still open
+        rerender(<CustomCompleterAceEditor {...props} fieldErrors={errorsAfter} isLoading={false} />);
 
-        // Popup closes — errors must NOT flash; waitingForFreshValidation still active
-        closePopupViaKeyboard(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
+        expect(queryByText("Updated error")).toBeNull();
         expect(queryByText("Bad expression")).toBeNull();
-
-        // Post-close validation cycle — errors now visible
-        simulateValidationCycle(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
-        expect(queryByText("Bad expression")).not.toBeNull();
     });
 
-    it("does not show validation errors while typing #'' with autocomplete popup open", () => {
+    it("does not show validation errors while typing with autocomplete popup open", () => {
         const onValueChange = jest.fn();
         const props = buildProps(onValueChange);
-        const { queryByText, rerender } = render(<CustomCompleterAceEditor {...props} fieldErrors={[]} isValidating />);
+        const { queryByText, rerender } = render(<CustomCompleterAceEditor {...props} fieldErrors={[]} />);
 
         focusEditor();
 
-        // User types "#" — autocomplete popup opens
-        openPopup(rerender, { ...props, fieldErrors: [], isValidating: false });
+        // User types — autocomplete popup opens
+        openPopup(rerender, { ...props, fieldErrors: [] });
         typeInEditor("#''");
 
-        // Validation finishes with errors, but popup is still open — errors must stay hidden
-        rerender(<CustomCompleterAceEditor {...props} fieldErrors={errors} isValidating={false} />);
-        act(() => jest.advanceTimersByTime(100));
+        // Validation finishes with errors while popup is still open — must stay hidden
+        rerender(<CustomCompleterAceEditor {...props} fieldErrors={errors} isLoading={false} />);
         expect(queryByText("Bad expression")).toBeNull();
 
-        // User dismisses popup — errors still hidden until post-close validation cycle
-        closePopupViaKeyboard(rerender, { ...props, fieldErrors: errors, isValidating: false });
-        act(() => jest.advanceTimersByTime(100));
+        // User dismisses popup — errors still hidden (fieldErrors unchanged since last render)
+        closePopupViaKeyboard(rerender, { ...props, fieldErrors: errors });
         expect(queryByText("Bad expression")).toBeNull();
 
-        // Post-close validation cycle — errors reappear
-        simulateValidationCycle(rerender, { ...props, fieldErrors: errors });
-        act(() => jest.advanceTimersByTime(100));
-        expect(queryByText("Bad expression")).not.toBeNull();
+        // New validation result with different errors — snapshot updates, errors appear
+        rerender(<CustomCompleterAceEditor {...props} fieldErrors={errorsAfter} isLoading={false} />);
+        expect(queryByText("Updated error")).not.toBeNull();
     });
 });

@@ -165,7 +165,8 @@ describe("useValidation", () => {
         expect(mockValidateNodeData).toHaveBeenLastCalledWith(expect.objectContaining({ nodeData: changedNode }), expect.any(Function));
 
         const errors = store.getState().nodeDetails[NODE_ID]?.validationErrors;
-        expect(errors).toEqual(updatedErrors);
+        // Each error gets a requestId injected by the reducer — use toMatchObject to ignore it
+        expect(errors).toMatchObject(updatedErrors);
     });
 
     it("does not dispatch validation when showValidation is false", async () => {

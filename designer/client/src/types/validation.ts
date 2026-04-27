@@ -70,4 +70,5 @@ export interface NodeValidationError {
     typ: string;
     details?: Details;
     errorType: ErrorType;
+    requestId?: string;
 }

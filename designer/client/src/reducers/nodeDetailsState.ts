@@ -1,3 +1,5 @@
+import { v4 as uuid4 } from "uuid";
+
 import type { Action } from "../actions/reduxTypes";
 import type { TypingResult, UIParameter } from "../types/definition";
 import type { NodeId } from "../types/node";
@@ -54,22 +56,15 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
             };
         }
 
-        case "VALIDATE_PROPERTIES": {
-            return {
-                ...state,
-                ".properties": {
-                    ...state[".properties"],
-                },
-            };
-        }
-
         case "NODE_VALIDATION_UPDATED": {
             const { validationData, nodeId } = action;
+            const requestId = uuid4();
             return {
                 ...state,
                 [nodeId]: {
                     ...state[nodeId],
                     ...validationData,
+                    validationErrors: validationData.validationErrors.map((e) => ({ ...e, requestId })),
                 },
             };
         }

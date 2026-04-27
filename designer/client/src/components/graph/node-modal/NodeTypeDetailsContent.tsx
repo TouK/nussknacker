@@ -20,7 +20,6 @@ import { Source } from "./source";
 import { Split } from "./split";
 import { Switch } from "./switch";
 import type { Prettify } from "./useNodeTypeDetailsContentLogic";
-import { useValidation } from "./useNodeTypeDetailsContentLogic";
 import {
     useAddElement,
     useIsEditMode,
@@ -29,6 +28,7 @@ import {
     useRenderFieldLabel,
     useSetEditedEdges,
     useSetProperty,
+    useValidation,
     useVariableTypes,
 } from "./useNodeTypeDetailsContentLogic";
 import Variable from "./Variable";
