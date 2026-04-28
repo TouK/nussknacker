@@ -5,7 +5,7 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
@@ -107,6 +107,45 @@ case class CanonicalProcess(
     copy(metaData = metaData.copy(id = processName.value))
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
+
+  // Strips `_unsafe_*` extension fields from metadata and every node's additionalFields.
+  // The 2-case NodeData match works thanks to `copySyntax` (shapeless LabelledGeneric `.copy`
+  // lifted to the `RealNodeData` sealed trait — the trick from FragmentResolver.prefixNodeData).
+  // The outer CanonicalNode match is unavoidable: each wrapper holds its nested children under
+  // differently-shaped fields (`nextFalse`, `nexts`, `outputs` …) that need recursion.
+  lazy val withoutUnsafeFields: CanonicalProcess = {
+    import pl.touk.nussknacker.engine.util.copySyntax._
+
+    def stripAdditional(af: UserDefinedAdditionalNodeFields) = af.copy(unsafeFields = Map.empty)
+
+    def stripData[T <: NodeData](n: T): T = (n.asInstanceOf[NodeData] match {
+      case e: RealNodeData  => e.copy(additionalFields = e.additionalFields.map(stripAdditional))
+      case b: BranchEndData => b
+    }).asInstanceOf[T]
+
+    def walk(n: CanonicalNode): CanonicalNode = n match {
+      case FlatNode(data) => FlatNode(stripData(data))
+      case fn: canonicalnode.FilterNode =>
+        fn.copy(data = stripData(fn.data), nextFalse = fn.nextFalse.map(walk))
+      case sn: canonicalnode.SwitchNode =>
+        sn.copy(
+          data = stripData(sn.data),
+          nexts = sn.nexts.map(c => c.copy(nodes = c.nodes.map(walk))),
+          defaultNext = sn.defaultNext.map(walk)
+        )
+      case sp: canonicalnode.SplitNode =>
+        sp.copy(data = stripData(sp.data), nexts = sp.nexts.map(_.map(walk)))
+      case fr: canonicalnode.Fragment =>
+        fr.copy(data = stripData(fr.data), outputs = fr.outputs.map { case (k, v) => k -> v.map(walk) })
+    }
+
+    copy(
+      metaData = metaData.copy(additionalFields = metaData.additionalFields.copy(unsafeFields = Map.empty)),
+      nodes = nodes.map(walk),
+      additionalBranches = additionalBranches.map(_.map(walk)),
+      stickyNotes = stickyNotes.map(sn => sn.copy(additionalFields = sn.additionalFields.map(stripAdditional)))
+    )
+  }
 
   def collectAllSources: List[SourceNodeData] = {
     val allNodes = collectAllNodes

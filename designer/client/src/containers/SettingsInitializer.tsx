@@ -8,13 +8,15 @@ import { userSettingSet, userSettingsSetInitial, userSettingsToggle } from "../a
 import { useUserSettings } from "../common/useUserSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
 import HttpService from "../http/HttpService/instance";
-import type { UserSettings } from "../reducers/userSettings";
+import type { Setting, UserSettings } from "../reducers/userSettings";
 import { waitForWindowValue } from "../reducers/waitForWindowValue";
 import { useAppDispatch } from "../store/storeHelpers";
 
+export type GlobalToggleUserFlag = (flag: Setting, value?: boolean) => Promise<boolean | "default">;
+
 declare global {
     interface Window {
-        $toggleUserFlag?: <K extends keyof UserSettings>(flag: K, value?: UserSettings[K]) => void;
+        $toggleUserFlag?: GlobalToggleUserFlag;
         $initialUserFlags?: UserSettings;
     }
 }
@@ -24,13 +26,17 @@ export function SettingsProvider({ children }: PropsWithChildren<unknown>): Reac
     const dispatch = useAppDispatch();
 
     useEffect(() => {
-        window.$toggleUserFlag = (flag, value) => {
-            if (value !== undefined) {
-                dispatch(userSettingSet(flag, value));
-            } else {
-                dispatch(userSettingsToggle([flag]));
-            }
-        };
+        window.$toggleUserFlag = (flag, value) =>
+            new Promise((resolve) => {
+                if (value !== undefined) {
+                    dispatch(userSettingSet(flag, value));
+                } else {
+                    dispatch(userSettingsToggle([flag]));
+                }
+                dispatch((_dispatch, getState) => {
+                    resolve(getState().userSettings.values[flag]);
+                });
+            });
         waitForWindowValue("$initialUserFlags").then((flags) => {
             dispatch(userSettingsSetInitial(flags));
         });

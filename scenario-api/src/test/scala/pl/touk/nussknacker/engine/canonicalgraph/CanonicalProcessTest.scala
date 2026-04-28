@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
+import io.circe.Json
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{
   CanonicalNode,
   Case,
@@ -21,7 +23,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 
 import scala.language.implicitConversions
 
-class CanonicalProcessTest extends AnyFunSuite with Matchers {
+class CanonicalProcessTest extends AnyFunSuite with Matchers with OptionValues {
 
   val source1 = FlatNode(Source(NodeId("in"), NodeName("in"), SourceRef("sourceType", Nil)))
 
@@ -170,6 +172,46 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
         )
       )
     )
+  }
+
+  test("#withoutUnsafeFields strips _unsafe_ entries from metadata and node additional fields") {
+    val withUnsafe = CanonicalProcess(
+      MetaData(
+        "process1",
+        ProcessAdditionalFields(
+          description = Some("d"),
+          properties = Map.empty,
+          metaDataType = StreamMetaData.typeName,
+          unsafeFields = Map("_unsafe_top" -> Json.fromString("secret"))
+        )
+      ),
+      nodes = List(
+        FlatNode(
+          Source(
+            NodeId("in"),
+            NodeName("in"),
+            SourceRef("sourceType", Nil),
+            additionalFields = Some(
+              UserDefinedAdditionalNodeFields(
+                description = Some("node desc"),
+                layoutData = None,
+                unsafeFields = Map("_unsafe_node" -> Json.fromInt(1))
+              )
+            )
+          )
+        ),
+        sink1
+      )
+    )
+
+    val stripped = withUnsafe.withoutUnsafeFields
+
+    stripped.metaData.additionalFields.unsafeFields shouldBe empty
+    stripped.metaData.additionalFields.description shouldBe Some("d")
+
+    val strippedNodeFields = stripped.nodes.head.data.additionalFields.value
+    strippedNodeFields.unsafeFields shouldBe empty
+    strippedNodeFields.description shouldBe Some("node desc")
   }
 
   private def fragment(output: List[CanonicalNode], isDisabled: Boolean) =

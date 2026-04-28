@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api
 
-import io.circe.{Decoder, Encoder, HCursor}
+import io.circe.{Decoder, Encoder, HCursor, Json, JsonObject}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
@@ -86,7 +86,8 @@ case class ProcessAdditionalFields(
     description: Option[String],
     properties: Map[String, String],
     metaDataType: String,
-    showDescription: Boolean = false
+    showDescription: Boolean = false,
+    unsafeFields: Map[String, Json] = Map.empty
 ) {
 
   def combineTypeSpecificProperties(typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
@@ -106,20 +107,33 @@ case class ProcessAdditionalFields(
 }
 
 object ProcessAdditionalFields {
+  import io.circe.syntax._
 
-  // TODO: is this currently needed?
-  private case class OptionalProcessAdditionalFields(
-      description: Option[String],
-      properties: Option[Map[String, String]],
-      metaDataType: String,
-      showDescription: Boolean = false
-  )
-
-  implicit val circeDecoder: Decoder[ProcessAdditionalFields] =
-    deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp =>
-      ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType, opp.showDescription)
+  implicit val circeEncoder: Encoder.AsObject[ProcessAdditionalFields] = Encoder.AsObject.instance { f =>
+    UnsafePrefixedFields.merge(
+      JsonObject(
+        "description"     -> f.description.asJson,
+        "properties"      -> f.properties.asJson,
+        "metaDataType"    -> f.metaDataType.asJson,
+        "showDescription" -> f.showDescription.asJson,
+      ),
+      f.unsafeFields
     )
+  }
 
-  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
+  implicit val circeDecoder: Decoder[ProcessAdditionalFields] = Decoder.instance { c =>
+    for {
+      description     <- c.get[Option[String]]("description")
+      properties      <- c.get[Option[Map[String, String]]]("properties")
+      metaDataType    <- c.get[String]("metaDataType")
+      showDescription <- c.getOrElse[Boolean]("showDescription")(false)
+    } yield ProcessAdditionalFields(
+      description,
+      properties.getOrElse(Map.empty),
+      metaDataType,
+      showDescription,
+      UnsafePrefixedFields.extract(c)
+    )
+  }
 
 }

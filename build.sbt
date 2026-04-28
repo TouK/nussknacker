@@ -1,3 +1,4 @@
+import com.github.sbt.git.SbtGit.GitKeys.useConsoleForROGit
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
@@ -53,6 +54,15 @@ publishTo          := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
 ThisBuild / isSnapshot := version(_ contains "-SNAPSHOT").value
+
+// Workaround for sbt-git not supporting git worktrees (see https://github.com/sbt/sbt-git/pull/243).
+// In a worktree `.git` is a regular file (containing `gitdir: ...` pointing at the main repo's
+// per-worktree git dir), not a directory — and sbt-git's embedded JGit cannot parse that layout,
+// which breaks read-only git operations such as gitCurrentBranch / gitHeadCommit used below.
+// Flipping `useConsoleForROGit` to true makes sbt-git shell out to the `git` CLI for those reads,
+// which handles worktrees correctly. Detecting `.git` as a file keeps the default (JGit) path
+// for normal checkouts where `.git` is a directory.
+ThisBuild / useConsoleForROGit := (baseDirectory.value / ".git").isFile
 
 lazy val publishSettings = Seq(
   publishMavenStyle             := true,

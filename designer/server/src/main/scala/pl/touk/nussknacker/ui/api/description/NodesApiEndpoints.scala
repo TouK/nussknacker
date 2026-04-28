@@ -1022,9 +1022,21 @@ object NodesApiEndpoints {
       implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as
     }
 
-    implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
-    implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
-    implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
+    // `unsafeFields` is the Scala container for top-level `_unsafe_*` JSON entries; it has no
+    // wire representation of its own, so we strip it from the derived schema entirely (marking
+    // it hidden with `.modify` leaves a dangling entry in `required`).
+    private def omitSchemaField[T](schema: Schema[T], fieldName: String): Schema[T] =
+      schema.schemaType match {
+        case p: SProduct[T] @unchecked =>
+          schema.copy(schemaType = SProduct(p.fields.filterNot(_.name.name == fieldName)))
+        case _ => schema
+      }
+
+    implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]           = Schema.derived
+    implicit lazy val unsafeFieldsSchema: Schema[Map[String, io.circe.Json]] = Schema.anyObject
+    implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] =
+      omitSchemaField(Schema.derived[ProcessAdditionalFields], "unsafeFields")
+    implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived.hidden(true)
 
     implicit lazy val parameterSchema: Schema[EvaluatedParameter]    = Schema.derived
     implicit lazy val edgeTypeSchema: Schema[EdgeType]               = Schema.derived
@@ -1055,15 +1067,18 @@ object NodesApiEndpoints {
       implicit lazy val fragmentClazzRefSchema: Schema[FragmentClazzRef] = Schema.derived
       implicit lazy val parameterValueCompileTimeValidationSchema: Schema[ParameterValueCompileTimeValidation] =
         Schema.derived
-      implicit lazy val parameterValueInputSchema: Schema[ParameterValueInput]                         = Schema.derived
-      implicit lazy val fragmentParameterSchema: Schema[FragmentParameter]                             = Schema.derived
-      implicit lazy val serviceRefSchema: Schema[ServiceRef]                                           = Schema.derived
-      implicit lazy val branchEndDefinitionSchema: Schema[BranchEndDefinition]                         = Schema.derived
-      implicit lazy val userDefinedAdditionalNodeFieldsSchema: Schema[UserDefinedAdditionalNodeFields] = Schema.derived
-      implicit lazy val layoutDataSchema: Schema[LayoutData]                                           = Schema.derived
-      implicit lazy val branchParametersSchema: Schema[BranchParameters]                               = Schema.derived
-      implicit lazy val fieldSchema: Schema[Field]                                                     = Schema.derived
-      implicit lazy val fragmentOutputVarDefinitionSchema: Schema[FragmentOutputVarDefinition]         = Schema.derived
+      implicit lazy val parameterValueInputSchema: Schema[ParameterValueInput] = Schema.derived
+      implicit lazy val fragmentParameterSchema: Schema[FragmentParameter]     = Schema.derived
+      implicit lazy val serviceRefSchema: Schema[ServiceRef]                   = Schema.derived
+      implicit lazy val branchEndDefinitionSchema: Schema[BranchEndDefinition] = Schema.derived
+      implicit lazy val layoutDataSchema: Schema[LayoutData]                   = Schema.derived
+
+      implicit lazy val userDefinedAdditionalNodeFieldsSchema: Schema[UserDefinedAdditionalNodeFields] =
+        omitSchemaField(Schema.derived[UserDefinedAdditionalNodeFields], "unsafeFields")
+
+      implicit lazy val branchParametersSchema: Schema[BranchParameters]                       = Schema.derived
+      implicit lazy val fieldSchema: Schema[Field]                                             = Schema.derived
+      implicit lazy val fragmentOutputVarDefinitionSchema: Schema[FragmentOutputVarDefinition] = Schema.derived
 
       //  Tapir currently supports only json schema v4 which has no way to declare discriminator
       //  We declare that each type of NodeData belongs to an enum with only one value as a workaround for this problem

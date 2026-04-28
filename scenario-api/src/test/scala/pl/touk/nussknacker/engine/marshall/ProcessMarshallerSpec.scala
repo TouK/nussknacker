@@ -225,6 +225,64 @@ class ProcessMarshallerSpec
     }
   }
 
+  it should "round-trip _unsafe_-prefixed additional fields on process and node" in {
+    val processFields = ProcessAdditionalFields(
+      description = Some("desc"),
+      properties = Map("customProperty" -> "customPropertyValue"),
+      metaDataType = StreamMetaData.typeName,
+      unsafeFields = Map(
+        "_unsafe_foo"    -> Json.fromString("bar"),
+        "_unsafe_nested" -> Json.obj("k" -> Json.fromInt(1))
+      )
+    )
+    processFields.asJson.as[ProcessAdditionalFields].toOption.value shouldBe processFields
+
+    val nodeFields = UserDefinedAdditionalNodeFields(
+      description = Some("n"),
+      layoutData = None,
+      unsafeFields = Map("_unsafe_id" -> Json.fromString("abc"))
+    )
+    nodeFields.asJson.as[UserDefinedAdditionalNodeFields].toOption.value shouldBe nodeFields
+  }
+
+  it should "refuse to let a non-prefixed key in unsafeFields clobber a real top-level field on encode" in {
+    val fields = ProcessAdditionalFields(
+      description = Some("real description"),
+      properties = Map.empty,
+      metaDataType = StreamMetaData.typeName,
+      unsafeFields = Map("description" -> Json.fromString("hijacked"))
+    )
+    val encoded = fields.asJson
+    encoded.hcursor.get[Option[String]]("description").toOption.value shouldBe Some("real description")
+  }
+
+  it should "drop non-prefixed extra fields on process and node additional fields" in {
+    val processJson = io.circe.parser
+      .parse("""{
+        "description": "d",
+        "properties": {},
+        "metaDataType": "StreamMetaData",
+        "showDescription": false,
+        "_unsafe_ok": "keep",
+        "nonPrefixed": "drop"
+      }""")
+      .toOption
+      .value
+    processJson.as[ProcessAdditionalFields].toOption.value.unsafeFields.keySet shouldBe Set("_unsafe_ok")
+
+    val nodeJson = io.circe.parser
+      .parse("""{
+        "description": "n",
+        "_unsafe_ok": "keep",
+        "nonPrefixed": "drop"
+      }""")
+      .toOption
+      .value
+    val parsedNode = nodeJson.as[UserDefinedAdditionalNodeFields].toOption.value
+    parsedNode.description shouldBe Some("n")
+    parsedNode.unsafeFields.keySet shouldBe Set("_unsafe_ok")
+  }
+
   it should "detect bad branch" in {
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {

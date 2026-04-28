@@ -73,7 +73,37 @@ object node {
 
   case class BranchEnd(data: BranchEndData) extends SubsequentNode
 
-  @JsonCodec case class UserDefinedAdditionalNodeFields(description: Option[String], layoutData: Option[LayoutData])
+  case class UserDefinedAdditionalNodeFields(
+      description: Option[String],
+      layoutData: Option[LayoutData],
+      unsafeFields: Map[String, Json] = Map.empty
+  )
+
+  object UserDefinedAdditionalNodeFields {
+    import io.circe.syntax._
+
+    implicit val encoder: Encoder.AsObject[UserDefinedAdditionalNodeFields] = Encoder.AsObject.instance { f =>
+      UnsafePrefixedFields.merge(
+        JsonObject(
+          "description" -> f.description.asJson,
+          "layoutData"  -> f.layoutData.asJson,
+        ),
+        f.unsafeFields
+      )
+    }
+
+    implicit val decoder: Decoder[UserDefinedAdditionalNodeFields] = Decoder.instance { c =>
+      for {
+        description <- c.get[Option[String]]("description")
+        layoutData  <- c.get[Option[LayoutData]]("layoutData")
+      } yield UserDefinedAdditionalNodeFields(
+        description,
+        layoutData,
+        UnsafePrefixedFields.extract(c)
+      )
+    }
+
+  }
 
   sealed trait NodeData {
     def id: NodeId

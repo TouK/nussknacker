@@ -7,6 +7,8 @@ type Type = "FragmentInput" | typeof StickyNoteType | "Source" | "Sink" | "Enric
 
 export type LayoutData = { x: number; y: number };
 
+export type UnsafeOptions = Record<`_unsafe_${string}`, unknown>;
+
 export interface BranchParams {
     branchId: string;
     parameters: Field[];
@@ -23,7 +25,7 @@ export type NodeType<F extends Field = Field> = {
         description?: string;
         layoutData?: LayoutData;
         creatorType?: string;
-    };
+    } & UnsafeOptions;
     parameters?: Parameter[];
     branchParameters?: BranchParams[];
     branchParametersTemplate?: BranchParametersTemplate;

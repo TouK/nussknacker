@@ -115,4 +115,26 @@ object CirceUtil {
   // that some value is null, but for people it generates a lot of unnecessary noise
   val humanReadablePrinter: Printer = Printer.spaces2.copy(dropNullValues = true)
 
+  // Helpers for a convention where a case class exposes `unsafeFields: Map[String, Json]` that is
+  // encoded/decoded as top-level JSON properties prefixed with `_unsafe_` (rather than under a
+  // nested field). Used to round-trip forward-compatible extension fields without schema changes.
+  object UnsafePrefixedFields {
+    val Prefix = "_unsafe_"
+
+    def extract(c: HCursor): Map[String, Json] =
+      c.keys.toList.flatten
+        .filter(_.startsWith(Prefix))
+        .flatMap(k => c.downField(k).as[Json].toOption.map(k -> _))
+        .toMap
+
+    // Only entries whose key already starts with [[Prefix]] are merged in — keeps a stray entry in
+    // the map (e.g. `"description" -> ...`) from clobbering a real top-level field during encode.
+    def merge(base: JsonObject, unsafeFields: Map[String, Json]): JsonObject =
+      unsafeFields.foldLeft(base) {
+        case (obj, (k, v)) if k.startsWith(Prefix) => obj.add(k, v)
+        case (obj, _)                              => obj
+      }
+
+  }
+
 }

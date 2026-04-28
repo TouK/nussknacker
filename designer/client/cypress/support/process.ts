@@ -1,6 +1,7 @@
 import { padStart } from "lodash";
 
-import type { Setting } from "../../src/reducers/userSettings";
+import type { GlobalToggleUserFlag } from "../../src/containers/SettingsInitializer";
+import type { UserSettings } from "../../src/reducers/userSettings";
 
 import Chainable = Cypress.Chainable;
 
@@ -327,13 +328,19 @@ function getNode(nameOrAlias: string) {
     });
 }
 
-function toggleUserFlag(flag: Setting, value?: boolean | undefined) {
+function toggleUserFlag(
+    flag: keyof UserSettings | (string & NonNullable<unknown>),
+    value?: boolean | undefined,
+): Chainable<boolean | "default"> {
     return cy
         .window()
         .its("$toggleUserFlag")
         .should("exist")
-        .then((toggleUserFlag) => {
-            toggleUserFlag(flag, value);
+        .then((toggleUserFlag: GlobalToggleUserFlag) => toggleUserFlag(flag, value))
+        .should((currentSubject) => {
+            if (value !== undefined) {
+                expect(currentSubject).to.eq(value);
+            }
         });
 }
 
