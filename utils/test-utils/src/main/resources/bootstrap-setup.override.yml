@@ -1,7 +1,7 @@
 services:
 
   bootstrap-setup:
-    image: touk/nussknacker-example-scenarios-library:1.11.0
+    image: touk/nussknacker-example-scenarios-library:1.13.0
     depends_on:
       designer:
         condition: service_healthy
