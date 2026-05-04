@@ -258,10 +258,11 @@ Some useful constants are also available:
 
 ### GEO - simple distance measurements
 
-- `#GEO.distanceInKm(Number,Number,Number,Number)` - calculate distance in km between two points (with decimal coordinates), using haversine algorithm
-- `#GEO.distanceInKm(pl.touk.nussknacker.engine.util.functions.Point,pl.touk.nussknacker.engine.util.functions.Point)` - calculate distance in km between two points (with decimal coordinates), using haversine algorithm
-- `#GEO.toPoint(Number,Number)` -> pl.touk.nussknacker.engine.util.functions.Point
-
+- `#GEO.azimuth(Number latitude1, Number longitude1, latitude2 Number, Number longitude2)` -> `Double` - calculate initial bearing (azimuth) in degrees from the first point to the second point. Result in range [0, 360).
+- `#GEO.closestPointOnLine(Number latitudeA, Number longitudeA, Number latitudeB, Number longitudeB, Number latitudeC, Number longitudeC)` -> `List[Double]` - calculate the closest point on the line segment AB to point C. Returns [latitude, longitude].
+- `#GEO.distanceInKm(Number latitude1, Number longitude1, Number latitude2, Number longitude2)` -> `Double` - calculate distance in km between two points (with decimal coordinates), using haversine algorithm
+- `#GEO.midpoint(Number latitude1, Number longitude1, Number latitude2, Number longitude2)` -> `List[Double]` - calculate geographic midpoint between two points on Earth. Returns [latitude, longitude].
+ 
 ### NUMERIC - number parsing
 
 - `#NUMERIC.abs(Number)` - returns the absolute value of a value.

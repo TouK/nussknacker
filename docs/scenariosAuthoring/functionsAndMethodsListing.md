@@ -9,7 +9,7 @@ keywords: ["functions", "methods", "SpEL", "expressions"]
 
 # Functions and Methods Listing
 
-<!-- This document is for Assistant only -->
+<!-- This document is for Assistant only - it is more more comprehensive that the document for humans, however more repetitive -->
 
 Functions and methods can be used in all [expression types](/docs/scenariosAuthoring/introduction.mdx#ways-of-providing-parameter-values) that support SpEL evaluation. 
 
@@ -127,9 +127,10 @@ Functions and methods can be used in all [expression types](/docs/scenariosAutho
 ```
 ### GEO
 ```
+.azimuth(Number latitude1, Number longitude1, latitude2 Number, Number longitude2)` -> Double - calculate initial bearing (azimuth) in degrees from the first point to the second point. Result in range [0, 360).
 .distanceInKm(Number,Number,Number,Number) -> Double - calculate distance in km between two points (with decimal coordinates), using haversine algorithm
-.distanceInKm(pl.touk.nussknacker.engine.util.functions.Point,pl.touk.nussknacker.engine.util.functions.Point) -> Double - calculate distance in km between two points (with decimal coordinates), using haversine algorithm
-.toPoint(Number,Number) -> pl.touk.nussknacker.engine.util.functions.Point
+.closestPointOnLine(Number latitudeA, Number longitudeA, Number latitudeB, Number longitudeB, Number latitudeC, Number longitudeC)` -> List[Double] - calculate the closest point on the line segment AB to point C. Returns [latitude, longitude].
+.midpoint(Number latitude1, Number longitude1, Number latitude2, Number longitude2)` -> List[Double] - calculate geographic midpoint between two points on Earth. Returns [latitude, longitude].
 ```
 ### NUMERIC
 ```
