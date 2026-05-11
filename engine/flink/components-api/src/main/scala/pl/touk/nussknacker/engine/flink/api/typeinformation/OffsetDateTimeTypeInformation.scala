@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
 import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
+import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
 import java.time.{Instant, OffsetDateTime, ZoneOffset}

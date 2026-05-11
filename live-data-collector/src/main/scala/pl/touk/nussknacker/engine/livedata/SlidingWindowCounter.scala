@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.livedata
 
 import java.time.{Clock, Instant}
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.{ConcurrentLinkedQueue, ConcurrentSkipListMap}
+import java.util.concurrent.atomic.AtomicLong
 import scala.jdk.CollectionConverters._
 
 private[livedata] class SlidingWindowCounter[T](

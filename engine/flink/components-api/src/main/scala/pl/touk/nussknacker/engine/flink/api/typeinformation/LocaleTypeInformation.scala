@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
 import org.apache.commons.lang3.LocaleUtils
-import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
 import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
+import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.springframework.util.StringUtils
 

@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
 import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
+import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
-import java.time.{Instant, ZoneOffset, ZonedDateTime}
+import java.time.{Instant, ZonedDateTime, ZoneOffset}
 
 object ZonedDateTimeTypeInformation extends SimpleTypeInformation[ZonedDateTime](new ZonedDateTimeTypeSerializer)
 

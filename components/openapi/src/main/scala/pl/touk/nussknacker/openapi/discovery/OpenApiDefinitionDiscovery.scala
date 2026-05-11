@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 import pl.touk.nussknacker.http.backend.HttpClientConfig
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
-import sttp.client3.{SttpBackend, basicRequest}
+import sttp.client3.{basicRequest, SttpBackend}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.model.Uri
 
@@ -34,6 +34,7 @@ trait OpenApiDefinitionDiscovery extends LazyLogging {
       logger.warn(s"Failed to parse following services: ${errors.mkString(", ")}")
     }
   }
+
 }
 
 object SwaggerOpenApiDefinitionDiscovery
@@ -54,8 +55,9 @@ object SwaggerOpenApiDefinitionDiscovery
       )
     )
 
-class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Any]) extends LazyLogging
-  with OpenApiDefinitionDiscovery {
+class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Any])
+    extends LazyLogging
+    with OpenApiDefinitionDiscovery {
 
   override def getServices(
       openAPIsConfig: OpenAPIServicesConfig
@@ -71,12 +73,14 @@ class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Fu
     }
     SwaggerParser.parse(definition, openAPIsConfig)
   }
+
 }
 
 class CachingOpenApiDefinitionDiscovery(
     discovery: OpenApiDefinitionDiscovery,
     openAPIsConfig: OpenAPIServicesConfig,
 ) extends OpenApiDefinitionDiscovery {
+
   @transient private lazy val servicesCache = new SingleValueCache[List[Validated[ServiceParseError, SwaggerService]]](
     expireAfterAccess = None,
     expireAfterWrite = Some(openAPIsConfig.openApiServicesDiscoveryCacheTtl)
@@ -87,4 +91,5 @@ class CachingOpenApiDefinitionDiscovery(
   ): List[Validated[ServiceParseError, SwaggerService]] = servicesCache.getOrCreate {
     discovery.getServices(openAPIsConfig)
   }
+
 }

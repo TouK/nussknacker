@@ -2,8 +2,15 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{schemaVersionParamName, topicParamName}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryError, SchemaTopicError, SchemaVersionError}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
+  schemaVersionParamName,
+  topicParamName
+}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaRegistryError,
+  SchemaTopicError,
+  SchemaVersionError
+}
 
 object SchemaRegistryErrorHandler {
 
