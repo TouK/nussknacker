@@ -33,7 +33,7 @@ class EmitWhenEventLeftAggregatorFunctionWithMapState(
 
   override def open(openContext: OpenContext): Unit = {
     super.open(openContext)
-    initMapState()
+    initBucketsState()
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }
 
@@ -65,30 +65,37 @@ class EmitWhenEventLeftAggregatorFunctionWithMapState(
       ctx: FlinkOnTimerCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
-    // Check if entries exist in [maxBucketTs - windowLength + 1, timestamp - windowLength].
-    // This range represents entries that were visible when the last event was emitted
-    // but are now outside the window boundary.
-    val maxBucketTsOpt = bucketState.keys().asScala.map(_.longValue()).maxOption
+    val allKeys = bucketsState.keys.asScala.map(_.longValue()).toList
 
-    maxBucketTsOpt.foreach { maxBucketTs =>
-      val rangeStart = maxBucketTs - timeWindowLengthMillis + 1
-      val rangeEnd   = timestamp - timeWindowLengthMillis
+    allKeys.maxOption.foreach { maxBucketTs =>
+      val leavingRangeStart = maxBucketTs - timeWindowLengthMillis + 1
+      val leavingRangeEnd   = timestamp - timeWindowLengthMillis
 
-      if (rangeEnd >= rangeStart) {
-        val hasLeavingEntries = bucketState
-          .keys()
-          .asScala
-          .exists(key => key >= rangeStart && key <= rangeEnd)
+      val hasLeavingEntries =
+        leavingRangeEnd >= leavingRangeStart &&
+          allKeys.exists(k => k >= leavingRangeStart && k <= leavingRangeEnd)
 
-        if (hasLeavingEntries) {
-          val finalVal = computeFinalValue(timestamp)
-          out.collect(
-            ValueWithContext(
-              finalVal,
-              KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)
-            )
+      if (hasLeavingEntries) {
+        val foldRangeStart = timestamp - timeWindowLengthMillis + 1
+        var count          = 0
+
+        val foldedState = allKeys
+          .filter(k => k >= foldRangeStart && k <= timestamp)
+          .sorted
+          .foldLeft(aggregator.createAccumulator()) { (acc, key) =>
+            count += 1
+            aggregator.merge(acc, bucketsState.get(key))
+          }
+
+        retrievedBucketsHistogram.update(count)
+        val finalVal = aggregator.alignToExpectedType(aggregator.getResult(foldedState), outputType)
+
+        out.collect(
+          ValueWithContext(
+            finalVal,
+            KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)
           )
-        }
+        )
       }
     }
   }
