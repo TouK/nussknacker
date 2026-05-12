@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
-import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, ValueState, ValueStateDescriptor}
+import org.apache.flink.api.common.state.{MapStateDescriptor, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.ListTypeInfo
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
@@ -29,7 +30,7 @@ class AggregatorFunctionWithMapState(
 
   override def open(openContext: OpenContext): Unit = {
     super.open(openContext)
-    initMapState()
+    initBucketsState()
   }
 
   override def processElement(
@@ -59,22 +60,26 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
   protected def aggregateTypeInformation: TypeInformation[AnyRef]
 
   @transient
-  protected var bucketState: MapState[java.lang.Long, AnyRef] = _
+  protected var bucketsState: BucketsState = _
 
-  @transient
-  protected var latestEvictionTimeForKey: ValueState[java.lang.Long] = _
-
-  protected def initMapState(): Unit = {
-    bucketState = getRuntimeContext.getMapState(
+  protected def initBucketsState(): Unit = {
+    val mapState = getRuntimeContext.getMapState(
       new MapStateDescriptor[java.lang.Long, AnyRef](
         "buckets",
         TypeInformation.of(classOf[java.lang.Long]),
         aggregateTypeInformation
       )
     )
-    latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](
+    val keysState = getRuntimeContext.getState(
+      new ValueStateDescriptor[java.util.List[java.lang.Long]](
+        "keys",
+        new ListTypeInfo(TypeInformation.of(classOf[java.lang.Long]))
+      )
+    )
+    val latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](
       new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long])
     )
+    bucketsState = new BucketsState(mapState, keysState, latestEvictionTimeForKey)
   }
 
   // for extending classes purpose
@@ -95,13 +100,13 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
     val bucketTs   = computeTimestampToStore(timestamp)
     val newElement = value.value.value.asInstanceOf[aggregator.Element]
 
-    val currentAggregate = Option(bucketState.get(bucketTs))
+    val currentAggregate = Option(bucketsState.get(bucketTs))
       .getOrElse(aggregator.createAccumulator())
       .asInstanceOf[aggregator.Aggregate]
 
     if (!aggregator.isNeutralForAccumulator(newElement, currentAggregate)) {
       val newAggregate = aggregator.add(newElement, currentAggregate)
-      bucketState.put(bucketTs, newAggregate)
+      bucketsState.put(bucketTs, newAggregate)
     }
 
     doMoveEvictionTime(bucketTs + timeWindowLengthMillis, timeService)
@@ -125,18 +130,14 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
     val rangeStart = timestamp - timeWindowLengthMillis + 1
     var count      = 0
 
-    val foldedState = bucketState
-      .entries()
-      .asScala
-      .filter { entry =>
-        val ts = entry.getKey.longValue()
-        ts >= rangeStart && ts <= timestamp
-      }
+    val foldedState = bucketsState.keys.asScala
+      .map(_.longValue())
+      .filter(ts => ts >= rangeStart && ts <= timestamp)
       .toList
-      .sortBy(_.getKey) // maintain timestamp order for order-dependent aggregators (e.g. ListAggregator)
-      .foldLeft(aggregator.createAccumulator()) { (acc, entry) =>
+      .sorted
+      .foldLeft(aggregator.createAccumulator()) { (acc, key) =>
         count += 1
-        aggregator.merge(acc, entry.getValue)
+        aggregator.merge(acc, bucketsState.get(key))
       }
 
     retrievedBucketsHistogram.update(count)
@@ -147,7 +148,7 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
   // Not extracted to shared trait to avoid touching LatelyEvictableStateFunctionMixin which is used
   // by unrelated components (UnionWithMemoTransformer, TransformStateTransformer).
   protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
-    val latestEvictionTimeValue = latestEvictionTimeForKey.value()
+    val latestEvictionTimeValue = bucketsState.latestEvictionTime
     val maxEvictionTime = if (latestEvictionTimeValue == null || time > latestEvictionTimeValue) {
       time
     } else {
@@ -158,33 +159,24 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
       timeService.registerEventTimeTimer(maxEvictionTime)
     }
 
-    latestEvictionTimeForKey.update(maxEvictionTime)
+    bucketsState.updateLatestEvictionTime(maxEvictionTime)
   }
 
   protected def handleOnTimer(timestamp: Long, timerService: TimerService): Unit = {
-    val latestEvictionTimeValue = latestEvictionTimeForKey.value()
+    val latestEvictionTimeValue = bucketsState.latestEvictionTime
     val noLaterEventsArrived    = latestEvictionTimeValue == timestamp
+
     if (noLaterEventsArrived) {
-      evictStates()
+      bucketsState.clear()
     } else if (latestEvictionTimeValue != null) {
       evictOldBuckets(timestamp)
       timerService.registerEventTimeTimer(latestEvictionTimeValue)
     }
   }
 
-  protected def evictOldBuckets(currentWatermark: Long): Unit = {
+  private def evictOldBuckets(currentWatermark: Long): Unit = {
     val cutoff = currentWatermark - timeWindowLengthMillis + 1 - allowedOutOfOrderMs
-    val keysToRemove = bucketState
-      .keys()
-      .asScala
-      .filter(_.longValue() < cutoff)
-      .toList
-    keysToRemove.foreach(bucketState.remove)
-  }
-
-  protected def evictStates(): Unit = {
-    bucketState.clear()
-    latestEvictionTimeForKey.update(null)
+    bucketsState.removeOlderThan(cutoff)
   }
 
 }
