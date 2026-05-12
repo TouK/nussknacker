@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import cats.data.NonEmptyList
-import org.apache.flink.api.common.functions.{RichFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimerService
@@ -11,13 +10,10 @@ import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithCo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
-import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
-import pl.touk.nussknacker.engine.util
 import pl.touk.nussknacker.engine.util.KeyedValue
-import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import scala.language.higherKinds
 
@@ -56,43 +52,18 @@ class AggregatorFunction[MapT[K, V]](
 
 }
 
-trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHolder[MapT[Long, AnyRef]] =>
-
-  protected def convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-
-  protected lazy val engineRuntimeContext: EngineRuntimeContext = convertToEngineRuntimeContext(getRuntimeContext)
-
-  def nodeId: NodeId
-
-  protected def name: String = "aggregator"
-
-  protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.id)
-
-  protected lazy val metricsProvider: MetricsProviderForScenario = engineRuntimeContext.metricsProvider
-
-  protected lazy val timeHistogram: util.metrics.Histogram =
-    metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "time"), tags), 10)
-
-  // this metric does *not* calculate histogram of sizes of maps in the whole state,
-  // but of those that are processed, so "hot" keys would be counted much more often.
-  protected lazy val retrievedBucketsHistogram: util.metrics.Histogram =
-    metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "retrievedBuckets"), tags), 10)
-
-  protected def minimalResolutionMs: Long = 60000L
-
-  protected def allowedOutOfOrderMs: Long = timeWindowLengthMillis
-
-  protected val aggregator: Aggregator
-
-  protected def timeWindowLengthMillis: Long
-
-  protected def aggregateElementType: TypingResult
-
-  protected val outputType: TypingResult = aggregator
-    .computeOutputType(aggregateElementType)
-    .valueOr(e => throw new IllegalArgumentException("Failed to compute output type: " + e))
+trait AggregatorFunctionMixin[MapT[K, V]] extends AggregatorFunctionBase { self: StateHolder[MapT[Long, AnyRef]] =>
 
   protected implicit def rangeMap: FlinkRangeMap[MapT]
+
+  // for extending classes purpose
+  protected def handleElementAddedToState(
+      newElementInStateTimestamp: Long,
+      newElement: aggregator.Element,
+      nkCtx: NkContext,
+      timeService: TimerService,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {}
 
   protected def handleNewElementAdded(
       value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
@@ -105,7 +76,6 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
     val finalVal = computeFinalValue(newState, timestamp)
     timeHistogram.update(System.nanoTime() - start)
     out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(value.context, value.value)))
-
   }
 
   protected def addElementToState[T <: AnyRef](
@@ -131,15 +101,6 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
     retrievedBucketsHistogram.update(newState.toScalaMapRO.size)
     newState
   }
-
-  // for extending classes purpose
-  protected def handleElementAddedToState(
-      newElementInStateTimestamp: Long,
-      newElement: aggregator.Element,
-      nkCtx: NkContext,
-      timeService: TimerService,
-      out: Collector[ValueWithContext[AnyRef]]
-  ): Unit = {}
 
   protected def computeFinalValue(newState: MapT[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
     aggregator.alignToExpectedType(computeFoldedAggregatedValue(newState, timestamp), outputType)
@@ -174,10 +135,6 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
       val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
       (current.updated(newElementInStateTimestamp, newAggregate), true)
     }
-  }
-
-  private def computeTimestampToStore(timestamp: Long): Long = {
-    (timestamp / minimalResolutionMs) * minimalResolutionMs
   }
 
   protected def stateForTimestampToSave[T](stateValue: MapT[Long, T], timestamp: Long): MapT[Long, T] = {

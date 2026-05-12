@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusChecki
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TestRecordHours.hoursToMillis
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerWithMapState
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
@@ -62,10 +63,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     )
     LocalModelData(
       ConfigFactory.empty(),
-      ComponentDefinition("start", sourceComponent) :: FlinkBaseUnboundedComponentProvider.create(
-        DocsConfig.Default,
-        aggregateWindowsConfig
-      ) ::: FlinkBaseComponentProvider.Components
+      ComponentDefinition("start", sourceComponent)
+        :: ComponentDefinition("aggregate-sliding-mapstate", SlidingAggregateTransformerWithMapState)
+        :: FlinkBaseUnboundedComponentProvider.create(
+          DocsConfig.Default,
+          aggregateWindowsConfig
+        ) ::: FlinkBaseComponentProvider.Components
         ::: List(ComponentDefinition(eventTimeExtractionComponentName, CustomTimestampExtractingTransformation)),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
@@ -166,181 +169,65 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateError("#AGG.map({f1: #AGG.max})", "#input.str", "aggregateBy should be declared as fixed map")
   }
 
-  test("sum aggregate") {
-    val id = "1"
+  // --- Sliding aggregation tests (ValueState and MapState) ---
 
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model =
-        modelData(
-          collectingListener,
-          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
-        )
-      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
+  test("sum aggregate") { verifySumAggregate("aggregate-sliding") }
+  test("MapState: sum aggregate") { verifySumAggregate("aggregate-sliding-mapstate") }
 
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(1, 3, 7)
-    }
+  test("sum aggregate with zeros") { verifySumAggregateWithZeros("aggregate-sliding") }
+  test("MapState: sum aggregate with zeros") { verifySumAggregateWithZeros("aggregate-sliding-mapstate") }
+
+  test("countWhen aggregate") { verifyCountWhenAggregate("aggregate-sliding") }
+  test("MapState: countWhen aggregate") { verifyCountWhenAggregate("aggregate-sliding-mapstate") }
+
+  test("average aggregate") { verifyAverageAggregate("aggregate-sliding") }
+  test("MapState: average aggregate") { verifyAverageAggregate("aggregate-sliding-mapstate") }
+
+  test("median aggregate") { verifyMedianAggregate("aggregate-sliding") }
+  test("MapState: median aggregate") { verifyMedianAggregate("aggregate-sliding-mapstate") }
+
+  test("standard deviation and average aggregates") { verifyStddevAndVarianceAggregates("aggregate-sliding") }
+
+  test("MapState: standard deviation and average aggregates") {
+    verifyStddevAndVarianceAggregates("aggregate-sliding-mapstate")
   }
 
-  test("sum aggregate with zeros") {
-    val id = "1"
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model =
-        modelData(
-          collectingListener,
-          List(TestRecordHours(id, 0, 0, "a"), TestRecordHours(id, 1, 1, "b"), TestRecordHours(id, 2, 0, "b"))
-        )
-      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
+  test("sliding aggregate should emit context of variables") { verifyEmitContextOfVariables("aggregate-sliding") }
 
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(0, 1, 1)
-    }
+  test("MapState: sliding aggregate should emit context of variables") {
+    verifyEmitContextOfVariables("aggregate-sliding-mapstate")
   }
 
-  test("countWhen aggregate") {
-    val id = "1"
+  test("sum aggregate for out of order elements") { verifySumAggregateOutOfOrder("aggregate-sliding") }
 
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model =
-        modelData(
-          collectingListener,
-          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "c"))
-        )
-      val testScenario =
-        sliding("#AGG.countWhen", """#input.str == "a" || #input.str == "b" """, emitWhenEventLeft = false)
-
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(1, 2, 1)
-    }
+  test("MapState: sum aggregate for out of order elements") {
+    verifySumAggregateOutOfOrder("aggregate-sliding-mapstate")
   }
 
-  test("average aggregate") {
-    val id = "1"
+  test("emit aggregate when event left the slide") { verifyEmitWhenEventLeftSlide("aggregate-sliding") }
 
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model =
-        modelData(
-          collectingListener,
-          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
-        )
-      val testScenario = sliding("#AGG.average", "#input.eId", emitWhenEventLeft = false)
-
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
-    }
+  test("MapState: emit aggregate when event left the slide") {
+    verifyEmitWhenEventLeftSlide("aggregate-sliding-mapstate")
   }
 
-  test("median aggregate") {
-    val id = "1"
+  test("list aggregate") { verifyListAggregate("aggregate-sliding") }
+  test("MapState: list aggregate") { verifyListAggregate("aggregate-sliding-mapstate") }
 
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model =
-        modelData(
-          collectingListener,
-          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
-        )
-      val testScenario = sliding("#AGG.median", "#input.eId", emitWhenEventLeft = false)
+  test("map aggregate") { verifyMapAggregate("aggregate-sliding") }
+  test("MapState: map aggregate") { verifyMapAggregate("aggregate-sliding-mapstate") }
 
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
-    }
-  }
-
-  test("standard deviation and average aggregates") {
-    val table = Table(
-      ("aggregate", "secondValue"),
-      ("#AGG.stddevPop", Math.sqrt(0.25)),
-      ("#AGG.stddevSamp", Math.sqrt(0.5)),
-      ("#AGG.varPop", 0.25),
-      ("#AGG.varSamp", 0.5)
-    )
-
-    forAll(table) { (aggregationName, secondValue) =>
-      val id = "1"
-
-      ResultsCollectingListenerHolder.withListener { collectingListener =>
-        val model =
-          modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
-        val testScenario = sliding(aggregationName, "#input.eId", emitWhenEventLeft = false)
-
-        runScenario(model, testScenario)
-        val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-        val mapped = aggregateVariables
-          .map(e => e.asInstanceOf[Double])
-        mapped.size shouldBe 2
-        mapped(0) shouldBe 0.0 +- 0.0001
-        mapped(1) shouldBe secondValue +- 0.0001
-      }
-    }
-  }
-
-  test("sliding aggregate should emit context of variables") {
-    val id = "1"
-
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model =
-        modelData(
-          collectingListener,
-          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
-        )
-      val testScenario =
-        sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false, afterAggregateExpression = "#input.eId")
-
-      runScenario(model, testScenario)
-      val nodeResults = collectingListener.endVariablesForKey(id)
-      nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
-    }
-  }
-
-  test("sum aggregate for out of order elements") {
-    val id = "1"
-
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model = modelData(
-        collectingListener,
-        List(
-          TestRecordHours(id, 0, 1, "a"),
-          TestRecordHours(id, 1, 2, "b"),
-          TestRecordHours(id, 2, 5, "b"),
-          TestRecordHours(id, 1, 1, "b")
-        )
-      )
-      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
-
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(1, 3, 7, 4)
-    }
-  }
-
-  test("emit aggregate when event left the slide") {
-    val id = "1"
-
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model = modelData(
-        collectingListener,
-        List(
-          TestRecordHours(id, 0, 1, ""),
-          TestRecordHours(id, 1, 2, ""),
-          TestRecordHours(id, 2, 5, "")
-        )
-      )
-      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true)
-
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(1, 3, 7, 5, 0)
-    }
-  }
+  test("base aggregates test") { verifyBaseAggregates("aggregate-sliding") }
+  test("MapState: base aggregates test") { verifyBaseAggregates("aggregate-sliding-mapstate") }
 
   test("emit aggregate when event left the slide should not emit context") {
     val testScenario =
-      sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
+      sliding(
+        "aggregate-sliding",
+        "#AGG.sum",
+        "#input.eId",
+        emitWhenEventLeft = true,
+        afterAggregateExpression = "#input.eId"
+      )
 
     val jobData = jobDataFor(testScenario)
     val scenarioCompilationDependencies =
@@ -822,90 +709,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     }
   }
 
-  test("map aggregate") {
-    val id = "1"
-
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model = modelData(
-        collectingListener,
-        List(
-          TestRecordHours(id, 1, 1, "a"),
-          TestRecordHours(id, 2, 2, "b"),
-          TestRecordHours(id, 3, 3, "c"),
-          TestRecordHours(id, 3, 4, "d"),
-          TestRecordHours("2", 3, 5, "no"),
-          TestRecordHours(id, 4, 6, "e"),
-          TestRecordHours(id, 5, 7, "a"),
-          TestRecordHours(id, 5, 8, "b")
-        )
-      )
-      val testScenario = sliding(
-        "#AGG.map({sum: #AGG.sum, first: #AGG.first, last: #AGG.last, set: #AGG.set, hll: #AGG.approxCardinality})",
-        "{sum: #input.eId, first: #input.eId, last: #input.eId, set: #input.str, hll: #input.str}",
-        emitWhenEventLeft = false
-      )
-
-      runScenario(model, testScenario)
-      val aggregateVariables = collectingListener.fragmentResultEndVariable[util.Map[String, Any]](id).map(_.asScala)
-
-      aggregateVariables shouldBe List(
-        Map("first" -> 1, "last" -> 1, "hll" -> 1, "sum" -> 1, "set"  -> Set("a").asJava),
-        Map("first" -> 1, "last" -> 2, "hll" -> 2, "sum" -> 3, "set"  -> Set("a", "b").asJava),
-        Map("first" -> 2, "last" -> 3, "hll" -> 2, "sum" -> 5, "set"  -> Set("b", "c").asJava),
-        Map("first" -> 2, "last" -> 4, "hll" -> 3, "sum" -> 9, "set"  -> Set("b", "c", "d").asJava),
-        Map("first" -> 3, "last" -> 6, "hll" -> 3, "sum" -> 13, "set" -> Set("c", "d", "e").asJava),
-        Map("first" -> 6, "last" -> 7, "hll" -> 2, "sum" -> 13, "set" -> Set("e", "a").asJava),
-        Map("first" -> 6, "last" -> 8, "hll" -> 3, "sum" -> 21, "set" -> Set("e", "a", "b").asJava)
-      )
-    }
-  }
-
-  test("base aggregates test") {
-    val id = "1"
-
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model = modelData(
-        collectingListener,
-        List(
-          TestRecordHours(id, 1, 2, "a"),
-          TestRecordHours(id, 2, 1, "b")
-        ),
-      )
-
-      val aggregates = List(
-        ("sum", 3),
-        ("first", 2),
-        ("last", 1),
-        ("max", 2),
-        ("min", 1),
-        ("list", util.Arrays.asList(2, 1)),
-        ("approxCardinality", 2)
-      )
-
-      // "aggregate-sliding", aggregator, aggregateBy, "windowLength", Map("emitWhenEventLeft" -> emitWhenEventLeft.toString
-      val testScenario = process(
-        aggregates
-          .map(_._1)
-          .map(name =>
-            AggregateData(
-              "aggregate-sliding",
-              s"#AGG.$name",
-              "#input.eId",
-              "windowLength",
-              Map("emitWhenEventLeft" -> "false"),
-              name
-            )
-          ): _*
-      )
-
-      runScenario(model, testScenario)
-      val lastResult = collectingListener.endVariablesForKey(id).last
-      aggregates.foreach { case (name, expected) =>
-        lastResult.variableTyped[AnyRef](s"fragmentResult$name").get shouldBe expected
-      }
-    }
-  }
-
   val intKey: Int              = 1
   val stringKey: String        = "2"
   val mapKey: Map[String, Int] = Map("a" -> 1)
@@ -936,7 +739,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           GenericRecordHours(1.2, 4, 5, "b")
         )
       )
-      val testScenario = sliding("#AGG.first", "#input.str", emitWhenEventLeft = false)
+      val testScenario = sliding("aggregate-sliding", "#AGG.first", "#input.str", emitWhenEventLeft = false)
 
       runScenario(model, testScenario)
       val keyVariables = collectingListener.keyVariables
@@ -946,7 +749,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
   test("sliding aggregation when emitWhenEventLeft is false should groupBy complex types") {
     ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val testScenario = sliding("#AGG.first", "#input.eId", emitWhenEventLeft = false)
+      val testScenario = sliding("aggregate-sliding", "#AGG.first", "#input.eId", emitWhenEventLeft = false)
 
       runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
       val keyVariables = collectingListener.keyVariables
@@ -965,7 +768,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
   test("sliding aggregation when emitWhenEventLeft is true should groupBy complex types") {
     ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val testScenario = sliding("#AGG.first", "#input.eId", emitWhenEventLeft = true)
+      val testScenario = sliding("aggregate-sliding", "#AGG.first", "#input.eId", emitWhenEventLeft = true)
 
       runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
       val keyVariables = collectingListener.keyVariables
@@ -1063,7 +866,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    val scenario = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
+    val scenario = sliding("aggregate-sliding", aggregator, aggregateBy, emitWhenEventLeft = false)
     val jobData  = jobDataFor(scenario)
     val scenarioCompilationDependencies =
       new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
@@ -1088,19 +891,253 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def sliding(
+      componentName: String,
       aggregator: String,
       aggregateBy: String,
       emitWhenEventLeft: Boolean,
       afterAggregateExpression: String = "null"
   ) = {
     process(
-      "aggregate-sliding",
+      componentName,
       aggregator,
       aggregateBy,
       "windowLength",
       Map("emitWhenEventLeft" -> emitWhenEventLeft.toString),
       afterAggregateExpression
     )
+  }
+
+  private def verifySumAggregate(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+      )
+      runScenario(model, sliding(componentName, "#AGG.sum", "#input.eId", emitWhenEventLeft = false))
+      collectingListener.fragmentResultEndVariable[Number](id) shouldBe List(1, 3, 7)
+    }
+  }
+
+  private def verifySumAggregateWithZeros(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 0, "a"), TestRecordHours(id, 1, 1, "b"), TestRecordHours(id, 2, 0, "b"))
+      )
+      runScenario(model, sliding(componentName, "#AGG.sum", "#input.eId", emitWhenEventLeft = false))
+      collectingListener.fragmentResultEndVariable[Number](id) shouldBe List(0, 1, 1)
+    }
+  }
+
+  private def verifyCountWhenAggregate(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "c"))
+      )
+      runScenario(
+        model,
+        sliding(
+          componentName,
+          "#AGG.countWhen",
+          """#input.str == "a" || #input.str == "b" """,
+          emitWhenEventLeft = false
+        )
+      )
+      collectingListener.fragmentResultEndVariable[Number](id) shouldBe List(1, 2, 1)
+    }
+  }
+
+  private def verifyAverageAggregate(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+      )
+      runScenario(model, sliding(componentName, "#AGG.average", "#input.eId", emitWhenEventLeft = false))
+      collectingListener.fragmentResultEndVariable[Number](id) shouldBe List(1.0d, 1.5, 3.5)
+    }
+  }
+
+  private def verifyMedianAggregate(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+      )
+      runScenario(model, sliding(componentName, "#AGG.median", "#input.eId", emitWhenEventLeft = false))
+      collectingListener.fragmentResultEndVariable[Number](id) shouldBe List(1.0d, 1.5, 3.5)
+    }
+  }
+
+  private def verifyStddevAndVarianceAggregates(componentName: String): Unit = {
+    val table = Table(
+      ("aggregate", "secondValue"),
+      ("#AGG.stddevPop", Math.sqrt(0.25)),
+      ("#AGG.stddevSamp", Math.sqrt(0.5)),
+      ("#AGG.varPop", 0.25),
+      ("#AGG.varSamp", 0.5)
+    )
+    forAll(table) { (aggregationName, secondValue) =>
+      val id = "1"
+      ResultsCollectingListenerHolder.withListener { collectingListener =>
+        val model =
+          modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
+        runScenario(model, sliding(componentName, aggregationName, "#input.eId", emitWhenEventLeft = false))
+        val mapped = collectingListener.fragmentResultEndVariable[Number](id).map(_.asInstanceOf[Double])
+        mapped.size shouldBe 2
+        mapped(0) shouldBe 0.0 +- 0.0001
+        mapped(1) shouldBe secondValue +- 0.0001
+      }
+    }
+  }
+
+  private def verifyEmitContextOfVariables(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+      )
+      runScenario(
+        model,
+        sliding(
+          componentName,
+          "#AGG.sum",
+          "#input.eId",
+          emitWhenEventLeft = false,
+          afterAggregateExpression = "#input.eId"
+        )
+      )
+      val nodeResults = collectingListener.endVariablesForKey(id)
+      nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
+    }
+  }
+
+  private def verifySumAggregateOutOfOrder(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 0, 1, "a"),
+          TestRecordHours(id, 1, 2, "b"),
+          TestRecordHours(id, 2, 5, "b"),
+          TestRecordHours(id, 1, 1, "b")
+        )
+      )
+      runScenario(model, sliding(componentName, "#AGG.sum", "#input.eId", emitWhenEventLeft = false))
+      collectingListener.fragmentResultEndVariable[Number](id) shouldBe List(1, 3, 7, 4)
+    }
+  }
+
+  private def verifyEmitWhenEventLeftSlide(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 1, ""), TestRecordHours(id, 1, 2, ""), TestRecordHours(id, 2, 5, ""))
+      )
+      runScenario(model, sliding(componentName, "#AGG.sum", "#input.eId", emitWhenEventLeft = true))
+      collectingListener.fragmentResultEndVariable[Number](id) shouldBe List(1, 3, 7, 5, 0)
+    }
+  }
+
+  private def verifyListAggregate(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+      )
+      runScenario(model, sliding(componentName, "#AGG.list", "#input.eId", emitWhenEventLeft = false))
+      collectingListener.fragmentResultEndVariable[java.util.List[Any]](id) shouldBe List(
+        asList(1),
+        asList(1, 2),
+        asList(2, 5)
+      )
+    }
+  }
+
+  private def verifyMapAggregate(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 1, 1, "a"),
+          TestRecordHours(id, 2, 2, "b"),
+          TestRecordHours(id, 3, 3, "c"),
+          TestRecordHours(id, 3, 4, "d"),
+          TestRecordHours("2", 3, 5, "no"),
+          TestRecordHours(id, 4, 6, "e"),
+          TestRecordHours(id, 5, 7, "a"),
+          TestRecordHours(id, 5, 8, "b")
+        )
+      )
+      runScenario(
+        model,
+        sliding(
+          componentName,
+          "#AGG.map({sum: #AGG.sum, first: #AGG.first, last: #AGG.last, set: #AGG.set, hll: #AGG.approxCardinality})",
+          "{sum: #input.eId, first: #input.eId, last: #input.eId, set: #input.str, hll: #input.str}",
+          emitWhenEventLeft = false
+        )
+      )
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[util.Map[String, Any]](id).map(_.asScala)
+      aggregateVariables shouldBe List(
+        Map("first" -> 1, "last" -> 1, "hll" -> 1, "sum" -> 1, "set"  -> Set("a").asJava),
+        Map("first" -> 1, "last" -> 2, "hll" -> 2, "sum" -> 3, "set"  -> Set("a", "b").asJava),
+        Map("first" -> 2, "last" -> 3, "hll" -> 2, "sum" -> 5, "set"  -> Set("b", "c").asJava),
+        Map("first" -> 2, "last" -> 4, "hll" -> 3, "sum" -> 9, "set"  -> Set("b", "c", "d").asJava),
+        Map("first" -> 3, "last" -> 6, "hll" -> 3, "sum" -> 13, "set" -> Set("c", "d", "e").asJava),
+        Map("first" -> 6, "last" -> 7, "hll" -> 2, "sum" -> 13, "set" -> Set("e", "a").asJava),
+        Map("first" -> 6, "last" -> 8, "hll" -> 3, "sum" -> 21, "set" -> Set("e", "a", "b").asJava)
+      )
+    }
+  }
+
+  private def verifyBaseAggregates(componentName: String): Unit = {
+    val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 1, 2, "a"), TestRecordHours(id, 2, 1, "b"))
+      )
+      val aggregates = List(
+        ("sum", 3),
+        ("first", 2),
+        ("last", 1),
+        ("max", 2),
+        ("min", 1),
+        ("list", util.Arrays.asList(2, 1)),
+        ("approxCardinality", 2)
+      )
+      val testScenario = process(
+        aggregates
+          .map(_._1)
+          .map(name =>
+            AggregateData(
+              componentName,
+              s"#AGG.$name",
+              "#input.eId",
+              "windowLength",
+              Map("emitWhenEventLeft" -> "false"),
+              name
+            )
+          ): _*
+      )
+      runScenario(model, testScenario)
+      val lastResult = collectingListener.endVariablesForKey(id).last
+      aggregates.foreach { case (name, expected) =>
+        lastResult.variableTyped[AnyRef](s"fragmentResult$name").get shouldBe expected
+      }
+    }
   }
 
   private def session(

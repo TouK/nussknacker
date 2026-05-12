@@ -72,6 +72,51 @@ object transformers {
       )
   }
 
+  def slidingTransformerWithMapState(
+      groupBy: LazyParameter[AnyRef],
+      groupByParameterName: ParameterName,
+      aggregateBy: LazyParameter[AnyRef],
+      aggregator: Aggregator,
+      windowLength: Duration,
+      variableName: String,
+      emitWhenEventLeft: Boolean,
+      explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
+  )(implicit nodeId: NodeId): ContextTransformation = {
+    val preserveContext = !emitWhenEventLeft
+    ContextTransformation
+      .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
+      .implementedBy(
+        FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
+          implicit val fctx: FlinkCustomNodeContext = ctx
+          val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
+
+          val aggregatorFunction =
+            if (preserveContext)
+              new AggregatorFunctionWithMapState(
+                aggregator,
+                windowLength.toMillis,
+                nodeId,
+                aggregateBy.returnType,
+                typeInfos.storedTypeInfo,
+                fctx.convertToEngineRuntimeContext
+              )
+            else
+              new EmitWhenEventLeftAggregatorFunctionWithMapState(
+                aggregator,
+                windowLength.toMillis,
+                nodeId,
+                aggregateBy.returnType,
+                typeInfos.storedTypeInfo,
+                fctx.convertToEngineRuntimeContext
+              )
+          start
+            .groupByWithValue(groupBy, groupByParameterName, aggregateBy, preserveContext)
+            .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
+            .setUidWithName(ctx, explicitUidInStatefulOperators)
+        })
+      )
+  }
+
   def tumblingTransformer(
       groupBy: LazyParameter[AnyRef],
       groupByParameterName: ParameterName,

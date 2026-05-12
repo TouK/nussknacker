@@ -75,6 +75,61 @@ object sampleTransformers {
 
   }
 
+  object SlidingAggregateTransformerWithMapState
+      extends CustomStreamTransformer
+      with UnboundedStreamComponent
+      with ExplicitUidInOperatorsSupport
+      with Serializable {
+
+    private val groupByParameterName = ParameterName("groupBy")
+
+    @MethodToInvoke(returnType = classOf[AnyRef])
+    def execute(
+        @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
+        @ParamName("aggregator")
+        @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
+        @Editor(
+          `type` = EditorType.FIXED_VALUES_EDITOR,
+          possibleValues = Array(
+            new LabeledExpression(label = "First", expression = "#AGG.first"),
+            new LabeledExpression(label = "Last", expression = "#AGG.last"),
+            new LabeledExpression(label = "Min", expression = "#AGG.min"),
+            new LabeledExpression(label = "Max", expression = "#AGG.max"),
+            new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
+            new LabeledExpression(label = "Average", expression = "#AGG.average"),
+            new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
+            new LabeledExpression(label = "StddevPop", expression = "#AGG.stddevPop"),
+            new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
+            new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
+            new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+            new LabeledExpression(label = "Median", expression = "#AGG.median"),
+            new LabeledExpression(label = "List", expression = "#AGG.list"),
+            new LabeledExpression(label = "Set", expression = "#AGG.set"),
+            new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
+          )
+        )
+        @Editor(`type` = EditorType.SPEL_EDITOR)
+        aggregator: Aggregator,
+        @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
+        @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
+        @ParamName("emitWhenEventLeft") @DefaultValue("false") emitWhenEventLeft: Boolean,
+        @OutputVariableName variableName: String
+    )(implicit nodeId: NodeId): ContextTransformation = {
+      val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
+      transformers.slidingTransformerWithMapState(
+        groupBy,
+        groupByParameterName,
+        aggregateBy,
+        aggregator,
+        windowDuration,
+        variableName,
+        emitWhenEventLeft,
+        explicitUidInStatefulOperators
+      )
+    }
+
+  }
+
   /**
    * Tumbling window aggregator.
    *
