@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, ValueState, ValueStateDescriptor}
+import org.apache.flink.api.common.state.v2.ListState
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ListTypeInfo
 import org.apache.flink.streaming.api.TimerService
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 import pl.touk.nussknacker.engine.util.KeyedValue
 
+import java.util.Comparator
 import scala.jdk.CollectionConverters._
 
 class AggregatorFunctionWithMapState(
@@ -126,20 +128,17 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
   ): Unit = {
     val start = System.nanoTime()
     addElementToState(value, timestamp, timeService, out)
-    val finalVal = computeFinalValue(timestamp)
+    val finalVal = computeFinalValue(timestamp, bucketsState.keys)
     timeHistogram.update(System.nanoTime() - start)
     out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(value.context, value.value)))
   }
 
-  protected def computeFinalValue(timestamp: Long): AnyRef = {
+  protected def computeFinalValue(timestamp: Long, bucketKeys: java.util.List[java.lang.Long]): AnyRef = {
     val rangeStart = timestamp - timeWindowLengthMillis + 1
     var count      = 0
 
-    val foldedState = bucketsState.keys.asScala
-      .map(_.longValue())
+    val foldedState = bucketKeys.asScala
       .filter(ts => ts >= rangeStart && ts <= timestamp)
-      .toList
-      .sorted
       .foldLeft(aggregator.createAccumulator()) { (acc, key) =>
         count += 1
         aggregator.merge(acc, bucketsState.get(key))
@@ -149,11 +148,18 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
     aggregator.alignToExpectedType(aggregator.getResult(foldedState), outputType)
   }
 
+  // Timer management — duplicated from LatelyEvictableStateFunctionMixin (~20 lines, stable code).
+  // Not extracted to shared trait to avoid touching LatelyEvictableStateFunctionMixin which is used
+  // by unrelated components (UnionWithMemoTransformer, TransformStateTransformer).
   protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
-    val latestEvictionTime = latestEvictionTimeForKey.value()
-    val maxEvictionTime    = Option(latestEvictionTime).fold(time)(let => math.max(time, let.longValue()))
+    val latestEvictionTimeValue = latestEvictionTimeForKey.value()
+    val maxEvictionTime = if (latestEvictionTimeValue == null || time > latestEvictionTimeValue) {
+      time
+    } else {
+      latestEvictionTimeValue.longValue()
+    }
 
-    if (latestEvictionTime == null) {
+    if (latestEvictionTimeValue == null) {
       timeService.registerEventTimeTimer(maxEvictionTime)
     }
 
@@ -178,48 +184,50 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
     bucketsState.removeOlderThan(cutoff)
   }
 
-}
+  /**
+   * Manages bucket data for MapState-based sliding window aggregators.
+   *
+   * Maintains a separate ValueState with bucket timestamps (keys) to avoid
+   * expensive prefix scans over RocksDB MapState for key-only operations
+   * like range checks, max computation, and eviction decisions.
+   */
+  class BucketsState(
+      private val mapState: MapState[java.lang.Long, AnyRef],
+      private val keysState: ValueState[java.util.List[java.lang.Long]]
+  ) {
 
-/**
- * Manages bucket data for MapState-based sliding window aggregators.
- *
- * Maintains a separate ValueState with bucket timestamps (keys) to avoid
- * expensive prefix scans over RocksDB MapState for key-only operations
- * like range checks, max computation, and eviction decisions.
- */
-private class BucketsState(
-    private val mapState: MapState[java.lang.Long, AnyRef],
-    private val keysState: ValueState[java.util.List[java.lang.Long]]
-) {
-
-  def keys: java.util.List[java.lang.Long] = keysState.value() match {
-    case null => new java.util.ArrayList[java.lang.Long]()
-    case v    => v
-  }
-
-  def get(key: java.lang.Long): AnyRef =
-    mapState.get(key)
-
-  def put(key: java.lang.Long, value: AnyRef): Unit = {
-    mapState.put(key, value)
-    val currentKeys = keys
-    if (!currentKeys.contains(key)) {
-      currentKeys.add(key)
-      keysState.update(currentKeys)
+    def keys: java.util.List[java.lang.Long] = keysState.value() match {
+      case null => new java.util.ArrayList[java.lang.Long]()
+      case v    => v
     }
-  }
 
-  def removeOlderThan(cutoff: java.lang.Long): Unit = {
-    val (toRemove, toKeep) = keys.asScala.partition(_ < cutoff)
-    if (toRemove.nonEmpty) {
-      toRemove.foreach(mapState.remove)
-      keysState.update(new java.util.ArrayList(toKeep.asJava))
+    def get(key: java.lang.Long): AnyRef =
+      mapState.get(key)
+
+    def put(key: java.lang.Long, value: AnyRef): Unit = {
+      mapState.put(key, value)
+      val currentKeys = keys
+      if (!currentKeys.contains(key)) {
+        currentKeys.add(key)
+        currentKeys.sort(Comparator.naturalOrder())
+        // We keep sorted list of keys
+        keysState.update(currentKeys)
+      }
     }
-  }
 
-  def clear(): Unit = {
-    mapState.clear()
-    keysState.update(null)
+    def removeOlderThan(cutoff: java.lang.Long): Unit = {
+      val (toRemove, toKeep) = keys.asScala.partition(_ < cutoff)
+      if (toRemove.nonEmpty) {
+        toRemove.foreach(mapState.remove)
+        keysState.update(new java.util.ArrayList(toKeep.asJava))
+      }
+    }
+
+    def clear(): Unit = {
+      mapState.clear()
+      keysState.update(null)
+    }
+
   }
 
 }
