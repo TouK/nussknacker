@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-import scala.jdk.CollectionConverters._
-
 class EmitWhenEventLeftAggregatorFunctionWithMapState(
     protected val aggregator: Aggregator,
     protected val timeWindowLengthMillis: Long,
@@ -65,31 +63,18 @@ class EmitWhenEventLeftAggregatorFunctionWithMapState(
       ctx: FlinkOnTimerCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
-    val allKeys = bucketsState.keys.asScala
+    val allKeys = bucketsState.keys
 
-    allKeys.maxOption.foreach { maxBucketTs =>
+    if (!allKeys.isEmpty) {
+      val maxBucketTs       = allKeys.get(allKeys.size() - 1)
       val leavingRangeStart = maxBucketTs - timeWindowLengthMillis + 1
       val leavingRangeEnd   = timestamp - timeWindowLengthMillis
 
-      val hasLeavingEntries =
-        leavingRangeEnd >= leavingRangeStart &&
-          allKeys.exists(k => k >= leavingRangeStart && k <= leavingRangeEnd)
+      val hasLeavingEntries = leavingRangeEnd >= leavingRangeStart &&
+        allKeys.stream().anyMatch(k => k >= leavingRangeStart && k <= leavingRangeEnd)
 
       if (hasLeavingEntries) {
-        val foldRangeStart = timestamp - timeWindowLengthMillis + 1
-        var count          = 0
-
-        val foldedState = allKeys
-          .filter(k => k >= foldRangeStart && k <= timestamp)
-          .sorted
-          .foldLeft(aggregator.createAccumulator()) { (acc, key) =>
-            count += 1
-            aggregator.merge(acc, bucketsState.get(key))
-          }
-
-        retrievedBucketsHistogram.update(count)
-        val finalVal = aggregator.alignToExpectedType(aggregator.getResult(foldedState), outputType)
-
+        val finalVal = computeFinalValue(timestamp, allKeys)
         out.collect(
           ValueWithContext(
             finalVal,
