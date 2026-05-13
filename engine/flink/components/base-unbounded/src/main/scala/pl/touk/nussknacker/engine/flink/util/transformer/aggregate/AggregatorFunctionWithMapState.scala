@@ -147,18 +147,11 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
     aggregator.alignToExpectedType(aggregator.getResult(foldedState), outputType)
   }
 
-  // Timer management — duplicated from LatelyEvictableStateFunctionMixin (~20 lines, stable code).
-  // Not extracted to shared trait to avoid touching LatelyEvictableStateFunctionMixin which is used
-  // by unrelated components (UnionWithMemoTransformer, TransformStateTransformer).
   protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
-    val latestEvictionTimeValue = latestEvictionTimeForKey.value()
-    val maxEvictionTime = if (latestEvictionTimeValue == null || time > latestEvictionTimeValue) {
-      time
-    } else {
-      latestEvictionTimeValue.longValue()
-    }
+    val latestEvictionTime = latestEvictionTimeForKey.value()
+    val maxEvictionTime    = Option(latestEvictionTime).fold(time)(let => math.max(time, let.longValue()))
 
-    if (latestEvictionTimeValue == null) {
+    if (latestEvictionTime == null) {
       timeService.registerEventTimeTimer(maxEvictionTime)
     }
 

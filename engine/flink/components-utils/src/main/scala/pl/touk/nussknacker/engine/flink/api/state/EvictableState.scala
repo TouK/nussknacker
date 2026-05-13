@@ -120,15 +120,13 @@ trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with Sta
   }
 
   override protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
-    val latestEvictionTimeValue = latestEvictionTimeForKey.value()
-    val maxEvictionTime = if (latestEvictionTimeValue == null || time > latestEvictionTimeValue) {
-      time
-    } else {
-      latestEvictionTimeValue.longValue()
-    }
-    if (latestEvictionTimeValue == null) {
+    val latestEvictionTime = latestEvictionTimeForKey.value()
+    val maxEvictionTime    = Option(latestEvictionTime).fold(time)(let => math.max(time, let.longValue()))
+
+    if (latestEvictionTime == null) {
       timeService.registerEventTimeTimer(maxEvictionTime)
     }
+
     latestEvictionTimeForKey.update(maxEvictionTime)
   }
 
