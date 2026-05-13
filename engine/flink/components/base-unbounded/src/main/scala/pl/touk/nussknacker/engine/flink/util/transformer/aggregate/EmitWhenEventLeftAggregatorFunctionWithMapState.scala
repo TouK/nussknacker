@@ -33,7 +33,7 @@ class EmitWhenEventLeftAggregatorFunctionWithMapState(
 
   override def open(openContext: OpenContext): Unit = {
     super.open(openContext)
-    initBucketsState()
+    initState()
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }
 

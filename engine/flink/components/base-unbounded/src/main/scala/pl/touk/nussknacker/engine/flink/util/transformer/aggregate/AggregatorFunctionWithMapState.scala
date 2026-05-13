@@ -30,7 +30,7 @@ class AggregatorFunctionWithMapState(
 
   override def open(openContext: OpenContext): Unit = {
     super.open(openContext)
-    initBucketsState()
+    initState()
   }
 
   override def processElement(
@@ -65,7 +65,7 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
   @transient
   protected var latestEvictionTimeForKey: ValueState[java.lang.Long] = _
 
-  protected def initBucketsState(): Unit = {
+  protected def initState(): Unit = {
     val mapState = getRuntimeContext.getMapState(
       new MapStateDescriptor[java.lang.Long, AnyRef](
         "buckets",
@@ -79,7 +79,9 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
         new ListTypeInfo(TypeInformation.of(classOf[java.lang.Long]))
       )
     )
+
     bucketsState = new BucketsState(mapState, keysState)
+
     latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](
       new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long])
     )
@@ -185,7 +187,7 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
  * expensive prefix scans over RocksDB MapState for key-only operations
  * like range checks, max computation, and eviction decisions.
  */
-class BucketsState(
+private class BucketsState(
     private val mapState: MapState[java.lang.Long, AnyRef],
     private val keysState: ValueState[java.util.List[java.lang.Long]]
 ) {
