@@ -65,7 +65,7 @@ class EmitWhenEventLeftAggregatorFunctionWithMapState(
       ctx: FlinkOnTimerCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
-    val allKeys = bucketsState.keys.asScala.map(_.longValue()).toList
+    val allKeys = bucketsState.keys.asScala
 
     allKeys.maxOption.foreach { maxBucketTs =>
       val leavingRangeStart = maxBucketTs - timeWindowLengthMillis + 1
