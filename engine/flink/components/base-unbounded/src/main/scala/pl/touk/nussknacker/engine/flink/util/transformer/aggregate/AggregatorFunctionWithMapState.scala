@@ -196,6 +196,7 @@ trait AggregatorFunctionWithMapStateMixin extends AggregatorFunctionBase {
       private val keysState: ValueState[java.util.List[java.lang.Long]]
   ) {
 
+    // Keys are always ordered. We order them before saving them to the state
     def keys: java.util.List[java.lang.Long] = keysState.value() match {
       case null => new java.util.ArrayList[java.lang.Long]()
       case v    => v
