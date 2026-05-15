@@ -15,7 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
-
+* [#9389](https://github.com/TouK/nussknacker/pull/9389) Aggregation windows now support seconds-level precision.
+    * Duration editors for sliding, tumbling, and session aggregations include a seconds component.
+    * Sliding aggregation resolution is derived automatically from the window length: 1-second buckets when the window contains a seconds component, 1-minute buckets otherwise.
+    * A hint text warns that adding seconds to long windows increases state size.
 * [#9390](https://github.com/TouK/nussknacker/pull/9390) Add HintText annotation for method-based components
 * Runtime parameter validation support added.
     * `Validator` is now a sealed trait. `CompileTimeValidator` carries the existing compile-time `isValid` signature; `RuntimeValidator` is new and runs after expression evaluation at runtime.
