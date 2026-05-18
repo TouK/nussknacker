@@ -91,6 +91,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("nullableTypesService", NullableTypesService),
     ComponentDefinition("mandatoryTypesService", MandatoryTypesService),
     ComponentDefinition("notBlankTypesService", NotBlankTypesService),
+    ComponentDefinition("notNullTypesService", NotNullTypesService),
     ComponentDefinition("eagerServiceWithMethod", EagerServiceWithMethod),
     ComponentDefinition("dynamicEagerService", DynamicEagerService),
     ComponentDefinition("eagerServiceWithFixedAdditional", EagerServiceWithFixedAdditional),
@@ -1152,6 +1153,45 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction(msisdn = "")) shouldBe ""
   }
 
+  test("throw ParameterValidationAtRuntimeException when not-null validator fails for null expression at runtime") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notNullTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    intercept[ParameterValidationAtRuntimeException] {
+      interpretProcess(process, Transaction(msisdn = null), enableRuntimeParameterValidation = true)
+    }.getMessage should include("expression")
+  }
+
+  test("not throw when not-null validator passes for non-null expression at runtime") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notNullTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(
+      process,
+      Transaction(msisdn = "valid-value"),
+      enableRuntimeParameterValidation = true
+    ) shouldBe "valid-value"
+  }
+
+  test("not throw when runtime validation is disabled even if dynamic expression evaluates to null") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notNullTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(msisdn = null)).asInstanceOf[String] shouldBe null
+  }
+
   test("use eager service") {
     val process = ScenarioBuilder
       .streaming("test")
@@ -1432,6 +1472,26 @@ object InterpreterSpec {
   object NotBlankTypesService extends Service {
     @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName("expression") @NotBlank expr: String) = Future.successful(expr)
+  }
+
+  object NotNullTypesService extends EagerServiceWithStaticParametersAndReturnType {
+
+    override def parameters: List[Parameter] = List(
+      Parameter[String](ParameterName("expression"))
+        .copy(isLazyParameter = true, validators = List(NotNullParameterValidator))
+    )
+
+    override def returnType: typing.TypingResult = Typed[String]
+
+    override def invoke(params: Map[ParameterName, Any])(
+        implicit ec: ExecutionContext,
+        collector: ServiceInvocationCollector,
+        context: Context,
+        metaData: MetaData,
+        componentUseContext: ComponentUseContext
+    ): Future[AnyRef] =
+      Future.successful(params(ParameterName("expression")).asInstanceOf[AnyRef])
+
   }
 
   object TransactionSource extends SourceFactory with UnboundedStreamComponent {
