@@ -242,6 +242,7 @@ class NodeCompiler(
       globalVariablesPreparer,
       listeners,
       definitions.globalParametersConfig.enableRuntimeParameterValidation,
+      expressionCompiler,
     )
 
   private val factory = new ComponentExecutorFactory(parametersEvaluator)

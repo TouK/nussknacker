@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
   PostponedEvaluatorLazyParameterStrategy
@@ -20,6 +21,7 @@ class ParameterEvaluator(
     globalVariablesPreparer: GlobalVariablesPreparer,
     listeners: Seq[ProcessListener],
     enableRuntimeParameterValidation: Boolean = false,
+    expressionCompiler: ExpressionCompiler,
 ) {
 
   private val compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
@@ -122,6 +124,18 @@ class ParameterEvaluator(
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): LazyParameter[Nothing] = {
+    val compiledValidators = if (enableRuntimeParameterValidation) {
+      definition.validators
+        .map(v =>
+          expressionCompiler.compileValidator(v, definition.name, definition.typ, validationContext.globalVariables)
+        )
+        .sequence
+        .valueOr(errors =>
+          throw new IllegalStateException(
+            s"Validator for '${definition.name.value}' failed compile during runtime preparation — should have been caught earlier: ${errors.toList.mkString(", ")}"
+          )
+        )
+    } else Nil
     val creator = new EvaluableLazyParameterCreator[Nothing](
       nodeId,
       definition,
@@ -133,7 +147,7 @@ class ParameterEvaluator(
       case EvaluableLazyParameterStrategy =>
         new EvaluableLazyParameter[Nothing](
           creator,
-          CompiledParameter(exprValue, definition),
+          CompiledParameter(exprValue, definition, compiledValidators),
           runtimeExpressionEvaluator,
           nodeId,
           jobData
