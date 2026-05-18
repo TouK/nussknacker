@@ -144,15 +144,20 @@ class ExpressionCompiler(
       nodeBranchParameters = List.empty,
       inputContext = inputContext,
       treatEagerParametersAsLazy = true
-    ).map(_.map {
-      case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
-        val runtimeValidators = paramDef.validators.flatMap { v =>
-          compileValidator(v, paramDef.name, paramDef.typ, inputContext.globalVariables).toOption
+    ).flatMap { compiledParamsWithDefs =>
+      compiledParamsWithDefs
+        .map {
+          case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
+            paramDef.validators
+              .map(v => compileValidator(v, paramDef.name, paramDef.typ, inputContext.globalVariables))
+              .sequence
+              .map(validators => CompiledParameter(expr.typedExpression, paramDef, validators))
+          case (TypedParameter(_, _: MultipleBranchesTypedValue), _) =>
+            throw new IllegalArgumentException("Typed expression map should not be here...")
         }
-        CompiledParameter(expr.typedExpression, paramDef, runtimeValidators)
-      case (TypedParameter(_, _: MultipleBranchesTypedValue), _) =>
-        throw new IllegalArgumentException("Typed expression map should not be here...")
-    })
+        .sequence
+        .toIor
+    }
   }
 
   // used for most cases during node compilation - for all components that are factories of Executors
