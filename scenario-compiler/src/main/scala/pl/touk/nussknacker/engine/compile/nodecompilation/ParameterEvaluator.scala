@@ -124,18 +124,6 @@ class ParameterEvaluator(
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): LazyParameter[Nothing] = {
-    val compiledValidators = if (enableRuntimeParameterValidation) {
-      definition.validators
-        .map(v =>
-          expressionCompiler.compileValidator(v, definition.name, definition.typ, validationContext.globalVariables)
-        )
-        .sequence
-        .valueOr(errors =>
-          throw new IllegalStateException(
-            s"Validator for '${definition.name.value}' failed compile during runtime preparation — should have been caught earlier: ${errors.toList.mkString(", ")}"
-          )
-        )
-    } else Nil
     val creator = new EvaluableLazyParameterCreator[Nothing](
       nodeId,
       definition,
@@ -145,6 +133,18 @@ class ParameterEvaluator(
     )
     lazyParameterCreationStrategy match {
       case EvaluableLazyParameterStrategy =>
+        val compiledValidators = if (enableRuntimeParameterValidation) {
+          definition.validators
+            .map(v =>
+              expressionCompiler.compileValidator(v, definition.name, definition.typ, validationContext.globalVariables)
+            )
+            .sequence
+            .valueOr(errors =>
+              throw new IllegalStateException(
+                s"Validator for '${definition.name.value}' failed compile during runtime preparation — should have been caught earlier: ${errors.toList.mkString(", ")}"
+              )
+            )
+        } else Nil
         new EvaluableLazyParameter[Nothing](
           creator,
           CompiledParameter(exprValue, definition, compiledValidators),
