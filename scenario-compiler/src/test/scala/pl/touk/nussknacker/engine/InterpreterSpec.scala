@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, ParameterValidationAtRuntimeException}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -114,7 +114,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       transaction: Transaction,
       additionalComponents: List[ComponentDefinition] = servicesDef,
       listeners: Seq[ProcessListener] = listenersDef(),
-      runtimeMode: RuntimeMode = RuntimeMode.Live
+      runtimeMode: RuntimeMode = RuntimeMode.Live,
+      enableRuntimeParameterValidation: Boolean = false,
   ): Any = {
     import Interpreter._
 
@@ -122,8 +123,10 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     NameDictService.clear()
 
     val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+    val globalParametersConfig =
+      GlobalParametersConfig.default.copy(enableRuntimeParameterValidation = enableRuntimeParameterValidation)
     val processCompilerData =
-      prepareCompilerData(jobData, additionalComponents, listeners, runtimeMode)
+      prepareCompilerData(jobData, additionalComponents, listeners, runtimeMode, globalParametersConfig)
     val interpreter = processCompilerData.interpreter
     implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
       EngineScenarioCompilationDependencies.empty
@@ -192,7 +195,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       jobData: JobData,
       additionalComponents: List[ComponentDefinition],
       listeners: Seq[ProcessListener],
-      runtimeMode: RuntimeMode
+      runtimeMode: RuntimeMode,
+      globalParametersConfig: GlobalParametersConfig = GlobalParametersConfig.default,
   ): ProcessCompilerData = {
     val components =
       ComponentDefinition("transaction-source", TransactionSource) ::
@@ -206,13 +210,13 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           ComponentsUiConfig.Empty,
           id => DesignerWideComponentId(id.toString),
           Map.empty,
-          GlobalParametersConfig.default,
+          globalParametersConfig,
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default,
       allowEndingScenarioWithoutSink = false,
-      globalParametersConfig = GlobalParametersConfig.default,
+      globalParametersConfig = globalParametersConfig,
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
@@ -1107,6 +1111,45 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
     }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
+  }
+
+  test("throw ParameterValidationAtRuntimeException when not-blank validator fails for dynamic expression at runtime") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notBlankTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    intercept[ParameterValidationAtRuntimeException] {
+      interpretProcess(process, Transaction(msisdn = ""), enableRuntimeParameterValidation = true)
+    }.getMessage should include("expression")
+  }
+
+  test("not throw when not-blank validator passes for dynamic expression at runtime") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notBlankTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(
+      process,
+      Transaction(msisdn = "valid-value"),
+      enableRuntimeParameterValidation = true
+    ) shouldBe "valid-value"
+  }
+
+  test("not throw when runtime validation is disabled even if dynamic expression evaluates to blank") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notBlankTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(msisdn = "")) shouldBe ""
   }
 
   test("use eager service") {

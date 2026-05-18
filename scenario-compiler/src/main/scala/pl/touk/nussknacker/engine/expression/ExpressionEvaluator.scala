@@ -110,7 +110,7 @@ class ExpressionEvaluator(
             case e                           => e.toString
           }
           throw new ParameterValidationAtRuntimeException(
-            input = s"${param.name.value}=${rawValue}",
+            input = param.name.value,
             message = s"Parameter '${param.name.value}' failed runtime validation: $errorMessage",
           )
         case Valid(_) =>
