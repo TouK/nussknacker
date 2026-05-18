@@ -146,7 +146,10 @@ class ExpressionCompiler(
       treatEagerParametersAsLazy = true
     ).map(_.map {
       case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
-        CompiledParameter(expr.typedExpression, paramDef)
+        val runtimeValidators = paramDef.validators.flatMap { v =>
+          compileValidator(v, paramDef.name, paramDef.typ, inputContext.globalVariables).toOption
+        }
+        CompiledParameter(expr.typedExpression, paramDef, runtimeValidators)
       case (TypedParameter(_, _: MultipleBranchesTypedValue), _) =>
         throw new IllegalArgumentException("Typed expression map should not be here...")
     })

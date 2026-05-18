@@ -82,7 +82,10 @@ object ModelConfig {
     case object SingleJsonTemplateParameter extends JsonLikeValuesEnteringMode
   }
 
-  final case class GlobalParametersConfig(editorsForStringType: NonEmptyList[ParameterEditor])
+  final case class GlobalParametersConfig(
+      editorsForStringType: NonEmptyList[ParameterEditor],
+      enableRuntimeParameterValidation: Boolean = false,
+  )
 
   object GlobalParametersConfig {
 
@@ -117,7 +120,9 @@ object ModelConfig {
       config.getAs[NonEmptyList[ParameterEditor]]("globalParametersConfig.editorsForStringType")
 
     GlobalParametersConfig(
-      editorsForStringType = maybeStringEditors.getOrElse(GlobalParametersConfig.default.editorsForStringType)
+      editorsForStringType = maybeStringEditors.getOrElse(GlobalParametersConfig.default.editorsForStringType),
+      enableRuntimeParameterValidation =
+        config.getOrElse("globalParametersConfig.enableRuntimeParameterValidation", false),
     )
   }
 

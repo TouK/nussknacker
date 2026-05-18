@@ -18,11 +18,17 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class ParameterEvaluator(
     globalVariablesPreparer: GlobalVariablesPreparer,
-    listeners: Seq[ProcessListener]
+    listeners: Seq[ProcessListener],
+    enableRuntimeParameterValidation: Boolean = false,
 ) {
 
   private val compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  private val runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
+
+  private val runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(
+    globalVariablesPreparer,
+    listeners,
+    enableRuntimeParameterValidation,
+  )
 
   private val contextToUse: Context = Context.dummy
 
