@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.Clos
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.annotation.nowarn
-import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 
 //TODO: think about merging these with TransformStateFunction and/or PreviousValueFunction
@@ -47,7 +46,7 @@ object transformers {
 
           val aggregatorFunction =
             if (preserveContext)
-              new AggregatorFunction[SortedMap](
+              new AggregatorFunction(
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
@@ -56,52 +55,7 @@ object transformers {
                 fctx.convertToEngineRuntimeContext
               )
             else
-              new EmitWhenEventLeftAggregatorFunction[SortedMap](
-                aggregator,
-                windowLength.toMillis,
-                nodeId,
-                aggregateBy.returnType,
-                typeInfos.storedTypeInfo,
-                fctx.convertToEngineRuntimeContext
-              )
-          start
-            .groupByWithValue(groupBy, groupByParameterName, aggregateBy, preserveContext)
-            .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
-            .setUidWithName(ctx, explicitUidInStatefulOperators)
-        })
-      )
-  }
-
-  def slidingTransformerWithMapState(
-      groupBy: LazyParameter[AnyRef],
-      groupByParameterName: ParameterName,
-      aggregateBy: LazyParameter[AnyRef],
-      aggregator: Aggregator,
-      windowLength: Duration,
-      variableName: String,
-      emitWhenEventLeft: Boolean,
-      explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
-  )(implicit nodeId: NodeId): ContextTransformation = {
-    val preserveContext = !emitWhenEventLeft
-    ContextTransformation
-      .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
-      .implementedBy(
-        FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          implicit val fctx: FlinkCustomNodeContext = ctx
-          val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
-
-          val aggregatorFunction =
-            if (preserveContext)
-              new AggregatorFunctionWithMapState(
-                aggregator,
-                windowLength.toMillis,
-                nodeId,
-                aggregateBy.returnType,
-                typeInfos.storedTypeInfo,
-                fctx.convertToEngineRuntimeContext
-              )
-            else
-              new EmitWhenEventLeftAggregatorFunctionWithMapState(
+              new EmitWhenEventLeftAggregatorFunction(
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
@@ -185,7 +139,7 @@ object transformers {
               keyedStream
                 // TODO: alignment??
                 .process(
-                  new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](
+                  new EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
                     aggregator,
                     windowLength.toMillis,
                     offsetMillis,
