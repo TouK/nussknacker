@@ -92,7 +92,7 @@ class TransformStateFunction[T](
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     collectHandlingErrors(keyWithContext.context, out) {
-      val previousValue = Option(state.value()).orNull
+      val previousValue = state.value()
       val newValue = if (evaluateTransformWhen(keyWithContext.context)) {
         val newValue = evaluateNewValue(keyWithContext.context.withVariable("previous", previousValue))
         state.update(newValue)
