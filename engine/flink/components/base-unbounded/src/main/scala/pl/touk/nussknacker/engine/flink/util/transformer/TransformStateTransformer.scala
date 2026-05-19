@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   LazyParameterInterpreterFunction
 }
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
 import scala.concurrent.duration._
@@ -72,11 +74,13 @@ class TransformStateFunction[T](
     transformWhenParam: LazyParameter[java.lang.Boolean],
     newValueParam: LazyParameter[AnyRef],
     stateTimeout: FiniteDuration
-) extends LatelyEvictableStateFunction[ValueWithContext[T], ValueWithContext[AnyRef], GenericState, String]
+) extends LatelyEvictableStateFunction[ValueWithContext[T], ValueWithContext[AnyRef], AnyRef, String]
     with LazyParameterInterpreterFunction {
 
-  override protected def stateDescriptor: ValueStateDescriptor[GenericState] =
-    new ValueStateDescriptor[GenericState]("state", classOf[GenericState])
+  override protected def stateDescriptor: ValueStateDescriptor[AnyRef] = {
+    val valueType: TypeInformation[AnyRef] = TypeInformationDetection.instance.forType(newValueParam.returnType)
+    new ValueStateDescriptor("state", valueType)
+  }
 
   private lazy val evaluateTransformWhen = toEvaluateFunctionConverter.toEvaluateFunction(transformWhenParam)
 
@@ -88,10 +92,10 @@ class TransformStateFunction[T](
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     collectHandlingErrors(keyWithContext.context, out) {
-      val previousValue = Option(state.value()).map(_.value).orNull
+      val previousValue = state.value()
       val newValue = if (evaluateTransformWhen(keyWithContext.context)) {
         val newValue = evaluateNewValue(keyWithContext.context.withVariable("previous", previousValue))
-        state.update(GenericState(newValue))
+        state.update(newValue)
         moveEvictionTime(stateTimeout.toMillis, ctx)
         newValue
       } else {
@@ -102,5 +106,3 @@ class TransformStateFunction[T](
   }
 
 }
-
-case class GenericState(value: AnyRef)
