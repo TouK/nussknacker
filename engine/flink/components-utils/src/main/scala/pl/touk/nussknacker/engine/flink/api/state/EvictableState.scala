@@ -64,24 +64,6 @@ abstract class LatelyEvictableStateFunction[In, Out, StateType, Key]
 
 }
 
-abstract class LatelyEvictableStateCoFunction[In1, In2, Out, StateType]
-    extends CoProcessFunction[In1, In2, Out]
-    with LatelyEvictableStateFunctionMixin[StateType] {
-
-  override def onTimer(
-      timestamp: Long,
-      ctx: CoProcessFunction[In1, In2, Out]#OnTimerContext,
-      out: Collector[Out]
-  ): Unit = {
-    handleOnTimer(timestamp, ctx.timerService)
-  }
-
-  protected def moveEvictionTime(offset: Long, ctx: CoProcessFunction[In1, In2, Out]#Context): Unit = {
-    doMoveEvictionTime(ctx.timestamp() + offset, ctx.timerService())
-  }
-
-}
-
 trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with StateHolder[StateType] {
 
   @transient
