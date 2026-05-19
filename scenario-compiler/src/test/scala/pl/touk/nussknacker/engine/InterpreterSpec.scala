@@ -1153,6 +1153,21 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction(msisdn = "")) shouldBe ""
   }
 
+  test(
+    "throw fatal exception when enableRuntimeParameterValidation=false and there is null value in notBlankTypesService"
+  ) {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notBlankTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    intercept[NullPointerException] {
+      interpretProcess(process, Transaction(msisdn = null))
+    }
+  }
+
   test("throw ParameterValidationAtRuntimeException when not-null validator fails for null expression at runtime") {
     val process = ScenarioBuilder
       .streaming("test")
@@ -1471,7 +1486,7 @@ object InterpreterSpec {
 
   object NotBlankTypesService extends Service {
     @MethodToInvoke(returnType = classOf[String])
-    def invoke(@ParamName("expression") @NotBlank expr: String) = Future.successful(expr)
+    def invoke(@ParamName("expression") @NotBlank expr: String) = Future.successful(expr.trim)
   }
 
   object NotNullTypesService extends EagerServiceWithStaticParametersAndReturnType {

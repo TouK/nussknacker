@@ -15,6 +15,20 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) Added runtime parameter validation for dynamic expressions.
+  * Component parameters annotated with `@NotBlank`, `@NotNull`, or similar validators are now also validated at runtime
+    when the parameter expression is dynamic (e.g. `#input.someField`). Previously validation only ran at compile-time
+    for static expressions.
+  * Disabled by default to preserve existing behavior. Enable per scenario type in `modelConfig`:
+    ```hocon
+    modelConfig {
+      globalParametersConfig {
+        enableRuntimeParameterValidation: true
+      }
+    }
+    ```
+  * When enabled, a failed runtime validation throws `ParameterValidationAtRuntimeException` instead of letting an
+    invalid value reach the component, which could cause an uncontrolled fatal error downstream.
 * [#9314](https://github.com/TouK/nussknacker/pull/9314) OpenAPI enricher: `handleErrors` renamed to `Error Strategy` and moved to advanced parameters
 * [#9303](https://github.com/TouK/nussknacker/pull/9303) OpenAPI enricher: added `handleErrors` response wrapping (`error`, `errorResponse`, `successResponse`, optional `statusCode`), with `statusCode` when it can be extracted.
 * [#9292](https://github.com/TouK/nussknacker/pull/9292) Variable node: added `SET`/`UNSET` operation with multi-variable `UNSET` and context cleanup for removed local variables.
