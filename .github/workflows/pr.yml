@@ -40,8 +40,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 100
-      - uses: dorny/paths-filter@v2
+          # fetch full history, it's required for dorny/paths-filter
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           list-files: 'csv'
