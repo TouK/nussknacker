@@ -17,7 +17,8 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
-import java.util.{Collections, Comparator}
+import java.lang
+import scala.collection.Searching._
 import scala.jdk.CollectionConverters._
 
 // This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
@@ -108,7 +109,7 @@ trait AggregatorFunctionMixin extends RichFunction {
   protected var bucketsState: BucketsState = _
 
   @transient
-  protected var latestEvictionTimeForKey: ValueState[java.lang.Long] = _
+  protected var latestEvictionTimeForKey: ValueState[lang.Long] = _
 
   protected def handleNewElementAdded(
       value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
@@ -155,13 +156,12 @@ trait AggregatorFunctionMixin extends RichFunction {
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {}
 
-  protected def computeFinalValue(timestamp: Long, keys: java.util.List[java.lang.Long]): AnyRef = {
-    val rangeStart = timestamp - timeWindowLengthMillis + 1
+  protected def computeFinalValue(timestamp: Long, keys: java.util.List[lang.Long]): AnyRef = {
+    val rangeStart = timestampToReadUntilEnd(timestamp)
     var count      = 0
 
     val foldedState = keys
       .keysInRange(rangeStart, timestamp)
-      .asScala
       .foldLeft(aggregator.createAccumulator()) { (acc, key) =>
         count += 1
         aggregator.merge(acc, bucketsState.get(key))
@@ -203,27 +203,38 @@ trait AggregatorFunctionMixin extends RichFunction {
     }
   }
 
-  private def evictOldBuckets(currentWatermark: Long): Unit = {
-    val cutoff = currentWatermark - timeWindowLengthMillis + 1 - allowedOutOfOrderMs
-    bucketsState.removeOlderThan(cutoff)
-  }
-
   private def computeTimestampToStore(timestamp: Long): Long = {
     (timestamp / minimalResolutionMs) * minimalResolutionMs
   }
 
+  // +1 gives an exclusive lower bound, matching Flink's half-open window range semantics [start, end):
+  // the bucket at (timestamp - timeWindowLengthMillis) falls in the preceding window and must
+  // not be included. The allowedOutOfOrderMs buffer retains buckets that may still receive late events.
+  protected def evictOldBuckets(timestamp: Long): Unit = {
+    bucketsState.removeOlderThan(timestamp - timeWindowLengthMillis + 1 - allowedOutOfOrderMs)
+  }
+
+  // +1 gives an exclusive lower bound, matching Flink's half-open window range semantics [start, end):
+  // the bucket at (timestamp - timeWindowLengthMillis) falls in the preceding window and must not be
+  // included in the current one.
+  protected def timestampToReadUntilEnd(timestamp: Long): Long =
+    timestamp - timeWindowLengthMillis + 1
+
+  protected def previousTime(timestamp: Long): Long =
+    timestamp - timeWindowLengthMillis
+
   protected def initState(): Unit = {
     val mapState = getRuntimeContext.getMapState(
-      new MapStateDescriptor[java.lang.Long, AnyRef](
+      new MapStateDescriptor[lang.Long, AnyRef](
         "buckets",
-        TypeInformation.of(classOf[java.lang.Long]),
+        TypeInformation.of(classOf[lang.Long]),
         aggregateTypeInformation
       )
     )
     val keysState = getRuntimeContext.getState(
-      new ValueStateDescriptor[java.util.List[java.lang.Long]](
+      new ValueStateDescriptor[java.util.List[lang.Long]](
         "keys",
-        new ListTypeInfo(TypeInformation.of(classOf[java.lang.Long]))
+        new ListTypeInfo(TypeInformation.of(classOf[lang.Long]))
       )
     )
 
@@ -232,27 +243,29 @@ trait AggregatorFunctionMixin extends RichFunction {
   }
 
   protected def initEvictionTimeState(): Unit = {
-    latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](
-      new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long])
+    latestEvictionTimeForKey = getRuntimeContext.getState[lang.Long](
+      new ValueStateDescriptor[lang.Long]("timers", classOf[lang.Long])
     )
   }
 
-  protected implicit class RichSortedLongList(val list: java.util.List[java.lang.Long]) {
+  protected implicit class RichSortedList(val list: java.util.List[lang.Long]) {
 
-    def keysInRange(from: java.lang.Long, to: java.lang.Long): java.util.List[java.lang.Long] = {
-      val fromIdx  = Collections.binarySearch(list, from)
-      val startIdx = if (fromIdx >= 0) fromIdx else -(fromIdx + 1)
-      val toIdx    = Collections.binarySearch(list, to)
-      val endIdx   = if (toIdx >= 0) toIdx + 1 else -(toIdx + 1)
-      if (startIdx >= endIdx) new java.util.ArrayList[java.lang.Long]()
-      else list.subList(startIdx, endIdx)
+    def keysInRange(from: lang.Long, to: lang.Long): List[lang.Long] = {
+      val buf     = list.asScala
+      val fromIdx = buf.search(from)
+      val toIdx   = buf.search(to, fromIdx.insertionPoint, buf.length)
+      val endIdx = toIdx match {
+        case Found(i)          => i + 1
+        case InsertionPoint(i) => i
+      }
+
+      buf
+        .slice(fromIdx.insertionPoint, endIdx)
+        .toList
     }
 
-    def hasElementsFrom(from: java.lang.Long): Boolean = {
-      val idx      = Collections.binarySearch(list, from)
-      val startIdx = if (idx >= 0) idx else -(idx + 1)
-      startIdx < list.size()
-    }
+    def hasElementsFrom(from: lang.Long): Boolean =
+      list.asScala.search(from).insertionPoint < list.size()
 
   }
 
@@ -264,31 +277,33 @@ trait AggregatorFunctionMixin extends RichFunction {
    * like range checks, max computation, and eviction decisions.
    */
   class BucketsState(
-      private val mapState: MapState[java.lang.Long, AnyRef],
-      private val keysState: ValueState[java.util.List[java.lang.Long]]
+      private val mapState: MapState[lang.Long, AnyRef],
+      private val keysState: ValueState[java.util.List[lang.Long]]
   ) {
 
-    // Keys are always ordered. We order them before saving them to the state
-    def keys: java.util.List[java.lang.Long] = keysState.value() match {
-      case null => new java.util.ArrayList[java.lang.Long]()
+    /**
+     * Keys are always ordered. We order them before saving them to the state
+     */
+    def keys: java.util.List[lang.Long] = keysState.value() match {
+      case null => new java.util.ArrayList[lang.Long]()
       case v    => v
     }
 
-    def get(key: java.lang.Long): AnyRef =
+    def get(key: lang.Long): AnyRef =
       mapState.get(key)
 
-    def put(key: java.lang.Long, value: AnyRef): Unit = {
+    def put(key: lang.Long, value: AnyRef): Unit = {
       mapState.put(key, value)
       val currentKeys = keys
       if (!currentKeys.contains(key)) {
         currentKeys.add(key)
         // We keep sorted list of keys
-        currentKeys.sort(Comparator.naturalOrder())
+        java.util.Collections.sort(currentKeys)
         keysState.update(currentKeys)
       }
     }
 
-    def removeOlderThan(cutoff: java.lang.Long): Unit = {
+    def removeOlderThan(cutoff: lang.Long): Unit = {
       val (toRemove, toKeep) = keys.asScala.partition(_ < cutoff)
       if (toRemove.nonEmpty) {
         toRemove.foreach(mapState.remove)

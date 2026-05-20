@@ -70,11 +70,11 @@ class EmitWhenEventLeftAggregatorFunction(
 
     if (!allKeys.isEmpty) {
       val maxBucketTs       = allKeys.get(allKeys.size() - 1)
-      val leavingRangeStart = maxBucketTs - timeWindowLengthMillis + 1
-      val leavingRangeEnd   = timestamp - timeWindowLengthMillis
+      val leavingRangeStart = timestampToReadUntilEnd(maxBucketTs)
+      val leavingRangeEnd   = previousTime(timestamp)
 
       val hasLeavingEntries = leavingRangeEnd >= leavingRangeStart &&
-        !allKeys.keysInRange(leavingRangeStart, leavingRangeEnd).isEmpty
+        allKeys.keysInRange(leavingRangeStart, leavingRangeEnd).nonEmpty
 
       if (hasLeavingEntries) {
         val finalVal = computeFinalValue(timestamp, allKeys)

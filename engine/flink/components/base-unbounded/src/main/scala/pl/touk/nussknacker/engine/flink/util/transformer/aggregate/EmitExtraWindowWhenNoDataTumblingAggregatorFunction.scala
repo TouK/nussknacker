@@ -67,7 +67,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
   }
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val previousTimestamp = timestamp - timeWindowLengthMillis
+    val previousTimestamp = previousTime(timestamp)
     val currentKeys       = bucketsState.keys
     val finalVal          = computeFinalValue(previousTimestamp, currentKeys)
     out.collect(
@@ -77,10 +77,15 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
       )
     )
 
-    val rangeStart  = previousTimestamp - timeWindowLengthMillis + 1
+    // rangeStart is the lower bound of the window we just emitted. hasMoreData is true when there are
+    // buckets within or after that window, meaning the next timer should still fire (possibly to emit
+    // a zero aggregate if no new events arrived). Buckets strictly before rangeStart are evicted since
+    // they can never contribute to any future window.
+    val rangeStart  = timestampToReadUntilEnd(previousTimestamp)
     val hasMoreData = currentKeys.hasElementsFrom(rangeStart)
 
     if (hasMoreData) {
+      evictOldBuckets(timestamp)
       ctx.timerService().registerEventTimeTimer(timestamp + timeWindowLengthMillis)
     } else {
       bucketsState.clear()
