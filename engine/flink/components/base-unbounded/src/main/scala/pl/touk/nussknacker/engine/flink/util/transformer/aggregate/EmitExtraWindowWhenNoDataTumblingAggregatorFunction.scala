@@ -68,7 +68,8 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val previousTimestamp = timestamp - timeWindowLengthMillis
-    val finalVal          = computeFinalValue(previousTimestamp, bucketsState.keys)
+    val currentKeys       = bucketsState.keys
+    val finalVal          = computeFinalValue(previousTimestamp, currentKeys)
     out.collect(
       ValueWithContext(
         finalVal,
@@ -77,7 +78,8 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
     )
 
     val rangeStart  = previousTimestamp - timeWindowLengthMillis + 1
-    val hasMoreData = bucketsState.keys.stream().anyMatch(k => k >= rangeStart)
+    val hasMoreData = currentKeys.hasElementsFrom(rangeStart)
+
     if (hasMoreData) {
       ctx.timerService().registerEventTimeTimer(timestamp + timeWindowLengthMillis)
     } else {

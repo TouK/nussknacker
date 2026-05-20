@@ -74,7 +74,7 @@ class EmitWhenEventLeftAggregatorFunction(
       val leavingRangeEnd   = timestamp - timeWindowLengthMillis
 
       val hasLeavingEntries = leavingRangeEnd >= leavingRangeStart &&
-        allKeys.stream().anyMatch(k => k >= leavingRangeStart && k <= leavingRangeEnd)
+        !allKeys.keysInRange(leavingRangeStart, leavingRangeEnd).isEmpty
 
       if (hasLeavingEntries) {
         val finalVal = computeFinalValue(timestamp, allKeys)

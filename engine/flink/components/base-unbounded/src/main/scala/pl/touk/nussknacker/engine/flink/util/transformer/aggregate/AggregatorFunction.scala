@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
-import java.util.Comparator
+import java.util.{Collections, Comparator}
 import scala.jdk.CollectionConverters._
 
 // This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
@@ -155,18 +155,20 @@ trait AggregatorFunctionMixin extends RichFunction {
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {}
 
-  protected def computeFinalValue(timestamp: Long, bucketKeys: java.util.List[java.lang.Long]): AnyRef = {
+  protected def computeFinalValue(timestamp: Long, keys: java.util.List[java.lang.Long]): AnyRef = {
     val rangeStart = timestamp - timeWindowLengthMillis + 1
     var count      = 0
 
-    val foldedState = bucketKeys.asScala
-      .filter(ts => ts >= rangeStart && ts <= timestamp)
+    val foldedState = keys
+      .keysInRange(rangeStart, timestamp)
+      .asScala
       .foldLeft(aggregator.createAccumulator()) { (acc, key) =>
         count += 1
         aggregator.merge(acc, bucketsState.get(key))
       }
 
     retrievedBucketsHistogram.update(count)
+
     aggregator.alignToExpectedType(aggregator.getResult(foldedState), outputType)
   }
 
@@ -235,6 +237,25 @@ trait AggregatorFunctionMixin extends RichFunction {
     )
   }
 
+  protected implicit class RichSortedLongList(val list: java.util.List[java.lang.Long]) {
+
+    def keysInRange(from: java.lang.Long, to: java.lang.Long): java.util.List[java.lang.Long] = {
+      val fromIdx  = Collections.binarySearch(list, from)
+      val startIdx = if (fromIdx >= 0) fromIdx else -(fromIdx + 1)
+      val toIdx    = Collections.binarySearch(list, to)
+      val endIdx   = if (toIdx >= 0) toIdx + 1 else -(toIdx + 1)
+      if (startIdx >= endIdx) new java.util.ArrayList[java.lang.Long]()
+      else list.subList(startIdx, endIdx)
+    }
+
+    def hasElementsFrom(from: java.lang.Long): Boolean = {
+      val idx      = Collections.binarySearch(list, from)
+      val startIdx = if (idx >= 0) idx else -(idx + 1)
+      startIdx < list.size()
+    }
+
+  }
+
   /**
    * Manages bucket data for MapState-based sliding window aggregators.
    *
@@ -261,8 +282,8 @@ trait AggregatorFunctionMixin extends RichFunction {
       val currentKeys = keys
       if (!currentKeys.contains(key)) {
         currentKeys.add(key)
-        currentKeys.sort(Comparator.naturalOrder())
         // We keep sorted list of keys
+        currentKeys.sort(Comparator.naturalOrder())
         keysState.update(currentKeys)
       }
     }
@@ -277,7 +298,7 @@ trait AggregatorFunctionMixin extends RichFunction {
 
     def clear(): Unit = {
       mapState.clear()
-      keysState.update(null)
+      keysState.clear()
     }
 
   }
