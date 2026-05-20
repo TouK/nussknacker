@@ -332,6 +332,11 @@ description: Stay informed with detailed changelogs covering new features, impro
 * Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
+### 1.18.11 (ESP)
+
+* [#9353](https://github.com/TouK/nussknacker/pull/9353) Sliding window aggregation components (`aggregate-sliding`, `aggregate-tumbling`, `single-side-join`, `full-outer-join`) now use Flink `MapState` instead of a serialised `SortedMap` stored in `ValueState`. This avoids full state deserialisation on every access, significantly reducing overhead with RocksDB state backend.
+  * **Note:** existing savepoints containing aggregation state are not compatible with this version — scenarios using these components must be restarted from scratch.
+
 ### 1.18.1 (9 December 2024)
 
 * [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
