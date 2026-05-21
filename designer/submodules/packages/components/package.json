@@ -20,7 +20,7 @@
         "i18next": "23.2.7",
         "i18next-browser-languagedetector": "7.1.0",
         "i18next-intervalplural-postprocessor": "3.0.0",
-        "lodash": "4.17.21",
+        "lodash": "4.18.1",
         "luxon": "3.2.1",
         "material-ui-popup-state": "5.0.10",
         "react": "18.3.1",
@@ -35,7 +35,7 @@
         "url-join": "5.0.0"
     },
     "devDependencies": {
-        "@types/lodash": "4.14.179",
+        "@types/lodash": "4.17.24",
         "@types/luxon": "3.2.0",
         "@types/react": "18.3.2",
         "@types/react-dom": "18.3.0",
