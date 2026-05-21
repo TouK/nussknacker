@@ -73,6 +73,7 @@ public class ListWithNullableValueTypeInfo<T> extends TypeInformation<List<T>> {
     }
 
     @Override
+    @SuppressWarnings({"unused", "deprecation"})
     public TypeSerializer<List<T>> createSerializer(ExecutionConfig config) {
         return createSerializer(config.getSerializerConfig());
     }
