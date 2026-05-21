@@ -36,12 +36,7 @@ class FullOuterJoinAggregatorFunction(
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
-    addElementToState(
-      in.asInstanceOf[ValueWithContext[KeyedValue[AnyRef, AnyRef]]],
-      ctx.timestamp(),
-      ctx.timerService(),
-      out
-    )
+    addElementToState(in, ctx.timestamp(), ctx.timerService(), out)
     val res = computeFinalValue(ctx.timestamp(), bucketsState.keys).asInstanceOf[java.util.Map[String, AnyRef]]
     res.put(keyFieldName, in.value.key)
     out.collect(ValueWithContext(res, in.context.clearUserVariables))

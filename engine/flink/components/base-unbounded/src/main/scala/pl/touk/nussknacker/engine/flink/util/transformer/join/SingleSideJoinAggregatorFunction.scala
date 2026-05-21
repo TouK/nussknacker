@@ -48,12 +48,7 @@ class SingleSideJoinAggregatorFunction(
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
-    addElementToState(
-      in2.asInstanceOf[ValueWithContext[KeyedValue[AnyRef, AnyRef]]],
-      ctx.timestamp(),
-      ctx.timerService(),
-      out
-    )
+    addElementToState(in2, ctx.timestamp(), ctx.timerService(), out)
   }
 
   override def onTimer(

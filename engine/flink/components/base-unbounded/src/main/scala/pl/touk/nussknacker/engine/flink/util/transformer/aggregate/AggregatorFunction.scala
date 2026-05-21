@@ -129,8 +129,8 @@ trait AggregatorFunctionMixin extends RichFunction {
 
   }
 
-  protected def addElementToState(
-      value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
+  protected def addElementToState[K <: AnyRef](
+      value: ValueWithContext[KeyedValue[K, AnyRef]],
       timestamp: Long,
       timeService: TimerService,
       out: Collector[ValueWithContext[AnyRef]]
