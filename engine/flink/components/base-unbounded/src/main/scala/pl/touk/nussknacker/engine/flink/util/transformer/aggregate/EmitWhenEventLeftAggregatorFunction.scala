@@ -69,7 +69,7 @@ class EmitWhenEventLeftAggregatorFunction(
     val allKeys = bucketsState.keys
 
     if (!allKeys.isEmpty) {
-      val maxBucketTs       = allKeys.get(allKeys.size() - 1)
+      val maxBucketTs       = allKeys.last
       val leavingRangeStart = timestampToReadUntilEnd(maxBucketTs)
       val leavingRangeEnd   = previousTime(timestamp)
 

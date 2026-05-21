@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import java.lang
 import scala.collection.Searching._
+import scala.collection.View
 import scala.jdk.CollectionConverters._
 
 // This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
@@ -250,7 +251,7 @@ trait AggregatorFunctionMixin extends RichFunction {
 
   protected implicit class RichSortedList(val list: java.util.List[lang.Long]) {
 
-    def keysInRange(from: lang.Long, to: lang.Long): List[lang.Long] = {
+    def keysInRange(from: lang.Long, to: lang.Long): View[lang.Long] = {
       val buf     = list.asScala
       val fromIdx = buf.search(from)
       val toIdx   = buf.search(to, fromIdx.insertionPoint, buf.length)
@@ -259,14 +260,15 @@ trait AggregatorFunctionMixin extends RichFunction {
         case InsertionPoint(i) => i
       }
 
-      buf
+      buf.view
         .slice(fromIdx.insertionPoint, endIdx)
-        .toList
     }
 
     def hasElementsFrom(from: lang.Long): Boolean =
       list.asScala.search(from).insertionPoint < list.size()
 
+    def last: lang.Long =
+      list.get(list.size() - 1)
   }
 
   /**
@@ -295,10 +297,10 @@ trait AggregatorFunctionMixin extends RichFunction {
     def put(key: lang.Long, value: AnyRef): Unit = {
       mapState.put(key, value)
       val currentKeys = keys
-      if (!currentKeys.contains(key)) {
-        currentKeys.add(key)
-        // We keep sorted list of keys
-        java.util.Collections.sort(currentKeys)
+      val index       = java.util.Collections.binarySearch(currentKeys, key)
+      if (index < 0) {
+        // We keep sorted list
+        currentKeys.add(-(index + 1), key)
         keysState.update(currentKeys)
       }
     }
