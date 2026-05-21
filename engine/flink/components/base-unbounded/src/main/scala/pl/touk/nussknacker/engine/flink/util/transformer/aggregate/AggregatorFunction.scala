@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import java.lang
 import scala.collection.Searching._
+import scala.collection.View
 import scala.jdk.CollectionConverters._
 
 // This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
@@ -211,7 +212,8 @@ trait AggregatorFunctionMixin extends RichFunction {
   // the bucket at (timestamp - timeWindowLengthMillis) falls in the preceding window and must
   // not be included. The allowedOutOfOrderMs buffer retains buckets that may still receive late events.
   protected def evictOldBuckets(timestamp: Long): Unit = {
-    bucketsState.removeOlderThan(timestamp - timeWindowLengthMillis + 1 - allowedOutOfOrderMs)
+    val cutoff = timestampToReadUntilEnd(timestamp) - allowedOutOfOrderMs
+    bucketsState.removeOlderThan(cutoff)
   }
 
   // +1 gives an exclusive lower bound, matching Flink's half-open window range semantics [start, end):
@@ -220,7 +222,9 @@ trait AggregatorFunctionMixin extends RichFunction {
   protected def timestampToReadUntilEnd(timestamp: Long): Long =
     timestamp - timeWindowLengthMillis + 1
 
-  protected def previousTime(timestamp: Long): Long =
+  // Returns the end of the window preceding the current timer, i.e. timestamp shifted back by one full
+  // window length. Used in tumbling-window logic to compute the aggregate for the window that just closed.
+  protected def previousWindowEnd(timestamp: Long): Long =
     timestamp - timeWindowLengthMillis
 
   protected def initState(): Unit = {
@@ -250,7 +254,7 @@ trait AggregatorFunctionMixin extends RichFunction {
 
   protected implicit class RichSortedList(val list: java.util.List[lang.Long]) {
 
-    def keysInRange(from: lang.Long, to: lang.Long): List[lang.Long] = {
+    def keysInRange(from: lang.Long, to: lang.Long): View[lang.Long] = {
       val buf     = list.asScala
       val fromIdx = buf.search(from)
       val toIdx   = buf.search(to, fromIdx.insertionPoint, buf.length)
@@ -259,14 +263,15 @@ trait AggregatorFunctionMixin extends RichFunction {
         case InsertionPoint(i) => i
       }
 
-      buf
+      buf.view
         .slice(fromIdx.insertionPoint, endIdx)
-        .toList
     }
 
     def hasElementsFrom(from: lang.Long): Boolean =
       list.asScala.search(from).insertionPoint < list.size()
 
+    def last: lang.Long =
+      list.get(list.size() - 1)
   }
 
   /**
@@ -295,10 +300,10 @@ trait AggregatorFunctionMixin extends RichFunction {
     def put(key: lang.Long, value: AnyRef): Unit = {
       mapState.put(key, value)
       val currentKeys = keys
-      if (!currentKeys.contains(key)) {
-        currentKeys.add(key)
-        // We keep sorted list of keys
-        java.util.Collections.sort(currentKeys)
+      val index       = java.util.Collections.binarySearch(currentKeys, key)
+      if (index < 0) {
+        // We keep sorted list
+        currentKeys.add(-(index + 1), key)
         keysState.update(currentKeys)
       }
     }
