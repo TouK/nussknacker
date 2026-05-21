@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
+import org.apache.flink.api.common.state.ValueState
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -8,8 +9,13 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
+import pl.touk.nussknacker.engine.flink.api.state.StateHolder
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 import pl.touk.nussknacker.engine.util.KeyedValue
+
+import scala.language.higherKinds
 
 /**
  * It behaves similar to Flink's TumblingWindow with one difference that we produce extra zero aggregate for each key when no data arrived.
@@ -17,7 +23,7 @@ import pl.touk.nussknacker.engine.util.KeyedValue
  * it handles out of order elements. The other difference from AggregatorFunction is that we emit event only in timer and handle
  * state eviction on ours own.
  */
-class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
+class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K, V]](
     protected val aggregator: Aggregator,
     protected val timeWindowLengthMillis: Long,
     protected val timeWindowOffsetMillis: Long,
@@ -25,8 +31,10 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
     protected val aggregateElementType: TypingResult,
     protected override val aggregateTypeInformation: TypeInformation[AnyRef],
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-) extends KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]
-    with AggregatorFunctionMixin {
+)(implicit override val rangeMap: FlinkRangeMap[MapT])
+    extends KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]
+    with StateHolder[MapT[Long, AnyRef]]
+    with AggregatorFunctionMixin[MapT] {
 
   type FlinkCtx =
     KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#Context
@@ -34,19 +42,17 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
     KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
   @transient
+  protected var state: ValueState[MapT[Long, AnyRef]] = _
+
+  @transient
   private var contextIdGenerator: ContextIdGenerator = _
 
   override def open(openContext: OpenContext): Unit = {
-    super.open(openContext)
-    initState()
+    state = getRuntimeContext.getState(stateDescriptor)
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }
 
   override protected val minimalResolutionMs: Long = timeWindowLengthMillis
-
-  override protected def initEvictionTimeState(): Unit = {
-    // eviction is handled in onTimer — latestEvictionTimeForKey is not used
-  }
 
   override def processElement(
       value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
@@ -67,9 +73,9 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
   }
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val previousTimestamp = previousWindowEnd(timestamp)
-    val currentKeys       = bucketsState.keys
-    val finalVal          = computeFinalValue(previousTimestamp, currentKeys)
+    val previousTimestamp = timestamp - timeWindowLengthMillis
+    val currentStateValue = readStateOrInitial()
+    val finalVal          = computeFinalValue(currentStateValue, previousTimestamp)
     out.collect(
       ValueWithContext(
         finalVal,
@@ -77,23 +83,30 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
       )
     )
 
-    // rangeStart is the lower bound of the window we just emitted. hasMoreData is true when there are
-    // buckets within or after that window, meaning the next timer should still fire (possibly to emit
-    // a zero aggregate if no new events arrived). Buckets strictly before rangeStart are evicted since
-    // they can never contribute to any future window.
-    val rangeStart  = previousWindowEnd(previousTimestamp) + 1
-    val hasMoreData = currentKeys.hasElementsFrom(rangeStart)
-
-    if (hasMoreData) {
-      evictOldBuckets(timestamp)
-      ctx.timerService().registerEventTimeTimer(timestamp + timeWindowLengthMillis)
+    val previousTimestampStateAndRest = stateForTimestampToReadUntilEnd(currentStateValue, previousTimestamp)
+    if (previousTimestampStateAndRest.toScalaMapRO.isEmpty) {
+      evictStates()
     } else {
-      bucketsState.clear()
+      ctx.timerService().registerEventTimeTimer(timestamp + timeWindowLengthMillis)
     }
+  }
+
+  override protected def updateState(
+      stateValue: MapT[Long, AnyRef],
+      stateValidity: Long,
+      timeService: TimerService
+  ): Unit = {
+    state.update(stateValue)
   }
 
   override protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
     // state eviction is controlled in onTimer
   }
+
+  protected def evictStates(): Unit = {
+    state.clear()
+  }
+
+  override protected def readState(): MapT[Long, AnyRef] = state.value()
 
 }

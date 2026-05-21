@@ -8,33 +8,43 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 import pl.touk.nussknacker.engine.util.KeyedValue
+
+import scala.language.higherKinds
 
 /**
  * It behaves the same as AggregatorFunction with one difference that also publish events when some event will left the slide.
  */
-class EmitWhenEventLeftAggregatorFunction(
+class EmitWhenEventLeftAggregatorFunction[MapT[K, V]](
     protected val aggregator: Aggregator,
     protected val timeWindowLengthMillis: Long,
     override val nodeId: NodeId,
     protected val aggregateElementType: TypingResult,
-    protected val aggregateTypeInformation: TypeInformation[AnyRef],
+    override protected val aggregateTypeInformation: TypeInformation[AnyRef],
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-) extends KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]
-    with AggregatorFunctionMixin {
+)(implicit override val rangeMap: FlinkRangeMap[MapT])
+    extends LatelyEvictableStateFunction[
+      ValueWithContext[KeyedValue[AnyRef, AnyRef]],
+      ValueWithContext[AnyRef],
+      MapT[Long, AnyRef],
+      AnyRef
+    ]
+    with AggregatorFunctionMixin[MapT] {
+
+  @transient
+  private var contextIdGenerator: ContextIdGenerator = _
 
   type FlinkCtx =
     KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx =
     KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
-  @transient
-  private var contextIdGenerator: ContextIdGenerator = _
-
   override def open(openContext: OpenContext): Unit = {
     super.open(openContext)
-    initState()
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }
 
@@ -57,34 +67,33 @@ class EmitWhenEventLeftAggregatorFunction(
   }
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    handleElementsLeavingWindow(timestamp, ctx, out)
-    handleOnTimer(timestamp, ctx.timerService())
+    val currentStateValue = readStateOrInitial()
+    handleElementLeftSlide(currentStateValue, timestamp, ctx, out)
+    super.onTimer(timestamp, ctx, out)
   }
 
-  private def handleElementsLeavingWindow(
+  protected def handleElementLeftSlide(
+      currentStateValue: MapT[Long, aggregator.Aggregate],
       timestamp: Long,
       ctx: FlinkOnTimerCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
-    val allKeys = bucketsState.keys
-
-    if (!allKeys.isEmpty) {
-      val maxBucketTs       = allKeys.last
-      val leavingRangeStart = previousWindowEnd(maxBucketTs) + 1
-      val leavingRangeEnd   = previousWindowEnd(timestamp)
-
-      val hasLeavingEntries = leavingRangeEnd >= leavingRangeStart &&
-        allKeys.keysInRange(leavingRangeStart, leavingRangeEnd).nonEmpty
-
-      if (hasLeavingEntries) {
-        val finalVal = computeFinalValue(timestamp, allKeys)
-        out.collect(
-          ValueWithContext(
-            finalVal,
-            KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)
-          )
-        )
+    val stateForRecentlySentEvent = currentStateValue.toScalaMapRO.lastOption
+      .map { case (lastTimestamp, _) =>
+        stateForTimestampToReadUntilEnd(
+          currentStateValue,
+          lastTimestamp
+        ) // shouldn't we save somewhere recently sent timestamp?
       }
+      .getOrElse(currentStateValue)
+    if (stateForRecentlySentEvent.toRO(timestamp - timeWindowLengthMillis).toScalaMapRO.nonEmpty) {
+      val finalVal = computeFinalValue(currentStateValue, timestamp)
+      out.collect(
+        ValueWithContext(
+          finalVal,
+          KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)
+        )
+      )
     }
   }
 

@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 
 class SingleSideJoinTransformer(
@@ -204,7 +205,7 @@ class SingleSideJoinTransformer(
   )(
       implicit nodeId: NodeId
   ): CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new SingleSideJoinAggregatorFunction(
+    new SingleSideJoinAggregatorFunction[SortedMap](
       aggregator,
       stateTimeout.toMillis,
       nodeId,
