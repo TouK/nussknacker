@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindo
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-import scala.collection.immutable.SortedMap
 import scala.compat.java8.DurationConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -42,7 +41,7 @@ object transformers {
 
           val aggregatorFunction =
             if (preserveContext)
-              new AggregatorFunction[SortedMap](
+              new AggregatorFunction(
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
@@ -52,7 +51,7 @@ object transformers {
                 fctx.convertToEngineRuntimeContext
               )
             else
-              new EmitWhenEventLeftAggregatorFunction[SortedMap](
+              new EmitWhenEventLeftAggregatorFunction(
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
@@ -135,7 +134,7 @@ object transformers {
               keyedStream
                 // TODO: alignment??
                 .process(
-                  new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](
+                  new EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
                     aggregator,
                     windowLength.toMillis,
                     offsetDuration.toMillis,

@@ -15,6 +15,9 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9376](https://github.com/TouK/nussknacker/pull/9376) Sliding window aggregation components (`aggregate-sliding`, `aggregate-tumbling`, `single-side-join`, `full-outer-join`) now use Flink `MapState` instead of a serialised `SortedMap` stored in `ValueState`.
+  * This avoids full state deserialisation on every access, significantly reducing overhead with RocksDB state backend.
+  * **Note:** existing savepoints/checkpoints containing aggregation state are not compatible with this version — scenarios using these components must be restarted from scratch.
 * [#9314](https://github.com/TouK/nussknacker/pull/9314) OpenAPI enricher: `handleErrors` renamed to `Error Strategy` and moved to advanced parameters
 * [#9303](https://github.com/TouK/nussknacker/pull/9303) OpenAPI enricher: added `handleErrors` response wrapping (`error`, `errorResponse`, `successResponse`, optional `statusCode`), with `statusCode` when it can be extracted.
 * [#9292](https://github.com/TouK/nussknacker/pull/9292) Variable node: added `SET`/`UNSET` operation with multi-variable `UNSET` and context cleanup for removed local variables.
