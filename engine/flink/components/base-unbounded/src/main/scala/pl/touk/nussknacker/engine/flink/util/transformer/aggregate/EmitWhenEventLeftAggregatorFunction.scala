@@ -57,11 +57,11 @@ class EmitWhenEventLeftAggregatorFunction(
   }
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    handleElementLeftSlide(timestamp, ctx, out)
+    handleElementsLeavingWindow(timestamp, ctx, out)
     handleOnTimer(timestamp, ctx.timerService())
   }
 
-  private def handleElementLeftSlide(
+  private def handleElementsLeavingWindow(
       timestamp: Long,
       ctx: FlinkOnTimerCtx,
       out: Collector[ValueWithContext[AnyRef]]
@@ -70,7 +70,7 @@ class EmitWhenEventLeftAggregatorFunction(
 
     if (!allKeys.isEmpty) {
       val maxBucketTs       = allKeys.last
-      val leavingRangeStart = timestampToReadUntilEnd(maxBucketTs)
+      val leavingRangeStart = previousWindowEnd(timestamp) + 1
       val leavingRangeEnd   = previousWindowEnd(timestamp)
 
       val hasLeavingEntries = leavingRangeEnd >= leavingRangeStart &&

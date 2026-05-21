@@ -81,7 +81,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
     // buckets within or after that window, meaning the next timer should still fire (possibly to emit
     // a zero aggregate if no new events arrived). Buckets strictly before rangeStart are evicted since
     // they can never contribute to any future window.
-    val rangeStart  = timestampToReadUntilEnd(previousTimestamp)
+    val rangeStart  = previousWindowEnd(timestamp) + 1
     val hasMoreData = currentKeys.hasElementsFrom(rangeStart)
 
     if (hasMoreData) {

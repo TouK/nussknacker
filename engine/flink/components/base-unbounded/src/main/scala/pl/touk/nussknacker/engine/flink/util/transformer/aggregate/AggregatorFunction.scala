@@ -158,7 +158,7 @@ trait AggregatorFunctionMixin extends RichFunction {
   ): Unit = {}
 
   protected def computeFinalValue(timestamp: Long, keys: java.util.List[lang.Long]): AnyRef = {
-    val rangeStart = timestampToReadUntilEnd(timestamp)
+    val rangeStart = previousWindowEnd(timestamp) + 1
     var count      = 0
 
     val foldedState = keys
@@ -208,22 +208,21 @@ trait AggregatorFunctionMixin extends RichFunction {
     (timestamp / minimalResolutionMs) * minimalResolutionMs
   }
 
-  // +1 gives an exclusive lower bound, matching Flink's half-open window range semantics [start, end):
-  // the bucket at (timestamp - timeWindowLengthMillis) falls in the preceding window and must
-  // not be included. The allowedOutOfOrderMs buffer retains buckets that may still receive late events.
   protected def evictOldBuckets(timestamp: Long): Unit = {
-    val cutoff = timestampToReadUntilEnd(timestamp) - allowedOutOfOrderMs
+
+    /**
+     * +1 gives an exclusive lower bound, matching Flink's half-open window range semantics [start, end):
+     * the bucket at (previousWindowEnd) falls in the preceding window and must
+     * not be included. The allowedOutOfOrderMs buffer retains buckets that may still receive late events.
+     */
+    val cutoff = previousWindowEnd(timestamp) + 1 - allowedOutOfOrderMs
     bucketsState.removeOlderThan(cutoff)
   }
 
-  // +1 gives an exclusive lower bound, matching Flink's half-open window range semantics [start, end):
-  // the bucket at (timestamp - timeWindowLengthMillis) falls in the preceding window and must not be
-  // included in the current one.
-  protected def timestampToReadUntilEnd(timestamp: Long): Long =
-    timestamp - timeWindowLengthMillis + 1
-
-  // Returns the end of the window preceding the current timer, i.e. timestamp shifted back by one full
-  // window length. Used in tumbling-window logic to compute the aggregate for the window that just closed.
+  /**
+   * Returns the end of the window preceding the current timer, i.e. timestamp shifted back by one full
+   * window length. Used in tumbling-window logic to compute the aggregate for the window that just closed.
+   */
   protected def previousWindowEnd(timestamp: Long): Long =
     timestamp - timeWindowLengthMillis
 
@@ -258,13 +257,13 @@ trait AggregatorFunctionMixin extends RichFunction {
       val buf     = list.asScala
       val fromIdx = buf.search(from)
       val toIdx   = buf.search(to, fromIdx.insertionPoint, buf.length)
-      val endIdx = toIdx match {
+      val untilIdx = toIdx match {
         case Found(i)          => i + 1
         case InsertionPoint(i) => i
       }
 
       buf.view
-        .slice(fromIdx.insertionPoint, endIdx)
+        .slice(fromIdx.insertionPoint, untilIdx)
     }
 
     def hasElementsFrom(from: lang.Long): Boolean =
