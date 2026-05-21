@@ -38,7 +38,6 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
@@ -216,7 +215,7 @@ class FullOuterJoinTransformer(
       implicit nodeId: NodeId,
       nodeName: NodeName
   ): KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new FullOuterJoinAggregatorFunction[SortedMap](
+    new FullOuterJoinAggregatorFunction(
       aggregator,
       stateTimeout.toMillis,
       nodeId,
