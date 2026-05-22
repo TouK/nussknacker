@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.definition.CompileTimeValidator
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.{CompileTimeEvaluableValue, CustomValidator}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor

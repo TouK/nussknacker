@@ -2,9 +2,8 @@ package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
+import io.circe.{Codec, Decoder, DecodingFailure}
 import io.circe.parser._
-import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
@@ -68,7 +67,7 @@ object ParameterValidator {
       ValidationExpressionParameterValidatorToCompile.apply
     )(v => (v.validationExpression, v.validationFailedMessage))
 
-  implicit def decoder: Decoder[ParameterValidator] = Decoder.instance { cursor =>
+  implicit val decoder: Decoder[ParameterValidator] = Decoder.instance { cursor =>
     cursor.downField("type").as[String].flatMap {
       case "MandatoryParameterValidator"        => Right(MandatoryParameterValidator)
       case "NotNullParameterValidator"          => Right(NotNullParameterValidator)

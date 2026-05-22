@@ -5,7 +5,7 @@ import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
-import pl.touk.nussknacker.engine.api.definition.{CompileTimeParameterValidator, CompileTimeValidator}
+import pl.touk.nussknacker.engine.api.definition.CompileTimeParameterValidator
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.process.periodic.utils.SchedulePropertyExtractorUtils
