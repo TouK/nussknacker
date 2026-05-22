@@ -220,8 +220,10 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   }
 
   test("extract custom validator when @CustomValidator annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(customValidatorParam)) shouldBe
-      List(MandatoryParameterValidator, CustomParameterValidatorByClassLoader(classOf[SampleCustomValidator].getName))
+    val extracted = ValidatorsExtractor.extract(validatorParams(customValidatorParam))
+    extracted should have size 2
+    extracted.head shouldBe MandatoryParameterValidator
+    extracted(1) shouldBe a[SampleCustomValidator]
   }
 
   test("determine validators based on config") {

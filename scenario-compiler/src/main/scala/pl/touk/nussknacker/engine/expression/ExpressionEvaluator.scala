@@ -90,9 +90,8 @@ class ExpressionEvaluator(
     }
   }
 
-  // Validation runs on the raw value before Option/Optional wrapping, so validators receive Some(null)
-  // for parameters where the expression evaluated to null (e.g. an Option[String] wrapping to None).
-  // Validators must handle Some(null) gracefully — built-in validators all do this explicitly.
+  // Validation runs on the raw value before Option/Optional wrapping, so validators receive null
+  // for parameters where the expression evaluated to null (e.g. before wrapping to None/Optional.empty).
   private def validateParameterAtRuntime(param: CompiledParameter, rawValue: AnyRef)(
       implicit nodeId: NodeId
   ): Unit = {
