@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.util.config
 
 import cats.data.NonEmptyList
 import com.typesafe.config.{Config, ConfigException, ConfigRenderOptions}
-import io.circe.Decoder
+import io.circe._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition._
 
 import scala.reflect.ClassTag
 

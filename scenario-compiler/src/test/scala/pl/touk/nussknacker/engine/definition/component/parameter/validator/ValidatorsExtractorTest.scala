@@ -1,19 +1,35 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
+import cats.data.Validated
+import cats.data.Validated.{invalid, valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
+import pl.touk.nussknacker.engine.api.definition.CompileTimeValidator
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.validation.{CompileTimeEvaluableValue, CustomValidator}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.parameter.{OptionalDeterminer, ParameterData}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.time.LocalDate
 import java.util.Optional
 import javax.annotation.Nullable
 import javax.validation.constraints.{Max, Min, NotBlank}
+
+class SampleCustomValidator extends CustomCompileTimeParameterValidator {
+  override val name: String = "sampleCustomValidator"
+
+  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = valid(())
+
+}
 
 class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
 
@@ -44,6 +60,8 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
     getFirstParam("minimalAndMaximalValueIntegerAnnotatedParam", classOf[Int])
   private val minimalAndMaximalValueBigDecimalParam =
     getFirstParam("minimalAndMaximalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
+
+  private val customValidatorParam = getFirstParam("customValidatorAnnotatedParam", classOf[String])
 
   private def notAnnotated(param: String) = ()
 
@@ -78,6 +96,8 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   private def minimalAndMaximalValueIntegerAnnotatedParam(@Min(value = 0) @Max(value = 1) value: Int) = ()
 
   private def minimalAndMaximalValueBigDecimalAnnotatedParam(@Min(value = 0) @Max(value = 1) value: BigDecimal) = ()
+
+  private def customValidatorAnnotatedParam(@CustomValidator(classOf[SampleCustomValidator]) param: String) = ()
 
   private def getFirstParam(name: String, params: Class[_]*) = {
     this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
@@ -197,6 +217,11 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   test("extract minimalAndMaximalValueBigDecimalParam value validator when @Min and @Max annotation detected") {
     ValidatorsExtractor.extract(validatorParams(minimalAndMaximalValueBigDecimalParam)) shouldBe
       List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
+  }
+
+  test("extract custom validator when @CustomValidator annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(customValidatorParam)) shouldBe
+      List(MandatoryParameterValidator, CustomParameterValidatorByClassLoader(classOf[SampleCustomValidator].getName))
   }
 
   test("determine validators based on config") {

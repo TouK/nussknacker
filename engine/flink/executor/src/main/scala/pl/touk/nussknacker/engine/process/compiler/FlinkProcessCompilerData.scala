@@ -80,7 +80,7 @@ class FlinkProcessCompilerData(
   def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(
     compilerData.expressionCompiler,
     compilerData.expressionEvaluator,
-    jobData
+    jobData,
   )
 
   def compileProcess(

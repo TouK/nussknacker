@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
 import pl.touk.nussknacker.engine.api.definition
 import pl.touk.nussknacker.engine.api.definition.{
+  CustomParameterValidatorByClassLoader,
   MaximalNumberValidator,
   MinimalNumberValidator,
   NotBlankParameterValidator,
   ParameterValidator
 }
-import pl.touk.nussknacker.engine.api.validation.JsonValidator
+import pl.touk.nussknacker.engine.api.validation.{CustomValidator, JsonValidator}
 
 import javax.validation.constraints.{Max, Min, NotBlank}
 
@@ -21,7 +22,10 @@ object ValidatorsExtractor {
       CompileTimeEvaluableValueValidatorExtractor,
       AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
       AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),
-      AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value()))
+      AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value())),
+      AnnotationValidatorExtractor[CustomValidator]((annotation: CustomValidator) =>
+        CustomParameterValidatorByClassLoader(annotation.value()).load()
+      )
     ).flatMap(_.extract(params))
     // TODO: should validators from config override or append those from annotations, types etc.?
     (fromValidatorExtractors ++ params.parameterConfig.validators.toList.flatten).distinct
