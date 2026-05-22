@@ -101,6 +101,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("nullSensitiveService", NullSensitiveService),
     ComponentDefinition("customValidatorTypesService", CustomValidatorTypesService),
     ComponentDefinition("notBlankRuntimeTypesService", NotBlankRuntimeTypesService),
+    ComponentDefinition("dualNotBlankTypesService", DualNotBlankTypesService),
     ComponentDefinition("eagerServiceWithMethod", EagerServiceWithMethod),
     ComponentDefinition("dynamicEagerService", DynamicEagerService),
     ComponentDefinition("eagerServiceWithFixedAdditional", EagerServiceWithFixedAdditional),
@@ -1113,6 +1114,43 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     }.getMessage should include("expression")
   }
 
+  test("dual validator (compile-time+runtime): compile-time fires for blank literal") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "dualNotBlankTypesService", "expression" -> "''".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    intercept[IllegalArgumentException] {
+      interpretProcess(process, Transaction())
+    }.getMessage shouldBe "Compilation errors: CustomParameterValidationError(Value must not be blank,Please provide a non-blank value,expression,customNode)"
+  }
+
+  test("dual validator (compile-time+runtime): runtime fires for dynamic expression evaluating to blank") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "dualNotBlankTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    intercept[ParameterValidationAtRuntimeException] {
+      interpretProcess(process, Transaction(msisdn = ""))
+    }.getMessage should include("expression")
+  }
+
+  test("dual validator (compile-time+runtime): valid value passes both") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "dualNotBlankTypesService", "expression" -> "#input.msisdn".spel)
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(msisdn = "valid-value")) shouldBe "valid-value"
+  }
+
   // Unit-level tests for ExpressionEvaluator runtime validation — exercise evaluateParameter directly, not via interpretProcess
 
   test("ExpressionEvaluator: RuntimeValidator fires and throws when value is invalid") {
@@ -1501,6 +1539,62 @@ object InterpreterSpec {
     def invoke(
         @ParamName("expression") @CustomValidator(classOf[FailingForBlankCustomValidator]) expr: String
     ): Future[String] = Future.successful(expr)
+
+  }
+
+  class DualNotBlankValidator extends CompileTimeParameterValidator with RuntimeParameterValidator {
+
+    override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
+        implicit nodeId: NodeId
+    ): Validated[PartSubGraphCompilationError, Unit] =
+      value match {
+        case Some(s: String) if s.isBlank =>
+          Invalid(
+            ProcessCompilationError.CustomParameterValidationError(
+              "Value must not be blank",
+              "Please provide a non-blank value",
+              paramName,
+              nodeId.id
+            )
+          )
+        case _ => Valid(())
+      }
+
+    override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+        implicit nodeId: NodeId
+    ): Validated[Throwable, Unit] =
+      value match {
+        case s: String if !s.isBlank => Valid(())
+        case _ =>
+          Invalid(
+            new ParameterValidationAtRuntimeException(
+              paramName.value,
+              s"Parameter '${paramName.value}' must not be blank"
+            )
+          )
+      }
+
+  }
+
+  object DualNotBlankTypesService extends EagerServiceWithStaticParametersAndReturnType {
+
+    private val dualValidator = new DualNotBlankValidator
+
+    override def parameters: List[Parameter] = List(
+      Parameter[String](ParameterName("expression"))
+        .copy(isLazyParameter = true, validators = List(dualValidator))
+    )
+
+    override def returnType: typing.TypingResult = Typed[String]
+
+    override def invoke(params: Map[ParameterName, Any])(
+        implicit ec: ExecutionContext,
+        collector: ServiceInvocationCollector,
+        context: Context,
+        metaData: MetaData,
+        componentUseContext: ComponentUseContext
+    ): Future[AnyRef] =
+      Future.successful(params(ParameterName("expression")).asInstanceOf[AnyRef])
 
   }
 
