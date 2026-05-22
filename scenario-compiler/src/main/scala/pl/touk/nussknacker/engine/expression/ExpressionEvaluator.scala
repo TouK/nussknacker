@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.expression
 
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition.ParameterRuntimeValidationError
+import pl.touk.nussknacker.engine.api.exception.ParameterValidationAtRuntimeException
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
@@ -25,7 +28,11 @@ object ExpressionEvaluator {
       globalVariablesPreparer: GlobalVariablesPreparer,
       listeners: Seq[ProcessListener],
   ): ExpressionEvaluator = {
-    new ExpressionEvaluator(globalVariablesPreparer, listeners, cacheGlobalVariables = true)
+    new ExpressionEvaluator(
+      globalVariablesPreparer,
+      listeners,
+      cacheGlobalVariables = true,
+    )
   }
 
   // This is for evaluation expressions fixed expressions during object creation *and* during tests/service queries
@@ -38,7 +45,7 @@ object ExpressionEvaluator {
 class ExpressionEvaluator(
     globalVariablesPreparer: GlobalVariablesPreparer,
     listeners: Seq[ProcessListener],
-    cacheGlobalVariables: Boolean
+    cacheGlobalVariables: Boolean,
 ) {
   private def prepareGlobals(jobData: JobData): Map[String, Any] =
     globalVariablesPreparer.prepareGlobalVariables(jobData).mapValuesNow(_.obj)
@@ -64,18 +71,38 @@ class ExpressionEvaluator(
       param: BaseCompiledParameter,
       ctx: Context
   )(implicit nodeId: NodeId, jobData: JobData): ValueWithContext[AnyRef] = {
-    try {
-      val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name.value, nodeId.id, ctx)
-      valueWithModifiedContext.map { evaluatedValue =>
-        if (param.shouldBeWrappedWithScalaOption)
-          Option(evaluatedValue)
-        else if (param.shouldBeWrappedWithJavaOptional)
-          Optional.ofNullable(evaluatedValue)
-        else
-          evaluatedValue
+    val valueWithModifiedContext =
+      try {
+        evaluate[AnyRef](param.expression, param.name.value, nodeId.id, ctx)
+      } catch {
+        case NonFatal(ex) => throw CustomNodeValidationException(ex.getMessage, Some(param.name), ex)
       }
-    } catch {
-      case NonFatal(ex) => throw CustomNodeValidationException(ex.getMessage, Some(param.name), ex)
+    param match {
+      case cp: CompiledParameter if cp.runtimeValidators.nonEmpty =>
+        validateParameterAtRuntime(cp, valueWithModifiedContext.value)
+      case _ =>
+    }
+    valueWithModifiedContext.map { evaluatedValue =>
+      if (param.shouldBeWrappedWithScalaOption)
+        Option(evaluatedValue)
+      else if (param.shouldBeWrappedWithJavaOptional)
+        Optional.ofNullable(evaluatedValue)
+      else
+        evaluatedValue
+    }
+  }
+
+  // Validation runs on the raw value before Option/Optional wrapping, so validators receive null
+  // for parameters where the expression evaluated to null (e.g. before wrapping to None/Optional.empty).
+  private def validateParameterAtRuntime(param: CompiledParameter, rawValue: AnyRef)(
+      implicit nodeId: NodeId
+  ): Unit = {
+    param.runtimeValidators.foreach { validator =>
+      validator.isValid(param.name, param.expressionForValidation, rawValue) match {
+        case Invalid(ParameterRuntimeValidationError(input, message)) =>
+          throw new ParameterValidationAtRuntimeException(input, message)
+        case Valid(_) => ()
+      }
     }
   }
 

@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.api.component
 
 import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.Semigroup
-import io.circe.generic.JsonCodec
+import io.circe.Decoder
+import io.circe.generic.semiauto.deriveDecoder
 import pl.touk.nussknacker.engine.api.definition.{
   ParameterCategory,
   ParameterEditor,
@@ -92,7 +93,7 @@ object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None, None, None)
 }
 
-@JsonCodec case class ScenarioPropertyConfig(
+case class ScenarioPropertyConfig(
     defaultValue: Option[String],
     editor: Option[StaticParameterEditor],
     validators: Option[List[ParameterValidator]],
@@ -101,6 +102,9 @@ object ParameterConfig {
 )
 
 object ScenarioPropertyConfig {
+
+  implicit val decoder: Decoder[ScenarioPropertyConfig] = deriveDecoder
+
   val empty: ScenarioPropertyConfig = ScenarioPropertyConfig(None, None, None, None, None)
 
   implicit val semigroup: Semigroup[ScenarioPropertyConfig] = {

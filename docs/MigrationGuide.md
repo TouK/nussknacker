@@ -66,6 +66,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* Runtime parameter validation: `CustomParameterValidator` trait hierarchy refactored to support both compile-time and runtime validation.
+  * `CustomParameterValidator` no longer extends `ParameterValidator`. It is now a standalone sealed trait.
+  * `CustomCompileTimeParameterValidator` now extends `CompileTimeValidator` (previously `CompileTimeParameterValidator`).
+  * `CustomRuntimeParameterValidator` now extends `RuntimeValidator` (previously `RuntimeParameterValidator`).
+  * `CustomParameterValidatorLoader.resolved` now returns `ParameterValidator` (wrapping the custom validator in an anonymous class) instead of `CustomParameterValidator`.
+    Code that previously assigned `resolved` to a `CustomParameterValidator` variable must be updated.
+  * `CustomParameterValidatorByClassLoader` is a new loader used by the `@CustomValidator` annotation. It serializes as
+    `CustomParameterValidatorDelegate` with a `className` key. The existing name-based format (from `CustomParameterValidatorByNameLoader`)
+    remains unchanged and is still decoded correctly.
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
   * added optional `traceId` field at `Context`, default None
   * Fro now `RequestResponseSource` transforms `Record[T]` instead T as a record
@@ -245,6 +254,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink 1.19.2 -> 1.20.2.
 * [#8209](https://github.com/TouK/nussknacker/pull/8209) Nussknacker now requires flink to be run with replaced `lib/flink-scala_2.12-x.x.x.jar` by `pl.touk:flink-scala` lib for the same scala version as used Nussknacker distribution. We provide prebuild flink docker images on [Docker Hub](https://hub.docker.com/r/touk/flink)    
 * [#8478](https://github.com/TouK/nussknacker/pull/8478) The behavior of `enum` to json encoding has been changed - now it uses `.name()` instead of `.toString()` 
+* Runtime parameter validation — custom validators and `Validator` API changes:
+  * `Validator.isValid` return type changed from `Validated[PartSubGraphCompilationError, Unit]` to `Validated[ParameterValidationError, Unit]`.
+    Custom validators implementing `CustomParameterValidator` must update their `isValid` signature accordingly.
+  * Validators annotated on parameters are now always evaluated at runtime (not only at compile time).
+    The previously opt-in `globalParameters.enableRuntimeParameterValidation` configuration key has been removed.
+  * New `@CustomValidator(classOf[MyValidator])` annotation in `pl.touk.nussknacker.engine.api.validation` allows
+    attaching a `CustomParameterValidator` implementation (identified by class) directly to a parameter.
+    The corresponding sealed subtype `CustomParameterValidatorByClass` was added to `ParameterValidator`.
 
 ## In version 1.18.0
 

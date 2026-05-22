@@ -291,12 +291,14 @@ object DynamicNodeValidator {
 
   def apply(modelData: ModelData): DynamicNodeValidator = {
     val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+    val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData)
     new DynamicNodeValidator(
-      ExpressionCompiler.withoutOptimization(modelData),
+      expressionCompiler,
       globalVariablesPreparer,
       new ParameterEvaluator(
         globalVariablesPreparer,
         Seq.empty,
+        expressionCompiler,
       ),
       modelData.modelConfig.globalParametersConfig
     )
