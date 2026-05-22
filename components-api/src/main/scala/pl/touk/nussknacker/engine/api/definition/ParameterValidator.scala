@@ -81,6 +81,8 @@ object ParameterValidator {
       case "MaximalNumberValidator"             => maximalNumberCodec(cursor)
       case "ValidationExpressionParameterValidatorToCompile" =>
         validationExpressionCodec(cursor)
+      case "CustomParameterValidatorDelegate" =>
+        cursor.downField("name").as[String].map(name => CustomParameterValidatorByNameLoader(name).load())
       case other =>
         Left(DecodingFailure(s"Unknown ParameterValidator type: $other", cursor.history))
     }
