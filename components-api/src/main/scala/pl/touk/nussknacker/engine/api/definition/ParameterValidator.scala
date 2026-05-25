@@ -8,6 +8,7 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.CustomParameterValidatorLoader.WithUnderlyingCustomParameterValidator
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -392,32 +393,42 @@ trait CustomCompileTimeParameterValidator extends CustomParameterValidator with 
 trait CustomRuntimeParameterValidator extends CustomParameterValidator with RuntimeValidator
 
 sealed trait CustomParameterValidatorLoader extends ParameterValidator {
-  def load(): CustomParameterValidator
+  protected def load(): CustomParameterValidator
 
-  lazy val resolved: ParameterValidator = load() match {
+  lazy val resolved: ParameterValidator with WithUnderlyingCustomParameterValidator = load() match {
     case validator: CustomCompileTimeParameterValidator =>
-      new CompileTimeParameterValidator {
+      new CompileTimeParameterValidator with WithUnderlyingCustomParameterValidator {
+        override val underlying: CustomCompileTimeParameterValidator = validator
         override def isValid(
             paramName: ParameterName,
             expression: Expression,
             value: Option[Any],
             label: Option[String]
         )(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-          validator.isValid(paramName, expression, value, label)
+          underlying.isValid(paramName, expression, value, label)
       }
     case validator: CustomRuntimeParameterValidator =>
-      new RuntimeParameterValidator {
+      new RuntimeParameterValidator with WithUnderlyingCustomParameterValidator {
+        override val underlying: CustomRuntimeParameterValidator = validator
         override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
             implicit nodeId: NodeId
-        ): Validated[Throwable, Unit] = validator.isValid(paramName, expression, value)
+        ): Validated[Throwable, Unit] = underlying.isValid(paramName, expression, value)
       }
+  }
+
+}
+
+object CustomParameterValidatorLoader {
+
+  trait WithUnderlyingCustomParameterValidator {
+    def underlying: CustomParameterValidator
   }
 
 }
 
 case class CustomParameterValidatorByNameLoader(name: String) extends CustomParameterValidatorLoader {
   import CustomParameterValidatorByNameLoader._
-  override def load(): CustomParameterValidator = getOrLoad(name)
+  override protected def load(): CustomParameterValidator = getOrLoad(name)
 }
 
 object CustomParameterValidatorByNameLoader {
@@ -442,7 +453,7 @@ object CustomParameterValidatorByNameLoader {
 
 case class CustomParameterValidatorByClassLoader(validatorClassName: String) extends CustomParameterValidatorLoader {
   import CustomParameterValidatorByClassLoader._
-  override def load(): CustomParameterValidator = getOrLoad(validatorClassName)
+  override protected def load(): CustomParameterValidator = getOrLoad(validatorClassName)
 }
 
 object CustomParameterValidatorByClassLoader {

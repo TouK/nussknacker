@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
 import cats.data.Validated
-import cats.data.Validated.{invalid, valid}
+import cats.data.Validated.valid
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
@@ -222,7 +222,8 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
     val extracted = ValidatorsExtractor.extract(validatorParams(customValidatorParam))
     extracted should have size 2
     extracted.head shouldBe MandatoryParameterValidator
-    extracted(1) shouldBe a[SampleCustomValidator]
+    val underlyingCustomValidator = extracted(1).asInstanceOf[CustomParameterValidatorByClassLoader].resolved.underlying
+    underlyingCustomValidator shouldBe a[SampleCustomValidator]
   }
 
   test("determine validators based on config") {
