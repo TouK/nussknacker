@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.Clos
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.annotation.nowarn
-import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 
 //TODO: think about merging these with TransformStateFunction and/or PreviousValueFunction
@@ -47,7 +46,7 @@ object transformers {
 
           val aggregatorFunction =
             if (preserveContext)
-              new AggregatorFunction[SortedMap](
+              new AggregatorFunction(
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
@@ -56,7 +55,7 @@ object transformers {
                 fctx.convertToEngineRuntimeContext
               )
             else
-              new EmitWhenEventLeftAggregatorFunction[SortedMap](
+              new EmitWhenEventLeftAggregatorFunction(
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
@@ -140,7 +139,7 @@ object transformers {
               keyedStream
                 // TODO: alignment??
                 .process(
-                  new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](
+                  new EmitExtraWindowWhenNoDataTumblingAggregatorFunction(
                     aggregator,
                     windowLength.toMillis,
                     offsetMillis,

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregatesSpec.{EPS_BIG_DECIMAL, EPS_DOUBLE}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
   AverageAggregator,
@@ -539,6 +539,8 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
         aggregator.mergeAggregates(elemAggregator, aggregator.zero) shouldBe elemAggregator
         aggregator.mergeAggregates(aggregator.zero, elemAggregator) shouldBe elemAggregator
+        aggregator.merge(elemAggregator, aggregator.zero) shouldBe elemAggregator
+        aggregator.merge(aggregator.zero, elemAggregator) shouldBe elemAggregator
       }
     })
   }
@@ -551,6 +553,8 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
     aggregator.mergeAggregates(aggregator.zero, state) shouldBe state
     aggregator.mergeAggregates(state, aggregator.zero) shouldBe state
+    aggregator.merge(state, aggregator.zero) shouldBe state
+    aggregator.merge(aggregator.zero, state) shouldBe state
   }
 
   test("Zeros should be neutral for option aggregator") {
@@ -584,6 +588,6 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 }
 
 object AggregatesSpec {
-  val EPS_DOUBLE      = 0.000001;
-  val EPS_BIG_DECIMAL = BigDecimal(new java.math.BigDecimal("0.000001"))
+  private val EPS_DOUBLE      = 0.000001
+  private val EPS_BIG_DECIMAL = BigDecimal(new java.math.BigDecimal("0.000001"))
 }
