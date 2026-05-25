@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
+import io.circe._
 import io.circe.parser._
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.NodeId
@@ -86,7 +86,11 @@ object ParameterValidator {
       case "ValidationExpressionParameterValidatorToCompile" =>
         validationExpressionCodec(cursor)
       case "CustomParameterValidatorDelegate" =>
-        cursor.downField("name").as[String].map(name => CustomParameterValidatorByNameLoader(name))
+        cursor
+          .downField("className")
+          .as[String]
+          .map(cn => CustomParameterValidatorByClassLoader(cn))
+          .orElse(cursor.downField("name").as[String].map(name => CustomParameterValidatorByNameLoader(name)))
       case other =>
         Left(DecodingFailure(s"Unknown ParameterValidator type: $other", cursor.history))
     }
@@ -111,9 +115,9 @@ object ParameterValidator {
       validationExpressionCodec(v).deepMerge(
         Json.obj("type" -> "ValidationExpressionParameterValidatorToCompile".asJson)
       )
-    case v: CustomParameterValidatorLoader =>
-      Json.obj("type" -> "CustomParameterValidatorDelegate".asJson, "name" -> v.name.asJson)
-    case v: CustomParameterValidator =>
+    case v: CustomParameterValidatorByClassLoader =>
+      Json.obj("type" -> "CustomParameterValidatorDelegate".asJson, "className" -> v.validatorClassName.asJson)
+    case v: CustomParameterValidatorByNameLoader =>
       Json.obj("type" -> "CustomParameterValidatorDelegate".asJson, "name" -> v.name.asJson)
     case v =>
       throw new IllegalArgumentException(s"Cannot encode unknown ParameterValidator type: ${v.getClass.getName}")
@@ -379,27 +383,41 @@ object ValidationExpressionParameterValidatorToCompile {
 
 }
 
-sealed trait CustomParameterValidator extends ParameterValidator {
+sealed trait CustomParameterValidator {
   def name: String
 }
 
-trait CustomCompileTimeParameterValidator extends CustomParameterValidator with CompileTimeParameterValidator
+trait CustomCompileTimeParameterValidator extends CustomParameterValidator with CompileTimeValidator
 
-trait CustomRuntimeParameterValidator extends CustomParameterValidator with RuntimeParameterValidator
+trait CustomRuntimeParameterValidator extends CustomParameterValidator with RuntimeValidator
 
 sealed trait CustomParameterValidatorLoader extends ParameterValidator {
   def load(): CustomParameterValidator
-  def resolved: CustomParameterValidator
-  def name: String
+
+  lazy val resolved: ParameterValidator = load() match {
+    case validator: CustomCompileTimeParameterValidator =>
+      new CompileTimeParameterValidator {
+        override def isValid(
+            paramName: ParameterName,
+            expression: Expression,
+            value: Option[Any],
+            label: Option[String]
+        )(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+          validator.isValid(paramName, expression, value, label)
+      }
+    case validator: CustomRuntimeParameterValidator =>
+      new RuntimeParameterValidator {
+        override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+            implicit nodeId: NodeId
+        ): Validated[Throwable, Unit] = validator.isValid(paramName, expression, value)
+      }
+  }
+
 }
 
 case class CustomParameterValidatorByNameLoader(name: String) extends CustomParameterValidatorLoader {
   import CustomParameterValidatorByNameLoader._
-
   override def load(): CustomParameterValidator = getOrLoad(name)
-
-  override lazy val resolved: CustomParameterValidator = load()
-
 }
 
 object CustomParameterValidatorByNameLoader {
@@ -424,13 +442,7 @@ object CustomParameterValidatorByNameLoader {
 
 case class CustomParameterValidatorByClassLoader(validatorClassName: String) extends CustomParameterValidatorLoader {
   import CustomParameterValidatorByClassLoader._
-
-  override lazy val name: String = resolved.name
-
   override def load(): CustomParameterValidator = getOrLoad(validatorClassName)
-
-  override lazy val resolved: CustomParameterValidator = load()
-
 }
 
 object CustomParameterValidatorByClassLoader {
@@ -438,13 +450,16 @@ object CustomParameterValidatorByClassLoader {
   def apply(clazz: Class[_ <: CustomParameterValidator]): CustomParameterValidatorByClassLoader =
     new CustomParameterValidatorByClassLoader(clazz.getName)
 
-  private val cache: TrieMap[String, CustomParameterValidator] = TrieMap[String, CustomParameterValidator]()
+  private val cache: TrieMap[(String, ClassLoader), CustomParameterValidator] = TrieMap.empty
 
-  private def getOrLoad(className: String): CustomParameterValidator = cache.getOrElseUpdate(className, load(className))
+  private def getOrLoad(className: String): CustomParameterValidator = {
+    val classLoader = Thread.currentThread().getContextClassLoader
+    cache.getOrElseUpdate((className, classLoader), load(className, classLoader))
+  }
 
-  private def load(className: String): CustomParameterValidator =
+  private def load(className: String, classLoader: ClassLoader): CustomParameterValidator =
     try {
-      Class.forName(className).getDeclaredConstructor().newInstance() match {
+      Class.forName(className, true, classLoader).getDeclaredConstructor().newInstance() match {
         case v: CustomParameterValidator => v
         case _ => throw new RuntimeException(s"Class $className does not extend CustomParameterValidator")
       }

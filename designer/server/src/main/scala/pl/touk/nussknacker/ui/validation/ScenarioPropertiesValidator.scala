@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingRequiredProperty
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, MissingRequiredProperty}
 import pl.touk.nussknacker.engine.api.definition.{CompileTimeValidator, MandatoryParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression

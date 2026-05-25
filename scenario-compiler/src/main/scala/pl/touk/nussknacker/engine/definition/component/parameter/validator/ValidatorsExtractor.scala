@@ -24,7 +24,7 @@ object ValidatorsExtractor {
       AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),
       AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value())),
       AnnotationValidatorExtractor[CustomValidator]((annotation: CustomValidator) =>
-        CustomParameterValidatorByClassLoader(annotation.value()).load()
+        CustomParameterValidatorByClassLoader(annotation.value())
       )
     ).flatMap(_.extract(params))
     // TODO: should validators from config override or append those from annotations, types etc.?

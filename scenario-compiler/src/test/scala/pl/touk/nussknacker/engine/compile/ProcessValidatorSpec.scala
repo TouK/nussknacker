@@ -131,7 +131,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       Some(Unknown),
       nonEndingOneInputComponent,
       Parameter[String](ParameterName("param"))
-        .copy(validators = List(CustomParameterValidatorByNameLoader("test_custom_validator").load()))
+        .copy(validators = List(CustomParameterValidatorByNameLoader("test_custom_validator").resolved))
     )
     .withCustom(
       "withAdditionalVariable",
