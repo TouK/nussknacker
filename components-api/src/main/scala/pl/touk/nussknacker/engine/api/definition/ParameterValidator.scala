@@ -396,6 +396,20 @@ sealed trait CustomParameterValidatorLoader extends ParameterValidator {
   protected def load(): CustomParameterValidator
 
   lazy val resolved: ParameterValidator with WithUnderlyingCustomParameterValidator = load() match {
+    case validator: CustomCompileTimeParameterValidator with CustomRuntimeParameterValidator =>
+      new CompileTimeParameterValidator with RuntimeParameterValidator with WithUnderlyingCustomParameterValidator {
+        override val underlying: CustomCompileTimeParameterValidator with CustomRuntimeParameterValidator = validator
+        override def isValid(
+            paramName: ParameterName,
+            expression: Expression,
+            value: Option[Any],
+            label: Option[String]
+        )(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+          underlying.isValid(paramName, expression, value, label)
+        override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+            implicit nodeId: NodeId
+        ): Validated[Throwable, Unit] = underlying.isValid(paramName, expression, value)
+      }
     case validator: CustomCompileTimeParameterValidator =>
       new CompileTimeParameterValidator with WithUnderlyingCustomParameterValidator {
         override val underlying: CustomCompileTimeParameterValidator = validator
