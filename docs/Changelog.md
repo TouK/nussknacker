@@ -15,12 +15,11 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
-* Added runtime parameter validation for dynamic expressions.
-  * Component parameters annotated with `@NotBlank`, `@NotNull`, or similar validators are now also validated at runtime
-    when the parameter expression is dynamic (e.g. `#input.someField`). Previously validation only ran at compile-time
-    for static expressions.
-  * A failed runtime validation throws `ParameterValidationAtRuntimeException` instead of letting an
-    invalid value reach the component, which could cause an uncontrolled fatal error downstream.
+* Added possibility of runtime parameter validation.
+  * New `RuntimeParameterValidator` trait for validators that execute during scenario runtime.
+  * Custom validators can now implement `CustomRuntimeParameterValidator` to validate a parameter value at runtime.
+  * A failed runtime validation throws `ParameterValidationAtRuntimeException`.
+  * Existing built-in validators (`@NotBlank`, `@NotNull`, etc.) remain compile-time only — their behaviour is unchanged.
 * [#9317](https://github.com/TouK/nussknacker/pull/9317/) Add handling null in List during Flink serialization
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
 * [#8720](https://github.com/TouK/nussknacker/pull/8720) In those aggregates, that do not require preserving context, the context is now cleaned before grouping:

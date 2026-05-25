@@ -66,6 +66,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* Runtime parameter validation: `CustomParameterValidator` trait hierarchy refactored to support both compile-time and runtime validation.
+  * `CustomParameterValidator` no longer extends `ParameterValidator`. It is now a standalone sealed trait.
+  * `CustomCompileTimeParameterValidator` now extends `CompileTimeValidator` (previously `CompileTimeParameterValidator`).
+  * `CustomRuntimeParameterValidator` now extends `RuntimeValidator` (previously `RuntimeParameterValidator`).
+  * `CustomParameterValidatorLoader.resolved` now returns `ParameterValidator` (wrapping the custom validator in an anonymous class) instead of `CustomParameterValidator`.
+    Code that previously assigned `resolved` to a `CustomParameterValidator` variable must be updated.
+  * `CustomParameterValidatorByClassLoader` is a new loader used by the `@CustomValidator` annotation. It serializes as
+    `CustomParameterValidatorDelegate` with a `className` key. The existing name-based format (from `CustomParameterValidatorByNameLoader`)
+    remains unchanged and is still decoded correctly.
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
   * added optional `traceId` field at `Context`, default None
   * Fro now `RequestResponseSource` transforms `Record[T]` instead T as a record
