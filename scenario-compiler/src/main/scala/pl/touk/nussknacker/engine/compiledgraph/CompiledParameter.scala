@@ -1,6 +1,12 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
-import pl.touk.nussknacker.engine.api.definition.{CompileTimeValidator, Parameter, RuntimeValidator, Validator}
+import pl.touk.nussknacker.engine.api.definition.{
+  CompileTimeValidator,
+  Parameter,
+  ParameterValidator,
+  RuntimeValidator,
+  Validator
+}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -39,9 +45,14 @@ final case class CompiledParameter(
     typingInfo: ExpressionTypingInfo,
     validators: List[Validator] = Nil,
 ) extends BaseCompiledParameter {
-  lazy val expressionForValidation: Expression               = Expression(expression.language, expression.original)
-  lazy val compileTimeValidators: List[CompileTimeValidator] = validators.collect { case v: CompileTimeValidator => v }
-  lazy val runtimeValidators: List[RuntimeValidator]         = validators.collect { case v: RuntimeValidator => v }
+  lazy val expressionForValidation: Expression         = Expression(expression.language, expression.original)
+  private lazy val resolvedValidators: List[Validator] = ParameterValidator.resolveLoaders(validators)
+
+  lazy val compileTimeValidators: List[CompileTimeValidator] = resolvedValidators.collect {
+    case v: CompileTimeValidator => v
+  }
+
+  lazy val runtimeValidators: List[RuntimeValidator] = resolvedValidators.collect { case v: RuntimeValidator => v }
 }
 
 trait BaseCompiledParameter {

@@ -53,7 +53,7 @@ class ScenarioPropertiesValidator(
 
     val propertiesWithConfiguredValidator = for {
       property  <- scenarioProperties
-      validator <- validatorsByPropertyName.getOrElse(property._1, List.empty)
+      validator <- ParameterValidator.resolveLoaders(validatorsByPropertyName.getOrElse(property._1, List.empty))
     } yield (property, config.get(property._1), validator)
 
     propertiesWithConfiguredValidator

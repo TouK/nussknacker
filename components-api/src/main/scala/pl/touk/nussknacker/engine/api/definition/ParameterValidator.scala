@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import io.circe.{Codec, Decoder, DecodingFailure}
+import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
 import io.circe.parser._
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -48,6 +48,10 @@ trait RuntimeValidator extends Validator {
 sealed trait ParameterValidator extends Validator
 
 object ParameterValidator {
+
+  def resolveLoaders(validators: List[Validator]): List[Validator] =
+    validators.map { case d: CustomParameterValidatorLoader => d.resolved; case v => v }
+
   private val fixedValuesCodec: Codec[FixedValuesValidator] =
     Codec.forProduct1("possibleValues")(FixedValuesValidator.apply)(_.possibleValues)
 
@@ -82,10 +86,37 @@ object ParameterValidator {
       case "ValidationExpressionParameterValidatorToCompile" =>
         validationExpressionCodec(cursor)
       case "CustomParameterValidatorDelegate" =>
-        cursor.downField("name").as[String].map(name => CustomParameterValidatorByNameLoader(name).load())
+        cursor.downField("name").as[String].map(name => CustomParameterValidatorByNameLoader(name))
       case other =>
         Left(DecodingFailure(s"Unknown ParameterValidator type: $other", cursor.history))
     }
+  }
+
+  implicit val encoder: Encoder[ParameterValidator] = Encoder.instance {
+    case MandatoryParameterValidator        => Json.obj("type" -> "MandatoryParameterValidator".asJson)
+    case NotNullParameterValidator          => Json.obj("type" -> "NotNullParameterValidator".asJson)
+    case CompileTimeEvaluableValueValidator => Json.obj("type" -> "CompileTimeEvaluableValueValidator".asJson)
+    case NotBlankParameterValidator         => Json.obj("type" -> "NotBlankParameterValidator".asJson)
+    case LiteralIntegerValidator            => Json.obj("type" -> "LiteralIntegerValidator".asJson)
+    case JsonValidator                      => Json.obj("type" -> "JsonValidator".asJson)
+    case v: FixedValuesValidator =>
+      fixedValuesCodec(v).deepMerge(Json.obj("type" -> "FixedValuesValidator".asJson))
+    case v: RegExpParameterValidator =>
+      regExpCodec(v).deepMerge(Json.obj("type" -> "RegExpParameterValidator".asJson))
+    case v: MinimalNumberValidator =>
+      minimalNumberCodec(v).deepMerge(Json.obj("type" -> "MinimalNumberValidator".asJson))
+    case v: MaximalNumberValidator =>
+      maximalNumberCodec(v).deepMerge(Json.obj("type" -> "MaximalNumberValidator".asJson))
+    case v: ValidationExpressionParameterValidatorToCompile =>
+      validationExpressionCodec(v).deepMerge(
+        Json.obj("type" -> "ValidationExpressionParameterValidatorToCompile".asJson)
+      )
+    case v: CustomParameterValidatorLoader =>
+      Json.obj("type" -> "CustomParameterValidatorDelegate".asJson, "name" -> v.name.asJson)
+    case v: CustomParameterValidator =>
+      Json.obj("type" -> "CustomParameterValidatorDelegate".asJson, "name" -> v.name.asJson)
+    case v =>
+      throw new IllegalArgumentException(s"Cannot encode unknown ParameterValidator type: ${v.getClass.getName}")
   }
 
 }
@@ -356,14 +387,18 @@ trait CustomCompileTimeParameterValidator extends CustomParameterValidator with 
 
 trait CustomRuntimeParameterValidator extends CustomParameterValidator with RuntimeParameterValidator
 
-sealed trait CustomParameterValidatorLoader {
+sealed trait CustomParameterValidatorLoader extends ParameterValidator {
   def load(): CustomParameterValidator
+  def resolved: CustomParameterValidator
+  def name: String
 }
 
 case class CustomParameterValidatorByNameLoader(name: String) extends CustomParameterValidatorLoader {
   import CustomParameterValidatorByNameLoader._
 
   override def load(): CustomParameterValidator = getOrLoad(name)
+
+  override lazy val resolved: CustomParameterValidator = load()
 
 }
 
@@ -390,7 +425,11 @@ object CustomParameterValidatorByNameLoader {
 case class CustomParameterValidatorByClassLoader(validatorClassName: String) extends CustomParameterValidatorLoader {
   import CustomParameterValidatorByClassLoader._
 
+  override lazy val name: String = resolved.name
+
   override def load(): CustomParameterValidator = getOrLoad(validatorClassName)
+
+  override lazy val resolved: CustomParameterValidator = load()
 
 }
 
