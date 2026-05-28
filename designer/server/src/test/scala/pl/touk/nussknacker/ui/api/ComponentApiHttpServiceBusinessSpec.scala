@@ -133,6 +133,7 @@ class ComponentApiHttpServiceBusinessSpec
     "builtin-variable",
     "dead-end",
     "decision-table",
+    "deduplication",
     "for-each",
     "streaming-custom-additionalvariable",
     "streaming-custom-aggregate-session",

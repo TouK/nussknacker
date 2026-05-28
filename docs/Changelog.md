@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9376](https://github.com/TouK/nussknacker/pull/9379) Introduce DeduplicationTransformer - Deduplication Component
 * [#9376](https://github.com/TouK/nussknacker/pull/9376) Sliding window aggregation components (`aggregate-sliding`, `aggregate-tumbling`, `single-side-join`, `full-outer-join`) now use Flink `MapState` instead of a serialised `SortedMap` stored in `ValueState`.
   * This avoids full state deserialisation on every access, significantly reducing overhead with RocksDB state backend.
   * **Note:** existing savepoints/checkpoints containing aggregation state are not compatible with this version — scenarios using these components must be restarted from scratch.
