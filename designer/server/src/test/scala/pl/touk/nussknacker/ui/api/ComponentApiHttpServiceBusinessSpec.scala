@@ -131,6 +131,7 @@ class ComponentApiHttpServiceBusinessSpec
     "builtin-record-variable",
     "builtin-split",
     "builtin-variable",
+    "deduplication",
     "streaming-custom-additionalvariable",
     "streaming-custom-constantstatetransformer",
     "streaming-custom-constantstatetransformerlongvalue",
