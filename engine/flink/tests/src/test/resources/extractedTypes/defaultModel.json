@@ -15809,6 +15809,139 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.typing$TypingResult"},
+    "methods": {
+      "canBeAssignedTo": [
+        {
+          "name": "canBeAssignedTo",
+          "signature": {
+            "noVarArgs": [
+              {"name": "typingResult", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.typing$TypingResult"}},
+              {"name": "conversionStrategy", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.ConversionStrategy"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLooselyAssignedTo": [
+        {
+          "name": "canBeLooselyAssignedTo",
+          "signature": {
+            "noVarArgs": [
+              {"name": "typingResult", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.typing$TypingResult"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeStrictlyAssignedTo": [
+        {
+          "name": "canBeStrictlyAssignedTo",
+          "signature": {
+            "noVarArgs": [
+              {"name": "typingResult", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.typing$TypingResult"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "display": [
+        {
+          "name": "display",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "valueOpt": [
+        {
+          "name": "valueOpt",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "withoutValue": [
+        {
+          "name": "withoutValue",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.typing$TypingResult"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.DeduplicationEntry"},
+    "methods": {
+      "timestamp": [
+        {
+          "name": "timestamp",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "value": [
+        {
+          "name": "value",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "apply": [
+        {
+          "name": "apply",
+          "signature": {
+            "noVarArgs": [
+              {"name": "timestamp", "refClazz": {"refClazzName": "java.lang.Long"}},
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.DeduplicationEntry"}
+          }
+        }
+      ],
+      "typed": [
+        {
+          "name": "typed",
+          "signature": {
+            "noVarArgs": [
+              {"name": "valueType", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.typing$TypingResult"}}
+            ],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.typing$TypingResult"}
+          }
+        }
+      ]
+    }
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper"},
     "methods": {
       "approxCardinality": [
