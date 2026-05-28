@@ -37,9 +37,7 @@ final case class CompiledParameter(
     Expression(expression.language, expression.original)
 
   lazy val runtimeValidators: List[RuntimeValidator] =
-    ParameterValidator
-      .resolveLoaders(validators)
-      .collect { case v: RuntimeValidator => v }
+    validators.collect { case v: RuntimeValidator => v }
 
 }
 

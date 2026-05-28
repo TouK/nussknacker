@@ -339,7 +339,8 @@ class ExpressionCompiler(
           paramType,
           globalVariables
         )
-      case v => Valid(v)
+      case l: CustomParameterValidatorLoader => Valid(l.resolved)
+      case v                                 => Valid(v)
     }
 
   def compileValidatorsOrThrow(
