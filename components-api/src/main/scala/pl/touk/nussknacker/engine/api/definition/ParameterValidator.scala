@@ -477,16 +477,17 @@ object CustomParameterValidatorByClassLoader {
   def apply(clazz: Class[_ <: CustomParameterValidator]): CustomParameterValidatorByClassLoader =
     new CustomParameterValidatorByClassLoader(clazz.getName)
 
-  private val cache: TrieMap[(String, ClassLoader), CustomParameterValidator] = TrieMap.empty
+  private val cache: TrieMap[String, CustomParameterValidator] = TrieMap.empty
 
-  private def getOrLoad(className: String): CustomParameterValidator = {
-    val classLoader = Thread.currentThread().getContextClassLoader
-    cache.getOrElseUpdate((className, classLoader), load(className, classLoader))
-  }
+  private def getOrLoad(className: String): CustomParameterValidator =
+    cache.getOrElseUpdate(className, load(className))
 
-  private def load(className: String, classLoader: ClassLoader): CustomParameterValidator =
+  private def load(className: String): CustomParameterValidator =
     try {
-      Class.forName(className, true, classLoader).getDeclaredConstructor().newInstance() match {
+      Class
+        .forName(className, true, Thread.currentThread().getContextClassLoader)
+        .getDeclaredConstructor()
+        .newInstance() match {
         case v: CustomParameterValidator => v
         case _ => throw new RuntimeException(s"Class $className does not extend CustomParameterValidator")
       }

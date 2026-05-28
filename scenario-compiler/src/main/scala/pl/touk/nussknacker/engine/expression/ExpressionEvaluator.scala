@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.expression
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.ParameterRuntimeValidationError
-import pl.touk.nussknacker.engine.api.exception.ParameterValidationAtRuntimeException
+import pl.touk.nussknacker.engine.api.exception.ParameterRuntimeValidationException
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
@@ -100,7 +100,7 @@ class ExpressionEvaluator(
     param.runtimeValidators.foreach { validator =>
       validator.isValid(param.name, param.expressionForValidation, rawValue) match {
         case Invalid(ParameterRuntimeValidationError(input, message)) =>
-          throw new ParameterValidationAtRuntimeException(input, message)
+          throw ParameterRuntimeValidationException(param.name, input, message)
         case Valid(_) => ()
       }
     }

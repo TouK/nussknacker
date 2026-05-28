@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig

@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, ParameterValidationAtRuntimeException}
+import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, ParameterRuntimeValidationException}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -1077,7 +1077,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction(msisdn = "valid-value")) shouldBe "valid-value"
   }
 
-  test("RuntimeValidator fires and throws ParameterValidationAtRuntimeException during scenario execution") {
+  test("RuntimeValidator fires and throws ParameterRuntimeValidationException during scenario execution") {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
@@ -1085,7 +1085,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
       .emptySink("end-end", "dummySink")
 
-    intercept[ParameterValidationAtRuntimeException] {
+    intercept[ParameterRuntimeValidationException] {
       interpretProcess(process, Transaction())
     }.getMessage should include("expression")
   }
@@ -1109,7 +1109,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
       .emptySink("end-end", "dummySink")
 
-    intercept[ParameterValidationAtRuntimeException] {
+    intercept[ParameterRuntimeValidationException] {
       interpretProcess(process, Transaction(msisdn = ""))
     }.getMessage should include("expression")
   }
@@ -1135,7 +1135,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
       .emptySink("end-end", "dummySink")
 
-    intercept[ParameterValidationAtRuntimeException] {
+    intercept[ParameterRuntimeValidationException] {
       interpretProcess(process, Transaction(msisdn = ""))
     }.getMessage should include("expression")
   }
@@ -1170,7 +1170,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       validators = List(NotBlankRuntimeValidator),
     )
 
-    intercept[ParameterValidationAtRuntimeException] {
+    intercept[ParameterRuntimeValidationException] {
       evaluator.evaluateParameter(param, Context.dummy)
     }.getMessage should include("param")
   }
@@ -1215,7 +1215,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     evaluator.evaluateParameter(param, Context.dummy).value shouldBe ""
   }
 
-  test("ExpressionEvaluator: RuntimeValidator can return a non-default exception type") {
+  test("ExpressionEvaluator: exception thrown inside RuntimeValidator.isValid propagates as-is, not wrapped") {
     implicit val nodeId: NodeId   = NodeId("testNode")
     val metaData                  = MetaData("TestProcess", StreamMetaData())
     implicit val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))

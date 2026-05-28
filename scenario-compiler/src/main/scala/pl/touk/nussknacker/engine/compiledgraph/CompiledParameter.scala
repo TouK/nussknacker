@@ -11,14 +11,8 @@ object CompiledParameter {
   def apply(
       typedExpression: TypedExpression,
       parameterDefinition: Parameter,
+      validators: List[Validator] = Nil,
   ): CompiledParameter =
-    apply(typedExpression, parameterDefinition, Nil)
-
-  def apply(
-      typedExpression: TypedExpression,
-      parameterDefinition: Parameter,
-      validators: List[Validator],
-  ): CompiledParameter = {
     CompiledParameter(
       parameterDefinition.name,
       typedExpression.expression,
@@ -27,7 +21,6 @@ object CompiledParameter {
       typedExpression.typingInfo,
       validators,
     )
-  }
 
 }
 
@@ -37,17 +30,16 @@ final case class CompiledParameter(
     override val shouldBeWrappedWithScalaOption: Boolean,
     override val shouldBeWrappedWithJavaOptional: Boolean,
     typingInfo: ExpressionTypingInfo,
-    validators: List[Validator] = Nil,
+    validators: List[Validator],
 ) extends BaseCompiledParameter {
 
-  lazy val expressionForValidation: Expression =
+  val expressionForValidation: Expression =
     Expression(expression.language, expression.original)
 
-  private lazy val resolvedValidators: List[Validator] =
-    ParameterValidator.resolveLoaders(validators)
-
   lazy val runtimeValidators: List[RuntimeValidator] =
-    resolvedValidators.collect { case v: RuntimeValidator => v }
+    ParameterValidator
+      .resolveLoaders(validators)
+      .collect { case v: RuntimeValidator => v }
 
 }
 
