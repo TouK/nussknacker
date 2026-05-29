@@ -54,10 +54,7 @@ object FlinkBaseComponentProvider {
       ComponentDefinition("delay", DelayTransformer)
         .withRelativeDocs("DataSourcesAndSinks#delay"),
       ComponentDefinition("previousValue", PreviousValueTransformer, label = Some("Previous Value"))
-        .withRelativeDocs("components/previousValue"),
-      ComponentDefinition("deduplication", DeduplicationTransformer, label = Some("Deduplication"))
-        .withRelativeDocs("BasicNodes#deduplication")
-        .withDesignerWideId("deduplication"),
+        .withRelativeDocs("DataSourcesAndSinks#previousvalue"),
     )
   }
 
