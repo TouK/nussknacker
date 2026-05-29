@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api.exception
 
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+
 case class ParameterRuntimeValidationException(
-    paramName: pl.touk.nussknacker.engine.api.parameter.ParameterName,
+    paramName: ParameterName,
     override val input: String,
     message: String,
     cause: Throwable = null,
