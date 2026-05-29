@@ -238,7 +238,8 @@ class NodeCompiler(
     new StaticComponentOutputValidationContextDeterminer(globalVariablesPreparer)
 
   private val parametersEvaluator =
-    new ParameterEvaluator(globalVariablesPreparer, listeners)
+    new ParameterEvaluator(globalVariablesPreparer, listeners, expressionCompiler)
+
   private val factory = new ComponentExecutorFactory(parametersEvaluator)
 
   private val dynamicNodeValidator =

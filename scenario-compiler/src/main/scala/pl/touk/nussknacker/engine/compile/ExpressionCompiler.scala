@@ -144,12 +144,20 @@ class ExpressionCompiler(
       nodeBranchParameters = List.empty,
       inputContext = inputContext,
       treatEagerParametersAsLazy = true
-    ).map(_.map {
-      case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
-        CompiledParameter(expr.typedExpression, paramDef)
-      case (TypedParameter(_, _: MultipleBranchesTypedValue), _) =>
-        throw new IllegalArgumentException("Typed expression map should not be here...")
-    })
+    ).flatMap { compiledParamsWithDefs =>
+      compiledParamsWithDefs
+        .map {
+          case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
+            paramDef.validators
+              .map(v => compileValidator(v, paramDef.name, paramDef.typ, inputContext.globalVariables))
+              .sequence
+              .map(validators => CompiledParameter(expr.typedExpression, paramDef, validators))
+          case (TypedParameter(_, _: MultipleBranchesTypedValue), _) =>
+            throw new IllegalArgumentException("Typed expression map should not be here...")
+        }
+        .sequence
+        .toIor
+    }
   }
 
   // used for most cases during node compilation - for all components that are factories of Executors
@@ -335,8 +343,22 @@ class ExpressionCompiler(
           paramType,
           globalVariables
         )
-      case v => Valid(v)
+      case l: CustomParameterValidatorLoader => Valid(l.resolved)
+      case v                                 => Valid(v)
     }
+
+  def compileValidatorsOrThrow(
+      definition: Parameter,
+      globalVariables: Map[String, TypingResult]
+  )(implicit nodeId: NodeId, jobData: JobData): List[Validator] =
+    definition.validators
+      .map(v => compileValidator(v, definition.name, definition.typ, globalVariables))
+      .sequence
+      .valueOr(errors =>
+        throw new IllegalStateException(
+          s"Validator for '${definition.name.value}' failed compile during runtime preparation — should have been caught earlier: ${errors.toList.mkString(", ")}"
+        )
+      )
 
   private def compileValidationExpressionParameterValidator(
       toCompileValidator: ValidationExpressionParameterValidatorToCompile,

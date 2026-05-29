@@ -15,6 +15,12 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* Runtime parameter validation support added.
+    * `Validator` is now a sealed trait. `CompileTimeValidator` carries the existing compile-time `isValid` signature; `RuntimeValidator` is new and runs after expression evaluation at runtime.
+    * Custom validators can implement `CustomCompileTimeParameterValidator`, `CustomRuntimeParameterValidator`, or both.
+    * A failed runtime validation throws `ParameterRuntimeValidationException` (a `NonTransientException`).
+    * New `@CustomValidator(classOf[MyValidator])` Java annotation (in `pl.touk.nussknacker.engine.api.validation`) attaches a `CustomParameterValidator` to a parameter by class.
+    * All existing built-in validators (`MandatoryParameterValidator`, `NotBlankParameterValidator`, etc.) remain compile-time only — their behavior is unchanged.
 * [#9376](https://github.com/TouK/nussknacker/pull/9379) Introduce DeduplicationTransformer - Deduplication Component
 * [#9376](https://github.com/TouK/nussknacker/pull/9376) Sliding window aggregation components (`aggregate-sliding`, `aggregate-tumbling`, `single-side-join`, `full-outer-join`) now use Flink `MapState` instead of a serialised `SortedMap` stored in `ValueState`.
   * This avoids full state deserialisation on every access, significantly reducing overhead with RocksDB state backend.
