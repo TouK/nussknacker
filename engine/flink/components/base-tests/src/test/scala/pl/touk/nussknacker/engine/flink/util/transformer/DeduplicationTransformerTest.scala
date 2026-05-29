@@ -5,7 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
@@ -28,6 +28,9 @@ class DeduplicationTransformerTest
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
+    .withExtraComponents(
+      List(ComponentDefinition("deduplication", DeduplicationTransformer))
+    )
     .build()
 
   override protected def afterAll(): Unit = {
