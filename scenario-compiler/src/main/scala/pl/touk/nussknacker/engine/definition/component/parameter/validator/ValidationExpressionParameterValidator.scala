@@ -5,7 +5,7 @@ import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.Validator
+import pl.touk.nussknacker.engine.api.definition.{CompileTimeValidator, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -19,7 +19,7 @@ case class ValidationExpressionParameterValidator(
     validationFailedMessage: Option[String],
     expressionEvaluator: ExpressionEvaluator,
     jobData: JobData
-) extends Validator {
+) extends CompileTimeValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId

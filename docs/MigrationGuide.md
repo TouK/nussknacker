@@ -84,6 +84,21 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* Runtime parameter validation: `Validator`, `ParameterValidator`, and `CustomParameterValidator` trait hierarchies refactored.
+  * `Validator` is now a sealed trait with no `isValid` method. Two new sub-traits carry the validation logic:
+    * `CompileTimeValidator` — the existing `isValid(paramName, expression, value, label)(nodeId)` returning `Validated[PartSubGraphCompilationError, Unit]`. All built-in validators implement this.
+    * `RuntimeValidator` — new; `isValid(paramName, expression, value: Any)(nodeId)` returning `Validated[ParameterRuntimeValidationError, Unit]`. Called after expression evaluation at runtime.
+  * `CompileTimeParameterValidator extends ParameterValidator with CompileTimeValidator` and `RuntimeParameterValidator extends ParameterValidator with RuntimeValidator` are the new intermediate traits.
+  * `CustomParameterValidator` is now a sealed trait with only `def name: String`. It no longer extends `Validator`.
+    Replace usages of the old `CustomParameterValidator` (which extended `Validator`) with:
+    * `CustomCompileTimeParameterValidator extends CustomParameterValidator with CompileTimeValidator` — compile-time custom validation.
+    * `CustomRuntimeParameterValidator extends CustomParameterValidator with RuntimeValidator` — runtime custom validation.
+    * A class may extend both if it needs to validate at both stages.
+  * `CustomParameterValidatorDelegate` is renamed to `CustomParameterValidatorByNameLoader`. JSON serialization format is unchanged — it still encodes/decodes as `"type": "CustomParameterValidatorDelegate"` with a `"name"` key.
+  * `CustomParameterValidatorLoader.resolved` now returns `ParameterValidator with WithUnderlyingCustomParameterValidator` instead of `CustomParameterValidator`. Code that previously assigned `resolved` to a `CustomParameterValidator` variable must be updated.
+  * New `CustomParameterValidatorByClassLoader` loads a `CustomParameterValidator` by fully-qualified class name (used by the `@CustomValidator` annotation). It serializes as `"type": "CustomParameterValidatorDelegate"` with a `"className"` key.
+  * New `@CustomValidator(classOf[MyValidator])` Java annotation in `pl.touk.nussknacker.engine.api.validation` attaches a `CustomParameterValidator` implementation to a parameter by class (alternative to the existing name-based `CustomParameterValidatorByNameLoader`).
+  * `ParameterValidator` JSON codec rewritten manually (was `@ConfiguredJsonCodec`). `ScenarioPropertyConfig` also receives an explicit `Decoder` in place of `@JsonCodec`.
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
   * added optional `traceId` field at `Context`, default None
   * Fro now `RequestResponseSource` transforms `Record[T]` instead T as a record

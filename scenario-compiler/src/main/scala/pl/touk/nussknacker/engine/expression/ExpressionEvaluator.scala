@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.expression
 
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition.ParameterRuntimeValidationError
+import pl.touk.nussknacker.engine.api.exception.ParameterRuntimeValidationException
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
@@ -68,14 +71,35 @@ class ExpressionEvaluator(
       Right(evaluate[AnyRef](param.expression, param.name.value, nodeId, ctx))
     } catch {
       case NonFatal(ex) => Left(CustomNodeValidationException(ex.getMessage, Some(param.name), ex))
-    }).map(_.map { evaluatedValue =>
-      if (param.shouldBeWrappedWithScalaOption)
-        Option(evaluatedValue)
-      else if (param.shouldBeWrappedWithJavaOptional)
-        Optional.ofNullable(evaluatedValue)
-      else
-        evaluatedValue
-    })
+    }).map { valueWithModifiedContext =>
+      param match {
+        case cp: CompiledParameter if cp.runtimeValidators.nonEmpty =>
+          validateParameterAtRuntime(cp, valueWithModifiedContext.value)
+        case _ =>
+      }
+      valueWithModifiedContext.map { evaluatedValue =>
+        if (param.shouldBeWrappedWithScalaOption)
+          Option(evaluatedValue)
+        else if (param.shouldBeWrappedWithJavaOptional)
+          Optional.ofNullable(evaluatedValue)
+        else
+          evaluatedValue
+      }
+    }
+  }
+
+  // Validation runs on the raw value before Option/Optional wrapping, so validators receive null
+  // for parameters where the expression evaluated to null (e.g. before wrapping to None/Optional.empty).
+  private def validateParameterAtRuntime(param: CompiledParameter, rawValue: AnyRef)(
+      implicit nodeId: NodeId
+  ): Unit = {
+    param.runtimeValidators.foreach { validator =>
+      validator.isValid(param.name, param.expressionForValidation, rawValue) match {
+        case Invalid(ParameterRuntimeValidationError(input, message)) =>
+          throw ParameterRuntimeValidationException(param.name, input, message)
+        case Valid(_) => ()
+      }
+    }
   }
 
   def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: NodeId, ctx: Context)(

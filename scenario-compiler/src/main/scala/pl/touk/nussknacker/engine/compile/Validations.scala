@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.{NonEmptyList, Validated}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
+import pl.touk.nussknacker.engine.api.definition.{CompileTimeValidator, Parameter, ParameterValidator, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.expression.parse.{MultipleBranchesTypedValue, SingleBranchTypedValue}
@@ -45,7 +45,9 @@ object Validations {
         }
     }
 
-    validators
+    ParameterValidator
+      .resolveLoaders(validators)
+      .collect { case v: CompileTimeValidator => v }
       .flatMap { validator =>
         paramWithValueAndExpressionList.map { case (name, value, expression) =>
           validator.isValid(name, Expression(expression.language, expression.original), value, None).toValidatedNel
