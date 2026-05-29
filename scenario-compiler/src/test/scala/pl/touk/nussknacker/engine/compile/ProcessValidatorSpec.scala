@@ -131,7 +131,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       Some(Unknown),
       nonEndingOneInputComponent,
       Parameter[String](ParameterName("param"))
-        .copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
+        .copy(validators = List(CustomParameterValidatorByNameLoader("test_custom_validator").resolved))
     )
     .withCustom(
       "withAdditionalVariable",
@@ -1972,7 +1972,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
 }
 
-class StartingWithACustomValidator extends CustomParameterValidator {
+class StartingWithACustomValidator extends CustomCompileTimeParameterValidator {
   override def name: String = "test_custom_validator"
 
   import cats.data.Validated.{invalid, valid}

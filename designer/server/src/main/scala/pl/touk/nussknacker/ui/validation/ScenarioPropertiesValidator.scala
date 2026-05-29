@@ -5,8 +5,8 @@ import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingRequiredProperty
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, MissingRequiredProperty}
+import pl.touk.nussknacker.engine.api.definition.{CompileTimeValidator, MandatoryParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -53,11 +53,11 @@ class ScenarioPropertiesValidator(
 
     val propertiesWithConfiguredValidator = for {
       property  <- scenarioProperties
-      validator <- validatorsByPropertyName.getOrElse(property._1, List.empty)
+      validator <- ParameterValidator.resolveLoaders(validatorsByPropertyName.getOrElse(property._1, List.empty))
     } yield (property, config.get(property._1), validator)
 
     propertiesWithConfiguredValidator
-      .collect { case (property, Some(config), validator: ParameterValidator) =>
+      .collect { case (property, Some(config), validator: CompileTimeValidator) =>
         val expression = property._2
         val value = expression match {
           case ex if ex.isBlank => null

@@ -75,8 +75,9 @@ object ProcessCompilerData {
       nodeCompiler,
       customProcessValidator
     )
-    val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
-    val interpreter         = Interpreter(listeners, expressionEvaluator, runtimeMode, nodesData)
+    val expressionEvaluator =
+      ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
+    val interpreter = Interpreter(listeners, expressionEvaluator, runtimeMode, nodesData)
 
     new ProcessCompilerData(
       processCompiler,
@@ -86,7 +87,7 @@ object ProcessCompilerData {
       interpreter,
       listeners,
       jobData,
-      servicesDefs.map(service => service.name -> service.component.asInstanceOf[Lifecycle]).toMap
+      servicesDefs.map(service => service.name -> service.component.asInstanceOf[Lifecycle]).toMap,
     )
 
   }
@@ -101,7 +102,7 @@ final class ProcessCompilerData(
     val interpreter: Interpreter,
     val listeners: Seq[ProcessListener],
     val jobData: JobData,
-    services: Map[String, Lifecycle]
+    services: Map[String, Lifecycle],
 ) {
 
   def lifecycle(nodesToUse: List[_ <: NodeData]): Seq[Lifecycle] = {

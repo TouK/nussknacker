@@ -15,6 +15,12 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* Runtime parameter validation support added.
+  * `Validator` is now a sealed trait. `CompileTimeValidator` carries the existing compile-time `isValid` signature; `RuntimeValidator` is new and runs after expression evaluation at runtime.
+  * Custom validators can implement `CustomCompileTimeParameterValidator`, `CustomRuntimeParameterValidator`, or both.
+  * A failed runtime validation throws `ParameterRuntimeValidationException` (a `NonTransientException`).
+  * New `@CustomValidator(classOf[MyValidator])` Java annotation (in `pl.touk.nussknacker.engine.api.validation`) attaches a `CustomParameterValidator` to a parameter by class.
+  * All existing built-in validators (`MandatoryParameterValidator`, `NotBlankParameterValidator`, etc.) remain compile-time only — their behavior is unchanged.
 * [#9317](https://github.com/TouK/nussknacker/pull/9317/) Add handling null in List during Flink serialization
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
 * [#8720](https://github.com/TouK/nussknacker/pull/8720) In those aggregates, that do not require preserving context, the context is now cleaned before grouping:

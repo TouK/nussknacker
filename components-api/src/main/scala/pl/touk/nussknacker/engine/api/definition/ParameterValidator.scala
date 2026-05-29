@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe._
 import io.circe.parser._
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.CustomParameterValidatorLoader.WithUnderlyingCustomParameterValidator
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -17,11 +18,23 @@ import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
-trait Validator {
+sealed trait Validator
+
+trait CompileTimeValidator extends Validator {
 
   def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit]
+
+}
+
+final case class ParameterRuntimeValidationError(input: String, message: String)
+
+trait RuntimeValidator extends Validator {
+
+  def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+      implicit nodeId: NodeId
+  ): Validated[ParameterRuntimeValidationError, Unit]
 
 }
 
@@ -35,11 +48,93 @@ trait Validator {
   * TODO: This being sealed also makes the tests of cases that use these validators dependant on the code here -
   * not good/unseal!!
   */
-@ConfiguredJsonCodec sealed trait ParameterValidator extends Validator
+sealed trait ParameterValidator extends Validator
+
+object ParameterValidator {
+
+  def resolveLoaders(validators: List[Validator]): List[Validator] =
+    validators.map { case d: CustomParameterValidatorLoader => d.resolved; case v => v }
+
+  private val fixedValuesCodec: Codec[FixedValuesValidator] =
+    Codec.forProduct1("possibleValues")(FixedValuesValidator.apply)(_.possibleValues)
+
+  private val regExpCodec: Codec[RegExpParameterValidator] =
+    Codec.forProduct3("pattern", "message", "description")(RegExpParameterValidator.apply)(v =>
+      (v.pattern, v.message, v.description)
+    )
+
+  private val minimalNumberCodec: Codec[MinimalNumberValidator] =
+    Codec.forProduct1("minimalNumber")(MinimalNumberValidator.apply)(_.minimalNumber)
+
+  private val maximalNumberCodec: Codec[MaximalNumberValidator] =
+    Codec.forProduct1("maximalNumber")(MaximalNumberValidator.apply)(_.maximalNumber)
+
+  private val validationExpressionCodec: Codec[ValidationExpressionParameterValidatorToCompile] =
+    Codec.forProduct2("validationExpression", "validationFailedMessage")(
+      ValidationExpressionParameterValidatorToCompile.apply
+    )(v => (v.validationExpression, v.validationFailedMessage))
+
+  implicit val decoder: Decoder[ParameterValidator] = Decoder.instance { cursor =>
+    cursor.downField("type").as[String].flatMap {
+      case "MandatoryParameterValidator"        => Right(MandatoryParameterValidator)
+      case "NotNullParameterValidator"          => Right(NotNullParameterValidator)
+      case "CompileTimeEvaluableValueValidator" => Right(CompileTimeEvaluableValueValidator)
+      case "NotBlankParameterValidator"         => Right(NotBlankParameterValidator)
+      case "LiteralIntegerValidator"            => Right(LiteralIntegerValidator)
+      case "JsonValidator"                      => Right(JsonValidator)
+      case "FixedValuesValidator"               => fixedValuesCodec(cursor)
+      case "RegExpParameterValidator"           => regExpCodec(cursor)
+      case "MinimalNumberValidator"             => minimalNumberCodec(cursor)
+      case "MaximalNumberValidator"             => maximalNumberCodec(cursor)
+      case "ValidationExpressionParameterValidatorToCompile" =>
+        validationExpressionCodec(cursor)
+      case "CustomParameterValidatorDelegate" =>
+        cursor
+          .downField("className")
+          .as[String]
+          .map(cn => CustomParameterValidatorByClassLoader(cn))
+          .orElse(cursor.downField("name").as[String].map(name => CustomParameterValidatorByNameLoader(name)))
+      case other =>
+        Left(DecodingFailure(s"Unknown ParameterValidator type: $other", cursor.history))
+    }
+  }
+
+  implicit val encoder: Encoder[ParameterValidator] = Encoder.instance {
+    case MandatoryParameterValidator        => Json.obj("type" -> "MandatoryParameterValidator".asJson)
+    case NotNullParameterValidator          => Json.obj("type" -> "NotNullParameterValidator".asJson)
+    case CompileTimeEvaluableValueValidator => Json.obj("type" -> "CompileTimeEvaluableValueValidator".asJson)
+    case NotBlankParameterValidator         => Json.obj("type" -> "NotBlankParameterValidator".asJson)
+    case LiteralIntegerValidator            => Json.obj("type" -> "LiteralIntegerValidator".asJson)
+    case JsonValidator                      => Json.obj("type" -> "JsonValidator".asJson)
+    case v: FixedValuesValidator =>
+      fixedValuesCodec(v).deepMerge(Json.obj("type" -> "FixedValuesValidator".asJson))
+    case v: RegExpParameterValidator =>
+      regExpCodec(v).deepMerge(Json.obj("type" -> "RegExpParameterValidator".asJson))
+    case v: MinimalNumberValidator =>
+      minimalNumberCodec(v).deepMerge(Json.obj("type" -> "MinimalNumberValidator".asJson))
+    case v: MaximalNumberValidator =>
+      maximalNumberCodec(v).deepMerge(Json.obj("type" -> "MaximalNumberValidator".asJson))
+    case v: ValidationExpressionParameterValidatorToCompile =>
+      validationExpressionCodec(v).deepMerge(
+        Json.obj("type" -> "ValidationExpressionParameterValidatorToCompile".asJson)
+      )
+    case v: CustomParameterValidatorByClassLoader =>
+      Json.obj("type" -> "CustomParameterValidatorDelegate".asJson, "className" -> v.validatorClassName.asJson)
+    case v: CustomParameterValidatorByNameLoader =>
+      Json.obj("type" -> "CustomParameterValidatorDelegate".asJson, "name" -> v.name.asJson)
+    case v =>
+      throw new IllegalArgumentException(s"Cannot encode unknown ParameterValidator type: ${v.getClass.getName}")
+  }
+
+}
+
+trait CompileTimeParameterValidator extends ParameterValidator with CompileTimeValidator
+
+trait RuntimeParameterValidator extends ParameterValidator with RuntimeValidator
 
 //TODO: These validators should be moved to separated module
 
-case object MandatoryParameterValidator extends ParameterValidator {
+case object MandatoryParameterValidator extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -63,7 +158,7 @@ case object MandatoryParameterValidator extends ParameterValidator {
 
 }
 
-case object NotNullParameterValidator extends ParameterValidator {
+case object NotNullParameterValidator extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -83,7 +178,7 @@ case object NotNullParameterValidator extends ParameterValidator {
 
 }
 
-case object CompileTimeEvaluableValueValidator extends ParameterValidator {
+case object CompileTimeEvaluableValueValidator extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -104,7 +199,7 @@ case object CompileTimeEvaluableValueValidator extends ParameterValidator {
 
 }
 
-case object NotBlankParameterValidator extends ParameterValidator {
+case object NotBlankParameterValidator extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -125,7 +220,7 @@ case object NotBlankParameterValidator extends ParameterValidator {
 
 }
 
-case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
+case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -143,7 +238,8 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
 
 }
 
-case class RegExpParameterValidator(pattern: String, message: String, description: String) extends ParameterValidator {
+case class RegExpParameterValidator(pattern: String, message: String, description: String)
+    extends CompileTimeParameterValidator {
 
   lazy val regexpPattern: Pattern = Pattern.compile(pattern)
 
@@ -163,7 +259,7 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
 
 // TODO: we need this validator because scenario properties do not have typing result, so we enforce proper type
 //   here in validator by parsing raw expression to int
-case object LiteralIntegerValidator extends ParameterValidator {
+case object LiteralIntegerValidator extends CompileTimeParameterValidator {
 
   // empty expression should not be validated - we want to chain validators
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -185,7 +281,7 @@ case object LiteralIntegerValidator extends ParameterValidator {
 
 }
 
-case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterValidator {
+case class MinimalNumberValidator(minimalNumber: BigDecimal) extends CompileTimeParameterValidator {
 
   // null value should not be validated - we want to chain validators
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -208,7 +304,7 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
 
 }
 
-case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterValidator {
+case class MaximalNumberValidator(maximalNumber: BigDecimal) extends CompileTimeParameterValidator {
 
   // null value should not be validated - we want to chain validators
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -234,7 +330,7 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
 
 // This validator is not determined by default in components based on usage of JsonParameterEditor because someone may want to use only
 // editor for syntax highlight but don't want to use validator e.g. when want user to provide SpEL literal map
-case object JsonValidator extends ParameterValidator {
+case object JsonValidator extends CompileTimeParameterValidator {
 
   // null value should not be validated - we want to chain validators
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -268,7 +364,7 @@ case object JsonValidator extends ParameterValidator {
 case class ValidationExpressionParameterValidatorToCompile(
     validationExpression: Expression,
     validationFailedMessage: Option[String]
-) extends ParameterValidator {
+) extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -290,20 +386,68 @@ object ValidationExpressionParameterValidatorToCompile {
 
 }
 
-trait CustomParameterValidator extends Validator {
+sealed trait CustomParameterValidator {
   def name: String
 }
 
-case class CustomParameterValidatorDelegate(name: String) extends ParameterValidator {
-  import CustomParameterValidatorDelegate._
+trait CustomCompileTimeParameterValidator extends CustomParameterValidator with CompileTimeValidator
 
-  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
-      implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, expression, value, label)
+trait CustomRuntimeParameterValidator extends CustomParameterValidator with RuntimeValidator
+
+sealed trait CustomParameterValidatorLoader extends ParameterValidator {
+  protected def load(): CustomParameterValidator
+
+  lazy val resolved: ParameterValidator with WithUnderlyingCustomParameterValidator = load() match {
+    case validator: CustomCompileTimeParameterValidator with CustomRuntimeParameterValidator =>
+      new CompileTimeParameterValidator with RuntimeParameterValidator with WithUnderlyingCustomParameterValidator {
+        override val underlying: CustomCompileTimeParameterValidator with CustomRuntimeParameterValidator = validator
+        override def isValid(
+            paramName: ParameterName,
+            expression: Expression,
+            value: Option[Any],
+            label: Option[String]
+        )(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+          underlying.isValid(paramName, expression, value, label)
+        override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+            implicit nodeId: NodeId
+        ): Validated[ParameterRuntimeValidationError, Unit] = underlying.isValid(paramName, expression, value)
+      }
+    case validator: CustomCompileTimeParameterValidator =>
+      new CompileTimeParameterValidator with WithUnderlyingCustomParameterValidator {
+        override val underlying: CustomCompileTimeParameterValidator = validator
+        override def isValid(
+            paramName: ParameterName,
+            expression: Expression,
+            value: Option[Any],
+            label: Option[String]
+        )(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+          underlying.isValid(paramName, expression, value, label)
+      }
+    case validator: CustomRuntimeParameterValidator =>
+      new RuntimeParameterValidator with WithUnderlyingCustomParameterValidator {
+        override val underlying: CustomRuntimeParameterValidator = validator
+        override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+            implicit nodeId: NodeId
+        ): Validated[ParameterRuntimeValidationError, Unit] = underlying.isValid(paramName, expression, value)
+      }
+  }
 
 }
 
-object CustomParameterValidatorDelegate {
+object CustomParameterValidatorLoader {
+
+  trait WithUnderlyingCustomParameterValidator {
+    def underlying: CustomParameterValidator
+  }
+
+}
+
+case class CustomParameterValidatorByNameLoader(name: String) extends CustomParameterValidatorLoader {
+  import CustomParameterValidatorByNameLoader._
+  override protected def load(): CustomParameterValidator = getOrLoad(name)
+}
+
+object CustomParameterValidatorByNameLoader {
   import scala.jdk.CollectionConverters._
 
   private val cache: TrieMap[String, CustomParameterValidator] = TrieMap[String, CustomParameterValidator]()
@@ -320,5 +464,36 @@ object CustomParameterValidatorDelegate {
     case Nil      => throw new RuntimeException(s"Cannot load custom validator: $name")
     case _        => throw new RuntimeException(s"Multiple custom validators with name: $name")
   }
+
+}
+
+case class CustomParameterValidatorByClassLoader(validatorClassName: String) extends CustomParameterValidatorLoader {
+  import CustomParameterValidatorByClassLoader._
+  override protected def load(): CustomParameterValidator = getOrLoad(validatorClassName)
+}
+
+object CustomParameterValidatorByClassLoader {
+
+  def apply(clazz: Class[_ <: CustomParameterValidator]): CustomParameterValidatorByClassLoader =
+    new CustomParameterValidatorByClassLoader(clazz.getName)
+
+  private val cache: TrieMap[String, CustomParameterValidator] = TrieMap.empty
+
+  private def getOrLoad(className: String): CustomParameterValidator =
+    cache.getOrElseUpdate(className, load(className))
+
+  private def load(className: String): CustomParameterValidator =
+    try {
+      Class
+        .forName(className, true, Thread.currentThread().getContextClassLoader)
+        .getDeclaredConstructor()
+        .newInstance() match {
+        case v: CustomParameterValidator => v
+        case _ => throw new RuntimeException(s"Class $className does not extend CustomParameterValidator")
+      }
+    } catch {
+      case e: ReflectiveOperationException =>
+        throw new RuntimeException(s"Failed to instantiate CustomParameterValidator '$className': ${e.getMessage}", e)
+    }
 
 }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
   PostponedEvaluatorLazyParameterStrategy
@@ -16,11 +17,16 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class ParameterEvaluator(
     globalVariablesPreparer: GlobalVariablesPreparer,
-    listeners: Seq[ProcessListener]
+    listeners: Seq[ProcessListener],
+    expressionCompiler: ExpressionCompiler,
 ) {
 
   private val compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  private val runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
+
+  private val runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(
+    globalVariablesPreparer,
+    listeners,
+  )
 
   private val contextToUse: Context = Context.dummy
 
@@ -108,8 +114,10 @@ class ParameterEvaluator(
   ): LazyParameter[Nothing] = {
     lazyParameterCreationStrategy match {
       case EvaluableLazyParameterStrategy =>
+        val compiledValidators =
+          expressionCompiler.compileValidatorsOrThrow(definition, validationContext.globalVariables)
         new EvaluableLazyParameter(
-          CompiledParameter(exprValue, definition),
+          CompiledParameter(exprValue, definition, compiledValidators),
           runtimeExpressionEvaluator,
           nodeId,
           jobData
