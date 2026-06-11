@@ -15,6 +15,8 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+
+* [#9390](https://github.com/TouK/nussknacker/pull/9390) Add HintText annotation for method-based components
 * Runtime parameter validation support added.
     * `Validator` is now a sealed trait. `CompileTimeValidator` carries the existing compile-time `isValid` signature; `RuntimeValidator` is new and runs after expression evaluation at runtime.
     * Custom validators can implement `CustomCompileTimeParameterValidator`, `CustomRuntimeParameterValidator`, or both.
