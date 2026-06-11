@@ -22,7 +22,7 @@ import scala.collection.Searching._
 import scala.collection.View
 import scala.jdk.CollectionConverters._
 
-// This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
+// This is the real SlidingWindow with slide = 1sec OR 1min - moving with time for each key. It reduce on each emit and store
 // partial aggregations for each minute, instead of storing aggregates for each slide. This implementation doesn't emit event
 // when some element left the slide. If you want to handle this situation, you should use `EmitWhenEventLeftAggregatorFunction`
 // Flinks SlidingWindows are something that is often called HoppingWindow. They consume a lot of memory because each element
@@ -90,7 +90,14 @@ trait AggregatorFunctionMixin extends RichFunction {
   protected lazy val retrievedBucketsHistogram: util.metrics.Histogram =
     metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "retrievedBuckets"), tags), 10)
 
-  protected def minimalResolutionMs: Long = 60000L
+  protected val minimalResolutionMs: Long = {
+    val resolution = if (timeWindowLengthMillis % 60000L != 0) 1000L else 60000L
+    require(
+      timeWindowLengthMillis % resolution == 0,
+      s"Window length ($timeWindowLengthMillis ms) must be divisible by resolution ($resolution ms)"
+    )
+    resolution
+  }
 
   protected def allowedOutOfOrderMs: Long = timeWindowLengthMillis
 

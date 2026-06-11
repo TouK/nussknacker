@@ -183,6 +183,72 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     }
   }
 
+  test("sub-minute sliding aggregation correctly discriminates events at second level") {
+    val id = "1"
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(
+            TestRecordWithTimestamp(id, 0L, 1, "a"),      // 0s
+            TestRecordWithTimestamp(id, 10_000L, 2, "b"), // 10s
+            TestRecordWithTimestamp(id, 25_000L, 3, "c"), // 25s
+            TestRecordWithTimestamp(id, 35_000L, 4, "d")  // 35s
+          )
+        )
+      val testScenario = sliding(
+        "#AGG.sum",
+        "#input.eId",
+        emitWhenEventLeft = false,
+        additionalParams = Map("windowLength" -> "T(java.time.Duration).parse('PT30S')")
+      )
+
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+
+      // PT30S window: for each event at time T, aggregate covers (T-30s, T]
+      // t=0s:  only event at 0s in window -> sum=1
+      // t=10s: events at 0s, 10s in window -> sum=3
+      // t=25s: events at 0s, 10s, 25s in window -> sum=6
+      // t=35s: event at 0s left window; events at 10s, 25s, 35s -> sum=9
+      aggregateVariables shouldBe List(1, 3, 6, 9)
+    }
+  }
+
+  test("slightly-above-minute sliding aggregation correctly discriminates events at second level") {
+    val id = "1"
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(
+            TestRecordWithTimestamp(id, 10_000L, 1, "a"), // 10s
+            TestRecordWithTimestamp(id, 45_000L, 2, "b"), // 45s
+            TestRecordWithTimestamp(id, 65_000L, 3, "c"), // 1m05s
+            TestRecordWithTimestamp(id, 72_000L, 4, "d")  // 1m12s
+          )
+        )
+      val testScenario = sliding(
+        "#AGG.sum",
+        "#input.eId",
+        emitWhenEventLeft = false,
+        additionalParams = Map("windowLength" -> "T(java.time.Duration).parse('PT1M7S')")
+      )
+
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+
+      // PT1M7S (67s) window: for each event at time T, aggregate covers (T-67s, T]
+      // t=10s:  only event at 10s in window -> sum=1
+      // t=45s:  events at 10s, 45s in window -> sum=3
+      // t=65s:  events at 10s, 45s, 65s in window -> sum=6
+      // t=72s:  window is (5s, 72s], event at 10s still inside (72-10=62 < 67); all 4 events -> sum=10
+      aggregateVariables shouldBe List(1, 3, 6, 10)
+    }
+  }
+
   test("sum aggregate with zeros") {
     val id = "1"
     ResultsCollectingListenerHolder.withListener { collectingListener =>
@@ -1091,6 +1157,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       aggregator: String,
       aggregateBy: String,
       emitWhenEventLeft: Boolean,
+      additionalParams: Map[String, String] = Map.empty,
       afterAggregateExpression: String = "null"
   ) = {
     process(
@@ -1098,7 +1165,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       aggregator,
       aggregateBy,
       "windowLength",
-      Map("emitWhenEventLeft" -> emitWhenEventLeft.toString),
+      Map("emitWhenEventLeft" -> emitWhenEventLeft.toString) ++ additionalParams,
       afterAggregateExpression
     )
   }
