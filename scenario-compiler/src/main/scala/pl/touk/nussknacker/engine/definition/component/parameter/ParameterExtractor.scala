@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component.parameter
 
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
+import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, HintText, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -70,7 +70,8 @@ object ParameterExtractor {
       isLazyParameter = isLazyParameter,
       scalaOptionParameter = isScalaOptionParameter,
       javaOptionalParameter = isJavaOptionalParameter,
-      hintText = parameterConfig.hintText,
+      hintText = parameterConfig.hintText
+        .orElse(parameterData.getAnnotation[HintText].map(_.value())),
       labelOpt = parameterConfig.label,
       category = category,
       // these features are available only for DynamicComponents
