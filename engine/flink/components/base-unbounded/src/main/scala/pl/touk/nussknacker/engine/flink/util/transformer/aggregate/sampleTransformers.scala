@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -49,7 +50,16 @@ object sampleTransformers {
         @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-        @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
+        @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')")
+        @HintText(
+          "Adding seconds to a long window (e.g. 6 hours 30 seconds) forces second-level state granularity, significantly increasing state size. Use the widest time unit alignment possible (e.g. 6 hours)."
+        )
+        @Editor(
+          `type` = EditorType.DURATION_EDITOR,
+          timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
+        )
+        @Editor(`type` = EditorType.SPEL_EDITOR)
+        length: java.time.Duration,
         @ParamName("emitWhenEventLeft") @DefaultValue("false") emitWhenEventLeft: Boolean,
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
@@ -107,7 +117,13 @@ object sampleTransformers {
         @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-        @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
+        @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')")
+        @Editor(
+          `type` = EditorType.DURATION_EDITOR,
+          timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
+        )
+        @Editor(`type` = EditorType.SPEL_EDITOR)
+        length: java.time.Duration,
         @ParamName("emitWhen") trigger: TumblingWindowTrigger,
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
@@ -173,7 +189,13 @@ object sampleTransformers {
         @Editor(`type` = EditorType.SPEL_EDITOR) endSessionCondition: LazyParameter[java.lang.Boolean],
         @ParamName("sessionTimeout") @DefaultValue(
           "T(java.time.Duration).parse('PT1H')"
-        ) sessionTimeout: java.time.Duration,
+        )
+        @Editor(
+          `type` = EditorType.DURATION_EDITOR,
+          timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
+        )
+        @Editor(`type` = EditorType.SPEL_EDITOR)
+        sessionTimeout: java.time.Duration,
         @ParamName("emitWhen") trigger: SessionWindowTrigger,
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
