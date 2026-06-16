@@ -44,6 +44,13 @@ trait RuntimeValidator extends Validator {
   * to `pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor` which should decide whether new validator
   * should appear in configuration for certain parameter
   *
+  * Validators can be run:
+  * <ul>
+  *   <li>at compile time, on expression - `*ExpressionValidator` subclasses
+  *   <li>at runtime, on evaluated value - `*ValueValidator` subclasses
+  *   <li>at both times - `*Validator` subclasses
+  * </ul>
+  *
   * TODO: It shouldn't be a sealed trait. We should allow everyone to create own ParameterValidator
   * TODO: This being sealed also makes the tests of cases that use these validators dependant on the code here -
   * not good/unseal!!
@@ -55,11 +62,11 @@ object ParameterValidator {
   def resolveLoaders(validators: List[Validator]): List[Validator] =
     validators.map { case d: CustomParameterValidatorLoader => d.resolved; case v => v }
 
-  private val fixedValuesCodec: Codec[FixedValuesValidator] =
-    Codec.forProduct1("possibleValues")(FixedValuesValidator.apply)(_.possibleValues)
+  private val fixedValuesCodec: Codec[FixedValuesExpressionValidator] =
+    Codec.forProduct1("possibleValues")(FixedValuesExpressionValidator.apply)(_.possibleValues)
 
-  private val regExpCodec: Codec[RegExpParameterValidator] =
-    Codec.forProduct3("pattern", "message", "description")(RegExpParameterValidator.apply)(v =>
+  private val regExpCodec: Codec[RegExpValidator] =
+    Codec.forProduct3("pattern", "message", "description")(RegExpValidator.apply)(v =>
       (v.pattern, v.message, v.description)
     )
 
@@ -76,14 +83,15 @@ object ParameterValidator {
 
   implicit val decoder: Decoder[ParameterValidator] = Decoder.instance { cursor =>
     cursor.downField("type").as[String].flatMap {
-      case "MandatoryParameterValidator"        => Right(MandatoryParameterValidator)
-      case "NotNullParameterValidator"          => Right(NotNullParameterValidator)
+      case "MandatoryExpressionValidator"       => Right(MandatoryExpressionValidator)
+      case "NotNullValidator"                   => Right(NotNullValidator)
       case "CompileTimeEvaluableValueValidator" => Right(CompileTimeEvaluableValueValidator)
-      case "NotBlankParameterValidator"         => Right(NotBlankParameterValidator)
-      case "LiteralIntegerValidator"            => Right(LiteralIntegerValidator)
-      case "JsonValidator"                      => Right(JsonValidator)
-      case "FixedValuesValidator"               => fixedValuesCodec(cursor)
-      case "RegExpParameterValidator"           => regExpCodec(cursor)
+      case "NotBlankValidator"                  => Right(NotBlankValidator)
+      case "LiteralIntegerExpressionValidator"  => Right(LiteralIntegerExpressionValidator)
+      case "JsonExpressionValidator"            => Right(JsonExpressionValidator)
+      case "NotEmptyCollectionValidator"        => Right(NotEmptyCollectionValidator)
+      case "FixedValuesExpressionValidator"     => fixedValuesCodec(cursor)
+      case "RegExpValidator"                    => regExpCodec(cursor)
       case "MinimalNumberValidator"             => minimalNumberCodec(cursor)
       case "MaximalNumberValidator"             => maximalNumberCodec(cursor)
       case "ValidationExpressionParameterValidatorToCompile" =>
@@ -100,16 +108,18 @@ object ParameterValidator {
   }
 
   implicit val encoder: Encoder[ParameterValidator] = Encoder.instance {
-    case MandatoryParameterValidator        => Json.obj("type" -> "MandatoryParameterValidator".asJson)
-    case NotNullParameterValidator          => Json.obj("type" -> "NotNullParameterValidator".asJson)
+    case MandatoryExpressionValidator       => Json.obj("type" -> "MandatoryExpressionValidator".asJson)
+    case NotNullValidator                   => Json.obj("type" -> "NotNullValidator".asJson)
     case CompileTimeEvaluableValueValidator => Json.obj("type" -> "CompileTimeEvaluableValueValidator".asJson)
-    case NotBlankParameterValidator         => Json.obj("type" -> "NotBlankParameterValidator".asJson)
-    case LiteralIntegerValidator            => Json.obj("type" -> "LiteralIntegerValidator".asJson)
-    case JsonValidator                      => Json.obj("type" -> "JsonValidator".asJson)
-    case v: FixedValuesValidator =>
-      fixedValuesCodec(v).deepMerge(Json.obj("type" -> "FixedValuesValidator".asJson))
-    case v: RegExpParameterValidator =>
-      regExpCodec(v).deepMerge(Json.obj("type" -> "RegExpParameterValidator".asJson))
+    case NotBlankValidator                  => Json.obj("type" -> "NotBlankValidator".asJson)
+    case LiteralIntegerExpressionValidator  => Json.obj("type" -> "LiteralIntegerExpressionValidator".asJson)
+    case JsonExpressionValidator            => Json.obj("type" -> "JsonExpressionValidator".asJson)
+    case NotEmptyCollectionValidator =>
+      Json.obj("type" -> "NotEmptyCollectionValidator".asJson)
+    case v: FixedValuesExpressionValidator =>
+      fixedValuesCodec(v).deepMerge(Json.obj("type" -> "FixedValuesExpressionValidator".asJson))
+    case v: RegExpValidator =>
+      regExpCodec(v).deepMerge(Json.obj("type" -> "RegExpValidator".asJson))
     case v: MinimalNumberValidator =>
       minimalNumberCodec(v).deepMerge(Json.obj("type" -> "MinimalNumberValidator".asJson))
     case v: MaximalNumberValidator =>
@@ -132,9 +142,34 @@ trait CompileTimeParameterValidator extends ParameterValidator with CompileTimeV
 
 trait RuntimeParameterValidator extends ParameterValidator with RuntimeValidator
 
-//TODO: These validators should be moved to separated module
+trait CompileTimeAndRuntimeValidator extends CompileTimeParameterValidator with RuntimeParameterValidator {
 
-case object MandatoryParameterValidator extends CompileTimeParameterValidator {
+  protected def message: String
+  protected def description: String
+
+  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] =
+    value match {
+      case Some(v) => validate(v, compileTimeError(paramName, nodeId))
+      case None    => valid(())
+    }
+
+  override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+      implicit nodeId: NodeId
+  ): Validated[ParameterRuntimeValidationError, Unit] =
+    validate(value, runtimeError(expression))
+
+  protected def validate[E](value: Any, error: => E): Validated[E, Unit]
+
+  protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): PartSubGraphCompilationError
+
+  protected def runtimeError(expression: Expression): ParameterRuntimeValidationError =
+    ParameterRuntimeValidationError(input = expression.expression, message = message)
+
+}
+
+case object MandatoryExpressionValidator extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -158,23 +193,34 @@ case object MandatoryParameterValidator extends CompileTimeParameterValidator {
 
 }
 
-case object NotNullParameterValidator extends CompileTimeParameterValidator {
+case object NotNullValidator extends CompileTimeAndRuntimeValidator {
 
-  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
-      implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] = {
+  override protected val message     = "This field value can not be null"
+  override protected val description = "Please provide the correct not null value"
+
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
+    if (value == null) invalid(error) else valid(())
+
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): EmptyMandatoryParameter =
+    EmptyMandatoryParameter(message, description, paramName, nodeId)
+
+}
+
+case object NotEmptyCollectionValidator extends CompileTimeAndRuntimeValidator {
+
+  override protected val message     = "This field value can not be empty"
+  override protected val description = "Please provide the correct not empty collection"
+
+  // null value should not be validated - we want to chain validators
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
     value match {
-      case Some(null) => invalid(error(paramName, nodeId))
-      case _          => valid(())
+      case c: java.util.Collection[_] if c.isEmpty => invalid(error)
+      case m: java.util.Map[_, _] if m.isEmpty     => invalid(error)
+      case _                                       => valid(())
     }
-  }
 
-  private def error(paramName: ParameterName, nodeId: NodeId): EmptyMandatoryParameter = EmptyMandatoryParameter(
-    message = "This field is required and can not be null",
-    description = "Please fill field for this parameter",
-    paramName = paramName,
-    nodeId = nodeId
-  )
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): EmptyMandatoryParameter =
+    EmptyMandatoryParameter(message, description, paramName, nodeId)
 
 }
 
@@ -199,28 +245,25 @@ case object CompileTimeEvaluableValueValidator extends CompileTimeParameterValid
 
 }
 
-case object NotBlankParameterValidator extends CompileTimeParameterValidator {
+case object NotBlankValidator extends CompileTimeAndRuntimeValidator {
 
-  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
-      implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] =
+  override protected val message     = "This field value can not be blank"
+  override protected val description = "Please provide the correct not blank value"
+
+  // null value should not be validated - we want to chain validators
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
     value match {
-      case None                         => valid(())
-      case Some(null)                   => valid(())
-      case Some(s: String) if s.isBlank => invalid(error(paramName, nodeId))
-      case _                            => valid(())
+      case s: String if s.isBlank => invalid(error)
+      case _                      => valid(())
     }
 
-  private def error(paramName: ParameterName, nodeId: NodeId): BlankParameter = BlankParameter(
-    "This field value is required and can not be blank",
-    "Please fill field value for this parameter",
-    paramName,
-    nodeId
-  )
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): BlankParameter =
+    BlankParameter(message, description, paramName, nodeId)
 
 }
 
-case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends CompileTimeParameterValidator {
+case class FixedValuesExpressionValidator(possibleValues: List[FixedExpressionValue])
+    extends CompileTimeParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
@@ -238,28 +281,27 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
 
 }
 
-case class RegExpParameterValidator(pattern: String, message: String, description: String)
-    extends CompileTimeParameterValidator {
+case class RegExpValidator(pattern: String, message: String, description: String)
+    extends CompileTimeAndRuntimeValidator {
 
-  lazy val regexpPattern: Pattern = Pattern.compile(pattern)
+  private lazy val regexpPattern: Pattern = Pattern.compile(pattern)
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
-      implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] = {
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
     value match {
-      case None                                                  => valid(())
-      case Some(null)                                            => valid(())
-      case Some(s: String) if regexpPattern.matcher(s).matches() => valid(())
-      case _ => invalid(MismatchParameter(message, description, paramName, nodeId))
+      case null                                            => valid(())
+      case s: String if regexpPattern.matcher(s).matches() => valid(())
+      case _                                               => invalid(error)
     }
-  }
+
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): MismatchParameter =
+    MismatchParameter(message, description, paramName, nodeId)
 
 }
 
 // TODO: we need this validator because scenario properties do not have typing result, so we enforce proper type
 //   here in validator by parsing raw expression to int
-case object LiteralIntegerValidator extends CompileTimeParameterValidator {
+case object LiteralIntegerExpressionValidator extends CompileTimeParameterValidator {
 
   // empty expression should not be validated - we want to chain validators
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -281,56 +323,47 @@ case object LiteralIntegerValidator extends CompileTimeParameterValidator {
 
 }
 
-case class MinimalNumberValidator(minimalNumber: BigDecimal) extends CompileTimeParameterValidator {
+case class MinimalNumberValidator(minimalNumber: BigDecimal) extends CompileTimeAndRuntimeValidator {
+
+  override protected val message     = s"This field value has to be a number greater than or equal to $minimalNumber"
+  override protected val description = "Please fill field with proper number"
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
-      implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] =
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
     value match {
-      case None                                                       => valid(())
-      case Some(null)                                                 => valid(())
-      case Some(n: BigDecimal) if n >= minimalNumber                  => valid(())
-      case Some(n: Number) if BigDecimal(n.toString) >= minimalNumber => valid(())
-      case _                                                          => invalid(error(paramName, nodeId))
+      case null                                                 => valid(())
+      case n: BigDecimal if n >= minimalNumber                  => valid(())
+      case n: Number if BigDecimal(n.toString) >= minimalNumber => valid(())
+      case _                                                    => invalid(error)
     }
 
-  private def error(paramName: ParameterName, nodeId: NodeId): LowerThanRequiredParameter = LowerThanRequiredParameter(
-    s"This field value has to be a number greater than or equal to ${minimalNumber}",
-    "Please fill field with proper number",
-    paramName,
-    nodeId
-  )
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): LowerThanRequiredParameter =
+    LowerThanRequiredParameter(message, description, paramName, nodeId)
 
 }
 
-case class MaximalNumberValidator(maximalNumber: BigDecimal) extends CompileTimeParameterValidator {
+case class MaximalNumberValidator(maximalNumber: BigDecimal) extends CompileTimeAndRuntimeValidator {
+
+  override protected val message     = s"This field value has to be a number lower than or equal to $maximalNumber"
+  override protected val description = "Please fill field with proper number"
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
-      implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] =
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
     value match {
-      case None                                                       => valid(())
-      case Some(null)                                                 => valid(())
-      case Some(n: BigDecimal) if n <= maximalNumber                  => valid(())
-      case Some(n: Number) if BigDecimal(n.toString) <= maximalNumber => valid(())
-      case _                                                          => invalid(error(paramName, nodeId))
+      case null                                                 => valid(())
+      case n: BigDecimal if n <= maximalNumber                  => valid(())
+      case n: Number if BigDecimal(n.toString) <= maximalNumber => valid(())
+      case _                                                    => invalid(error)
     }
 
-  private def error(paramName: ParameterName, nodeId: NodeId): GreaterThanRequiredParameter =
-    GreaterThanRequiredParameter(
-      s"This field value has to be a number lower than or equal to ${maximalNumber}",
-      "Please fill field with proper number",
-      paramName,
-      nodeId
-    )
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): GreaterThanRequiredParameter =
+    GreaterThanRequiredParameter(message, description, paramName, nodeId)
 
 }
 
 // This validator is not determined by default in components based on usage of JsonParameterEditor because someone may want to use only
 // editor for syntax highlight but don't want to use validator e.g. when want user to provide SpEL literal map
-case object JsonValidator extends CompileTimeParameterValidator {
+case object JsonExpressionValidator extends CompileTimeParameterValidator {
 
   // null value should not be validated - we want to chain validators
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -361,7 +394,7 @@ case object JsonValidator extends CompileTimeParameterValidator {
 
 }
 
-case class MultiSelectFixedValuesValidator(possibleSelectValues: List[MultiSelectFixedValue])
+case class MultiSelectFixedValuesExpressionValidator(possibleSelectValues: List[MultiSelectFixedValue])
     extends CompileTimeParameterValidator {
 
   private val possibleValues: List[Json] = possibleSelectValues.map(_.value)

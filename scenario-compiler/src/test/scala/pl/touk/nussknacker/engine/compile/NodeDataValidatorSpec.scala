@@ -223,7 +223,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         case ValidationPerformed(
               (
                 EmptyMandatoryParameter(
-                  "This field is required and can not be null",
+                  "This field value can not be null",
                   _,
                   NodeExpressionId.DefaultExpressionIdParamName,
                   NodeId("filter")
@@ -733,7 +733,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     )
     val configWithValidators: Config = defaultConfig.withValue(
       s"componentsUiConfig.$fragmentId.params.P1.validators",
-      fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+      fromIterable(List(Map("type" -> "MandatoryExpressionValidator").asJava).asJava)
     )
 
     validate(
@@ -772,7 +772,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     )
     val configWithValidators: Config = defaultConfig.withValue(
       s"componentsUiConfig.$fragmentId.params.P1.validators",
-      fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+      fromIterable(List(Map("type" -> "MandatoryExpressionValidator").asJava).asJava)
     )
 
     inside(
@@ -833,11 +833,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     val configWithValidators: Config = defaultConfig
       .withValue(
         s"componentsUiConfig.$fragmentId.params.P1.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+        fromIterable(List(Map("type" -> "MandatoryExpressionValidator").asJava).asJava)
       )
       .withValue(
         s"componentsUiConfig.$fragmentId.params.P2.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+        fromIterable(List(Map("type" -> "MandatoryExpressionValidator").asJava).asJava)
       )
 
     validate(
@@ -1005,7 +1005,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       ) {
         case ValidationPerformed(
               EmptyMandatoryParameter(
-                "This field is required and can not be null",
+                "This field value can not be null",
                 _,
                 ParameterName("caseTarget"),
                 NodeId("switchId")

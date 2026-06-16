@@ -97,7 +97,7 @@ class UniversalKafkaSinkFactory(
   private val sinkRawEditorParam = Parameter[Boolean](sinkRawEditorParamName).copy(
     defaultValue = Some(Expression.spel("false")),
     editors = List(BoolParameterEditor),
-    validators = List(MandatoryParameterValidator)
+    validators = List(MandatoryExpressionValidator)
   )
 
   private val validationModeParamDeclaration =

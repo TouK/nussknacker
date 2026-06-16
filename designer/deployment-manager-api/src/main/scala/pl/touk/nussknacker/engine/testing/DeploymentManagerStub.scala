@@ -105,7 +105,7 @@ object FlinkStreamingPropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StaticStringParameterEditor),
-      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(LiteralIntegerExpressionValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),
       hintText = None
     )
@@ -126,7 +126,7 @@ object FlinkStreamingPropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
-      validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
+      validators = Some(List(FixedValuesExpressionValidator(spillStatePossibleValues))),
       label = Some("Spill state to disk"),
       hintText = None
     )
@@ -136,7 +136,7 @@ object FlinkStreamingPropertiesConfig {
       ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
-        validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
+        validators = Some(List(FixedValuesExpressionValidator(asyncPossibleValues))),
         label = Some("IO mode"),
         hintText = None
       )
@@ -145,7 +145,7 @@ object FlinkStreamingPropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StaticStringParameterEditor),
-      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(LiteralIntegerExpressionValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"),
       hintText = None
     )

@@ -26,14 +26,14 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
       reqFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
-        validators = Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
+        validators = Some(List(LiteralIntegerExpressionValidator, MandatoryExpressionValidator)),
         label = Some(label),
         hintText = None
       ),
       regexpFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
-        validators = Some(List(LiteralIntegerValidator)),
+        validators = Some(List(LiteralIntegerExpressionValidator)),
         label = Some(label),
         hintText = None
       ),
@@ -47,7 +47,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
       optFixedFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(possibleValues)),
-        validators = Some(List(FixedValuesValidator(possibleValues))),
+        validators = Some(List(FixedValuesExpressionValidator(possibleValues))),
         label = Some(label),
         hintText = None
       ),

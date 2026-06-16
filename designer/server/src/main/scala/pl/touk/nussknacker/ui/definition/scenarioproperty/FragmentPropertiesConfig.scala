@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValueWithIcon,
   FixedValuesParameterEditor,
   FixedValuesWithIconParameterEditor,
-  MandatoryParameterValidator,
+  MandatoryExpressionValidator,
   SpelTemplateParameterEditor,
   StaticStringParameterEditor
 }
@@ -46,7 +46,7 @@ object FragmentPropertiesConfig {
           FixedExpressionValue(groupName.value, groupName.value)
         )
       ).some,
-      validators = Some(List(MandatoryParameterValidator)),
+      validators = Some(List(MandatoryExpressionValidator)),
       label = Some("Component group"),
       hintText = Some("Group of components in the Creator Panel in which this fragment will be available")
     )
@@ -68,7 +68,7 @@ object FragmentPropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesWithIconParameterEditor(icons)),
-      validators = Some(List(MandatoryParameterValidator)),
+      validators = Some(List(MandatoryExpressionValidator)),
       label = Some("Icon"),
       hintText = None
     )

@@ -45,7 +45,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
   private val rawModeParam: Parameter = Parameter[Boolean](SinkRawEditorParamName).copy(
     defaultValue = Some(Expression.spel("false")),
     editors = List(BoolParameterEditor),
-    validators = List(MandatoryParameterValidator)
+    validators = List(MandatoryExpressionValidator)
   )
 
   private val rawValueParam = ParameterDeclaration.lazyMandatory[AnyRef](SinkRawValueParamName).withCreator()

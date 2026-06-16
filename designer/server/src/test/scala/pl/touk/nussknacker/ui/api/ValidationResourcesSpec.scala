@@ -67,21 +67,21 @@ class ValidationResourcesSpec
           "requiredStringProperty" -> ScenarioPropertyConfig(
             None,
             Some(StaticStringParameterEditor),
-            Some(List(MandatoryParameterValidator)),
+            Some(List(MandatoryExpressionValidator)),
             Some("label"),
             None
           ),
           "numberOfThreads" -> ScenarioPropertyConfig(
             None,
             Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
-            Some(List(FixedValuesValidator(TestFactory.possibleValues))),
+            Some(List(FixedValuesExpressionValidator(TestFactory.possibleValues))),
             None,
             None
           ),
           "maxEvents" -> ScenarioPropertyConfig(
             None,
             None,
-            Some(List(LiteralIntegerValidator)),
+            Some(List(LiteralIntegerExpressionValidator)),
             Some("label"),
             None
           )
@@ -119,7 +119,7 @@ class ValidationResourcesSpec
     createAndValidateScenario(ProcessTestData.invalidProcessWithBlankParameter) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include("This field value is required and can not be blank")
+      entity should include("This field value can not be blank")
     }
   }
 
@@ -238,7 +238,7 @@ class ValidationResourcesSpec
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
       validation.errors.invalidNodes(NodeId("filter")).head.message should include(
-        "This field is required and can not be null"
+        "This field value can not be null"
       )
       validation.errors.invalidNodes(NodeId("variable1")).head.message should include(
         "Field: $expression is mandatory and can not be empty"

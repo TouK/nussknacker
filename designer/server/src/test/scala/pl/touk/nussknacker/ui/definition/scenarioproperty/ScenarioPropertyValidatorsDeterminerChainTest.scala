@@ -5,9 +5,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
+  FixedValuesExpressionValidator,
   FixedValuesParameterEditor,
-  FixedValuesValidator,
-  MandatoryParameterValidator
+  MandatoryExpressionValidator
 }
 
 class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Matchers {
@@ -16,14 +16,14 @@ class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Mat
     val config = ScenarioPropertyConfig(
       None,
       None,
-      Some(List(MandatoryParameterValidator)),
+      Some(List(MandatoryExpressionValidator)),
       None,
       None
     )
 
     val determined = ScenarioPropertyValidatorDeterminerChain(config).determine()
 
-    determined shouldBe List(MandatoryParameterValidator)
+    determined shouldBe List(MandatoryExpressionValidator)
   }
 
   test("determine property validator based on fixed value editor") {
@@ -38,7 +38,7 @@ class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Mat
 
     val determined = ScenarioPropertyValidatorDeterminerChain(config).determine()
 
-    determined shouldBe List(FixedValuesValidator(possibleValues))
+    determined shouldBe List(FixedValuesExpressionValidator(possibleValues))
   }
 
 }

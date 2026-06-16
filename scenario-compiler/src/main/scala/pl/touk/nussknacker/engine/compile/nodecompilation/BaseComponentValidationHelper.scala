@@ -4,11 +4,7 @@ import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.definition.{
-  MandatoryParameterValidator,
-  NotNullParameterValidator,
-  ParameterValidator
-}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryExpressionValidator, NotNullValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
@@ -23,7 +19,7 @@ object BaseComponentValidationHelper {
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    validateOrValid(NotNullParameterValidator, expression, paramName, inputContext)
+    validateOrValid(NotNullValidator, expression, paramName, inputContext)
   }
 
   def validateVariableValue(
@@ -33,7 +29,7 @@ object BaseComponentValidationHelper {
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    validateOrValid(MandatoryParameterValidator, expression, paramName, inputContext)
+    validateOrValid(MandatoryExpressionValidator, expression, paramName, inputContext)
   }
 
   private def validateOrValid(

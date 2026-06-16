@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ParameterInitialValue
 }
 import pl.touk.nussknacker.engine.api.definition.{
-  MandatoryParameterValidator,
+  MandatoryExpressionValidator,
   ValidationExpressionParameterValidatorToCompile
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -34,7 +34,7 @@ object ComponentAdditionalConfigConverter {
       paramAdditionalConfig: ParameterAdditionalUIConfig,
       paramName: ParameterName
   ): ParameterConfig = {
-    val validators = (if (paramAdditionalConfig.required) List(MandatoryParameterValidator) else List.empty) ++
+    val validators = (if (paramAdditionalConfig.required) List(MandatoryExpressionValidator) else List.empty) ++
       paramAdditionalConfig.valueCompileTimeValidation
         .map(validation => List(ValidationExpressionParameterValidatorToCompile(validation)))
         .getOrElse(List.empty)

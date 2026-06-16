@@ -486,7 +486,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
-          validators = Some(List(MandatoryParameterValidator)),
+          validators = Some(List(MandatoryExpressionValidator)),
           label = Some("label1"),
           hintText = None
         ),
@@ -586,14 +586,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
-          validators = Some(List(MandatoryParameterValidator)),
+          validators = Some(List(MandatoryExpressionValidator)),
           label = Some("label1"),
           hintText = None
         ),
         "field2" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
-          validators = Some(List(MandatoryParameterValidator)),
+          validators = Some(List(MandatoryExpressionValidator)),
           label = Some("label2"),
           hintText = None
         )
@@ -616,14 +616,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = Some(FixedValuesParameterEditor(possibleValues)),
-          validators = Some(List(FixedValuesValidator(possibleValues))),
+          validators = Some(List(FixedValuesExpressionValidator(possibleValues))),
           label = Some("label"),
           hintText = None
         ),
         "field2" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
-          validators = Some(List(LiteralIntegerValidator)),
+          validators = Some(List(LiteralIntegerExpressionValidator)),
           label = Some("label"),
           hintText = None
         )
@@ -1332,7 +1332,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test(
-    "validate service parameter (dynamic component) based on additional config from provider - MandatoryParameterValidator"
+    "validate service parameter (dynamic component) based on additional config from provider - MandatoryExpressionValidator"
   ) {
     val process = processWithEagerServiceWithDynamicComponent("")
 
@@ -1368,7 +1368,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test(
-    "validate service parameter (static component) based on additional config from provider - MandatoryParameterValidator"
+    "validate service parameter (static component) based on additional config from provider - MandatoryExpressionValidator"
   ) {
     val process = processWithOptionalParameterService("")
 
@@ -1714,13 +1714,13 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("validate service parameter based on input config - MandatoryParameterValidator") {
+  test("validate service parameter based on input config - MandatoryExpressionValidator") {
     val modelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
         .getConfig("modelConfig")
         .withValue(
           "componentsUiConfig.optionalParameterService.params.optionalParam.validators",
-          fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+          fromIterable(List(Map("type" -> "MandatoryExpressionValidator").asJava).asJava)
         ),
       List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
       additionalConfigsFromProvider = Map.empty
@@ -2032,7 +2032,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val configWithValidators: Config = defaultConfig
       .withValue(
         s"componentsUiConfig.$fragmentId.params.P1.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+        fromIterable(List(Map("type" -> "MandatoryExpressionValidator").asJava).asJava)
       )
 
     val fragmentDefinition: CanonicalProcess =
@@ -2530,14 +2530,14 @@ private object UIProcessValidatorSpec {
       "requiredStringProperty" -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(StaticStringParameterEditor),
-        validators = Some(List(MandatoryParameterValidator)),
+        validators = Some(List(MandatoryExpressionValidator)),
         label = Some("label"),
         hintText = None
       ),
       "numberOfThreads" -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
-        validators = Some(List(FixedValuesValidator(TestFactory.possibleValues))),
+        validators = Some(List(FixedValuesExpressionValidator(TestFactory.possibleValues))),
         label = None,
         hintText = None
       ),

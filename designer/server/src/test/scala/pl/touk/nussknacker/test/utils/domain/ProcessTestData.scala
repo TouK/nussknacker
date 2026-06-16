@@ -111,7 +111,7 @@ object ProcessTestData {
         otherExistingServiceId4,
         Parameter[JavaSampleEnum](ParameterName("expression")).copy(
           editors = List(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
-          validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a"))))
+          validators = List(FixedValuesExpressionValidator(List(FixedExpressionValue("a", "a"))))
         )
       )
       .withCustom(

@@ -5,12 +5,14 @@ import pl.touk.nussknacker.engine.api.definition.{
   CustomParameterValidatorByClassLoader,
   MaximalNumberValidator,
   MinimalNumberValidator,
-  NotBlankParameterValidator,
+  NotBlankValidator,
+  NotEmptyCollectionValidator,
+  NotNullValidator,
   ParameterValidator
 }
 import pl.touk.nussknacker.engine.api.validation.{CustomValidator, JsonValidator}
 
-import javax.validation.constraints.{Max, Min, NotBlank}
+import javax.validation.constraints.{Max, Min, NotBlank, NotEmpty, NotNull}
 
 object ValidatorsExtractor {
 
@@ -18,9 +20,12 @@ object ValidatorsExtractor {
     val fromValidatorExtractors = List(
       MandatoryValidatorExtractor,
       EditorBasedValidatorExtractor,
-      AnnotationValidatorExtractor[JsonValidator](definition.JsonValidator),
+      AnnotationValidatorExtractor[JsonValidator](definition.JsonExpressionValidator),
       CompileTimeEvaluableValueValidatorExtractor,
-      AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
+      AnnotationValidatorExtractor[NotBlank](NotBlankValidator),
+      AnnotationValidatorExtractor[NotNull](NotNullValidator),
+      // @NotEmpty supports only collections (java.util.Collection / java.util.Map); for strings use @NotBlank
+      AnnotationValidatorExtractor[NotEmpty](NotEmptyCollectionValidator),
       AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),
       AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value())),
       AnnotationValidatorExtractor[CustomValidator]((annotation: CustomValidator) =>
