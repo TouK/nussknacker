@@ -125,7 +125,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "withJsonParam",
       Some(Unknown),
       nonEndingOneInputComponent,
-      Parameter[String](ParameterName("jsonParam")).copy(validators = List(JsonValidator))
+      Parameter[String](ParameterName("jsonParam")).copy(validators = List(JsonExpressionValidator))
     )
     .withCustom(
       "withCustomValidatorParam",

@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.engine.requestresponse.api.openapi
 
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, JsonValidator, MandatoryParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{
+  JsonExpressionValidator,
+  JsonParameterEditor,
+  MandatoryExpressionValidator
+}
 
 object RequestResponseOpenApiSettings {
 
@@ -14,14 +18,14 @@ object RequestResponseOpenApiSettings {
     InputSchemaProperty -> ScenarioPropertyConfig(
       Some(emptySchema),
       Some(JsonParameterEditor),
-      Some(List(MandatoryParameterValidator, JsonValidator)),
+      Some(List(MandatoryExpressionValidator, JsonExpressionValidator)),
       Some("Input schema"),
       None
     ),
     OutputSchemaProperty -> ScenarioPropertyConfig(
       Some(emptySchema),
       Some(JsonParameterEditor),
-      Some(List(MandatoryParameterValidator, JsonValidator)),
+      Some(List(MandatoryExpressionValidator, JsonExpressionValidator)),
       Some("Output schema"),
       None
     ),

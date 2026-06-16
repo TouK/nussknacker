@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioTesting
 import org.apache.pekko.stream.scaladsl.Source
 import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, SpelParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryExpressionValidator, Parameter, SpelParameterEditor}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -109,7 +109,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                                 Parameter(
                                   name = ParameterName("name"),
                                   typ = Typed[String],
-                                  validators = List(MandatoryParameterValidator),
+                                  validators = List(MandatoryExpressionValidator),
                                   editors = List(SpelParameterEditor)
                                 )
                               )

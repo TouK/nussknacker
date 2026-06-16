@@ -170,7 +170,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                 ParameterName("overriddenByDevConfigParam") -> ParameterConfig(
                   defaultValue = None,
                   editors = None,
-                  validators = Some(List(MandatoryParameterValidator)),
+                  validators = Some(List(MandatoryExpressionValidator)),
                   label = None,
                   hintText = None,
                   category = None,
@@ -178,7 +178,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                 ParameterName("overriddenByFileConfigParam") -> ParameterConfig(
                   defaultValue = None,
                   editors = None,
-                  validators = Some(List(MandatoryParameterValidator)),
+                  validators = Some(List(MandatoryExpressionValidator)),
                   label = None,
                   hintText = None,
                   category = None,

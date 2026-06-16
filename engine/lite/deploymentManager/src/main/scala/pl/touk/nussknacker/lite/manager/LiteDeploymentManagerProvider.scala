@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitialize
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
-  LiteralIntegerValidator,
+  LiteralIntegerExpressionValidator,
   MinimalNumberValidator,
   StaticStringParameterEditor
 }
@@ -49,7 +49,7 @@ object LitePropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StaticStringParameterEditor),
-      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(LiteralIntegerExpressionValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),
       hintText = None
     )

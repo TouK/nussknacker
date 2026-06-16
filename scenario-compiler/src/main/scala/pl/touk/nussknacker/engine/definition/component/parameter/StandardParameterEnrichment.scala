@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
-  MandatoryParameterValidator,
+  MandatoryExpressionValidator,
   Parameter,
   ParameterEditor,
   ParameterValidator
@@ -50,7 +50,7 @@ object StandardParameterEnrichment {
       (original.validators ++
         parameterConfig.validators.toList.flatten ++
         extractAdditionalValidator(parameterData, parameterConfig, finalEditors)).distinct
-    val isOptional = !finalValidators.contains(MandatoryParameterValidator)
+    val isOptional = !finalValidators.contains(MandatoryExpressionValidator)
     val finalDefaultValue = original.defaultValue.orElse(
       DefaultValueDeterminerChain.determineParameterDefaultValue(
         DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditors)

@@ -11,7 +11,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
 
   private implicit val nodeId: NodeId = NodeId("someNode")
 
-  test("MandatoryParameterValidator") {
+  test("MandatoryExpressionValidator") {
     forAll(
       Table(
         ("expression", "value", "isValid"),
@@ -28,7 +28,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("1 + 1", Some(2), true),
       )
     ) { (expression, value, expected) =>
-      MandatoryParameterValidator
+      MandatoryExpressionValidator
         .isValid(ParameterName("dummy"), Expression.spel(expression), value, None)
         .isValid shouldBe expected
     }
@@ -51,13 +51,13 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("1 + 1", Some(2), true),
       )
     ) { (expression, value, expected) =>
-      NotNullParameterValidator
+      NotNullValidator
         .isValid(ParameterName("dummy"), Expression.spel(expression), value, None)
         .isValid shouldBe expected
     }
   }
 
-  test("NotBlankParameterValidator") {
+  test("NotBlankValidator") {
     forAll(
       Table(
         ("expression", "value", "isValid"),
@@ -76,14 +76,14 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("\"someString\" + \"\"", Some("someString"), true),
       )
     ) { (expression, value, expected) =>
-      NotBlankParameterValidator
+      NotBlankValidator
         .isValid(ParameterName("dummy"), Expression.spel(expression), value, None)
         .isValid shouldBe expected
     }
   }
 
-  test("FixedValuesValidator") {
-    val validator = FixedValuesValidator(
+  test("FixedValuesExpressionValidator") {
+    val validator = FixedValuesExpressionValidator(
       List(
         FixedExpressionValue("'a'", "a"),
         FixedExpressionValue("'b'", "b"),
@@ -110,8 +110,8 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     }
   }
 
-  test("FixedValuesValidator for non-evaluable expressions") {
-    val validator = FixedValuesValidator(
+  test("FixedValuesExpressionValidator for non-evaluable expressions") {
+    val validator = FixedValuesExpressionValidator(
       List(
         FixedExpressionValue("#AGG.first", "First"),
         FixedExpressionValue("#AGG.last", "Last"),
@@ -137,8 +137,8 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     }
   }
 
-  test("LiteralIntegerValidator") {
-    val validator = LiteralIntegerValidator
+  test("LiteralIntegerExpressionValidator") {
+    val validator = LiteralIntegerExpressionValidator
     forAll(
       Table(
         ("expression", "value", "isValid"),
@@ -205,9 +205,9 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     }
   }
 
-  test("RegExpParameterValidator") {
-    val mailValidator = RegExpParameterValidator("^[^<>]+@nussknacker\\.io$", "", "")
-    val alaValidator  = RegExpParameterValidator("^ala$", "", "")
+  test("RegExpValidator") {
+    val mailValidator = RegExpValidator("^[^<>]+@nussknacker\\.io$", "", "")
+    val alaValidator  = RegExpValidator("^ala$", "", "")
 
     forAll(
       Table(
@@ -223,6 +223,135 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
       )
     ) { (expression, value, validator, expected) =>
       validator.isValid(ParameterName("dummy"), Expression.spel(expression), value, None).isValid shouldBe expected
+    }
+  }
+
+  test("NotNullValidator runtime validation") {
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("null", null, false),
+        ("''", "", true),
+        ("' '", " ", true),
+        ("'foo'", "foo", true),
+        ("1", 1, true),
+        ("{}", java.util.List.of(), true),
+      )
+    ) { (expression, value, expected) =>
+      NotNullValidator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value)
+        .isValid shouldBe expected
+    }
+  }
+
+  test("NotEmptyCollectionValidator runtime validation") {
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("null", null, true),
+        ("{}", java.util.List.of(), false),
+        ("{1}", java.util.List.of(1), true),
+        ("{:}", java.util.Map.of(), false),
+        ("{foo: 1}", java.util.Map.of("foo", 1), true),
+        ("'foo'", "foo", true),
+      )
+    ) { (expression, value, expected) =>
+      NotEmptyCollectionValidator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value)
+        .isValid shouldBe expected
+    }
+  }
+
+  test("NotEmptyCollectionValidator compile-time validation") {
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("#input", None, true),
+        ("null", Some(null), true),
+        ("{}", Some(java.util.List.of()), false),
+        ("{1}", Some(java.util.List.of(1)), true),
+        ("{:}", Some(java.util.Map.of()), false),
+        ("{foo: 1}", Some(java.util.Map.of("foo", 1)), true),
+        ("'foo'", Some("foo"), true),
+      )
+    ) { (expression, value, expected) =>
+      NotEmptyCollectionValidator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value, None)
+        .isValid shouldBe expected
+    }
+  }
+
+  test("NotBlankValidator runtime validation") {
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("null", null, true),
+        ("''", "", false),
+        ("' '", " ", false),
+        ("'\t'", "\t", false),
+        ("'foo'", "foo", true),
+        ("1", 1, true),
+      )
+    ) { (expression, value, expected) =>
+      NotBlankValidator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value)
+        .isValid shouldBe expected
+    }
+  }
+
+  test("RegExpValidator runtime validation") {
+    val mailValidator = RegExpValidator("^[^<>]+@nussknacker\\.io$", "", "")
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("null", null, true),
+        ("'lcl@nussknacker.io'", "lcl@nussknacker.io", true),
+        ("'lcl@nussknacker.ios'", "lcl@nussknacker.ios", false),
+        ("''", "", false),
+        ("1", 1, false),
+      )
+    ) { (expression, value, expected) =>
+      mailValidator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value)
+        .isValid shouldBe expected
+    }
+  }
+
+  test("MinimalNumberValidator runtime validation") {
+    val validator = MinimalNumberValidator(5)
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("null", null, true),
+        ("1", 1, false),
+        ("5", 5, true),
+        ("6", 6, true),
+        ("21.37", 21.37, true),
+        ("'foo'", "foo", false),
+      )
+    ) { (expression, value, expected) =>
+      validator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value)
+        .isValid shouldBe expected
+    }
+  }
+
+  test("MaximalNumberValidator runtime validation") {
+    val validator = MaximalNumberValidator(5)
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("null", null, true),
+        ("1", 1, true),
+        ("5", 5, true),
+        ("6", 6, false),
+        ("21.37", 21.37, false),
+        ("'foo'", "foo", false),
+      )
+    ) { (expression, value, expected) =>
+      validator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value)
+        .isValid shouldBe expected
     }
   }
 

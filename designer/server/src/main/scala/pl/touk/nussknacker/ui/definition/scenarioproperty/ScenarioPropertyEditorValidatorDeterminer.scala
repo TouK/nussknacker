@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import pl.touk.nussknacker.engine.api.definition.{
+  FixedValuesExpressionValidator,
   FixedValuesParameterEditor,
-  FixedValuesValidator,
+  JsonExpressionValidator,
   JsonParameterEditor,
-  JsonValidator,
   ParameterValidator,
   StaticParameterEditor
 }
@@ -14,8 +14,8 @@ protected class ScenarioPropertyEditorValidatorDeterminer(editor: Option[StaticP
 
   override def determine(): Option[List[ParameterValidator]] = {
     editor match {
-      case Some(editor: FixedValuesParameterEditor) => Some(List(FixedValuesValidator(editor.possibleValues)))
-      case Some(JsonParameterEditor)                => Some(List(JsonValidator))
+      case Some(editor: FixedValuesParameterEditor) => Some(List(FixedValuesExpressionValidator(editor.possibleValues)))
+      case Some(JsonParameterEditor)                => Some(List(JsonExpressionValidator))
       case _                                        => None
     }
   }

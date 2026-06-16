@@ -516,8 +516,8 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     validationResult.result shouldBe Invalid(
       NonEmptyList(
         BlankParameter(
-          "This field value is required and can not be blank",
-          "Please fill field value for this parameter",
+          "This field value can not be blank",
+          "Please provide the correct not blank value",
           ParameterName("key for branch branch1"),
           NodeId("join1")
         ),

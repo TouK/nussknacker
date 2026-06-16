@@ -101,7 +101,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("nullableTypesService", NullableTypesService),
     ComponentDefinition("mandatoryTypesService", MandatoryTypesService),
     ComponentDefinition("notBlankTypesService", NotBlankTypesService),
-    ComponentDefinition("notNullTypesService", NotNullTypesService),
     ComponentDefinition("nullSensitiveService", NullSensitiveService),
     ComponentDefinition("customValidatorTypesService", CustomValidatorTypesService),
     ComponentDefinition("notBlankRuntimeTypesService", NotBlankRuntimeTypesService),
@@ -1122,10 +1121,10 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
+    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value can not be blank,Please provide the correct not blank value,expression,customNode)"
   }
 
-  test("CompileTimeValidator does not run at runtime for dynamic expression evaluating to blank") {
+  test("NotBlankValidator rejects a runtime-blank dynamic expression") {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
@@ -1133,10 +1132,12 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
       .emptySink("end-end", "dummySink")
 
-    interpretProcess(process, Transaction(msisdn = "")) shouldBe ""
+    intercept[ParameterRuntimeValidationException] {
+      interpretProcess(process, Transaction(msisdn = ""))
+    }.getMessage should include("can not be blank")
   }
 
-  test("CompileTimeValidator does not run at runtime for dynamic expression evaluating to a valid value") {
+  test("NotBlankValidator allows a non-blank value at runtime") {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
@@ -1147,18 +1148,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction(msisdn = "valid-value")) shouldBe "valid-value"
   }
 
-  test("CompileTimeValidator does not run at runtime for dynamic expression evaluating to null") {
-    val process = ScenarioBuilder
-      .streaming("test")
-      .source("start", "transaction-source")
-      .enricher("customNode", "rawExpression", "notNullTypesService", "expression" -> "#input.msisdn".spel)
-      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
-      .emptySink("end-end", "dummySink")
-
-    interpretProcess(process, Transaction(msisdn = null)).asInstanceOf[String] shouldBe null
-  }
-
-  test("null reaches service and causes NullPointerException when component is null-sensitive") {
+  test("NotNullValidator protects a null-sensitive component from runtime null") {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
@@ -1166,9 +1156,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
       .emptySink("end-end", "dummySink")
 
-    intercept[NullPointerException] {
+    intercept[ParameterRuntimeValidationException] {
       interpretProcess(process, Transaction(msisdn = null))
-    }
+    }.getMessage should include("can not be null")
   }
 
   test("CompileTimeValidator annotated with @CustomValidator does not run at runtime for dynamic expression") {
@@ -1722,31 +1712,11 @@ object InterpreterSpec {
 
   }
 
-  object NotNullTypesService extends EagerServiceWithStaticParametersAndReturnType {
-
-    override def parameters: List[Parameter] = List(
-      Parameter[String](ParameterName("expression"))
-        .copy(isLazyParameter = true, validators = List(NotNullParameterValidator))
-    )
-
-    override def returnType: typing.TypingResult = Typed[String]
-
-    override def invoke(params: Map[ParameterName, Any])(
-        implicit ec: ExecutionContext,
-        collector: ServiceInvocationCollector,
-        context: Context,
-        metaData: MetaData,
-        componentUseContext: ComponentUseContext
-    ): Future[AnyRef] =
-      Future.successful(params(ParameterName("expression")).asInstanceOf[AnyRef])
-
-  }
-
   object NullSensitiveService extends EagerServiceWithStaticParametersAndReturnType {
 
     override def parameters: List[Parameter] = List(
       Parameter[String](ParameterName("expression"))
-        .copy(isLazyParameter = true, validators = List(NotNullParameterValidator))
+        .copy(isLazyParameter = true, validators = List(NotNullValidator))
     )
 
     override def returnType: typing.TypingResult = Typed[String]

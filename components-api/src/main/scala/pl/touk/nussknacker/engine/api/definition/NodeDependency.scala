@@ -67,7 +67,7 @@ object Parameter {
 
   // we want to have mandatory parameters by default because it can protect us from NPE in some cases)
   def apply(name: ParameterName, typ: TypingResult): Parameter =
-    Parameter(name, typ, validators = List(MandatoryParameterValidator))
+    Parameter(name, typ, validators = List(MandatoryExpressionValidator))
 
   def apply(name: ParameterName, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
     Parameter(name, typ, validators, editors = List.empty)
@@ -129,7 +129,7 @@ object Parameter {
 object NotBlankParameter {
 
   def apply(name: ParameterName, typ: TypingResult): Parameter =
-    Parameter(name, typ, validators = List(NotBlankParameterValidator))
+    Parameter(name, typ, validators = List(NotBlankValidator))
 
 }
 
@@ -316,7 +316,7 @@ case class Parameter(
     )
   }
 
-  val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
+  val isOptional: Boolean = !validators.contains(MandatoryExpressionValidator)
 
 //  // TODO: all three methods below could be removed when we split this class into api class and domain model class
   def finalEditors: List[ParameterEditor] = editors match {

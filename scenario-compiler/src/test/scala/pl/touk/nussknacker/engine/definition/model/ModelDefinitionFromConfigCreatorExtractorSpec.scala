@@ -13,10 +13,10 @@ import pl.touk.nussknacker.engine.api.context.ContextTransformation.DummyStreamT
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
   FixedExpressionValue,
-  FixedValuesValidator,
-  MandatoryParameterValidator,
+  FixedValuesExpressionValidator,
+  MandatoryExpressionValidator,
   Parameter,
-  RegExpParameterValidator
+  RegExpValidator
 }
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType, LabeledExpression}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
@@ -112,9 +112,9 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
     definition.parameters should have size 1
     val parameter = definition.parameters.head
-    parameter.validators should contain(MandatoryParameterValidator)
+    parameter.validators should contain(MandatoryExpressionValidator)
     parameter.validators should contain(
-      FixedValuesValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar")))
+      FixedValuesExpressionValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar")))
     )
   }
 
@@ -185,8 +185,8 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val parameter = definition.parameters.find(_.name == ParameterName("param1"))
     parameter.map(_.validators) shouldBe Some(
       List(
-        MandatoryParameterValidator,
-        RegExpParameterValidator(".*", "has to match...", "really has to match...")
+        MandatoryExpressionValidator,
+        RegExpValidator(".*", "has to match...", "really has to match...")
       )
     )
   }

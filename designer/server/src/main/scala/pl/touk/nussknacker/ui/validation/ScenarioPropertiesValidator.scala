@@ -6,7 +6,11 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, MissingRequiredProperty}
-import pl.touk.nussknacker.engine.api.definition.{CompileTimeValidator, MandatoryParameterValidator, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{
+  CompileTimeValidator,
+  MandatoryExpressionValidator,
+  ParameterValidator
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -83,7 +87,7 @@ class ScenarioPropertiesValidator(
   ) = {
     config
       .filter(_._2.validators.nonEmpty)
-      .filter(_._2.validators.get.contains(MandatoryParameterValidator))
+      .filter(_._2.validators.get.contains(MandatoryExpressionValidator))
       .map(propertyConfig =>
         (propertyConfig._1, propertyConfig._2, MissingRequiredPropertyValidator(scenarioProperties.map(_._1)))
       )

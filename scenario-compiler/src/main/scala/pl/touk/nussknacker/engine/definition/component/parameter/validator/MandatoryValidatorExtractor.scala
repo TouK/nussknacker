@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
-
-import javax.annotation.Nullable
+import pl.touk.nussknacker.engine.api.definition.{MandatoryExpressionValidator, ParameterValidator}
 
 object MandatoryValidatorExtractor extends ValidatorExtractor {
 
@@ -10,7 +8,7 @@ object MandatoryValidatorExtractor extends ValidatorExtractor {
     if (params.isOptional) {
       None
     } else {
-      Some(MandatoryParameterValidator)
+      Some(MandatoryExpressionValidator)
     }
   }
 

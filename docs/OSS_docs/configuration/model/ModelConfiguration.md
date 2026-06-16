@@ -99,7 +99,7 @@ in most cases you should not need to defined these settings. The settings you ca
 * in which toolbox panel the component should appear (`componentGroup` property)  
 * `params` configuration (allows to override default component settings):
   * `editor` - `BoolParameterEditor`, `SpelTemplateParameterEditor`, `DateParameterEditor` etc. 
-  * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
+  * `validators` - `MandatoryExpressionValidator`, `NotBlankValidator`, `RegExpValidator`
   * `defaultValue`
   * `label`
   * `hintText`
@@ -114,7 +114,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
             editor: "SpelTemplateParameterEditor"
             validators: [ 
               {
-                type: "RegExpParameterValidator"
+                type: "RegExpValidator"
                 pattern: "customerId-[0-9]*"
                 message: "has to match customer id format"
                 description: "really has to match..."
@@ -177,7 +177,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
 scenarioPropertiesConfig {
   campaignType: {
     editor: { type: "SpelTemplateParameterEditor" }
-    validators: [ { type: "MandatoryParameterValidator" } ]
+    validators: [ { type: "MandatoryExpressionValidator" } ]
     label: "Campaign type"
     defaultValue: "Generic campaign"
   }

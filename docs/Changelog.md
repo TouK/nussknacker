@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9391](https://github.com/TouK/nussknacker/pull/9391) Built-in parameter validators: runtime validation, `@NotNull`/`@NotEmpty` support and naming cleanup. See the [Migration Guide](MigrationGuide.md) for details and behavior changes.
 * [#9389](https://github.com/TouK/nussknacker/pull/9389) Aggregation windows now support seconds-level precision.
     * Duration editors for sliding, tumbling, and session aggregations include a seconds component.
     * Sliding aggregation resolution is derived automatically from the window length: 1-second buckets when the window contains a seconds component, 1-minute buckets otherwise.
