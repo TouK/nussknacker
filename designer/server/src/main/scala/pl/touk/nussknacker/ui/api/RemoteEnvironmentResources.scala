@@ -117,6 +117,35 @@ class RemoteEnvironmentResources(
             }
           }
         } ~
+        path(ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
+          (processName, currentLocalVersionId) =>
+            (get & processId(processName)) { processIdWithName =>
+              complete {
+                for {
+                  localDetails <- processService.getProcessWithDetails(
+                    processIdWithName,
+                    currentLocalVersionId,
+                    GetScenarioWithDetailsOptions.withScenarioGraph
+                  )
+                  remoteVersions <- remoteEnvironment.processVersions(processIdWithName.name)
+                  diffsPerVersion <- Future.traverse(remoteVersions) { remoteVersion =>
+                    remoteEnvironment
+                      .compare(
+                        localDetails.scenarioGraphUnsafe,
+                        processIdWithName.name,
+                        Some(remoteVersion.processVersionId)
+                      )
+                      .map { diffResult =>
+                        val diff = diffResult.getOrElse(Map.empty)
+                        (remoteVersion.processVersionId, diff)
+                      }
+                  }
+                } yield diffsPerVersion.collect {
+                  case (versionId, diff) if ScenarioGraphComparator.hasMeaningfulDifferences(diff) => versionId
+                }
+              }
+            }
+        } ~
         path(ProcessNameSegment / "versions") { processName =>
           (get & processId(processName)) { processId =>
             complete {

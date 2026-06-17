@@ -970,6 +970,21 @@ class HttpService {
         return promise;
     }
 
+    fetchVersionsWithDifferences(processName: ProcessName, versionId: number) {
+        const promise = api.get<number[]>(`/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`);
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToGetVersionsWithDifferences", "Failed to get versions with differences"), error),
+        );
+        return promise;
+    }
+
+    fetchRemoteVersionsWithDifferences(processName: ProcessName, versionId: number): Promise<number[] | null> {
+        return api
+            .get<number[]>(`/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`)
+            .then((response) => response.data)
+            .catch(() => null);
+    }
+
     fetchRemoteVersions(processName: ProcessName) {
         const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
         promise.catch((error) =>
