@@ -947,6 +947,31 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("return versions with meaningful differences excluding identical versions") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val versionIds = responseAs[List[Long]]
+      versionIds should contain(1L)
+    }
+  }
+
+  test("return empty list of versions with differences when no other versions exist") {
+    createEmptyScenario(processName, category = Category1)
+
+    Get(
+      s"/api/processes/$processName/1/versions-with-differences"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val versionIds = responseAs[List[Long]]
+      versionIds shouldBe empty
+    }
+  }
+
   test("return non-validated process version") {
     createEmptyScenario(processName, category = Category1)
 

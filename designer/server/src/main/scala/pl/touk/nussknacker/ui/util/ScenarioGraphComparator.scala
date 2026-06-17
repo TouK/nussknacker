@@ -59,8 +59,30 @@ object ScenarioGraphComparator {
       .toMap
   }
 
+  import io.circe.Json
+  import io.circe.syntax._
   import pl.touk.nussknacker.engine.api.CirceUtil._
   import pl.touk.nussknacker.engine.graph.node.NodeData._
+
+  def hasMeaningfulDifferences(diff: Map[String, Difference]): Boolean = {
+    diff.nonEmpty && diff.values.exists {
+      case NodeDifferent(_, current, other) => !isLayoutOnlyNodeDiff(current, other)
+      case _                                => true
+    }
+  }
+
+  private def isLayoutOnlyNodeDiff(current: NodeData, other: NodeData): Boolean =
+    nodeJsonWithoutLayout(current) == nodeJsonWithoutLayout(other)
+
+  private def nodeJsonWithoutLayout(node: NodeData): Json = {
+    val json = node.asJson
+    json.hcursor
+      .downField("additionalFields")
+      .downField("layoutData")
+      .delete
+      .top
+      .getOrElse(json)
+  }
 
   @ConfiguredJsonCodec sealed trait Difference {
     def id: String
