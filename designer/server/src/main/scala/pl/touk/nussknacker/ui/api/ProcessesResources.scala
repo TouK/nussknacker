@@ -224,6 +224,40 @@ class ProcessesResources(
               .map(processToolbarService.getScenarioToolbarSettings(_).asJson)
           }
         }
+      } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
+        (processName, currentVersionId) =>
+          (get & processId(processName)) { processId =>
+            complete {
+              for {
+                currentDetails <- processService.getProcessWithDetails(
+                  processId,
+                  currentVersionId,
+                  GetScenarioWithDetailsOptions.withScenarioGraph
+                )
+                latestDetails <- processService.getLatestProcessWithDetails(
+                  processId,
+                  GetScenarioWithDetailsOptions.detailsOnly
+                )
+                otherVersionIds = latestDetails.history
+                  .getOrElse(Nil)
+                  .map(_.processVersionId)
+                  .filterNot(_ == currentVersionId)
+                diffsPerVersion <- Future.traverse(otherVersionIds) { otherVersionId =>
+                  processService
+                    .getProcessWithDetails(processId, otherVersionId, GetScenarioWithDetailsOptions.withScenarioGraph)
+                    .map { otherDetails =>
+                      val diff = ScenarioGraphComparator.compare(
+                        currentDetails.scenarioGraphUnsafe,
+                        otherDetails.scenarioGraphUnsafe
+                      )
+                      (otherVersionId, diff)
+                    }
+                }
+              } yield diffsPerVersion.collect {
+                case (versionId, diff) if ScenarioGraphComparator.hasMeaningfulDifferences(diff) => versionId
+              }
+            }
+          }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
         (processName, thisVersion, otherVersion) =>
           (get & processId(processName)) { processId =>
