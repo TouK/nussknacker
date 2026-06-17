@@ -2,12 +2,12 @@ package pl.touk.nussknacker.ui.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
-import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
+import pl.touk.nussknacker.engine.graph.node.{Case, Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator._
 
 class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
@@ -87,6 +87,44 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
         Edge("switch1", "end1", Some(NextSwitch("other".spel)))
       )
     )
+  }
+
+  test("hasMeaningfulDifferences returns false for empty diff") {
+    val current = toDisplayable(_.emptySink("end", "testSink"))
+    val diff    = ScenarioGraphComparator.compare(current, current)
+    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe false
+  }
+
+  test("hasMeaningfulDifferences returns true for node content change") {
+    val current = toDisplayable(_.filter("filter1", "#input == 4".spel).emptySink("end", "testSink"))
+    val other   = toDisplayable(_.filter("filter1", "#input == 8".spel).emptySink("end", "testSink"))
+    val diff    = ScenarioGraphComparator.compare(current, other)
+    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
+  }
+
+  test("hasMeaningfulDifferences returns false when only layoutData differs") {
+    val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
+    val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
+    val nodeWithLayoutA = Filter("filter1", "#input == 4".spel, additionalFields = layoutA)
+    val nodeWithLayoutB = Filter("filter1", "#input == 4".spel, additionalFields = layoutB)
+    val diff            = Map("Node 'filter1'" -> NodeDifferent("filter1", nodeWithLayoutA, nodeWithLayoutB))
+    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe false
+  }
+
+  test("hasMeaningfulDifferences returns true when layout and content both differ") {
+    val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
+    val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
+    val nodeWithLayoutA = Filter("filter1", "#input == 4".spel, additionalFields = layoutA)
+    val nodeWithLayoutB = Filter("filter1", "#input == 8".spel, additionalFields = layoutB)
+    val diff            = Map("Node 'filter1'" -> NodeDifferent("filter1", nodeWithLayoutA, nodeWithLayoutB))
+    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
+  }
+
+  test("hasMeaningfulDifferences returns true for edge differences regardless of layout") {
+    val current = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("current")))
+    val other   = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("other")))
+    val diff    = ScenarioGraphComparator.compare(current, other)
+    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
   }
 
   test("detect changed description") {

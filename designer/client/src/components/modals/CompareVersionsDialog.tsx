@@ -27,18 +27,26 @@ import type { ProcessVersionType } from "../Process/types";
 import { PropertiesForm } from "../properties";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
+type Environment = "local" | "remote";
+
 const initState: State = {
+    environment: "local",
     otherVersion: null,
     currentDiffId: null,
     difference: null,
     remoteVersions: [],
+    versionIdsWithDifferences: new Set(),
+    remoteVersionIdsWithDifferences: null,
 };
 
 interface State {
+    environment: Environment;
     currentDiffId: string;
     otherVersion: string;
     remoteVersions: ProcessVersionType[];
     difference: unknown;
+    versionIdsWithDifferences: Set<number>;
+    remoteVersionIdsWithDifferences: Set<number> | null; // null = fallback (show all)
 }
 
 interface Props {
@@ -61,6 +69,26 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         }
     }, [processName, otherEnvironment]);
 
+    useEffect(() => {
+        if (processName && version && otherEnvironment) {
+            HttpService.fetchRemoteVersionsWithDifferences(processName, version).then((ids) => {
+                setState((prevState) => ({
+                    ...prevState,
+                    remoteVersionIdsWithDifferences: ids !== null ? new Set(ids) : null,
+                }));
+            });
+        }
+    }, [processName, version, otherEnvironment]);
+
+    useEffect(() => {
+        if (processName && version) {
+            HttpService.fetchVersionsWithDifferences(processName, version).then((response) => {
+                const ids = response.data ?? [];
+                setState((prevState) => ({ ...prevState, versionIdsWithDifferences: new Set(ids) }));
+            });
+        }
+    }, [processName, version]);
+
     const isLayoutChangeOnly = useCallback(
         (diffId: string): boolean => {
             const { type, currentNode, otherNode } = state.difference[diffId];
@@ -78,7 +106,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     setState((prevState) => ({ ...prevState, difference: response.data, otherVersion: versionId, currentDiffId: null })),
                 );
             } else {
-                setState(initState);
+                setState((prev) => ({ ...prev, otherVersion: null, currentDiffId: null, difference: null }));
             }
         },
         [processName, version],
@@ -200,17 +228,27 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     };
 
     const versionOptions: Option[] = useMemo(() => {
+        if (state.environment === "remote") {
+            const allRemote = state?.remoteVersions ?? [];
+            const filtered =
+                state.remoteVersionIdsWithDifferences !== null
+                    ? allRemote.filter((v) => state.remoteVersionIdsWithDifferences.has(v.processVersionId))
+                    : allRemote;
+            return [
+                { label: "", value: "" },
+                ...filtered.map((v) => ({
+                    label: createVersionElement(v, remotePrefix),
+                    value: createVersionId(v, remotePrefix),
+                })),
+            ];
+        }
         return [
             { label: "", value: "" },
             ...versions
-                .filter((currentVersion) => version !== currentVersion.processVersionId)
-                .map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
-            ...(state?.remoteVersions ?? []).map((version) => ({
-                label: createVersionElement(version, remotePrefix),
-                value: createVersionId(version, remotePrefix),
-            })),
+                .filter((v) => version !== v.processVersionId && state.versionIdsWithDifferences.has(v.processVersionId))
+                .map((v) => ({ label: createVersionElement(v), value: createVersionId(v) })),
         ];
-    }, [createVersionElement, state?.remoteVersions, version, versions]);
+    }, [createVersionElement, state.environment, state?.remoteVersions, state.remoteVersionIdsWithDifferences, state.versionIdsWithDifferences, version, versions]);
 
     const differenceOptions: Option[] = useMemo(() => {
         return [
@@ -226,8 +264,41 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         ];
     }, [isLayoutChangeOnly, state?.difference]);
 
+    const handleEnvironmentChange = useCallback(
+        (env: string) => {
+            setState((prev) => ({
+                ...prev,
+                environment: env as Environment,
+                otherVersion: null,
+                currentDiffId: null,
+                difference: null,
+            }));
+        },
+        [],
+    );
+
+    const environmentOptions: Option[] = useMemo(() => {
+        if (!otherEnvironment) return [];
+        return [
+            { label: "Local", value: "local" },
+            { label: otherEnvironment, value: "remote" },
+        ];
+    }, [otherEnvironment]);
+
     return (
         <>
+            {otherEnvironment && (
+                <FormControl>
+                    <FormLabel>Environment</FormLabel>
+                    <TypeSelect
+                        id="environment"
+                        onChange={handleEnvironmentChange}
+                        value={environmentOptions.find((o) => o.value === state.environment)}
+                        options={environmentOptions}
+                        fieldErrors={[]}
+                    />
+                </FormControl>
+            )}
             <FormControl>
                 <FormLabel>Version to compare</FormLabel>
                 <TypeSelect
