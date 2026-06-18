@@ -15,18 +15,46 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9391](https://github.com/TouK/nussknacker/pull/9391) Built-in parameter validators: runtime validation, `@NotNull`/`@NotEmpty` support and naming cleanup. See the [Migration Guide](MigrationGuide.md) for details and behavior changes.
 * [#9389](https://github.com/TouK/nussknacker/pull/9389) Aggregation windows now support seconds-level precision.
     * Duration editors for sliding, tumbling, and session aggregations include a seconds component.
     * Sliding aggregation resolution is derived automatically from the window length: 1-second buckets when the window contains a seconds component, 1-minute buckets otherwise.
     * A hint text warns that adding seconds to long windows increases state size.
 * [#9390](https://github.com/TouK/nussknacker/pull/9390) Add HintText annotation for method-based components
 * Runtime parameter validation support added.
-  * `Validator` is now a sealed trait. `CompileTimeValidator` carries the existing compile-time `isValid` signature; `RuntimeValidator` is new and runs after expression evaluation at runtime.
-  * Custom validators can implement `CustomCompileTimeParameterValidator`, `CustomRuntimeParameterValidator`, or both.
-  * A failed runtime validation throws `ParameterRuntimeValidationException` (a `NonTransientException`).
-  * New `@CustomValidator(classOf[MyValidator])` Java annotation (in `pl.touk.nussknacker.engine.api.validation`) attaches a `CustomParameterValidator` to a parameter by class.
-  * All existing built-in validators (`MandatoryParameterValidator`, `NotBlankParameterValidator`, etc.) remain compile-time only — their behavior is unchanged.
-* [#9317](https://github.com/TouK/nussknacker/pull/9317/) Add handling null in List during Flink serialization
+    * `Validator` is now a sealed trait. `CompileTimeValidator` carries the existing compile-time `isValid` signature; `RuntimeValidator` is new and runs after expression evaluation at runtime.
+    * Custom validators can implement `CustomCompileTimeParameterValidator`, `CustomRuntimeParameterValidator`, or both.
+    * A failed runtime validation throws `ParameterRuntimeValidationException` (a `NonTransientException`).
+    * New `@CustomValidator(classOf[MyValidator])` Java annotation (in `pl.touk.nussknacker.engine.api.validation`) attaches a `CustomParameterValidator` to a parameter by class.
+    * All existing built-in validators (`MandatoryParameterValidator`, `NotBlankParameterValidator`, etc.) remain compile-time only — their behavior is unchanged.
+* [#9376](https://github.com/TouK/nussknacker/pull/9379) Introduce DeduplicationTransformer - Deduplication Component
+* [#9376](https://github.com/TouK/nussknacker/pull/9376) Sliding window aggregation components (`aggregate-sliding`, `aggregate-tumbling`, `single-side-join`, `full-outer-join`) now use Flink `MapState` instead of a serialised `SortedMap` stored in `ValueState`.
+  * This avoids full state deserialisation on every access, significantly reducing overhead with RocksDB state backend.
+  * **Note:** existing savepoints/checkpoints containing aggregation state are not compatible with this version — scenarios using these components must be restarted from scratch.
+* [#9314](https://github.com/TouK/nussknacker/pull/9314) OpenAPI enricher: `handleErrors` renamed to `Error Strategy` and moved to advanced parameters
+* [#9303](https://github.com/TouK/nussknacker/pull/9303) OpenAPI enricher: added `handleErrors` response wrapping (`error`, `errorResponse`, `successResponse`, optional `statusCode`), with `statusCode` when it can be extracted.
+* [#9292](https://github.com/TouK/nussknacker/pull/9292) Variable node: added `SET`/`UNSET` operation with multi-variable `UNSET` and context cleanup for removed local variables.
+    * Backward compatible: existing scenarios keep previous behavior (`SET` by default), no migration required.
+* [#9231](https://github.com/TouK/nussknacker/pull/9231) OpenAPI enricher: improved discovery cache resilience.
+    * Added optional `cacheFileLocation` configuration for persisting last valid OpenAPI definitions.
+    * Added stale-on-error behavior for discovery refresh: on refresh failure, cached definitions are used from memory and (if configured) from file cache.
+    * Renamed OpenAPI discovery cache TTL key from `openApiServicesDiscoveryCacheTtl` to `discoveryCacheTtl`.
+* [#9167](https://github.com/TouK/nussknacker/pull/9167) OpenAPI enricher: added OAuth2 Client Credentials authentication support.
+  * New security type: `oauth2ClientCredentials` (alias: `oauth2`) with `clientId` and `clientSecret`.
+  * `tokenUrl` and scopes are resolved from OpenAPI `securitySchemes` and operation `security` requirements.
+  * `docs/integration/OpenAPI.md` removed in favor of `https://docs.nussknacker.io/OSS_docs/integration/OpenAPI/`.
+* [#9112](https://github.com/TouK/nussknacker/pull/9112) Sink output records are now visible in `Outgoing records` for both scenario tests and live data preview.
+    * Component API update for custom sink preview values: introduced `SinkDisplayableValue` trait.
+    * Added `ResultsVariableEncoder` utility for result/live data variable encoding.
+    * `ResultCollector` now supports sink-level collectors (`createSinkInvocationCollector`, `shouldRegisterSinkInAdditionToCollector`).
+* [#8988](https://github.com/TouK/nussknacker/pull/8988) Fixed fragment test data validation for required or restricted input parameters
+* [#8997](https://github.com/TouK/nussknacker/pull/8997) Introduce Node IDs as a stable UUIDs
+  * Each scenario node now has two distinct fields: a stable `id` (UUID, never changes) and a user-editable `name` (human-readable label).
+  * Existing scenarios are migrated, the old human-readable ID becomes the node `name`, and a new UUID is generated as `id`.
+  * Introduce `nodeNames` field to `ValidationResult` response to easily translate uuid to user-friendly names. Fragment inner nodes are covered using the `"fragmentName - innerNodeName"` format.
+* [#8923](https://github.com/TouK/nussknacker/pull/8923) Add new functions to Collection/Geo/Numeric helpers
+* [#8897](https://github.com/TouK/nussknacker/pull/8897) Fix: Passing TraceId after collect in RequestResponse
+* [#8849](https://github.com/TouK/nussknacker/pull/8849) Vulnerability: Spring upgrade to 6.2.15
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
 * [#8720](https://github.com/TouK/nussknacker/pull/8720) In those aggregates, that do not require preserving context, the context is now cleaned before grouping:
   * it is done by removing user variables
@@ -324,6 +352,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   When enabled, expressions with Unknown type cannot be assigned to fields with a concrete type, reducing runtime type errors for partially typed data.
   Can be configured by implementing TypingConfigurationProvider and registering it as SPI.
   By default, the existing permissive behavior is preserved.
+* [#9392](https://github.com/TouK/nussknacker/pull/9392) Optimized error topic creation in large Kafka clusters
 
 ## 1.18
 
@@ -342,11 +371,6 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 * Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
-
-### 1.18.11 (ESP)
-
-* [#9353](https://github.com/TouK/nussknacker/pull/9353) Sliding window aggregation components (`aggregate-sliding`, `aggregate-tumbling`, `single-side-join`, `full-outer-join`) now use Flink `MapState` instead of a serialised `SortedMap` stored in `ValueState`. This avoids full state deserialisation on every access, significantly reducing overhead with RocksDB state backend.
-  * **Note:** existing savepoints containing aggregation state are not compatible with this version — scenarios using these components must be restarted from scratch.
 
 ### 1.18.1 (9 December 2024)
 
