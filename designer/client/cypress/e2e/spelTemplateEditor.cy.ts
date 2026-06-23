@@ -12,7 +12,7 @@ describe("SpEL template editor", () => {
     it("should insert '#{ # }' snippet when '#{' provided", () => {
         cy.visitNewProcess(seed, "spelTemplateEditor", "Category1");
         cy.getNode("Delay").should("be.visible").trigger("dblclick");
-        cy.get("[title='key']").next().find(".ace_editor").should("be.visible").parent().as("editor");
+        cy.get("[title='keyBy']").next().find(".ace_editor").should("be.visible").parent().as("editor");
 
         cy.get("@editor").click();
 

@@ -21,8 +21,9 @@ class FlinkBaseComponentProvider extends ComponentProvider {
       componentProviderConfig: Config,
       componentDependencies: ComponentDependencies
   ): List[ComponentDefinition] = {
-    val docsConfig = DocsConfig(componentProviderConfig)
-    FlinkBaseComponentProvider.create(docsConfig)
+    val docsConfig  = DocsConfig(componentProviderConfig)
+    val delayConfig = DelayConfig.fromConfig(componentProviderConfig)
+    FlinkBaseComponentProvider.create(docsConfig, delayConfig)
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
@@ -33,9 +34,12 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 object FlinkBaseComponentProvider {
 
   val Components: List[ComponentDefinition] =
-    create(DocsConfig.Default)
+    create(DocsConfig.Default, DelayConfig.Default)
 
-  def create(docsConfig: DocsConfig): List[ComponentDefinition] = {
+  def create(
+      docsConfig: DocsConfig,
+      delayConfig: DelayConfig
+  ): List[ComponentDefinition] = {
     import docsConfig._
 
     List(
@@ -51,7 +55,7 @@ object FlinkBaseComponentProvider {
       ComponentDefinition(name = "decision-table", component = DecisionTable)
         .withRelativeDocs("Enrichers/#decision-table")
         .withDesignerWideId("decision-table"),
-      ComponentDefinition("delay", DelayTransformer)
+      ComponentDefinition("delay", new DelayTransformer(delayConfig), label = Some("Delay"))
         .withRelativeDocs("DataSourcesAndSinks#delay"),
       ComponentDefinition("previousValue", PreviousValueTransformer, label = Some("Previous Value"))
         .withRelativeDocs("DataSourcesAndSinks#previousvalue"),

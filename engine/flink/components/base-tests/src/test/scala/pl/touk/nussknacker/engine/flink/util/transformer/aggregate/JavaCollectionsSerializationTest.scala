@@ -35,8 +35,9 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       .customNodeNoOutput(
         "delay",
         "delay",
-        "key"   -> "#input.id".spel,
-        "delay" -> "T(java.time.Duration).parse('PT30M')".spel
+        "keyBy"    -> "#input.id".spel,
+        "delay"    -> "T(java.time.Duration).parse('PT30M')".spel,
+        "timeMode" -> "'EventTime'".spel
       )
       .emptySink("end", "dead-end")
 

@@ -70,8 +70,9 @@ class ModelUtilExceptionHandlingSpec
             .customNodeNoOutput(
               "delay",
               "delay",
-              "key"   -> generator.throwFromString().spel,
-              "delay" -> "T(java.time.Duration).parse('PT0M')".spel,
+              "keyBy"    -> generator.throwFromString().spel,
+              "delay"    -> "T(java.time.Duration).parse('PT0M')".spel,
+              "timeMode" -> "'EventTime'".spel,
             )
             .split(
               "branches",
