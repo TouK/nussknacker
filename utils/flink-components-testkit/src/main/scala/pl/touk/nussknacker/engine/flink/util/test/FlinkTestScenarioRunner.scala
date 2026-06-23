@@ -247,6 +247,7 @@ class FlinkTestScenarioRunner(
           )
           val streamGraph = env.getStreamGraph
           streamGraph.setSavepointRestoreSettings(savepointRestoreSettings)
+          streamGraph.setJobName(scenario.name.value)
 
           val jobExecutionResult = env.execute(streamGraph)
           flinkMiniClusterWithServices

@@ -15,6 +15,11 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9394](https://github.com/TouK/nussknacker/pull/9394) The `delay` component: added processing-time support and reworked parameters.
+    * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain. In processing time, events still queued when a bounded input ends are flushed at the end of the input.
+    * The default `timeMode` can be configured via the optional `components.base.delay.timeMode` setting; when not configured it defaults to `ProcessingTime` (`keyBy` and `delay` have fixed defaults `""` and `100ms`). **Note:** the `timeMode` default changes the previous default behavior (event time) for delay nodes that do not set the parameter.
+    * Renamed the `key` parameter to `keyBy`.
+    * Reimplemented as a dynamic `CustomStreamTransformer` with parameter labels/hints.
 * [#9391](https://github.com/TouK/nussknacker/pull/9391) Built-in parameter validators: runtime validation, `@NotNull`/`@NotEmpty` support and naming cleanup. See the [Migration Guide](MigrationGuide.md) for details and behavior changes.
 * [#9389](https://github.com/TouK/nussknacker/pull/9389) Aggregation windows now support seconds-level precision.
     * Duration editors for sliding, tumbling, and session aggregations include a seconds component.

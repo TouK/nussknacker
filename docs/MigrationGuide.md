@@ -248,6 +248,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 
+* [#9394](https://github.com/TouK/nussknacker/pull/9394) The `delay` component was reworked:
+    * The `key` parameter was renamed to `keyBy`. Existing scenarios using the `delay` component must update this parameter (rename `key` to `keyBy`), either manually or via a scenario/DB migration.
+    * A new advanced parameter `timeMode` (`EventTime` / `ProcessingTime`) was added. Its default can be configured via the optional `components.base.delay.timeMode` setting; when not configured it defaults to `ProcessingTime` (`keyBy` and `delay` have fixed defaults `""` and `100ms`).
+    * **Behavior change:** the previous default was event time. Delay nodes that do not set `timeMode` now run in processing time. To keep the previous behavior, either set the node's `timeMode` to `EventTime`, or configure `components.base.delay.timeMode: "EventTime"`.
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
     * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15
     * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
