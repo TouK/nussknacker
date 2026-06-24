@@ -7,6 +7,7 @@ import org.apache.flink.metrics.{Gauge => FlinkGauge}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.exception.ParameterRuntimeValidationException
 import pl.touk.nussknacker.engine.api.process.{ProcessName, SourceFactory}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -152,10 +153,103 @@ class DelayTransformerTest
     gaugeValue("bufferedEvents") shouldBe 0L
   }
 
+  test("should compute the delay per event from an input field") {
+    implicit val scenarioName: ProcessName = ProcessName(getClass.getName + "-per-event-delay")
+    val scenario = createScenarioWithDelayExpression(
+      scenarioName,
+      TestScenarioRunner.testDataSource,
+      delayExpression = "T(java.time.Duration).ofMillis(#input.delayMillis)",
+      timeMode = TimeMode.EventTime
+    )
+
+    // each record carries its own delay; the bounded final watermark releases them all regardless of size
+    val data = List(
+      DelayTestRecord("A", 1, 0L, 1000L),
+      DelayTestRecord("B", 2, 0L, 60000L),
+      DelayTestRecord("A", 3, 0L, 0L),
+      DelayTestRecord("B", 4, 0L, 120000L),
+    )
+
+    val runner = TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .build()
+
+    val result = runner.runWithData[DelayTestRecord, Int](scenario, data, watermarkStrategy = Some(watermarkStrategy))
+    result.validValue.successes should contain theSameElementsAs List(1, 2, 3, 4)
+    result.validValue.errors shouldBe empty
+  }
+
+  test("should route a per-event null delay to the error handler and keep processing the rest") {
+    implicit val scenarioName: ProcessName = ProcessName(getClass.getName + "-null-delay")
+    val scenario = createScenarioWithDelayExpression(
+      scenarioName,
+      TestScenarioRunner.testDataSource,
+      // null for the offending record (delayMillis < 0 used as a "missing" marker -> null Duration)
+      delayExpression = "#input.delayMillis < 0 ? null : T(java.time.Duration).ofMillis(#input.delayMillis)",
+      timeMode = TimeMode.EventTime
+    )
+
+    val data = List(
+      DelayTestRecord("A", 1, 0L, 0L),
+      DelayTestRecord("B", 2, 0L, -1L), // -> null delay -> error
+      DelayTestRecord("A", 3, 0L, 0L),
+    )
+
+    val runner = TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .build()
+
+    val result = runner.runWithData[DelayTestRecord, Int](scenario, data, watermarkStrategy = Some(watermarkStrategy))
+    result.validValue.successes should contain theSameElementsAs List(1, 3)
+    val errors = result.validValue.errors
+    errors should have size 1
+    errors.head.nodeId.map(_.value) shouldBe Some("delay")
+    errors.head.context.variables.get("input").map(_.asInstanceOf[DelayTestRecord].value) shouldBe Some(2)
+    errors.head.throwable shouldBe a[ParameterRuntimeValidationException]
+    errors.head.throwable.getMessage should include("This field value can not be null")
+  }
+
+  test("should treat a per-event negative delay as no delay and emit the event without error") {
+    implicit val scenarioName: ProcessName = ProcessName(getClass.getName + "-negative-delay")
+    val scenario = createScenarioWithDelayExpression(
+      scenarioName,
+      TestScenarioRunner.testDataSource,
+      delayExpression = "T(java.time.Duration).ofMillis(#input.delayMillis)",
+      timeMode = TimeMode.EventTime
+    )
+
+    val data = List(
+      DelayTestRecord("A", 1, 0L, 0L),
+      DelayTestRecord("B", 2, 0L, -1L), // -> negative delay -> released immediately, no error
+      DelayTestRecord("A", 3, 0L, 1000L),
+    )
+
+    val runner = TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .build()
+
+    val result = runner.runWithData[DelayTestRecord, Int](scenario, data, watermarkStrategy = Some(watermarkStrategy))
+    result.validValue.successes should contain theSameElementsAs List(1, 2, 3)
+    result.validValue.errors shouldBe empty
+  }
+
   private def createScenario(
       processName: ProcessName,
       sourceComponentId: String,
       delay: String,
+      timeMode: TimeMode
+  ): CanonicalProcess =
+    createScenarioWithDelayExpression(
+      processName,
+      sourceComponentId,
+      delayExpression = s"T(java.time.Duration).parse('$delay')",
+      timeMode = timeMode
+    )
+
+  private def createScenarioWithDelayExpression(
+      processName: ProcessName,
+      sourceComponentId: String,
+      delayExpression: String,
       timeMode: TimeMode
   ): CanonicalProcess =
     ScenarioBuilder
@@ -166,7 +260,7 @@ class DelayTransformerTest
         "delay",
         "delay",
         "keyBy"    -> "#input.key".spel,
-        "delay"    -> s"T(java.time.Duration).parse('$delay')".spel,
+        "delay"    -> delayExpression.spel,
         "timeMode" -> s"'$timeMode'".spel,
       )
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input.value".spel)
@@ -209,4 +303,4 @@ object DelayTestRecord {
 }
 
 @TypeInfo(classOf[DelayTestRecord.TypeInfoFactory])
-case class DelayTestRecord(key: String, value: Int, eventTimestamp: Long)
+case class DelayTestRecord(key: String, value: Int, eventTimestamp: Long, delayMillis: Long = 0L)

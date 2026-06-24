@@ -23,7 +23,12 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.{TimeMode, WithTimeMode}
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.operator.{BoundedEndInputFlushingOperator, EndInputFlushableFunction}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkCustomNodeContext,
+  FlinkCustomStreamTransformation,
+  FlinkLazyParameterFunctionHelper,
+  LazyParameterInterpreterFunction
+}
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, MetricsProviderForScenario}
 import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, nodeNameTag}
@@ -61,16 +66,21 @@ class DelayTransformer(config: DelayConfig)
   private val delayParamName = ParameterName("delay")
 
   private val delayParamDeclaration = ParameterDeclaration
-    .mandatory[Duration](delayParamName)
+    .lazyMandatory[Duration](delayParamName)
     .withCreator(modify =
       param =>
         param.copy(
           labelOpt = Some("Delay"),
+          hintText = Some(
+            "Delay applied to each event before it is released. Evaluated per event, so the expression may reference " +
+              "input fields. A negative duration is treated as no delay (the event is released immediately)."
+          ),
           defaultValue = Some(s"T(java.time.Duration).parse('${Duration.ofMillis(100)}')".spel),
           editors = List(
             DurationParameterEditor(
               List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
-            )
+            ),
+            SpelParameterEditor
           ),
           validators = param.validators :+ NotNullValidator
         )
@@ -160,30 +170,35 @@ object DelayConfig {
 
   private[transformer] val Default: DelayConfig = DelayConfig(timeMode = TimeMode.ProcessingTime)
 
-  def fromConfig(config: Config, path: String = DelayConfigNamespace): DelayConfig = {
+  def fromConfig(config: Config, path: String = DelayConfigNamespace): DelayConfig =
     Option
-      .when(config.hasPath(path)) {
-        config.as[DelayConfig](path)
-      }
+      .when(config.hasPath(path))(config.as[DelayConfig](path))
       .getOrElse(Default)
-  }
 
 }
 
 final case class DelayConfig(timeMode: TimeMode)
 
-class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration, override val timeMode: TimeMode)
-    extends KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]
+class DelayFunction(
+    nodeCtx: FlinkCustomNodeContext,
+    delayParam: LazyParameter[Duration],
+    override val timeMode: TimeMode
+) extends KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]
     with WithTimeMode[String, ValueWithContext[String], ValueWithContext[AnyRef]]
     with EndInputFlushableFunction[ValueWithContext[AnyRef]]
-    with CheckpointedFunction {
+    with CheckpointedFunction
+    with LazyParameterInterpreterFunction {
 
   // Extracted eagerly so that nodeCtx stays a constructor-only local and is never serialized by Flink,
   // which would pull in non-serializable FlinkCustomNodeContext internals (e.g. ValueWithContextInfo).
-  private val toEngineRuntimeContext = nodeCtx.convertToEngineRuntimeContext
-  private val contextTypeInfo        = nodeCtx.contextTypeInfo
-  private val nodeName               = nodeCtx.nodeName
-  private val nodeId                 = nodeCtx.nodeId
+  // lazyParameterHelper is the exception: it is Serializable, so keeping it as a field is safe.
+  private val toEngineRuntimeContext                                  = nodeCtx.convertToEngineRuntimeContext
+  private val contextTypeInfo                                         = nodeCtx.contextTypeInfo
+  private val nodeName                                                = nodeCtx.nodeName
+  private val nodeId                                                  = nodeCtx.nodeId
+  protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper = nodeCtx.lazyParameterHelper
+
+  @transient private lazy val evaluateDelay = toEvaluateFunctionConverter.toEvaluateFunction(delayParam)
 
   @transient lazy private val bufferedEventsDescriptor =
     new MapStateDescriptor[java.lang.Long, java.util.List[api.Context]](
@@ -230,8 +245,9 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration, override v
   }
 
   override def open(openContext: OpenContext): Unit = {
+    super.open(openContext)
+
     bufferedEvents = getRuntimeContext.getMapState(bufferedEventsDescriptor)
-    bufferedEventsCount = 0
 
     val tags = Map(nodeIdTag -> nodeId.value, nodeNameTag -> nodeName.value)
     metricsProvider.registerGauge[java.lang.Long](
@@ -245,7 +261,18 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration, override v
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit =
-    delayEvent(value, ctx)
+    handlingErrors(value.context) {
+      val delayMillis = evaluateDelay(value.context).toMillis
+      if (delayMillis <= 0) {
+        // no delay - release the event immediately, bypassing the buffer and the timer
+        out.collect(ValueWithContext(null, value.context))
+      } else {
+        val fireTime = currentTime(ctx) + delayMillis
+        bufferEvent(fireTime, value)
+        registerTimer(ctx, fireTime)
+        bufferedEventsCount += 1
+      }
+    }
 
   override def onTimer(
       timestamp: Long,
@@ -272,18 +299,6 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration, override v
     }
   }
 
-  private def delayEvent(event: ValueWithContext[String], ctx: FlinkCtx): Unit = {
-    val fireTime = currentTime(ctx) + delay.toMillis
-    bufferEvent(fireTime, event)
-    registerTimer(ctx, fireTime)
-    bufferedEventsCount += 1
-  }
-
-  private def readBufferedEventsFromState(timestamp: java.lang.Long): java.util.List[api.Context] = {
-    val current = bufferedEvents.get(timestamp)
-    if (current != null) current else new util.ArrayList[api.Context]()
-  }
-
   private def bufferEvent(timestamp: java.lang.Long, event: ValueWithContext[String]): Unit = {
     val events = readBufferedEventsFromState(timestamp)
     events.add(event.context)
@@ -302,6 +317,11 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration, override v
 
     bufferedEvents.remove(timestamp)
     events.size
+  }
+
+  private def readBufferedEventsFromState(timestamp: java.lang.Long): java.util.List[api.Context] = {
+    val current = bufferedEvents.get(timestamp)
+    if (current != null) current else new util.ArrayList[api.Context]()
   }
 
 }
