@@ -15,7 +15,6 @@ componentPaletteGroup: Flow
 ---
 
 import ModeStreaming from '/badges/modeStreaming.mdx';
-import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
 
 # Delay
 <!-- Processing modes -->
@@ -23,8 +22,34 @@ import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
 
 ## Description
 
-Holds event in the node until 
-  *event time* + `delay` >= max (*event time* ever seen by the Delay node). 
+Holds each incoming event in the node for the configured **Delay** and then releases it.
+Events are grouped by the **Key by** expression, and each event is delayed independently.
 
-## Additional considerations
-The `key` parameter will be removed in the future release of Nussknacker, for the time being, configure it to `#inputMeta.key`.
+The **Time mode** parameter selects the time domain used for the delay:
+- **Event time** - an event is released once *event time* + delay >= max (*event time* ever seen by the Delay node).
+  When the input ends, any still-queued events are released as well, because Flink emits a final watermark that fires the pending timers.
+- **Processing time** - the delay is measured in processing time (wall clock). Events still queued when a bounded input ends are released immediately at the end of the input (the remaining delay is not awaited).
+
+:::note
+On a **bounded** source, when the input ends any events still waiting in the node - for example with a large processing-time **Delay** - are emitted **immediately**. The remaining delay is not awaited, so the configured delay is not honored for those events at the end of the input.
+:::
+
+## Parameters
+
+| Parameter | Description                                                              | Default        |
+| --------- | ------------------------------------------------------------------------ | -------------- |
+| Key by    | Groups events by this key. Each event is delayed independently.          | ""             |
+| Delay     | How long each event is held.                                             | 100ms          |
+| Time mode | Advanced. Time domain used for the delay: Event time or Processing time. | ProcessingTime |
+
+## Configuration
+
+The default `timeMode` can be configured (both the section and the field are optional):
+
+```hocon
+components.base.delay {
+  timeMode: "ProcessingTime"   # EventTime | ProcessingTime
+}
+```
+
+Only `timeMode` can be configured; `Key by` and `Delay` always use their defaults (see the parameters table above).

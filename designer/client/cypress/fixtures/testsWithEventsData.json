@@ -62,7 +62,7 @@
             "nodeType": "delay",
             "parameters": [
                 {
-                    "name": "key",
+                    "name": "keyBy",
                     "expression": {
                         "language": "spelTemplate",
                         "expression": ""
