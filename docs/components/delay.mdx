@@ -25,6 +25,12 @@ import ModeStreaming from '/badges/modeStreaming.mdx';
 Holds each incoming event in the node for the configured **Delay** and then releases it.
 Events are grouped by the **Key by** expression, and each event is delayed independently.
 
+The **Delay** is evaluated per event, so it can be a constant or an expression computed from the
+incoming event (for example derived from an event field). A `null` value sends the event to the
+error handler; a negative duration is treated as no delay, so the event is released immediately.
+Because the delay can differ between events, releases are ordered by each event's computed release
+time, which may differ from the input order.
+
 The **Time mode** parameter selects the time domain used for the delay:
 - **Event time** - an event is released once *event time* + delay >= max (*event time* ever seen by the Delay node).
   When the input ends, any still-queued events are released as well, because Flink emits a final watermark that fires the pending timers.
@@ -39,7 +45,7 @@ On a **bounded** source, when the input ends any events still waiting in the nod
 | Parameter | Description                                                              | Default        |
 | --------- | ------------------------------------------------------------------------ | -------------- |
 | Key by    | Groups events by this key. Each event is delayed independently.          | ""             |
-| Delay     | How long each event is held.                                             | 100ms          |
+| Delay     | How long each event is held. Evaluated per event; may be an expression referencing input fields. A negative duration is treated as no delay. | 100ms          |
 | Time mode | Advanced. Time domain used for the delay: Event time or Processing time. | ProcessingTime |
 
 ## Configuration
