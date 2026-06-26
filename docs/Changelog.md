@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9396](https://github.com/TouK/nussknacker/pull/9396) Flink `components-api`: added reusable restore-able keyed operators (`RestorableKeyedOperator`, `RestorableOneInputFlushingKeyedOperator`) that re-pace every key's buffered events once after a state restore, and the end-of-input flush API now carries the key. See the [Migration Guide](MigrationGuide.md) for the API changes.
 * [#9394](https://github.com/TouK/nussknacker/pull/9394),[#9395](https://github.com/TouK/nussknacker/pull/9395) The `delay` component: added processing-time support and reworked parameters.
     * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain. In processing time, events still queued when a bounded input ends are flushed at the end of the input.
     * The default `timeMode` can be configured via the optional `components.base.delay.timeMode` setting; when not configured it defaults to `ProcessingTime` (`keyBy` and `delay` have fixed defaults `""` and `100ms`). **Note:** the `timeMode` default changes the previous default behavior (event time) for delay nodes that do not set the parameter.

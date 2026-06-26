@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.definition.ParameterCategory.Advanced
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.{TimeMode, WithTimeMode}
-import pl.touk.nussknacker.engine.flink.api.operator.{BoundedEndInputFlushingOperator, EndInputFlushableFunction}
+import pl.touk.nussknacker.engine.flink.api.operator.{KeyedFlushFunction, OneInputFlushingKeyedOperator}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,
@@ -143,12 +143,12 @@ class DelayTransformer(config: DelayConfig)
 
       // Event time handles end of input by default: Flink emits a final MAX watermark when the input ends, which fires
       // all pending event-time timers, so queued events are flushed without any extra operator. Processing-time timers
-      // do not fire at end of input, so processing time needs BoundedEndInputFlushingOperator to flush queued events.
+      // do not fire at end of input, so they need to be handled manually.
       val processed: SingleOutputStreamOperator[ValueWithContext[AnyRef]] = timeMode match {
         case TimeMode.EventTime =>
           keyedStream.process(function, outputTypeInfo)
         case TimeMode.ProcessingTime =>
-          keyedStream.transform(ctx.nodeId, outputTypeInfo, new BoundedEndInputFlushingOperator(function))
+          keyedStream.transform(ctx.nodeId, outputTypeInfo, new OneInputFlushingKeyedOperator(function))
       }
 
       processed.uid(ctx.nodeId).name(ctx.nodeId)
@@ -184,7 +184,7 @@ class DelayFunction(
     override val timeMode: TimeMode
 ) extends KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]
     with WithTimeMode[String, ValueWithContext[String], ValueWithContext[AnyRef]]
-    with EndInputFlushableFunction[ValueWithContext[AnyRef]]
+    with KeyedFlushFunction[String, ValueWithContext[AnyRef]]
     with CheckpointedFunction
     with LazyParameterInterpreterFunction {
 
@@ -279,12 +279,15 @@ class DelayFunction(
     emitEventsForTime(timestamp, c => out.collect(ValueWithContext(null, c)))
 
   /**
-    * Called by BoundedEndInputFlushingOperator.endInput, once per key. Processing-time timers do not fire after the
-    * input ends, so without this the queued events would be lost. They are emitted immediately (in fire-time order); we
-    * deliberately do NOT wait for the remaining delay, because blocking the task thread until each scheduled time could
-    * stall checkpoints and the job's completion (especially with large delays).
+    * Called once per key. Processing-time timers do not fire after the input ends, so without this the queued events
+    * would be lost. They are emitted immediately (in fire-time order); we deliberately do NOT wait for the remaining
+    * delay, because blocking the task thread until each scheduled time could stall checkpoints and the job's
+    * completion (especially with large delays).
     */
-  override def flushPendingEventsForCurrentKey(output: Output[StreamRecord[ValueWithContext[AnyRef]]]): Unit = {
+  override def flushForCurrentKey(
+      key: String,
+      output: Output[StreamRecord[ValueWithContext[AnyRef]]]
+  ): Unit = {
     import scala.jdk.CollectionConverters._
     bufferedEvents.keys().asScala.toList.sorted.foreach { fireTime =>
       emitEventsForTime(

@@ -66,6 +66,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* [#9396](https://github.com/TouK/nussknacker/pull/9396) Flink `components-api`: keyed end-of-input flushing and restore re-pacing operators (package `pl.touk.nussknacker.engine.flink.api.operator`).
+    * `EndInputFlushableFunction[OUT]` is now `KeyedFlushFunction[K, OUT]`, and its flush callback gains the current key and a shorter name: `flushPendingEventsForCurrentKey(output)` → `flushForCurrentKey(key: K, output)`. Implementations (a `KeyedProcessFunction` wired through `OneInputFlushingKeyedOperator`) must add the `K` type parameter and update the method signature.
+    * New restore-able operators: `KeyedRestoreFunction[K, OUT]` plus `RestorableKeyedOperator[K, IN, OUT]` (restore-only) and `RestorableOneInputFlushingKeyedOperator[K, IN, OUT]` (end-of-input flushing + restore). A `KeyedProcessFunction` mixes in `KeyedRestoreFunction` to re-pace its per-key buffered events once after a state restore via `restoreForCurrentKey(key, timerService)`; implementations that need no rescheduling (e.g. event time) make it a no-op.
 * Runtime parameter validation: `Validator`, `ParameterValidator`, and `CustomParameterValidator` trait hierarchies refactored.
   * `Validator` is now a sealed trait with no `isValid` method. Two new sub-traits carry the validation logic:
     * `CompileTimeValidator` — the existing `isValid(paramName, expression, value, label)(nodeId)` returning `Validated[PartSubGraphCompilationError, Unit]`. All built-in validators implement this.
