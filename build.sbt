@@ -1662,8 +1662,11 @@ lazy val flinkComponentsApi = (project in flink("components-api"))
     name := "nussknacker-flink-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV     % Provided,
-        "org.scalatest"   %% "scalatest"            % scalaTestV % Test
+        "org.apache.flink" % "flink-streaming-java"   % flinkV     % Provided,
+        "org.scalatest"   %% "scalatest"              % scalaTestV % Test,
+        "org.apache.flink" % "flink-streaming-java"   % flinkV     % Test classifier "tests",
+        "org.apache.flink" % "flink-runtime"          % flinkV     % Test classifier "tests",
+        "org.apache.flink" % "flink-test-utils-junit" % flinkV     % Test
       )
     }
   )
