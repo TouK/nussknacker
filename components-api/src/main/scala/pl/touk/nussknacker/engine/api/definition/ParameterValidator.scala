@@ -483,7 +483,7 @@ trait CustomRuntimeParameterValidator extends CustomParameterValidator with Runt
 sealed trait CustomParameterValidatorLoader extends ParameterValidator {
   protected def load(): CustomParameterValidator
 
-  lazy val resolved: ParameterValidator with WithUnderlyingCustomParameterValidator = load() match {
+  @transient lazy val resolved: ParameterValidator with WithUnderlyingCustomParameterValidator = load() match {
     case validator: CustomCompileTimeParameterValidator with CustomRuntimeParameterValidator =>
       new CompileTimeParameterValidator with RuntimeParameterValidator with WithUnderlyingCustomParameterValidator {
         override val underlying: CustomCompileTimeParameterValidator with CustomRuntimeParameterValidator = validator
