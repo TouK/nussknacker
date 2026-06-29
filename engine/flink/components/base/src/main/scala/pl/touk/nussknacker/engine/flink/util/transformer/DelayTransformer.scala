@@ -74,12 +74,7 @@ class DelayTransformer(config: DelayConfig)
               "input fields. A negative duration is treated as no delay (the event is released immediately)."
           ),
           defaultValue = Some(s"T(java.time.Duration).parse('${Duration.ofMillis(100)}')".spel),
-          editors = List(
-            DurationParameterEditor(
-              List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
-            ),
-            SpelParameterEditor
-          ),
+          editors = List(SpelParameterEditor),
           validators = param.validators
         )
     )
