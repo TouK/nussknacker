@@ -64,12 +64,27 @@ object ScenarioGraphComparator {
       .toMap
   }
 
-  def hasMeaningfulDifferences(diff: Map[String, Difference]): Boolean = {
-    diff.nonEmpty && diff.values.exists {
-      case NodeDifferent(_, current, other) => !isLayoutOnlyNodeDiff(current, other)
-      case _                                => true
+  def meaningfulDiffs(diff: Map[String, Difference]): Map[String, Difference] =
+    diff.filter {
+      case (_, NodeDifferent(_, current, other)) => !isLayoutOnlyNodeDiff(current, other)
+      case _                                     => true
     }
-  }
+
+  def hasMeaningfulDifferences(diff: Map[String, Difference]): Boolean = meaningfulDiffs(diff).nonEmpty
+
+  def describeMeaningfulDiffs(diff: Map[String, Difference]): List[String] =
+    meaningfulDiffs(diff).values.map {
+      case NodeDifferent(id, _, _)            => s"Node '$id' modified"
+      case NodeNotPresentInOther(id, _)       => s"Node '$id' added"
+      case NodeNotPresentInCurrent(id, _)     => s"Node '$id' removed"
+      case EdgeDifferent(from, to, _, _)      => s"Edge '$from' → '$to' modified"
+      case EdgeNotPresentInOther(from, to, _) => s"Edge '$from' → '$to' added"
+      case EdgeNotPresentInCurrent(from, to, _) => s"Edge '$from' → '$to' removed"
+      case StickyNoteDifferent(id, _, _)      => s"Note '$id' modified"
+      case StickyNotePresentInOther(id, _)    => s"Note '$id' added"
+      case StickyNotePresentInCurrent(id, _)  => s"Note '$id' removed"
+      case PropertiesDifferent(_, _)          => "Properties modified"
+    }.toList
 
   private def isLayoutOnlyNodeDiff(current: NodeData, other: NodeData): Boolean =
     nodeJsonWithoutLayout(current) == nodeJsonWithoutLayout(other)

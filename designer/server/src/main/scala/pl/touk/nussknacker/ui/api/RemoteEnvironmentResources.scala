@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironm
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionsWithDifferences, VersionsWithDifferencesPageSize}
+import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionWithDifference, VersionsWithDifferences, VersionsWithDifferencesPageSize}
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
@@ -144,8 +144,10 @@ class RemoteEnvironmentResources(
                         }
                     }
                   } yield VersionsWithDifferences(
-                    versionIds = diffsPerVersion.collect {
-                      case (versionId, diff) if ScenarioGraphComparator.hasMeaningfulDifferences(diff) => versionId
+                    versions = diffsPerVersion.flatMap { case (versionId, diff) =>
+                      val descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(diff)
+                      if (descriptions.nonEmpty) List(VersionWithDifference(versionId, descriptions))
+                      else List.empty
                     },
                     hasMore = offset + VersionsWithDifferencesPageSize < allRemoteVersions.size,
                     pageSize = VersionsWithDifferencesPageSize

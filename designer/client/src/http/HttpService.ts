@@ -185,6 +185,12 @@ type DictOption = {
     label: string;
 };
 
+export type VersionsWithDifferencesResponse = {
+    versions: { versionId: number; changedElements: string[] }[];
+    hasMore: boolean;
+    pageSize: number;
+};
+
 type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
 class HttpService {
@@ -971,7 +977,7 @@ class HttpService {
     }
 
     fetchVersionsWithDifferences(processName: ProcessName, versionId: number, offset = 0) {
-        const promise = api.get<{ versionIds: number[]; hasMore: boolean; pageSize: number }>(
+        const promise = api.get<VersionsWithDifferencesResponse>(
             `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
             { params: { offset } },
         );
@@ -985,9 +991,9 @@ class HttpService {
         processName: ProcessName,
         versionId: number,
         offset = 0,
-    ): Promise<{ versionIds: number[]; hasMore: boolean; pageSize: number } | null> {
+    ): Promise<VersionsWithDifferencesResponse | null> {
         return api
-            .get<{ versionIds: number[]; hasMore: boolean; pageSize: number }>(
+            .get<VersionsWithDifferencesResponse>(
                 `/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
                 { params: { offset } },
             )
