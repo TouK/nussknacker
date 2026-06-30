@@ -43,7 +43,7 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     value: Option;
     placeholder?: string;
     fieldErrors?: FieldError[];
-    selectComponents?: React.ComponentProps<typeof CreatableSelect>["components"];
+    selectComponents?: React.ComponentProps<typeof CreatableSelect<Option>>["components"];
 }
 
 export function TypeSelect({
@@ -66,7 +66,7 @@ export function TypeSelect({
 
     return (
         <NodeValue marked={isMarked} onKeyDown={preventEsc} sx={{ width: "100%" }}>
-            <CreatableSelect
+            <CreatableSelect<Option>
                 id={props.id}
                 aria-label={"type-select"}
                 className={cx(`${nodeValue}`, props.className)}
@@ -76,7 +76,7 @@ export function TypeSelect({
                 onMenuClose={() => setCaptureEsc(false)}
                 components={selectComponents}
                 options={options}
-                value={value || ""}
+                value={value || null}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
                 onBlur={(e) => onBlur?.(e.target.value)}
                 menuPortalTarget={document.body}
