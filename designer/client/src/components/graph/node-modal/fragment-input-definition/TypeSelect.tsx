@@ -42,6 +42,7 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     value: Option;
     placeholder?: string;
     fieldErrors?: FieldError[];
+    selectComponents?: React.ComponentProps<typeof CreatableSelect>["components"];
 }
 
 export function TypeSelect({
@@ -53,6 +54,7 @@ export function TypeSelect({
     onBlur,
     placeholder,
     fieldErrors = [],
+    selectComponents,
     ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
@@ -71,6 +73,7 @@ export function TypeSelect({
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
                 onMenuClose={() => setCaptureEsc(false)}
+                components={selectComponents}
                 options={options}
                 value={value || ""}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
