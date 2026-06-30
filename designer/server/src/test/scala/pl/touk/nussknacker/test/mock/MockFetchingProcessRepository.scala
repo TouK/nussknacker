@@ -101,7 +101,7 @@ class MockFetchingProcessRepository private (
     Future(
       processes
         .filter(p => p.processId == processId && versionIds.contains(p.processVersionId))
-        .flatMap(p => p.json.map(p.processVersionId -> _))
+        .map(p => p.processVersionId -> p.json)
         .toMap
     )
 
