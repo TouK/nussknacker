@@ -971,7 +971,7 @@ class HttpService {
     }
 
     fetchVersionsWithDifferences(processName: ProcessName, versionId: number, offset = 0) {
-        const promise = api.get<{ versionIds: number[]; hasMore: boolean }>(
+        const promise = api.get<{ versionIds: number[]; hasMore: boolean; pageSize: number }>(
             `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
             { params: { offset } },
         );
@@ -985,9 +985,9 @@ class HttpService {
         processName: ProcessName,
         versionId: number,
         offset = 0,
-    ): Promise<{ versionIds: number[]; hasMore: boolean } | null> {
+    ): Promise<{ versionIds: number[]; hasMore: boolean; pageSize: number } | null> {
         return api
-            .get<{ versionIds: number[]; hasMore: boolean }>(
+            .get<{ versionIds: number[]; hasMore: boolean; pageSize: number }>(
                 `/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
                 { params: { offset } },
             )

@@ -147,7 +147,8 @@ class RemoteEnvironmentResources(
                     versionIds = diffsPerVersion.collect {
                       case (versionId, diff) if ScenarioGraphComparator.hasMeaningfulDifferences(diff) => versionId
                     },
-                    hasMore = offset + VersionsWithDifferencesPageSize < allRemoteVersions.size
+                    hasMore = offset + VersionsWithDifferencesPageSize < allRemoteVersions.size,
+                    pageSize = VersionsWithDifferencesPageSize
                   )
                 }
             }

@@ -4,10 +4,11 @@ import { FormControl, FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
 import i18next from "i18next";
 import { keys } from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { components as SelectComponents } from "react-select";
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
@@ -29,7 +30,41 @@ import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 type Environment = "local" | "remote";
 
-const VERSIONS_PAGE_SIZE = 30;
+interface LoadMoreContextValue {
+    hasMore: boolean;
+    loadMore: () => void;
+}
+const LoadMoreContext = React.createContext<LoadMoreContextValue | null>(null);
+
+const VersionMenuList = ({ children, ...props }: React.ComponentProps<typeof SelectComponents.MenuList>) => {
+    const ctx = useContext(LoadMoreContext);
+    return (
+        <SelectComponents.MenuList {...props}>
+            {children}
+            {ctx?.hasMore && (
+                <div
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        ctx.loadMore();
+                    }}
+                    className={css({
+                        padding: "8px 12px",
+                        cursor: "pointer",
+                        textAlign: "center",
+                        fontSize: "0.85em",
+                        opacity: 0.7,
+                        borderTop: "1px solid rgba(128,128,128,0.2)",
+                        "&:hover": { opacity: 1, background: "rgba(128,128,128,0.1)" },
+                    })}
+                >
+                    Load older versions…
+                </div>
+            )}
+        </SelectComponents.MenuList>
+    );
+};
+const VERSION_MENU_COMPONENTS = { MenuList: VersionMenuList };
+
 
 const initState: State = {
     environment: "local",
@@ -51,10 +86,10 @@ interface State {
     otherVersion: string;
     remoteVersions: ProcessVersionType[];
     difference: unknown;
-    versionIdsWithDifferences: Set<number> | null; // null = not yet loaded, show all as fallback
+    versionIdsWithDifferences: Set<number> | null; // null = not yet loaded
     hasMoreLocalVersions: boolean;
     localVersionsNextOffset: number;
-    remoteVersionIdsWithDifferences: Set<number> | null; // null = not yet loaded or error, show all as fallback
+    remoteVersionIdsWithDifferences: Set<number> | null; // null = not yet loaded or error
     hasMoreRemoteVersions: boolean;
     remoteVersionsNextOffset: number;
 }
@@ -86,7 +121,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     ...prevState,
                     remoteVersionIdsWithDifferences: result !== null ? new Set(result.versionIds) : null,
                     hasMoreRemoteVersions: result?.hasMore ?? false,
-                    remoteVersionsNextOffset: VERSIONS_PAGE_SIZE,
+                    remoteVersionsNextOffset: result?.pageSize ?? 0,
                 }));
             });
         }
@@ -95,12 +130,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     useEffect(() => {
         if (processName && version) {
             HttpService.fetchVersionsWithDifferences(processName, version, 0).then((response) => {
-                const { versionIds, hasMore } = response.data;
+                const { versionIds, hasMore, pageSize } = response.data;
                 setState((prevState) => ({
                     ...prevState,
                     versionIdsWithDifferences: new Set(versionIds),
                     hasMoreLocalVersions: hasMore,
-                    localVersionsNextOffset: VERSIONS_PAGE_SIZE,
+                    localVersionsNextOffset: pageSize,
                 }));
             });
         }
@@ -246,11 +281,9 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const versionOptions: Option[] = useMemo(() => {
         if (state.environment === "remote") {
-            const allRemote = state?.remoteVersions ?? [];
-            const filtered =
-                state.remoteVersionIdsWithDifferences !== null
-                    ? allRemote.filter((v) => state.remoteVersionIdsWithDifferences.has(v.processVersionId))
-                    : allRemote;
+            const remoteIds = state.remoteVersionIdsWithDifferences;
+            if (remoteIds === null) return [{ label: "", value: "" }];
+            const filtered = (state?.remoteVersions ?? []).filter((v) => remoteIds.has(v.processVersionId));
             return [
                 { label: "", value: "" },
                 ...filtered.map((v) => ({
@@ -259,14 +292,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 })),
             ];
         }
+        const localIds = state.versionIdsWithDifferences;
+        if (localIds === null) return [{ label: "", value: "" }];
         return [
             { label: "", value: "" },
             ...versions
-                .filter(
-                    (v) =>
-                        version !== v.processVersionId &&
-                        (state.versionIdsWithDifferences === null || state.versionIdsWithDifferences.has(v.processVersionId)),
-                )
+                .filter((v) => version !== v.processVersionId && localIds.has(v.processVersionId))
                 .map((v) => ({ label: createVersionElement(v), value: createVersionId(v) })),
         ];
     }, [createVersionElement, state.environment, state?.remoteVersions, state.remoteVersionIdsWithDifferences, state.versionIdsWithDifferences, version, versions]);
@@ -288,12 +319,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const loadMoreLocalVersions = useCallback(() => {
         if (!processName || !version) return;
         HttpService.fetchVersionsWithDifferences(processName, version, state.localVersionsNextOffset).then((response) => {
-            const { versionIds, hasMore } = response.data;
+            const { versionIds, hasMore, pageSize } = response.data;
             setState((prev) => ({
                 ...prev,
                 versionIdsWithDifferences: new Set([...(prev.versionIdsWithDifferences ?? []), ...versionIds]),
                 hasMoreLocalVersions: hasMore,
-                localVersionsNextOffset: prev.localVersionsNextOffset + VERSIONS_PAGE_SIZE,
+                localVersionsNextOffset: prev.localVersionsNextOffset + pageSize,
             }));
         });
     }, [processName, version, state.localVersionsNextOffset]);
@@ -306,7 +337,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 ...prev,
                 remoteVersionIdsWithDifferences: new Set([...(prev.remoteVersionIdsWithDifferences ?? []), ...result.versionIds]),
                 hasMoreRemoteVersions: result.hasMore,
-                remoteVersionsNextOffset: prev.remoteVersionsNextOffset + VERSIONS_PAGE_SIZE,
+                remoteVersionsNextOffset: prev.remoteVersionsNextOffset + result.pageSize,
             }));
         });
     }, [processName, version, state.remoteVersionsNextOffset]);
@@ -322,6 +353,14 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             }));
         },
         [],
+    );
+
+    const loadMoreContextValue = useMemo<LoadMoreContextValue>(
+        () => ({
+            hasMore: state.environment === "local" ? state.hasMoreLocalVersions : state.hasMoreRemoteVersions,
+            loadMore: state.environment === "local" ? loadMoreLocalVersions : loadMoreRemoteVersions,
+        }),
+        [state.environment, state.hasMoreLocalVersions, state.hasMoreRemoteVersions, loadMoreLocalVersions, loadMoreRemoteVersions],
     );
 
     const environmentOptions: Option[] = useMemo(() => {
@@ -348,25 +387,18 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             )}
             <FormControl>
                 <FormLabel>Version to compare</FormLabel>
-                <TypeSelect
-                    readOnly={Boolean(predefinedOtherVersion)}
-                    autoFocus={true}
-                    id="otherVersion"
-                    onChange={(value) => loadVersion(value)}
-                    value={versionOptions.find((option) => option.value === state.otherVersion)}
-                    options={versionOptions}
-                    fieldErrors={[]}
-                />
-                {state.environment === "local" && state.hasMoreLocalVersions && (
-                    <button type="button" onClick={loadMoreLocalVersions}>
-                        Load older versions
-                    </button>
-                )}
-                {state.environment === "remote" && state.hasMoreRemoteVersions && (
-                    <button type="button" onClick={loadMoreRemoteVersions}>
-                        Load older versions
-                    </button>
-                )}
+                <LoadMoreContext.Provider value={loadMoreContextValue}>
+                    <TypeSelect
+                        readOnly={Boolean(predefinedOtherVersion)}
+                        autoFocus={true}
+                        id="otherVersion"
+                        onChange={loadVersion}
+                        value={versionOptions.find((option) => option.value === state.otherVersion)}
+                        options={versionOptions}
+                        fieldErrors={[]}
+                        selectComponents={VERSION_MENU_COMPONENTS}
+                    />
+                </LoadMoreContext.Provider>
             </FormControl>
             {state.otherVersion ? (
                 <div>
