@@ -29,14 +29,20 @@ import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 type Environment = "local" | "remote";
 
+const VERSIONS_PAGE_SIZE = 30;
+
 const initState: State = {
     environment: "local",
     otherVersion: null,
     currentDiffId: null,
     difference: null,
     remoteVersions: [],
-    versionIdsWithDifferences: new Set(),
+    versionIdsWithDifferences: null,
+    hasMoreLocalVersions: false,
+    localVersionsNextOffset: 0,
     remoteVersionIdsWithDifferences: null,
+    hasMoreRemoteVersions: false,
+    remoteVersionsNextOffset: 0,
 };
 
 interface State {
@@ -45,8 +51,12 @@ interface State {
     otherVersion: string;
     remoteVersions: ProcessVersionType[];
     difference: unknown;
-    versionIdsWithDifferences: Set<number>;
-    remoteVersionIdsWithDifferences: Set<number> | null; // null = fallback (show all)
+    versionIdsWithDifferences: Set<number> | null; // null = not yet loaded, show all as fallback
+    hasMoreLocalVersions: boolean;
+    localVersionsNextOffset: number;
+    remoteVersionIdsWithDifferences: Set<number> | null; // null = not yet loaded or error, show all as fallback
+    hasMoreRemoteVersions: boolean;
+    remoteVersionsNextOffset: number;
 }
 
 interface Props {
@@ -71,10 +81,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     useEffect(() => {
         if (processName && version && otherEnvironment) {
-            HttpService.fetchRemoteVersionsWithDifferences(processName, version).then((ids) => {
+            HttpService.fetchRemoteVersionsWithDifferences(processName, version, 0).then((result) => {
                 setState((prevState) => ({
                     ...prevState,
-                    remoteVersionIdsWithDifferences: ids !== null ? new Set(ids) : null,
+                    remoteVersionIdsWithDifferences: result !== null ? new Set(result.versionIds) : null,
+                    hasMoreRemoteVersions: result?.hasMore ?? false,
+                    remoteVersionsNextOffset: VERSIONS_PAGE_SIZE,
                 }));
             });
         }
@@ -82,9 +94,14 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     useEffect(() => {
         if (processName && version) {
-            HttpService.fetchVersionsWithDifferences(processName, version).then((response) => {
-                const ids = response.data ?? [];
-                setState((prevState) => ({ ...prevState, versionIdsWithDifferences: new Set(ids) }));
+            HttpService.fetchVersionsWithDifferences(processName, version, 0).then((response) => {
+                const { versionIds, hasMore } = response.data;
+                setState((prevState) => ({
+                    ...prevState,
+                    versionIdsWithDifferences: new Set(versionIds),
+                    hasMoreLocalVersions: hasMore,
+                    localVersionsNextOffset: VERSIONS_PAGE_SIZE,
+                }));
             });
         }
     }, [processName, version]);
@@ -245,7 +262,11 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         return [
             { label: "", value: "" },
             ...versions
-                .filter((v) => version !== v.processVersionId && state.versionIdsWithDifferences.has(v.processVersionId))
+                .filter(
+                    (v) =>
+                        version !== v.processVersionId &&
+                        (state.versionIdsWithDifferences === null || state.versionIdsWithDifferences.has(v.processVersionId)),
+                )
                 .map((v) => ({ label: createVersionElement(v), value: createVersionId(v) })),
         ];
     }, [createVersionElement, state.environment, state?.remoteVersions, state.remoteVersionIdsWithDifferences, state.versionIdsWithDifferences, version, versions]);
@@ -263,6 +284,32 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             }),
         ];
     }, [isLayoutChangeOnly, state?.difference]);
+
+    const loadMoreLocalVersions = useCallback(() => {
+        if (!processName || !version) return;
+        HttpService.fetchVersionsWithDifferences(processName, version, state.localVersionsNextOffset).then((response) => {
+            const { versionIds, hasMore } = response.data;
+            setState((prev) => ({
+                ...prev,
+                versionIdsWithDifferences: new Set([...(prev.versionIdsWithDifferences ?? []), ...versionIds]),
+                hasMoreLocalVersions: hasMore,
+                localVersionsNextOffset: prev.localVersionsNextOffset + VERSIONS_PAGE_SIZE,
+            }));
+        });
+    }, [processName, version, state.localVersionsNextOffset]);
+
+    const loadMoreRemoteVersions = useCallback(() => {
+        if (!processName || !version) return;
+        HttpService.fetchRemoteVersionsWithDifferences(processName, version, state.remoteVersionsNextOffset).then((result) => {
+            if (result === null) return;
+            setState((prev) => ({
+                ...prev,
+                remoteVersionIdsWithDifferences: new Set([...(prev.remoteVersionIdsWithDifferences ?? []), ...result.versionIds]),
+                hasMoreRemoteVersions: result.hasMore,
+                remoteVersionsNextOffset: prev.remoteVersionsNextOffset + VERSIONS_PAGE_SIZE,
+            }));
+        });
+    }, [processName, version, state.remoteVersionsNextOffset]);
 
     const handleEnvironmentChange = useCallback(
         (env: string) => {
@@ -310,6 +357,16 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     options={versionOptions}
                     fieldErrors={[]}
                 />
+                {state.environment === "local" && state.hasMoreLocalVersions && (
+                    <button type="button" onClick={loadMoreLocalVersions}>
+                        Load older versions
+                    </button>
+                )}
+                {state.environment === "remote" && state.hasMoreRemoteVersions && (
+                    <button type="button" onClick={loadMoreRemoteVersions}>
+                        Load older versions
+                    </button>
+                )}
             </FormControl>
             {state.otherVersion ? (
                 <div>

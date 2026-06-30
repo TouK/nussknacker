@@ -225,6 +225,21 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     run(action.value)
   }
 
+  override def fetchScenarioJsonsForVersionIds(
+      processId: ProcessId,
+      versionIds: Seq[VersionId]
+  )(implicit ec: ExecutionContext): F[Map[VersionId, CanonicalProcess]] = {
+    if (versionIds.isEmpty)
+      Monad[F].pure(Map.empty)
+    else
+      run(
+        processVersionsTableWithScenarioJson
+          .filter(v => v.processId === processId && v.id.inSet(versionIds.toSet))
+          .result
+          .map(_.flatMap(v => v.json.map(v.id -> _)).toMap)
+      )
+  }
+
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {
     run(processesTable.filter(_.name === processName).map(_.id).result.headOption.map(_.map(id => id)))
   }

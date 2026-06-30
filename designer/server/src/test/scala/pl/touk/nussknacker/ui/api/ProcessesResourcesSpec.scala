@@ -54,6 +54,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
   Available,
   NotAvailable
 }
+import pl.touk.nussknacker.ui.api.ProcessesResources
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
@@ -955,8 +956,8 @@ class ProcessesResourcesSpec
       s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val versionIds = responseAs[List[Long]]
-      versionIds should contain(1L)
+      val result = responseAs[ProcessesResources.VersionsWithDifferences]
+      result.versionIds.map(_.value) should contain(1L)
     }
   }
 
@@ -967,8 +968,22 @@ class ProcessesResourcesSpec
       s"/api/processes/$processName/1/versions-with-differences"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val versionIds = responseAs[List[Long]]
-      versionIds shouldBe empty
+      val result = responseAs[ProcessesResources.VersionsWithDifferences]
+      result.versionIds shouldBe empty
+      result.hasMore shouldBe false
+    }
+  }
+
+  test("return hasMore true when there are more versions beyond the page") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?offset=0"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val result = responseAs[ProcessesResources.VersionsWithDifferences]
+      result.hasMore shouldBe false
     }
   }
 
