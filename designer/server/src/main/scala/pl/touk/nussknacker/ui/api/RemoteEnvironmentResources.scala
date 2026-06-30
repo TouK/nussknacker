@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironm
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionsWithDifferences, VersionsWithDifferencesPageSize}
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
@@ -119,31 +120,36 @@ class RemoteEnvironmentResources(
         } ~
         path(ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
           (processName, currentLocalVersionId) =>
-            (get & processId(processName)) { processIdWithName =>
-              complete {
-                for {
-                  localDetails <- processService.getProcessWithDetails(
-                    processIdWithName,
-                    currentLocalVersionId,
-                    GetScenarioWithDetailsOptions.withScenarioGraph
+            (get & processId(processName) & parameters(Symbol("offset").as[Int].withDefault(0))) {
+              (processIdWithName, offset) =>
+                complete {
+                  for {
+                    localDetails <- processService.getProcessWithDetails(
+                      processIdWithName,
+                      currentLocalVersionId,
+                      GetScenarioWithDetailsOptions.withScenarioGraph
+                    )
+                    allRemoteVersions <- remoteEnvironment.processVersions(processIdWithName.name)
+                    page = allRemoteVersions.slice(offset, offset + VersionsWithDifferencesPageSize)
+                    diffsPerVersion <- Future.traverse(page) { remoteVersion =>
+                      remoteEnvironment
+                        .compare(
+                          localDetails.scenarioGraphUnsafe,
+                          processIdWithName.name,
+                          Some(remoteVersion.processVersionId)
+                        )
+                        .map { diffResult =>
+                          val diff = diffResult.getOrElse(Map.empty)
+                          (remoteVersion.processVersionId, diff)
+                        }
+                    }
+                  } yield VersionsWithDifferences(
+                    versionIds = diffsPerVersion.collect {
+                      case (versionId, diff) if ScenarioGraphComparator.hasMeaningfulDifferences(diff) => versionId
+                    },
+                    hasMore = offset + VersionsWithDifferencesPageSize < allRemoteVersions.size
                   )
-                  remoteVersions <- remoteEnvironment.processVersions(processIdWithName.name)
-                  diffsPerVersion <- Future.traverse(remoteVersions) { remoteVersion =>
-                    remoteEnvironment
-                      .compare(
-                        localDetails.scenarioGraphUnsafe,
-                        processIdWithName.name,
-                        Some(remoteVersion.processVersionId)
-                      )
-                      .map { diffResult =>
-                        val diff = diffResult.getOrElse(Map.empty)
-                        (remoteVersion.processVersionId, diff)
-                      }
-                  }
-                } yield diffsPerVersion.collect {
-                  case (versionId, diff) if ScenarioGraphComparator.hasMeaningfulDifferences(diff) => versionId
                 }
-              }
             }
         } ~
         path(ProcessNameSegment / "versions") { processName =>

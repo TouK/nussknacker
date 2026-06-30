@@ -6,6 +6,11 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote}
 
 object ScenarioGraphComparator {
 
+  import io.circe.Json
+  import io.circe.syntax._
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+  import pl.touk.nussknacker.engine.graph.node.NodeData._
+
   def compare(currentGraph: ScenarioGraph, otherGraph: ScenarioGraph): Map[String, Difference] = {
     val nodes = getDifferences(
       currentGraph.nodes.map(node => node.id -> node).toMap,
@@ -58,11 +63,6 @@ object ScenarioGraphComparator {
       .map(difference => difference.id -> difference)
       .toMap
   }
-
-  import io.circe.Json
-  import io.circe.syntax._
-  import pl.touk.nussknacker.engine.api.CirceUtil._
-  import pl.touk.nussknacker.engine.graph.node.NodeData._
 
   def hasMeaningfulDifferences(diff: Map[String, Difference]): Boolean = {
     diff.nonEmpty && diff.values.exists {

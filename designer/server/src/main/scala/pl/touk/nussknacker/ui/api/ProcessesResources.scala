@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionsWithDifferences, VersionsWithDifferencesPageSize}
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
@@ -226,37 +227,32 @@ class ProcessesResources(
         }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
         (processName, currentVersionId) =>
-          (get & processId(processName)) { processId =>
-            complete {
-              for {
-                currentDetails <- processService.getProcessWithDetails(
-                  processId,
-                  currentVersionId,
-                  GetScenarioWithDetailsOptions.withScenarioGraph
-                )
-                latestDetails <- processService.getLatestProcessWithDetails(
-                  processId,
-                  GetScenarioWithDetailsOptions.detailsOnly
-                )
-                otherVersionIds = latestDetails.history
-                  .getOrElse(Nil)
-                  .map(_.processVersionId)
-                  .filterNot(_ == currentVersionId)
-                diffsPerVersion <- Future.traverse(otherVersionIds) { otherVersionId =>
-                  processService
-                    .getProcessWithDetails(processId, otherVersionId, GetScenarioWithDetailsOptions.withScenarioGraph)
-                    .map { otherDetails =>
-                      val diff = ScenarioGraphComparator.compare(
-                        currentDetails.scenarioGraphUnsafe,
-                        otherDetails.scenarioGraphUnsafe
+          (get & processId(processName) & parameters(Symbol("offset").as[Int].withDefault(0))) {
+            (processId, offset) =>
+              complete {
+                for {
+                  currentDetails <- processService.getProcessWithDetails(
+                    processId,
+                    currentVersionId,
+                    GetScenarioWithDetailsOptions.withScenarioGraph
+                  )
+                  allOtherVersionIds = currentDetails.history
+                    .getOrElse(Nil)
+                    .map(_.processVersionId)
+                    .filterNot(_ == currentVersionId)
+                  page = allOtherVersionIds.slice(offset, offset + VersionsWithDifferencesPageSize)
+                  otherGraphs <- processService.getScenarioGraphsForVersionIds(processId, page)
+                } yield VersionsWithDifferences(
+                  versionIds = page.filter { otherVersionId =>
+                    otherGraphs.get(otherVersionId).exists { otherGraph =>
+                      ScenarioGraphComparator.hasMeaningfulDifferences(
+                        ScenarioGraphComparator.compare(currentDetails.scenarioGraphUnsafe, otherGraph)
                       )
-                      (otherVersionId, diff)
                     }
-                }
-              } yield diffsPerVersion.collect {
-                case (versionId, diff) if ScenarioGraphComparator.hasMeaningfulDifferences(diff) => versionId
+                  },
+                  hasMore = offset + VersionsWithDifferencesPageSize < allOtherVersionIds.size
+                )
               }
-            }
           }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
         (processName, thisVersion, otherVersion) =>
@@ -330,4 +326,8 @@ class ProcessesResources(
 object ProcessesResources {
   final case class ProcessUnmarshallingError(message: String) extends OtherError(message)
 
+  val VersionsWithDifferencesPageSize: Int = 30
+
+  @io.circe.generic.JsonCodec
+  final case class VersionsWithDifferences(versionIds: List[VersionId], hasMore: Boolean)
 }
