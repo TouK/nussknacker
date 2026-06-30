@@ -20,6 +20,7 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.ui.api.ProcessesResources
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
@@ -145,6 +146,56 @@ class RemoteEnvironmentResourcesSpec
       }
     }
 
+  }
+
+  it should "return only remote version IDs that have meaningful differences" in {
+    import java.time.Instant
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+    val versionWithDiff    = VersionId(1)
+    val versionWithoutDiff = VersionId(2)
+    val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", "#input == 4".spel)))
+
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def processVersions(pName: ProcessName): Future[List[ScenarioVersion]] =
+        Future.successful(
+          List(
+            ScenarioVersion(versionWithDiff, Instant.now(), "user"),
+            ScenarioVersion(versionWithoutDiff, Instant.now(), "user"),
+          )
+        )
+
+      override def compare(
+          localScenarioGraph: ScenarioGraph,
+          remoteProcessName: ProcessName,
+          remoteProcessVersion: Option[VersionId]
+      ): Future[Either[NuDesignerError, Map[String, ScenarioGraphComparator.Difference]]] =
+        Future.successful(
+          Right(if (remoteProcessVersion.contains(versionWithDiff)) difference else Map.empty)
+        )
+    }
+
+    val route = withPermissions(
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        processService,
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
+      ),
+      Permission.Read
+    )
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/1/versions-with-differences") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        val result = responseAs[ProcessesResources.VersionsWithDifferences]
+        result.versionIds.map(_.value) should contain(versionWithDiff.value)
+        result.versionIds.map(_.value) should not contain versionWithoutDiff.value
+        result.hasMore shouldBe false
+      }
+    }
   }
 
   it should "not fail in comparing environments if process does not exist in the other one" in {

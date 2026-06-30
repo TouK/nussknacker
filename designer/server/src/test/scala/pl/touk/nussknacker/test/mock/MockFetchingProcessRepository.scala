@@ -94,6 +94,17 @@ class MockFetchingProcessRepository private (
   ): Future[Option[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(_.find(p => p.processId == processId && p.processVersionId == versionId))
 
+  override def fetchScenarioJsonsForVersionIds(
+      processId: ProcessId,
+      versionIds: Seq[VersionId]
+  )(implicit ec: ExecutionContext): Future[Map[VersionId, CanonicalProcess]] =
+    Future(
+      processes
+        .filter(p => p.processId == processId && versionIds.contains(p.processVersionId))
+        .flatMap(p => p.json.map(p.processVersionId -> _))
+        .toMap
+    )
+
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]] =
     Future(processes.find(p => p.name == processName).map(_.processId))
 
