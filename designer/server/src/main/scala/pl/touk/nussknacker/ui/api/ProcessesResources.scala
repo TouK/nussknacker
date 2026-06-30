@@ -250,7 +250,8 @@ class ProcessesResources(
                       )
                     }
                   },
-                  hasMore = offset + VersionsWithDifferencesPageSize < allOtherVersionIds.size
+                  hasMore = offset + VersionsWithDifferencesPageSize < allOtherVersionIds.size,
+                  pageSize = VersionsWithDifferencesPageSize
                 )
               }
           }
@@ -326,8 +327,8 @@ class ProcessesResources(
 object ProcessesResources {
   final case class ProcessUnmarshallingError(message: String) extends OtherError(message)
 
-  val VersionsWithDifferencesPageSize: Int = 30
+  val VersionsWithDifferencesPageSize: Int = 5
 
   @io.circe.generic.JsonCodec
-  final case class VersionsWithDifferences(versionIds: List[VersionId], hasMore: Boolean)
+  final case class VersionsWithDifferences(versionIds: List[VersionId], hasMore: Boolean, pageSize: Int)
 }
