@@ -58,11 +58,21 @@ const graphReducer = {
 const store = mockStore({
     graphReducer,
     settings: { featuresSettings: { remoteEnvironment: { targetEnvironmentId: "remote environment" } } },
+    processActivity: { activities: [] },
 });
 
 const scenario = graphReducer.present.scenario;
 
 const DOWN_ARROW = { keyCode: 40 };
+
+const localVersionsWithDifferences = {
+    versions: [
+        { versionId: 35, changedElements: [] },
+        { versionId: 34, changedElements: [] },
+    ],
+    hasMore: false,
+    pageSize: 5,
+};
 
 describe("CompareVersionsDialog", () => {
     afterAll(() => {
@@ -79,6 +89,12 @@ describe("CompareVersionsDialog", () => {
         ];
 
         mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, remoteVersions);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
+            versions: [{ versionId: 1, changedElements: [] }],
+            hasMore: false,
+            pageSize: 5,
+        });
         mock.onGet(
             `/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/compare/${remoteVersions[0].processVersionId}`,
         ).replyOnce(200, {});
@@ -98,11 +114,14 @@ describe("CompareVersionsDialog", () => {
             </NuThemeProvider>,
         );
 
-        fireEvent.keyDown(screen.getByText("Select..."), DOWN_ARROW);
+        // Switch to remote environment
+        fireEvent.keyDown(screen.getByText("Local"), DOWN_ARROW);
+        fireEvent.click(await screen.findByText("remote environment"));
 
-        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+        // Open version picker and select the remote version
+        fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
 
-        const remoteItemText = "1 on remote environment - created by test 2024-05-31|00:00";
+        const remoteItemText = "1 on remote environment - 2024-05-31|00:00 test";
 
         await waitFor(() => {
             fireEvent.click(screen.getByText(remoteItemText));
@@ -122,6 +141,12 @@ describe("CompareVersionsDialog", () => {
         ];
 
         mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, remoteVersions);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
+            versions: [],
+            hasMore: false,
+            pageSize: 5,
+        });
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/${scenario.history[1].processVersionId}`).replyOnce(
             200,
             {},
@@ -144,7 +169,7 @@ describe("CompareVersionsDialog", () => {
 
         fireEvent.keyDown(screen.getByText("Select..."), DOWN_ARROW);
 
-        const historyItemText = "34 - created by admin 2024-05-31|00:00";
+        const historyItemText = "34 - 2024-05-31|00:00 admin";
 
         await waitFor(() => {
             fireEvent.click(screen.getByText(historyItemText));
