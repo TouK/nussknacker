@@ -145,6 +145,11 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetailsEntity[PS]]]
 
+  def getScenarioGraphsForVersionIds(
+      processId: ProcessIdWithName,
+      versionIds: Seq[VersionId]
+  )(implicit user: LoggedUser): Future[Map[VersionId, ScenarioGraph]]
+
   def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit]
 
   def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit]
@@ -321,6 +326,15 @@ class DBProcessService(
       query: ScenarioQuery
   )(implicit user: LoggedUser): Future[List[ScenarioWithDetailsEntity[PS]]] = {
     fetchingProcessRepository.fetchLatestProcessesDetails(query)
+  }
+
+  override def getScenarioGraphsForVersionIds(
+      processId: ProcessIdWithName,
+      versionIds: Seq[VersionId]
+  )(implicit user: LoggedUser): Future[Map[VersionId, ScenarioGraph]] = {
+    fetchingProcessRepository
+      .fetchScenarioJsonsForVersionIds(processId.id, versionIds)
+      .map(_.view.mapValues(_.toScenarioGraph).toMap)
   }
 
   private def validateAndReverseResolve(
