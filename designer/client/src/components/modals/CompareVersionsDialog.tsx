@@ -13,8 +13,11 @@ import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
 import HttpService from "../../http/HttpService";
+import type { VersionsWithDifferencesResponse } from "../../http/HttpService";
+import { getActivities } from "../../reducers/selectors/activities";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
+import type { ItemActivity } from "../toolbars/activities/ActivitiesPanel";
 import type { NodeType, StickyNoteNodeType } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
@@ -29,6 +32,9 @@ import { PropertiesForm } from "../properties";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 type Environment = "local" | "remote";
+
+const toVersionDiffsMap = (versions: VersionsWithDifferencesResponse["versions"]): Map<number, string[]> =>
+    new Map(versions.map(({ versionId, changedElements }) => [versionId, changedElements]));
 
 interface LoadMoreContextValue {
     hasMore: boolean;
@@ -63,7 +69,12 @@ const VersionMenuList = ({ children, ...props }: React.ComponentProps<typeof Sel
         </SelectComponents.MenuList>
     );
 };
-const VERSION_MENU_COMPONENTS = { MenuList: VersionMenuList };
+const VersionOption = ({ children, innerProps, ...props }: React.ComponentProps<typeof SelectComponents.Option>) => (
+    <SelectComponents.Option {...props} innerProps={{ ...innerProps, title: (props.data as Option).description }}>
+        {children}
+    </SelectComponents.Option>
+);
+const VERSION_MENU_COMPONENTS = { MenuList: VersionMenuList, Option: VersionOption };
 
 
 const initState: State = {
@@ -72,10 +83,10 @@ const initState: State = {
     currentDiffId: null,
     difference: null,
     remoteVersions: [],
-    versionIdsWithDifferences: null,
+    localVersionDiffs: null,
     hasMoreLocalVersions: false,
     localVersionsNextOffset: 0,
-    remoteVersionIdsWithDifferences: null,
+    remoteVersionDiffs: null,
     hasMoreRemoteVersions: false,
     remoteVersionsNextOffset: 0,
 };
@@ -86,10 +97,10 @@ interface State {
     otherVersion: string;
     remoteVersions: ProcessVersionType[];
     difference: unknown;
-    versionIdsWithDifferences: Set<number> | null; // null = not yet loaded
+    localVersionDiffs: Map<number, string[]> | null; // null = not yet loaded; versionId → changed elements
     hasMoreLocalVersions: boolean;
     localVersionsNextOffset: number;
-    remoteVersionIdsWithDifferences: Set<number> | null; // null = not yet loaded or error
+    remoteVersionDiffs: Map<number, string[]> | null; // null = not yet loaded or error
     hasMoreRemoteVersions: boolean;
     remoteVersionsNextOffset: number;
 }
@@ -105,6 +116,24 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const version = useSelector(getProcessVersionId);
     const otherEnvironment = useSelector(getTargetEnvironmentId);
     const versions = useSelector(getVersions);
+    const activities = useSelector(getActivities);
+
+    const versionComments = useMemo(() => {
+        const map = new Map<number, string>();
+        for (const activity of activities) {
+            if (activity.uiType !== "item") continue;
+            const a = activity as ItemActivity;
+            if (
+                (a.type === "SCENARIO_CREATED" || a.type === "SCENARIO_MODIFIED") &&
+                a.scenarioVersionId != null &&
+                a.comment?.content.status === "AVAILABLE" &&
+                a.comment.content.value
+            ) {
+                map.set(a.scenarioVersionId, a.comment.content.value);
+            }
+        }
+        return map;
+    }, [activities]);
 
     useEffect(() => {
         if (processName && otherEnvironment) {
@@ -119,7 +148,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             HttpService.fetchRemoteVersionsWithDifferences(processName, version, 0).then((result) => {
                 setState((prevState) => ({
                     ...prevState,
-                    remoteVersionIdsWithDifferences: result !== null ? new Set(result.versionIds) : null,
+                    remoteVersionDiffs: result !== null ? toVersionDiffsMap(result.versions) : null,
                     hasMoreRemoteVersions: result?.hasMore ?? false,
                     remoteVersionsNextOffset: result?.pageSize ?? 0,
                 }));
@@ -130,10 +159,10 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     useEffect(() => {
         if (processName && version) {
             HttpService.fetchVersionsWithDifferences(processName, version, 0).then((response) => {
-                const { versionIds, hasMore, pageSize } = response.data;
+                const { versions, hasMore, pageSize } = response.data;
                 setState((prevState) => ({
                     ...prevState,
-                    versionIdsWithDifferences: new Set(versionIds),
+                    localVersionDiffs: toVersionDiffsMap(versions),
                     hasMoreLocalVersions: hasMore,
                     localVersionsNextOffset: pageSize,
                 }));
@@ -192,9 +221,11 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const createVersionElement = useCallback(
         (version: ProcessVersionType, versionPrefix = "") => {
             const versionId = createVersionId(version, versionPrefix);
-            return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(version.createDate)}`;
+            const comment = !versionPrefix ? versionComments.get(version.processVersionId) : undefined;
+            const commentSuffix = comment ? ` (${comment})` : "";
+            return `${versionDisplayString(versionId)} - ${formatAbsolutely(version.createDate)} ${version.user}${commentSuffix}`;
         },
-        [versionDisplayString],
+        [versionDisplayString, versionComments],
     );
 
     const enrichStickyNoteNode = (node: NodeType): StickyNoteNodeType => {
@@ -281,9 +312,9 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const versionOptions: Option[] = useMemo(() => {
         if (state.environment === "remote") {
-            const remoteIds = state.remoteVersionIdsWithDifferences;
-            if (remoteIds === null) return [{ label: "", value: "" }];
-            const filtered = (state?.remoteVersions ?? []).filter((v) => remoteIds.has(v.processVersionId));
+            const remoteDiffs = state.remoteVersionDiffs;
+            if (remoteDiffs === null) return [{ label: "", value: "" }];
+            const filtered = (state?.remoteVersions ?? []).filter((v) => remoteDiffs.has(v.processVersionId));
             return [
                 { label: "", value: "" },
                 ...filtered.map((v) => ({
@@ -292,15 +323,22 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 })),
             ];
         }
-        const localIds = state.versionIdsWithDifferences;
-        if (localIds === null) return [{ label: "", value: "" }];
+        const localDiffs = state.localVersionDiffs;
+        if (localDiffs === null) return [{ label: "", value: "" }];
         return [
             { label: "", value: "" },
             ...versions
-                .filter((v) => version !== v.processVersionId && localIds.has(v.processVersionId))
-                .map((v) => ({ label: createVersionElement(v), value: createVersionId(v) })),
+                .filter((v) => version !== v.processVersionId && localDiffs.has(v.processVersionId))
+                .map((v) => {
+                    const changedElements = localDiffs.get(v.processVersionId) ?? [];
+                    return {
+                        label: createVersionElement(v),
+                        value: createVersionId(v),
+                        description: changedElements.join("\n"),
+                    };
+                }),
         ];
-    }, [createVersionElement, state.environment, state?.remoteVersions, state.remoteVersionIdsWithDifferences, state.versionIdsWithDifferences, version, versions]);
+    }, [createVersionElement, state.environment, state?.remoteVersions, state.remoteVersionDiffs, state.localVersionDiffs, version, versions]);
 
     const differenceOptions: Option[] = useMemo(() => {
         return [
@@ -319,10 +357,10 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const loadMoreLocalVersions = useCallback(() => {
         if (!processName || !version) return;
         HttpService.fetchVersionsWithDifferences(processName, version, state.localVersionsNextOffset).then((response) => {
-            const { versionIds, hasMore, pageSize } = response.data;
+            const { versions, hasMore, pageSize } = response.data;
             setState((prev) => ({
                 ...prev,
-                versionIdsWithDifferences: new Set([...(prev.versionIdsWithDifferences ?? []), ...versionIds]),
+                localVersionDiffs: new Map([...(prev.localVersionDiffs ?? []), ...toVersionDiffsMap(versions)]),
                 hasMoreLocalVersions: hasMore,
                 localVersionsNextOffset: prev.localVersionsNextOffset + pageSize,
             }));
@@ -335,7 +373,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             if (result === null) return;
             setState((prev) => ({
                 ...prev,
-                remoteVersionIdsWithDifferences: new Set([...(prev.remoteVersionIdsWithDifferences ?? []), ...result.versionIds]),
+                remoteVersionDiffs: new Map([...(prev.remoteVersionDiffs ?? []), ...toVersionDiffsMap(result.versions)]),
                 hasMoreRemoteVersions: result.hasMore,
                 remoteVersionsNextOffset: prev.remoteVersionsNextOffset + result.pageSize,
             }));

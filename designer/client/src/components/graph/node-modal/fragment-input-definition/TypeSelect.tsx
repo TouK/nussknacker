@@ -31,6 +31,7 @@ export interface Option {
     value: string;
     label: string;
     isDisabled?: boolean;
+    description?: string;
 }
 
 interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {

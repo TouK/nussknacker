@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionsWithDifferences, VersionsWithDifferencesPageSize}
+import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionWithDifference, VersionsWithDifferences, VersionsWithDifferencesPageSize}
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
@@ -243,12 +243,14 @@ class ProcessesResources(
                   page = allOtherVersionIds.slice(offset, offset + VersionsWithDifferencesPageSize)
                   otherGraphs <- processService.getScenarioGraphsForVersionIds(processId, page)
                 } yield VersionsWithDifferences(
-                  versionIds = page.filter { otherVersionId =>
-                    otherGraphs.get(otherVersionId).exists { otherGraph =>
-                      ScenarioGraphComparator.hasMeaningfulDifferences(
+                  versions = page.flatMap { otherVersionId =>
+                    for {
+                      otherGraph <- otherGraphs.get(otherVersionId)
+                      descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(
                         ScenarioGraphComparator.compare(currentDetails.scenarioGraphUnsafe, otherGraph)
                       )
-                    }
+                      if descriptions.nonEmpty
+                    } yield VersionWithDifference(otherVersionId, descriptions)
                   },
                   hasMore = offset + VersionsWithDifferencesPageSize < allOtherVersionIds.size,
                   pageSize = VersionsWithDifferencesPageSize
@@ -327,8 +329,11 @@ class ProcessesResources(
 object ProcessesResources {
   final case class ProcessUnmarshallingError(message: String) extends OtherError(message)
 
-  val VersionsWithDifferencesPageSize: Int = 5
+  val VersionsWithDifferencesPageSize: Int = 10
 
   @io.circe.generic.JsonCodec
-  final case class VersionsWithDifferences(versionIds: List[VersionId], hasMore: Boolean, pageSize: Int)
+  final case class VersionWithDifference(versionId: VersionId, changedElements: List[String])
+
+  @io.circe.generic.JsonCodec
+  final case class VersionsWithDifferences(versions: List[VersionWithDifference], hasMore: Boolean, pageSize: Int)
 }
