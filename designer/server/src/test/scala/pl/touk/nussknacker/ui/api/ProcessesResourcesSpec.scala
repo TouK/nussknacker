@@ -957,7 +957,7 @@ class ProcessesResourcesSpec
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = responseAs[ProcessesResources.VersionsWithDifferences]
-      result.versionIds.map(_.value) should contain(1L)
+      result.versions.map(_.versionId.value) should contain(1L)
     }
   }
 
@@ -969,7 +969,7 @@ class ProcessesResourcesSpec
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = responseAs[ProcessesResources.VersionsWithDifferences]
-      result.versionIds shouldBe empty
+      result.versions shouldBe empty
       result.hasMore shouldBe false
     }
   }
