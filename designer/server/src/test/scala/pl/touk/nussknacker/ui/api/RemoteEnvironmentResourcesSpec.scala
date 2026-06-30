@@ -191,8 +191,8 @@ class RemoteEnvironmentResourcesSpec
       Get(s"/remoteEnvironment/$processName/1/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[ProcessesResources.VersionsWithDifferences]
-        result.versionIds.map(_.value) should contain(versionWithDiff.value)
-        result.versionIds.map(_.value) should not contain versionWithoutDiff.value
+        result.versions.map(_.versionId.value) should contain(versionWithDiff.value)
+        result.versions.map(_.versionId.value) should not contain versionWithoutDiff.value
         result.hasMore shouldBe false
       }
     }
