@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="RunEnvForLocalDesigner" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.dev.RunEnvForLocalDesigner" />
-    <module name="nussknacker-designer" />
+    <module name="nussknacker.nussknacker-designer" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="pl.touk.nussknacker.dev.*" />
