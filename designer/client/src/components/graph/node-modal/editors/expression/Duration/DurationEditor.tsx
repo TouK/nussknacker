@@ -16,6 +16,7 @@ export type Duration = {
     hours: number;
     minutes: number;
     seconds: number;
+    milliseconds: number;
 };
 
 type Props = {
@@ -30,12 +31,13 @@ type Props = {
 };
 
 const SPEL_DURATION_SWITCHABLE_TO_REGEX =
-    /^T\(java\.time\.Duration\)\.parse\('(-)?P([0-9]{1,}D)?(T((-)?[0-9]{1,}H)?((-)?[0-9]{1,}M)?((-)?[0-9]{1,}S)?)?'\)$/;
+    /^T\(java\.time\.Duration\)\.parse\('(-)?P([0-9]{1,}D)?(T((-)?[0-9]{1,}H)?((-)?[0-9]{1,}M)?((-)?[0-9]{1,}(\.[0-9]+)?S)?)?'\)$/;
 const NONE_DURATION = {
     asDays: () => null,
     hours: () => null,
     minutes: () => null,
     seconds: () => null,
+    milliseconds: () => null,
 };
 
 export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
@@ -50,7 +52,8 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             isValueNotNullAndNotZero(value.days) ||
             isValueNotNullAndNotZero(value.hours) ||
             isValueNotNullAndNotZero(value.minutes) ||
-            isValueNotNullAndNotZero(value.seconds),
+            isValueNotNullAndNotZero(value.seconds) ||
+            isValueNotNullAndNotZero(value.milliseconds),
         [isValueNotNullAndNotZero],
     );
 
@@ -101,5 +104,6 @@ export function duration(decodeExecResult) {
         hours: duration.hours(),
         minutes: duration.minutes(),
         seconds: duration.seconds(),
+        milliseconds: duration.milliseconds(),
     };
 }

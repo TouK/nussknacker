@@ -35,7 +35,7 @@ describe(DurationEditor.name, () => {
 
 describe(`${duration.name} function`, () => {
     it("should parse duration without loosing days if more than 31", () => {
-        const emptyDuration: Duration = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+        const emptyDuration: Duration = { days: 0, hours: 0, minutes: 0, seconds: 0, milliseconds: 0 };
         const formatter = typeFormatters[FormatterType.Duration];
         const oneMinute = "PT1M";
         const oneHour = "PT1H";
@@ -43,7 +43,7 @@ describe(`${duration.name} function`, () => {
         const oneDayOneHour = "PT25H";
         const oneDay = "P1D";
         const fortyDays = "P40D";
-        const mix = "P1DT1H1M";
+        const mix = "P1DT1H1M0.10S";
 
         const times = [oneMinute, oneHour, almostOneDay, oneDayOneHour, oneDay, fortyDays, mix];
         const results = [
@@ -53,7 +53,7 @@ describe(`${duration.name} function`, () => {
             { ...emptyDuration, days: 1, hours: 1 },
             { ...emptyDuration, days: 1 },
             { ...emptyDuration, days: 40 },
-            { days: 1, hours: 1, minutes: 1, seconds: 0 },
+            { days: 1, hours: 1, minutes: 1, seconds: 0, milliseconds: 100 },
         ];
         expect(times.map(formatter.decode).map(duration)).toStrictEqual(results);
     });
