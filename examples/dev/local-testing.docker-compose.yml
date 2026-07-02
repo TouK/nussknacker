@@ -64,7 +64,7 @@ services:
   ### KAFKA-related services:
 
   kafka:
-    image: bitnami/kafka:3.7.0
+    image: bitnamilegacy/kafka:3.7.0
     restart: unless-stopped
     hostname: nu-kafka
     ports:
@@ -87,7 +87,7 @@ services:
           memory: 512M
 
   schema-registry:
-    image: bitnami/schema-registry:7.6.1
+    image: bitnamilegacy/schema-registry:7.6.1
     restart: unless-stopped
     ports:
       - 3082:8081
