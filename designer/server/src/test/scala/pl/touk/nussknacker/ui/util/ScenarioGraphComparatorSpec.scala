@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGr
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
-import pl.touk.nussknacker.engine.graph.node.{Case, Filter, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.graph.node.{Case, Dimensions, Filter, StickyNote, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator._
 
 class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
@@ -124,6 +124,24 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
     val current = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("current")))
     val other   = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("other")))
     val diff    = ScenarioGraphComparator.compare(current, other)
+    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
+  }
+
+  test("hasMeaningfulDifferences returns false when only a sticky note's layoutData differs") {
+    val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
+    val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
+    val noteWithLayoutA = StickyNote("note1", "content", "#fff", Dimensions(200, 100), layoutA)
+    val noteWithLayoutB = StickyNote("note1", "content", "#fff", Dimensions(200, 100), layoutB)
+    val diff             = Map("Node 'note1'" -> StickyNoteDifferent("note1", noteWithLayoutA, noteWithLayoutB))
+    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe false
+  }
+
+  test("hasMeaningfulDifferences returns true when a sticky note's content differs") {
+    val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
+    val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
+    val noteWithLayoutA = StickyNote("note1", "content A", "#fff", Dimensions(200, 100), layoutA)
+    val noteWithLayoutB = StickyNote("note1", "content B", "#fff", Dimensions(200, 100), layoutB)
+    val diff             = Map("Node 'note1'" -> StickyNoteDifferent("note1", noteWithLayoutA, noteWithLayoutB))
     ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
   }
 

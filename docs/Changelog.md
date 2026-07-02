@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) The "Compare versions" dialog can now compare the current scenario version against another version on a configured remote (secondary) environment, not just against its own local history.
+    * The version picker now only lists versions with a meaningful (non-layout-only) difference from the current version, and shows a tooltip with the list of changed nodes/edges/properties.
+    * Versions are loaded a page at a time, with a "Load older versions…" option to fetch more.
+    * See the [Migration Guide](MigrationGuide.md) for the `RemoteEnvironment` API change.
 * [#9419](https://github.com/TouK/nussknacker/pull/9419) Compile-time parameter validators now inspect the resolved value of parameters whose value the typer cannot determine statically (e.g. a computed expression like `T(java.time.Duration).parse('PT3S').getSeconds()`), not only literal values. Such a parameter is evaluated at compile time - only when it has validators - so its value-based validators (e.g. min/max, validation expression) run against the computed value; previously these were skipped for non-literal expressions. This also covers lazy parameters, as long as their expression does not read context variables (e.g. `#input`) - the value of such a context-free expression is resolved at compile time solely for validation; lazy parameters whose expressions read context variables are still validated only at runtime. This can turn a scenario that previously compiled into an invalid one.
 * [#9415](https://github.com/TouK/nussknacker/pull/9415) `deduplication` component: added processing-time support and two filter counters.
     * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain used to measure the deduplication TTL. In processing time an idle key is reset on the wall clock, even with no traffic and no watermark; in event time the TTL is measured against the watermark and replays reproducibly.

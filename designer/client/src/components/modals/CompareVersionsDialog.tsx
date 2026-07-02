@@ -7,8 +7,8 @@ import { keys } from "lodash";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-
 import { components as SelectComponents } from "react-select";
+
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
@@ -16,9 +16,7 @@ import HttpService from "../../http/HttpService";
 import type { VersionsWithDifferencesResponse } from "../../http/HttpService";
 import { getActivities } from "../../reducers/selectors/activities";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
-import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
-import type { ItemActivity } from "../toolbars/activities/ActivitiesPanel";
-import type { ActivitiesResponse, ActivityType } from "../toolbars/activities/types";
+import { getEnvironmentAlert, getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import type { NodeType, StickyNoteNodeType } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
@@ -30,12 +28,65 @@ import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { StickyNoteType } from "../graph/utils/stickyNotesUtils";
 import type { ProcessVersionType } from "../Process/types";
 import { PropertiesForm } from "../properties";
+import type { ItemActivity } from "../toolbars/activities/ActivitiesPanel";
+import type { ActivitiesResponse, ActivityType } from "../toolbars/activities/types";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 type Environment = "local" | "remote";
 
 const toVersionDiffsMap = (versions: VersionsWithDifferencesResponse["versions"]): Map<number, string[]> =>
     new Map(versions.map(({ versionId, changedElements }) => [versionId, changedElements]));
+
+type DiffsPageState = {
+    diffs: Map<number, string[]> | null; // null = not yet loaded
+    hasMore: boolean;
+    nextOffset: number;
+};
+
+// Shared by the local and remote version pickers: fetches page 0 eagerly (so the dropdown has content as soon
+// as possible), resets when `fetchPage`'s identity changes (i.e. the caller's fetch key - process/version/
+// environment - changed, so any previously loaded pages are for a stale baseline and must not be kept around),
+// and normalizes a failed/unsupported fetch to a non-null empty map rather than leaving `diffs` stuck on null
+// forever, so dependent UI doesn't get permanently stuck in a "loading" state.
+const usePaginatedVersionDiffs = (
+    fetchPage: ((offset: number) => Promise<VersionsWithDifferencesResponse | null>) | null,
+): DiffsPageState & { loadMore: () => void } => {
+    const [state, setState] = useState<DiffsPageState>({ diffs: null, hasMore: false, nextOffset: 0 });
+
+    const applyPage = useCallback((offset: number, result: VersionsWithDifferencesResponse | null) => {
+        setState((prev) =>
+            result === null
+                ? { diffs: prev.diffs ?? new Map(), hasMore: false, nextOffset: offset }
+                : {
+                      diffs: new Map([...(prev.diffs ?? []), ...toVersionDiffsMap(result.versions)]),
+                      hasMore: result.hasMore,
+                      nextOffset: offset + result.pageSize,
+                  },
+        );
+    }, []);
+
+    useEffect(() => {
+        setState({ diffs: null, hasMore: false, nextOffset: 0 });
+        if (fetchPage) {
+            fetchPage(0).then((result) => applyPage(0, result));
+        }
+    }, [fetchPage, applyPage]);
+
+    const loadMore = useCallback(() => {
+        if (!fetchPage) return;
+        const fetchFrom = (offset: number) => {
+            fetchPage(offset).then((result) => {
+                applyPage(offset, result);
+                if (result !== null && result.versions.length === 0 && result.hasMore) {
+                    fetchFrom(offset + result.pageSize);
+                }
+            });
+        };
+        fetchFrom(state.nextOffset);
+    }, [fetchPage, applyPage, state.nextOffset]);
+
+    return { ...state, loadMore };
+};
 
 type CommentableActivity = Pick<ActivitiesResponse["activities"][number], "type" | "scenarioVersionId" | "comment">;
 
@@ -73,6 +124,7 @@ const LoadMoreContext = React.createContext<LoadMoreContextValue | null>(null);
 
 const VersionMenuList = ({ children, ...props }: React.ComponentProps<typeof SelectComponents.MenuList>) => {
     const ctx = useContext(LoadMoreContext);
+    const { t } = useTranslation();
     return (
         <SelectComponents.MenuList {...props}>
             {children}
@@ -92,7 +144,7 @@ const VersionMenuList = ({ children, ...props }: React.ComponentProps<typeof Sel
                         "&:hover": { opacity: 1, background: "rgba(128,128,128,0.1)" },
                     })}
                 >
-                    Load older versions…
+                    {t("dialog.compareVersions.loadOlderVersions", "Load older versions…")}
                 </div>
             )}
         </SelectComponents.MenuList>
@@ -112,12 +164,6 @@ const initState: State = {
     currentDiffId: null,
     difference: null,
     remoteVersions: [],
-    localVersionDiffs: null,
-    hasMoreLocalVersions: false,
-    localVersionsNextOffset: 0,
-    remoteVersionDiffs: null,
-    hasMoreRemoteVersions: false,
-    remoteVersionsNextOffset: 0,
     remoteActivities: null,
 };
 
@@ -127,12 +173,6 @@ interface State {
     otherVersion: string;
     remoteVersions: ProcessVersionType[];
     difference: unknown;
-    localVersionDiffs: Map<number, string[]> | null; // null = not yet loaded; versionId → changed elements
-    hasMoreLocalVersions: boolean;
-    localVersionsNextOffset: number;
-    remoteVersionDiffs: Map<number, string[]> | null; // null = not yet loaded or error
-    hasMoreRemoteVersions: boolean;
-    remoteVersionsNextOffset: number;
     remoteActivities: ActivitiesResponse["activities"] | null; // null = not yet loaded or error
 }
 
@@ -142,10 +182,12 @@ interface Props {
 const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const remotePrefix = "remote-";
 
+    const { t } = useTranslation();
     const [state, setState] = useState<State>(initState);
     const processName = useSelector(getProcessName);
     const version = useSelector(getProcessVersionId);
     const otherEnvironment = useSelector(getTargetEnvironmentId);
+    const { content: localEnvironmentName } = useSelector(getEnvironmentAlert);
     const versions = useSelector(getVersions);
     const activities = useSelector(getActivities);
 
@@ -164,7 +206,28 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         }
     }, [processName, otherEnvironment]);
 
-    const remoteVersionDiffsLoaded = state.remoteVersionDiffs !== null;
+    const fetchLocalPage = useMemo<((offset: number) => Promise<VersionsWithDifferencesResponse | null>) | null>(
+        () =>
+            processName && version
+                ? (offset: number) =>
+                      HttpService.fetchVersionsWithDifferences(processName, version, offset)
+                          .then((response) => response.data)
+                          .catch(() => null)
+                : null,
+        [processName, version],
+    );
+    const localDiffsState = usePaginatedVersionDiffs(fetchLocalPage);
+
+    const fetchRemotePage = useMemo<((offset: number) => Promise<VersionsWithDifferencesResponse | null>) | null>(
+        () =>
+            processName && version && otherEnvironment
+                ? (offset: number) => HttpService.fetchRemoteVersionsWithDifferences(processName, version, offset)
+                : null,
+        [processName, version, otherEnvironment],
+    );
+    const remoteDiffsState = usePaginatedVersionDiffs(fetchRemotePage);
+
+    const remoteVersionDiffsLoaded = remoteDiffsState.diffs !== null;
 
     useEffect(() => {
         // Deferred until the (connection-pool constrained, compare-heavy) diffs pagination has produced its
@@ -176,46 +239,6 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             );
         }
     }, [processName, otherEnvironment, remoteVersionDiffsLoaded]);
-
-    useEffect(() => {
-        if (processName && version && otherEnvironment) {
-            const fetchFrom = (offset: number) => {
-                HttpService.fetchRemoteVersionsWithDifferences(processName, version, offset).then((result) => {
-                    if (result === null) return;
-                    setState((prev) => ({
-                        ...prev,
-                        remoteVersionDiffs: new Map([...(prev.remoteVersionDiffs ?? []), ...toVersionDiffsMap(result.versions)]),
-                        hasMoreRemoteVersions: result.hasMore,
-                        remoteVersionsNextOffset: offset + result.pageSize,
-                    }));
-                    if (result.versions.length === 0 && result.hasMore) {
-                        fetchFrom(offset + result.pageSize);
-                    }
-                });
-            };
-            fetchFrom(0);
-        }
-    }, [processName, version, otherEnvironment]);
-
-    useEffect(() => {
-        if (processName && version) {
-            const fetchFrom = (offset: number) => {
-                HttpService.fetchVersionsWithDifferences(processName, version, offset).then((response) => {
-                    const { versions, hasMore, pageSize } = response.data;
-                    setState((prev) => ({
-                        ...prev,
-                        localVersionDiffs: new Map([...(prev.localVersionDiffs ?? []), ...toVersionDiffsMap(versions)]),
-                        hasMoreLocalVersions: hasMore,
-                        localVersionsNextOffset: offset + pageSize,
-                    }));
-                    if (versions.length === 0 && hasMore) {
-                        fetchFrom(offset + pageSize);
-                    }
-                });
-            };
-            fetchFrom(0);
-        }
-    }, [processName, version]);
 
     const isLayoutChangeOnly = useCallback(
         (diffId: string): boolean => {
@@ -272,7 +295,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 ? remoteVersionComments.get(version.processVersionId)
                 : versionComments.get(version.processVersionId);
             const commentSuffix = comment ? ` (${comment})` : "";
-            return `${versionDisplayString(versionId)} - ${formatAbsolutely(version.createDate)} ${version.user}${commentSuffix}`;
+            return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(version.createDate)}${commentSuffix}`;
         },
         [versionDisplayString, versionComments, remoteVersionComments],
     );
@@ -361,9 +384,14 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const versionOptions: Option[] = useMemo(() => {
         if (state.environment === "remote") {
-            const remoteDiffs = state.remoteVersionDiffs;
+            const remoteDiffs = remoteDiffsState.diffs;
             if (remoteDiffs === null) return [{ label: "", value: "" }];
-            const filtered = (state?.remoteVersions ?? []).filter((v) => remoteDiffs.has(v.processVersionId));
+            // A version is listed if it has a meaningful diff, or it's the currently selected/predefined version -
+            // otherwise a version whose diff got filtered out (e.g. layout-only) would vanish from the dropdown
+            // while still being displayed below, leaving the "Version to compare" field blank.
+            const filtered = (state?.remoteVersions ?? []).filter(
+                (v) => remoteDiffs.has(v.processVersionId) || createVersionId(v, remotePrefix) === state.otherVersion,
+            );
             return [
                 { label: "", value: "" },
                 ...filtered.map((v) => {
@@ -376,12 +404,16 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 }),
             ];
         }
-        const localDiffs = state.localVersionDiffs;
+        const localDiffs = localDiffsState.diffs;
         if (localDiffs === null) return [{ label: "", value: "" }];
         return [
             { label: "", value: "" },
             ...versions
-                .filter((v) => version !== v.processVersionId && localDiffs.has(v.processVersionId))
+                .filter(
+                    (v) =>
+                        version !== v.processVersionId &&
+                        (localDiffs.has(v.processVersionId) || createVersionId(v) === state.otherVersion),
+                )
                 .map((v) => {
                     const changedElements = localDiffs.get(v.processVersionId) ?? [];
                     return {
@@ -391,7 +423,16 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     };
                 }),
         ];
-    }, [createVersionElement, state.environment, state?.remoteVersions, state.remoteVersionDiffs, state.localVersionDiffs, version, versions]);
+    }, [
+        createVersionElement,
+        state.environment,
+        state.otherVersion,
+        state?.remoteVersions,
+        remoteDiffsState.diffs,
+        localDiffsState.diffs,
+        version,
+        versions,
+    ]);
 
     const differenceOptions: Option[] = useMemo(() => {
         return [
@@ -406,44 +447,6 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             }),
         ];
     }, [isLayoutChangeOnly, state?.difference]);
-
-    const loadMoreLocalVersions = useCallback(() => {
-        if (!processName || !version) return;
-        const fetchFrom = (offset: number) => {
-            HttpService.fetchVersionsWithDifferences(processName, version, offset).then((response) => {
-                const { versions, hasMore, pageSize } = response.data;
-                setState((prev) => ({
-                    ...prev,
-                    localVersionDiffs: new Map([...(prev.localVersionDiffs ?? []), ...toVersionDiffsMap(versions)]),
-                    hasMoreLocalVersions: hasMore,
-                    localVersionsNextOffset: offset + pageSize,
-                }));
-                if (versions.length === 0 && hasMore) {
-                    fetchFrom(offset + pageSize);
-                }
-            });
-        };
-        fetchFrom(state.localVersionsNextOffset);
-    }, [processName, version, state.localVersionsNextOffset]);
-
-    const loadMoreRemoteVersions = useCallback(() => {
-        if (!processName || !version) return;
-        const fetchFrom = (offset: number) => {
-            HttpService.fetchRemoteVersionsWithDifferences(processName, version, offset).then((result) => {
-                if (result === null) return;
-                setState((prev) => ({
-                    ...prev,
-                    remoteVersionDiffs: new Map([...(prev.remoteVersionDiffs ?? []), ...toVersionDiffsMap(result.versions)]),
-                    hasMoreRemoteVersions: result.hasMore,
-                    remoteVersionsNextOffset: offset + result.pageSize,
-                }));
-                if (result.versions.length === 0 && result.hasMore) {
-                    fetchFrom(offset + result.pageSize);
-                }
-            });
-        };
-        fetchFrom(state.remoteVersionsNextOffset);
-    }, [processName, version, state.remoteVersionsNextOffset]);
 
     const handleEnvironmentChange = useCallback(
         (env: string) => {
@@ -460,25 +463,28 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const loadMoreContextValue = useMemo<LoadMoreContextValue>(
         () => ({
-            hasMore: state.environment === "local" ? state.hasMoreLocalVersions : state.hasMoreRemoteVersions,
-            loadMore: state.environment === "local" ? loadMoreLocalVersions : loadMoreRemoteVersions,
+            hasMore: state.environment === "local" ? localDiffsState.hasMore : remoteDiffsState.hasMore,
+            loadMore: state.environment === "local" ? localDiffsState.loadMore : remoteDiffsState.loadMore,
         }),
-        [state.environment, state.hasMoreLocalVersions, state.hasMoreRemoteVersions, loadMoreLocalVersions, loadMoreRemoteVersions],
+        [state.environment, localDiffsState.hasMore, remoteDiffsState.hasMore, localDiffsState.loadMore, remoteDiffsState.loadMore],
     );
 
     const environmentOptions: Option[] = useMemo(() => {
         if (!otherEnvironment) return [];
+        const localLabel = localEnvironmentName
+            ? t("dialog.compareVersions.localWithName", "Local: {{name}}", { name: localEnvironmentName })
+            : t("dialog.compareVersions.local", "Local");
         return [
-            { label: "Local", value: "local" },
-            { label: otherEnvironment, value: "remote" },
+            { label: localLabel, value: "local" },
+            { label: t("dialog.compareVersions.remoteWithName", "Remote: {{name}}", { name: otherEnvironment }), value: "remote" },
         ];
-    }, [otherEnvironment]);
+    }, [otherEnvironment, localEnvironmentName, t]);
 
     return (
         <>
             {otherEnvironment && (
                 <FormControl>
-                    <FormLabel>Environment</FormLabel>
+                    <FormLabel>{t("dialog.compareVersions.environment", "Environment")}</FormLabel>
                     <TypeSelect
                         id="environment"
                         onChange={handleEnvironmentChange}

@@ -43,7 +43,6 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   sampleFragmentWithPreset
 }
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.api.ProcessesResources
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
   ScenarioActivities,
   ScenarioActivity,
@@ -58,6 +57,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
@@ -956,7 +956,7 @@ class ProcessesResourcesSpec
       s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val result = responseAs[ProcessesResources.VersionsWithDifferences]
+      val result = responseAs[VersionsWithDifferences]
       result.versions.map(_.versionId.value) should contain(1L)
     }
   }
@@ -968,7 +968,7 @@ class ProcessesResourcesSpec
       s"/api/processes/$processName/1/versions-with-differences"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val result = responseAs[ProcessesResources.VersionsWithDifferences]
+      val result = responseAs[VersionsWithDifferences]
       result.versions shouldBe empty
       result.hasMore shouldBe false
     }
@@ -982,7 +982,7 @@ class ProcessesResourcesSpec
       s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?offset=0"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val result = responseAs[ProcessesResources.VersionsWithDifferences]
+      val result = responseAs[VersionsWithDifferences]
       result.hasMore shouldBe false
     }
   }

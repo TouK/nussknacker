@@ -82,7 +82,13 @@ class HttpRemoteEnvironment(
       HttpMethods.GET,
       List("processes", processName.value, "versions", "graphs"),
       Query(("versionIds", versionIds.map(_.value).mkString(",")))
-    ).map(_.fold(_ => Map.empty[VersionId, ScenarioGraph], _.versions.map(g => g.versionId -> g.scenarioGraph).toMap))
+    ).map(_.fold(
+        error => {
+          logFetchError("scenario graphs", processName, error)
+          Map.empty[VersionId, ScenarioGraph]
+        },
+        _.versions.map(g => g.versionId -> g.scenarioGraph).toMap
+      ))
       .recover { case NonFatal(ex) =>
         logger.warn(s"Failed to fetch scenario graphs from remote environment for scenario ${processName.value}", ex)
         Map.empty
@@ -95,11 +101,35 @@ class HttpRemoteEnvironment(
     invokeJson[ScenarioActivities](
       HttpMethods.GET,
       List("processes", processName.value, "activity", "activities")
-    ).map(_.fold(_ => List(), _.activities))
+    ).map(_.fold(
+        error => {
+          logFetchError("activities", processName, error)
+          List.empty[ScenarioActivity]
+        },
+        _.activities
+      ))
       .recover { case NonFatal(ex) =>
         logger.warn(s"Failed to fetch activities from remote environment for scenario ${processName.value}", ex)
         List.empty
       }
+
+  // A 404 most likely means the remote environment is running an older Nussknacker version that doesn't
+  // expose this endpoint yet - expected and not actionable, so it's only logged at debug. Any other status
+  // (5xx, auth failures, ...) is a real problem on a reachable, up-to-date remote and is logged at warn,
+  // same severity as the NonFatal-exception branch below, so it isn't silently invisible in the logs.
+  private def logFetchError(what: String, processName: ProcessName, error: NuDesignerError): Unit = error match {
+    case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
+      logger.debug(
+        s"Remote environment doesn't support fetching $what for scenario ${processName.value} " +
+          s"(likely an older Nussknacker version)"
+      )
+    case RemoteEnvironmentCommunicationError(statusCode, message) =>
+      logger.warn(
+        s"Failed to fetch $what from remote environment for scenario ${processName.value}: $statusCode $message"
+      )
+    case other =>
+      logger.warn(s"Failed to fetch $what from remote environment for scenario ${processName.value}: $other")
+  }
 
   override protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = {
     EitherT {

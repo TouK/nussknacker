@@ -14,14 +14,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.ProcessesResources.{
-  VersionsWithDifferences,
-  VersionsWithDifferencesPageSize,
-  VersionWithDifference
-}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivities
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionWithDifference
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
@@ -135,38 +132,20 @@ class RemoteEnvironmentResources(
                       GetScenarioWithDetailsOptions.withScenarioGraph
                     )
                     allRemoteVersions <- remoteEnvironment.processVersions(processIdWithName.name)
-                    page = allRemoteVersions.slice(offset, offset + VersionsWithDifferencesPageSize)
-                    // A single bulk round trip for the whole page, instead of one remote HTTP call per version.
-                    remoteGraphs <- remoteEnvironment.scenarioGraphsForVersions(
-                      processIdWithName.name,
-                      page.map(_.processVersionId)
+                    result <- VersionsWithDifferencesService.compute(
+                      localDetails.scenarioGraphUnsafe,
+                      allRemoteVersions.map(_.processVersionId),
+                      offset,
+                      // A single bulk round trip for the whole page, instead of one remote HTTP call per version.
+                      fetchGraphs = page => remoteEnvironment.scenarioGraphsForVersions(processIdWithName.name, page),
+                      // The remote environment didn't return a graph for this version (e.g. it's running a
+                      // Nussknacker version older than this bulk-fetch endpoint). We can't tell whether it
+                      // actually differs, so we conservatively mark it as different rather than silently
+                      // hiding a version that might have real, unreviewed changes.
+                      describeMissingGraph = versionId =>
+                        Some(VersionWithDifference(versionId, List("Unable to determine differences with the remote environment")))
                     )
-                  } yield VersionsWithDifferences(
-                    versions = page.flatMap { remoteVersion =>
-                      remoteGraphs.get(remoteVersion.processVersionId) match {
-                        case Some(remoteGraph) =>
-                          val descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(
-                            ScenarioGraphComparator.compare(localDetails.scenarioGraphUnsafe, remoteGraph)
-                          )
-                          Option.when(descriptions.nonEmpty)(
-                            VersionWithDifference(remoteVersion.processVersionId, descriptions)
-                          )
-                        case None =>
-                          // The remote environment didn't return a graph for this version (e.g. it's running a
-                          // Nussknacker version older than this bulk-fetch endpoint). We can't tell whether it
-                          // actually differs, so we conservatively mark it as different rather than silently
-                          // hiding a version that might have real, unreviewed changes.
-                          Some(
-                            VersionWithDifference(
-                              remoteVersion.processVersionId,
-                              List("Unable to determine differences with the remote environment")
-                            )
-                          )
-                      }
-                    },
-                    hasMore = offset + VersionsWithDifferencesPageSize < allRemoteVersions.size,
-                    pageSize = VersionsWithDifferencesPageSize
-                  )
+                  } yield result
                 }
             }
         } ~
