@@ -55,9 +55,7 @@ class DeduplicationTransformer
     .withCreator(modify =
       _.copy(
         labelOpt = Some("Group by"),
-        hintText = Some(
-          "Groups events for deduplication. Events with the same key share one deduplication entry."
-        ),
+        hintText = Some("Groups events for deduplication. Events with the same key share one deduplication entry."),
         defaultValue = Some("''".spel)
       )
     )
@@ -107,19 +105,21 @@ class DeduplicationTransformer
   private val ttlParamDeclaration = ParameterDeclaration
     .mandatory[Duration](ttlParamName)
     .withCreator(modify =
-      _.copy(
-        labelOpt = Some("TTL"),
-        hintText = Some(
-          "Time after which the deduplication entry expires. " +
-            "The timer resets with each incoming event for a given key. " +
-            "After this period of inactivity, the next event is treated as new."
-        ),
-        editors = List(
-          DurationParameterEditor(
-            List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
-          )
+      param =>
+        param.copy(
+          labelOpt = Some("TTL"),
+          hintText = Some(
+            "Time after which the deduplication entry expires. " +
+              "The timer resets with each incoming event for a given key. " +
+              "After this period of inactivity, the next event is treated as new."
+          ),
+          editors = List(
+            DurationParameterEditor(
+              List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
+            )
+          ),
+          validators = param.validators :+ NotNullValidator
         )
-      )
     )
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
