@@ -43,6 +43,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   sampleFragmentWithPreset
 }
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.ui.api.ProcessesResources
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
   ScenarioActivities,
   ScenarioActivity,
@@ -54,7 +55,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
   Available,
   NotAvailable
 }
-import pl.touk.nussknacker.ui.api.ProcessesResources
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.ScenarioQuery

@@ -74,16 +74,16 @@ object ScenarioGraphComparator {
 
   def describeMeaningfulDiffs(diff: Map[String, Difference]): List[String] =
     meaningfulDiffs(diff).values.map {
-      case NodeDifferent(id, _, _)            => s"Node '$id' modified"
-      case NodeNotPresentInOther(id, _)       => s"Node '$id' added"
-      case NodeNotPresentInCurrent(id, _)     => s"Node '$id' removed"
-      case EdgeDifferent(from, to, _, _)      => s"Edge '$from' → '$to' modified"
-      case EdgeNotPresentInOther(from, to, _) => s"Edge '$from' → '$to' added"
+      case NodeDifferent(id, _, _)              => s"Node '$id' modified"
+      case NodeNotPresentInOther(id, _)         => s"Node '$id' added"
+      case NodeNotPresentInCurrent(id, _)       => s"Node '$id' removed"
+      case EdgeDifferent(from, to, _, _)        => s"Edge '$from' → '$to' modified"
+      case EdgeNotPresentInOther(from, to, _)   => s"Edge '$from' → '$to' added"
       case EdgeNotPresentInCurrent(from, to, _) => s"Edge '$from' → '$to' removed"
-      case StickyNoteDifferent(id, _, _)      => s"Note '$id' modified"
-      case StickyNotePresentInOther(id, _)    => s"Note '$id' added"
-      case StickyNotePresentInCurrent(id, _)  => s"Note '$id' removed"
-      case PropertiesDifferent(_, _)          => "Properties modified"
+      case StickyNoteDifferent(id, _, _)        => s"Note '$id' modified"
+      case StickyNotePresentInOther(id, _)      => s"Note '$id' added"
+      case StickyNotePresentInCurrent(id, _)    => s"Note '$id' removed"
+      case PropertiesDifferent(_, _)            => "Properties modified"
     }.toList
 
   private def isLayoutOnlyNodeDiff(current: NodeData, other: NodeData): Boolean =

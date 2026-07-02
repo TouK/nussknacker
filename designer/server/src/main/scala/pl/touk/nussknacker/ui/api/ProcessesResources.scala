@@ -10,10 +10,14 @@ import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.api.ProcessesResources.{
+  VersionsWithDifferences,
+  VersionsWithDifferencesPageSize,
+  VersionWithDifference
+}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionWithDifference, VersionsWithDifferences, VersionsWithDifferencesPageSize}
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
@@ -22,6 +26,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.migrate.{VersionGraph, VersionGraphs}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -227,35 +232,34 @@ class ProcessesResources(
         }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
         (processName, currentVersionId) =>
-          (get & processId(processName) & parameters(Symbol("offset").as[Int].withDefault(0))) {
-            (processId, offset) =>
-              complete {
-                for {
-                  currentDetails <- processService.getProcessWithDetails(
-                    processId,
-                    currentVersionId,
-                    GetScenarioWithDetailsOptions.withScenarioGraph
-                  )
-                  allOtherVersionIds = currentDetails.history
-                    .getOrElse(Nil)
-                    .map(_.processVersionId)
-                    .filterNot(_ == currentVersionId)
-                  page = allOtherVersionIds.slice(offset, offset + VersionsWithDifferencesPageSize)
-                  otherGraphs <- processService.getScenarioGraphsForVersionIds(processId, page)
-                } yield VersionsWithDifferences(
-                  versions = page.flatMap { otherVersionId =>
-                    for {
-                      otherGraph <- otherGraphs.get(otherVersionId)
-                      descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(
-                        ScenarioGraphComparator.compare(currentDetails.scenarioGraphUnsafe, otherGraph)
-                      )
-                      if descriptions.nonEmpty
-                    } yield VersionWithDifference(otherVersionId, descriptions)
-                  },
-                  hasMore = offset + VersionsWithDifferencesPageSize < allOtherVersionIds.size,
-                  pageSize = VersionsWithDifferencesPageSize
+          (get & processId(processName) & parameters(Symbol("offset").as[Int].withDefault(0))) { (processId, offset) =>
+            complete {
+              for {
+                currentDetails <- processService.getProcessWithDetails(
+                  processId,
+                  currentVersionId,
+                  GetScenarioWithDetailsOptions.withScenarioGraph
                 )
-              }
+                allOtherVersionIds = currentDetails.history
+                  .getOrElse(Nil)
+                  .map(_.processVersionId)
+                  .filterNot(_ == currentVersionId)
+                page = allOtherVersionIds.slice(offset, offset + VersionsWithDifferencesPageSize)
+                otherGraphs <- processService.getScenarioGraphsForVersionIds(processId, page)
+              } yield VersionsWithDifferences(
+                versions = page.flatMap { otherVersionId =>
+                  for {
+                    otherGraph <- otherGraphs.get(otherVersionId)
+                    descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(
+                      ScenarioGraphComparator.compare(currentDetails.scenarioGraphUnsafe, otherGraph)
+                    )
+                    if descriptions.nonEmpty
+                  } yield VersionWithDifference(otherVersionId, descriptions)
+                },
+                hasMore = offset + VersionsWithDifferencesPageSize < allOtherVersionIds.size,
+                pageSize = VersionsWithDifferencesPageSize
+              )
+            }
           }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
         (processName, thisVersion, otherVersion) =>
@@ -275,6 +279,18 @@ class ProcessesResources(
               } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
           }
+      } ~ path("processes" / ProcessNameSegment / "versions" / "graphs") { processName =>
+        // Used by other Nussknacker instances (via RemoteEnvironment.scenarioGraphsForVersions) to bulk-fetch
+        // graphs for several versions of this scenario in one round trip, instead of one request per version.
+        (get & processId(processName) & parameters(Symbol("versionIds").as(CsvSeq[Long]))) {
+          (processId, versionIdValues) =>
+            complete {
+              val versionIds = versionIdValues.map(VersionId(_)).toList
+              processService.getScenarioGraphsForVersionIds(processId, versionIds).map { graphs =>
+                VersionGraphs(versionIds.flatMap(id => graphs.get(id).map(VersionGraph(id, _))))
+              }
+            }
+        }
       }
     }
   }

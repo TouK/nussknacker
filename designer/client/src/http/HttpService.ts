@@ -1104,6 +1104,15 @@ class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
+    // The secondary environment may run an incompatible Nussknacker version, so any error
+    // (network, HTTP, or an unexpected response shape) is swallowed and treated as "no data".
+    fetchRemoteActivities(scenarioName: string): Promise<ActivitiesResponse | null> {
+        return api
+            .get<ActivitiesResponse>(`/remoteEnvironment/${encodeURIComponent(scenarioName)}/activity/activities`)
+            .then((response) => response.data)
+            .catch(() => null);
+    }
+
     sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
         const headers = {
             "Content-Type": "application/json",
