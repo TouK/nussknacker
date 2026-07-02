@@ -10,11 +10,6 @@ import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui._
-import pl.touk.nussknacker.ui.api.ProcessesResources.{
-  VersionsWithDifferences,
-  VersionsWithDifferencesPageSize,
-  VersionWithDifference
-}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.process._
@@ -244,21 +239,13 @@ class ProcessesResources(
                   .getOrElse(Nil)
                   .map(_.processVersionId)
                   .filterNot(_ == currentVersionId)
-                page = allOtherVersionIds.slice(offset, offset + VersionsWithDifferencesPageSize)
-                otherGraphs <- processService.getScenarioGraphsForVersionIds(processId, page)
-              } yield VersionsWithDifferences(
-                versions = page.flatMap { otherVersionId =>
-                  for {
-                    otherGraph <- otherGraphs.get(otherVersionId)
-                    descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(
-                      ScenarioGraphComparator.compare(currentDetails.scenarioGraphUnsafe, otherGraph)
-                    )
-                    if descriptions.nonEmpty
-                  } yield VersionWithDifference(otherVersionId, descriptions)
-                },
-                hasMore = offset + VersionsWithDifferencesPageSize < allOtherVersionIds.size,
-                pageSize = VersionsWithDifferencesPageSize
-              )
+                result <- VersionsWithDifferencesService.compute(
+                  currentDetails.scenarioGraphUnsafe,
+                  allOtherVersionIds,
+                  offset,
+                  fetchGraphs = page => processService.getScenarioGraphsForVersionIds(processId, page)
+                )
+              } yield result
             }
           }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
@@ -344,12 +331,4 @@ class ProcessesResources(
 
 object ProcessesResources {
   final case class ProcessUnmarshallingError(message: String) extends OtherError(message)
-
-  val VersionsWithDifferencesPageSize: Int = 10
-
-  @io.circe.generic.JsonCodec
-  final case class VersionWithDifference(versionId: VersionId, changedElements: List[String])
-
-  @io.circe.generic.JsonCodec
-  final case class VersionsWithDifferences(versions: List[VersionWithDifference], hasMore: Boolean, pageSize: Int)
 }

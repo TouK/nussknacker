@@ -5,12 +5,14 @@ import io.circe.syntax.EncoderOps
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model.{
+  HttpEntity,
   HttpHeader,
   HttpMethod,
   HttpMethods,
   HttpResponse,
   MessageEntity,
   RequestEntity,
+  StatusCode,
   StatusCodes,
   Uri
 }
@@ -18,7 +20,7 @@ import org.apache.pekko.stream.Materializer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
@@ -108,6 +110,50 @@ class HttpRemoteEnvironmentSpec
     whenReady(remoteEnvironment.compare(scenarioGraph, name, None)) { result =>
       result shouldBe Symbol("right")
     }
+  }
+
+  // These two cases exercise the two branches of HttpRemoteEnvironment.logFetchError: a 404 (remote doesn't
+  // support the endpoint - e.g. an older Nussknacker version) and a 500 (a real, unexpected failure) both
+  // resolve to an empty result without failing the Future, but are logged at different severities.
+  it should "resolve scenarioGraphsForVersions to an empty map when the remote returns 404 (unsupported endpoint)" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
+
+    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
+      result shouldBe Map.empty
+    }
+  }
+
+  it should "resolve scenarioGraphsForVersions to an empty map when the remote returns a server error" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.InternalServerError)
+
+    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
+      result shouldBe Map.empty
+    }
+  }
+
+  it should "resolve activities to an empty list when the remote returns 404 (unsupported endpoint)" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
+
+    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
+      result shouldBe List.empty
+    }
+  }
+
+  it should "resolve activities to an empty list when the remote returns a server error" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.InternalServerError)
+
+    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
+      result shouldBe List.empty
+    }
+  }
+
+  private def mockRemoteEnvironmentReturning(statusCode: StatusCode) = new MockRemoteEnvironment {
+    override protected def request(
+        path: Uri,
+        method: HttpMethod,
+        request: MessageEntity,
+        headers: Seq[HttpHeader]
+    ): Future[HttpResponse] = Future.successful(HttpResponse(statusCode, entity = HttpEntity("error")))
   }
 
   it should "handle request without labels in decoder fallback to migrate the scenario from/to older versions of NU" in {

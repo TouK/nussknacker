@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) The "Compare versions" dialog can now compare the current scenario version against another version on a configured remote (secondary) environment, not just against its own local history.
+    * The version picker now only lists versions with a meaningful (non-layout-only) difference from the current version, and shows a tooltip with the list of changed nodes/edges/properties.
+    * Versions are loaded a page at a time, with a "Load older versions…" option to fetch more.
+    * See the [Migration Guide](MigrationGuide.md) for the `RemoteEnvironment` API change.
 * [#9396](https://github.com/TouK/nussknacker/pull/9396) Flink `components-api`: added reusable restore-able keyed operators (`RestorableKeyedOperator`, `RestorableOneInputFlushingKeyedOperator`) that re-pace every key's buffered events once after a state restore, and the end-of-input flush API now carries the key. See the [Migration Guide](MigrationGuide.md) for the API changes.
 * [#9394](https://github.com/TouK/nussknacker/pull/9394),[#9395](https://github.com/TouK/nussknacker/pull/9395) The `delay` component: added processing-time support and reworked parameters.
     * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain. In processing time, events still queued when a bounded input ends are flushed at the end of the input.

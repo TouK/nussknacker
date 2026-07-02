@@ -114,14 +114,14 @@ describe("CompareVersionsDialog", () => {
             </NuThemeProvider>,
         );
 
-        // Switch to remote environment
-        fireEvent.keyDown(screen.getByText("Local"), DOWN_ARROW);
-        fireEvent.click(await screen.findByText("remote environment"));
+        // Switch to remote environment (mocked useTranslation returns the raw key, ignoring interpolation)
+        fireEvent.keyDown(screen.getByText("dialog.compareVersions.local"), DOWN_ARROW);
+        fireEvent.click(await screen.findByText("dialog.compareVersions.remoteWithName"));
 
         // Open version picker and select the remote version
         fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
 
-        const remoteItemText = "1 on remote environment - 2024-05-31|00:00 test";
+        const remoteItemText = "1 on remote environment - created by test 2024-05-31|00:00";
 
         await waitFor(() => {
             fireEvent.click(screen.getByText(remoteItemText));
@@ -169,7 +169,7 @@ describe("CompareVersionsDialog", () => {
 
         fireEvent.keyDown(screen.getByText("Select..."), DOWN_ARROW);
 
-        const historyItemText = "34 - 2024-05-31|00:00 admin";
+        const historyItemText = "34 - created by admin 2024-05-31|00:00";
 
         await waitFor(() => {
             fireEvent.click(screen.getByText(historyItemText));
@@ -177,5 +177,82 @@ describe("CompareVersionsDialog", () => {
 
         expect(await screen.findByText("Difference to pick")).toBeInTheDocument();
         expect(await screen.findByText(historyItemText)).toBeInTheDocument();
+    });
+
+    it("should keep the predefined version visible in the dropdown even when it has no meaningful diff", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
+        // version 34 (the predefined one) is absent from the returned page - e.g. it only had a layout-only
+        // diff, filtered out server-side - while version 35 does have a meaningful diff.
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
+            versions: [{ versionId: 35, changedElements: ["Node 'x' modified"] }],
+            hasMore: false,
+            pageSize: 5,
+        });
+        mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
+            versions: [],
+            hasMore: false,
+            pageSize: 5,
+        });
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/34`).replyOnce(200, {});
+
+        render(
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <CompareVersionsDialog
+                        data={{
+                            title: "compare versions",
+                            kind: 12,
+                            id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                            meta: { scenarioVersionId: "34" },
+                        }}
+                    />
+                </Provider>
+            </NuThemeProvider>,
+        );
+
+        const historyItemText = "34 - created by admin 2024-05-31|00:00";
+        expect(await screen.findByText(historyItemText)).toBeInTheDocument();
+    });
+
+    it("should show the local environment's configured name in the environment picker when set", async () => {
+        const storeWithLocalEnvironmentName = mockStore({
+            graphReducer,
+            settings: {
+                featuresSettings: {
+                    remoteEnvironment: { targetEnvironmentId: "remote environment" },
+                    environmentAlert: { content: "local environment" },
+                },
+            },
+            processActivity: { activities: [] },
+        });
+
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
+            versions: [],
+            hasMore: false,
+            pageSize: 5,
+        });
+
+        render(
+            <NuThemeProvider>
+                <Provider store={storeWithLocalEnvironmentName}>
+                    <CompareVersionsDialog
+                        data={{
+                            title: "compare versions",
+                            kind: 12,
+                            id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                            meta: { scenarioVersionId: undefined },
+                        }}
+                    />
+                </Provider>
+            </NuThemeProvider>,
+        );
+
+        // mocked useTranslation returns the raw key, ignoring interpolation - confirms the "with name" key is
+        // used instead of the plain "local"/"remoteWithName" fallback when environmentAlert.content is set
+        expect(await screen.findByText("dialog.compareVersions.localWithName")).toBeInTheDocument();
+        fireEvent.keyDown(screen.getByText("dialog.compareVersions.localWithName"), DOWN_ARROW);
+        expect(await screen.findByText("dialog.compareVersions.remoteWithName")).toBeInTheDocument();
     });
 });

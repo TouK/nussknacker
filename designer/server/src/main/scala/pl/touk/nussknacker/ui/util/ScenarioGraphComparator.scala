@@ -2,11 +2,11 @@ package pl.touk.nussknacker.ui.util
 
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote}
+import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote, UserDefinedAdditionalNodeFields}
 
 object ScenarioGraphComparator {
 
-  import io.circe.Json
+  import io.circe.{Encoder, Json}
   import io.circe.syntax._
   import pl.touk.nussknacker.engine.api.CirceUtil._
   import pl.touk.nussknacker.engine.graph.node.NodeData._
@@ -66,8 +66,9 @@ object ScenarioGraphComparator {
 
   def meaningfulDiffs(diff: Map[String, Difference]): Map[String, Difference] =
     diff.filter {
-      case (_, NodeDifferent(_, current, other)) => !isLayoutOnlyNodeDiff(current, other)
-      case _                                     => true
+      case (_, NodeDifferent(_, current, other))       => !isLayoutOnlyNodeDiff(current, other)
+      case (_, StickyNoteDifferent(_, current, other)) => !isLayoutOnlyStickyNoteDiff(current, other)
+      case _                                           => true
     }
 
   def hasMeaningfulDifferences(diff: Map[String, Difference]): Boolean = meaningfulDiffs(diff).nonEmpty
@@ -87,16 +88,19 @@ object ScenarioGraphComparator {
     }.toList
 
   private def isLayoutOnlyNodeDiff(current: NodeData, other: NodeData): Boolean =
-    nodeJsonWithoutLayout(current) == nodeJsonWithoutLayout(other)
+    nodeJsonWithoutLayout(current, current.additionalFields) == nodeJsonWithoutLayout(other, other.additionalFields)
 
-  private def nodeJsonWithoutLayout(node: NodeData): Json = {
-    val json = node.asJson
-    json.hcursor
-      .downField("additionalFields")
-      .downField("layoutData")
-      .delete
-      .top
-      .getOrElse(json)
+  private def isLayoutOnlyStickyNoteDiff(current: StickyNote, other: StickyNote): Boolean =
+    nodeJsonWithoutLayout(current, current.additionalFields) == nodeJsonWithoutLayout(other, other.additionalFields)
+
+  // Rather than deleting a "layoutData" field by string path from the fully-serialized JSON (which would
+  // silently no-op - comparing the untouched JSON - if that path ever stopped matching), this replaces the
+  // "additionalFields" subtree with JSON built from a domain-level `UserDefinedAdditionalNodeFields` copy that
+  // has `layoutData` cleared. Renaming/removing the `layoutData` case class field breaks this at compile time.
+  private def nodeJsonWithoutLayout[A: Encoder](node: A, additionalFields: Option[UserDefinedAdditionalNodeFields]): Json = {
+    val json                 = node.asJson
+    val additionalFieldsJson = additionalFields.map(_.copy(layoutData = None)).asJson
+    json.hcursor.downField("additionalFields").set(additionalFieldsJson).top.getOrElse(json)
   }
 
   @ConfiguredJsonCodec sealed trait Difference {

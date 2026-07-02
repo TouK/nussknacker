@@ -77,7 +77,7 @@ describe("Activities", () => {
         cy.get("[data-testid=compare-2]").eq(0).click();
 
         cy.contains("Version to compare").siblings().as("versionToCompare");
-        cy.get("@versionToCompare").contains(/2 - .+ admin/);
+        cy.get("@versionToCompare").contains(/2 - created by admin/);
         cy.get("@versionToCompare").find("input").should("be.disabled");
         cy.get("#differentVersion input").select(1);
         cy.contains(/^ok/i).click();

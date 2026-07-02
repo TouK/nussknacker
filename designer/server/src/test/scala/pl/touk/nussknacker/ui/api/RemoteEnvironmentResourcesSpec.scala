@@ -20,8 +20,8 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.ProcessesResources
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
@@ -196,7 +196,7 @@ class RemoteEnvironmentResourcesSpec
     saveCanonicalProcess(ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        val result = responseAs[ProcessesResources.VersionsWithDifferences]
+        val result = responseAs[VersionsWithDifferences]
         result.versions.map(_.versionId.value) should contain(versionWithDiff.value)
         result.versions.map(_.versionId.value) should not contain versionWithoutDiff.value
         result.hasMore shouldBe false
@@ -237,7 +237,7 @@ class RemoteEnvironmentResourcesSpec
     saveCanonicalProcess(ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        val result = responseAs[ProcessesResources.VersionsWithDifferences]
+        val result = responseAs[VersionsWithDifferences]
         result.versions.map(_.versionId.value) should contain(versionWithUnknownDiff.value)
       }
     }
