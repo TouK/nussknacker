@@ -12,11 +12,13 @@ import org.apache.pekko.http.scaladsl.model.Uri.{Path, Query}
 import org.apache.pekko.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
 import org.apache.pekko.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import org.apache.pekko.stream.Materializer
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{ScenarioActivities, ScenarioActivity}
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData
 import pl.touk.nussknacker.ui.security.api.{
   AuthManager,
@@ -29,6 +31,7 @@ import pl.touk.nussknacker.ui.security.api.{
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
+import scala.util.control.NonFatal
 
 final case class HttpRemoteEnvironmentConfig(
     uri: String,
@@ -68,6 +71,35 @@ class HttpRemoteEnvironment(
     ).map { result =>
       result.fold(_ => List(), _.historyUnsafe)
     }
+
+  // Implementations should not fail the returned Future - errors resolve to an empty map, since a partial
+  // or incompatible response should just show fewer versions rather than break the comparison feature.
+  override def scenarioGraphsForVersions(
+      processName: ProcessName,
+      versionIds: List[VersionId]
+  ): Future[Map[VersionId, ScenarioGraph]] =
+    invokeJson[VersionGraphs](
+      HttpMethods.GET,
+      List("processes", processName.value, "versions", "graphs"),
+      Query(("versionIds", versionIds.map(_.value).mkString(",")))
+    ).map(_.fold(_ => Map.empty[VersionId, ScenarioGraph], _.versions.map(g => g.versionId -> g.scenarioGraph).toMap))
+      .recover { case NonFatal(ex) =>
+        logger.warn(s"Failed to fetch scenario graphs from remote environment for scenario ${processName.value}", ex)
+        Map.empty
+      }
+
+  // Comments are supplementary (used only for tooltips), so any incompatibility with the remote
+  // environment's response (e.g. a different Nussknacker version with an incompatible activities
+  // schema) is swallowed and results in an empty list rather than failing the whole comparison.
+  override def activities(processName: ProcessName): Future[List[ScenarioActivity]] =
+    invokeJson[ScenarioActivities](
+      HttpMethods.GET,
+      List("processes", processName.value, "activity", "activities")
+    ).map(_.fold(_ => List(), _.activities))
+      .recover { case NonFatal(ex) =>
+        logger.warn(s"Failed to fetch activities from remote environment for scenario ${processName.value}", ex)
+        List.empty
+      }
 
   override protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = {
     EitherT {

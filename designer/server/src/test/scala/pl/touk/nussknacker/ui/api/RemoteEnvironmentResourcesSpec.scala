@@ -21,6 +21,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
@@ -150,11 +151,9 @@ class RemoteEnvironmentResourcesSpec
 
   it should "return only remote version IDs that have meaningful differences" in {
     import java.time.Instant
-    import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     val versionWithDiff    = VersionId(1)
     val versionWithoutDiff = VersionId(2)
-    val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", "#input == 4".spel)))
 
     val remoteEnvironment = new MockRemoteEnvironment() {
       override def processVersions(pName: ProcessName): Future[List[ScenarioVersion]] =
@@ -165,13 +164,17 @@ class RemoteEnvironmentResourcesSpec
           )
         )
 
-      override def compare(
-          localScenarioGraph: ScenarioGraph,
-          remoteProcessName: ProcessName,
-          remoteProcessVersion: Option[VersionId]
-      ): Future[Either[NuDesignerError, Map[String, ScenarioGraphComparator.Difference]]] =
+      // versionWithDiff's graph differs from the local (ProcessTestData.validProcess) one,
+      // versionWithoutDiff's is identical to it.
+      override def scenarioGraphsForVersions(
+          pName: ProcessName,
+          versionIds: List[VersionId]
+      ): Future[Map[VersionId, ScenarioGraph]] =
         Future.successful(
-          Right(if (remoteProcessVersion.contains(versionWithDiff)) difference else Map.empty)
+          Map(
+            versionWithDiff    -> ProcessTestData.invalidProcess.toScenarioGraph,
+            versionWithoutDiff -> ProcessTestData.validScenarioGraph,
+          )
         )
     }
 
@@ -187,13 +190,55 @@ class RemoteEnvironmentResourcesSpec
       Permission.Read
     )
 
+    // saveCanonicalProcess creates version 1 (an empty skeleton) via POST, then version 2 with the real
+    // content via PUT - so the local graph to diff against is fetched at version 2, matching
+    // ProcessTestData.validScenarioGraph (used below as the "no differences" remote version).
     saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/1/versions-with-differences") ~> route ~> check {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[ProcessesResources.VersionsWithDifferences]
         result.versions.map(_.versionId.value) should contain(versionWithDiff.value)
         result.versions.map(_.versionId.value) should not contain versionWithoutDiff.value
         result.hasMore shouldBe false
+      }
+    }
+  }
+
+  it should "conservatively treat a remote version as different when its graph can't be fetched" in {
+    import java.time.Instant
+
+    val versionWithUnknownDiff = VersionId(1)
+
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def processVersions(pName: ProcessName): Future[List[ScenarioVersion]] =
+        Future.successful(List(ScenarioVersion(versionWithUnknownDiff, Instant.now(), "user")))
+
+      // Simulates a remote environment that doesn't support the bulk graphs endpoint yet
+      // (e.g. an older Nussknacker version) - RemoteEnvironment.scenarioGraphsForVersions
+      // resolves to an empty map on any such failure instead of failing the Future.
+      override def scenarioGraphsForVersions(
+          pName: ProcessName,
+          versionIds: List[VersionId]
+      ): Future[Map[VersionId, ScenarioGraph]] = Future.successful(Map.empty)
+    }
+
+    val route = withPermissions(
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        processService,
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
+      ),
+      Permission.Read
+    )
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        val result = responseAs[ProcessesResources.VersionsWithDifferences]
+        result.versions.map(_.versionId.value) should contain(versionWithUnknownDiff.value)
       }
     }
   }
@@ -262,6 +307,13 @@ class RemoteEnvironmentResourcesSpec
     }
 
     override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] = Future.successful(List())
+
+    override def scenarioGraphsForVersions(
+        processName: ProcessName,
+        versionIds: List[VersionId]
+    ): Future[Map[VersionId, ScenarioGraph]] = Future.successful(Map.empty)
+
+    override def activities(processName: ProcessName): Future[List[ScenarioActivity]] = Future.successful(List())
 
     override def testMigration(
         processToInclude: ScenarioWithDetailsForMigrations => Boolean,

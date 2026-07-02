@@ -14,13 +14,18 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
+import pl.touk.nussknacker.ui.api.ProcessesResources.{
+  VersionsWithDifferences,
+  VersionsWithDifferencesPageSize,
+  VersionWithDifference
+}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivities
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.api.ProcessesResources.{VersionWithDifference, VersionsWithDifferences, VersionsWithDifferencesPageSize}
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
@@ -131,23 +136,33 @@ class RemoteEnvironmentResources(
                     )
                     allRemoteVersions <- remoteEnvironment.processVersions(processIdWithName.name)
                     page = allRemoteVersions.slice(offset, offset + VersionsWithDifferencesPageSize)
-                    diffsPerVersion <- Future.traverse(page) { remoteVersion =>
-                      remoteEnvironment
-                        .compare(
-                          localDetails.scenarioGraphUnsafe,
-                          processIdWithName.name,
-                          Some(remoteVersion.processVersionId)
-                        )
-                        .map { diffResult =>
-                          val diff = diffResult.getOrElse(Map.empty)
-                          (remoteVersion.processVersionId, diff)
-                        }
-                    }
+                    // A single bulk round trip for the whole page, instead of one remote HTTP call per version.
+                    remoteGraphs <- remoteEnvironment.scenarioGraphsForVersions(
+                      processIdWithName.name,
+                      page.map(_.processVersionId)
+                    )
                   } yield VersionsWithDifferences(
-                    versions = diffsPerVersion.flatMap { case (versionId, diff) =>
-                      val descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(diff)
-                      if (descriptions.nonEmpty) List(VersionWithDifference(versionId, descriptions))
-                      else List.empty
+                    versions = page.flatMap { remoteVersion =>
+                      remoteGraphs.get(remoteVersion.processVersionId) match {
+                        case Some(remoteGraph) =>
+                          val descriptions = ScenarioGraphComparator.describeMeaningfulDiffs(
+                            ScenarioGraphComparator.compare(localDetails.scenarioGraphUnsafe, remoteGraph)
+                          )
+                          Option.when(descriptions.nonEmpty)(
+                            VersionWithDifference(remoteVersion.processVersionId, descriptions)
+                          )
+                        case None =>
+                          // The remote environment didn't return a graph for this version (e.g. it's running a
+                          // Nussknacker version older than this bulk-fetch endpoint). We can't tell whether it
+                          // actually differs, so we conservatively mark it as different rather than silently
+                          // hiding a version that might have real, unreviewed changes.
+                          Some(
+                            VersionWithDifference(
+                              remoteVersion.processVersionId,
+                              List("Unable to determine differences with the remote environment")
+                            )
+                          )
+                      }
                     },
                     hasMore = offset + VersionsWithDifferencesPageSize < allRemoteVersions.size,
                     pageSize = VersionsWithDifferencesPageSize
@@ -159,6 +174,13 @@ class RemoteEnvironmentResources(
           (get & processId(processName)) { processId =>
             complete {
               remoteEnvironment.processVersions(processId.name)
+            }
+          }
+        } ~
+        path(ProcessNameSegment / "activity" / "activities") { processName =>
+          (get & processId(processName)) { processId =>
+            complete {
+              remoteEnvironment.activities(processId.name).map(ScenarioActivities.apply)
             }
           }
         }

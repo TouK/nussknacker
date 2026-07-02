@@ -18,6 +18,7 @@ import { getActivities } from "../../reducers/selectors/activities";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import type { ItemActivity } from "../toolbars/activities/ActivitiesPanel";
+import type { ActivitiesResponse, ActivityType } from "../toolbars/activities/types";
 import type { NodeType, StickyNoteNodeType } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
@@ -35,6 +36,34 @@ type Environment = "local" | "remote";
 
 const toVersionDiffsMap = (versions: VersionsWithDifferencesResponse["versions"]): Map<number, string[]> =>
     new Map(versions.map(({ versionId, changedElements }) => [versionId, changedElements]));
+
+type CommentableActivity = Pick<ActivitiesResponse["activities"][number], "type" | "scenarioVersionId" | "comment">;
+
+// Only activities that represent an actual content change get to contribute a version's displayed comment.
+// Deployment-lifecycle activities (SCENARIO_DEPLOYED, SCENARIO_CANCELED, SCENARIO_REDEPLOYED, ...) commonly
+// carry their own comment (e.g. "restart", "redeploy action") which would otherwise clobber the meaningful
+// save/migration comment for that same version, since it's chronologically later.
+const COMMENT_SOURCE_ACTIVITY_TYPES: ReadonlySet<ActivityType> = new Set<ActivityType>([
+    "SCENARIO_CREATED",
+    "SCENARIO_MODIFIED",
+    "SCENARIO_MODIFIED_WITH_AUTOSAVE",
+    "AUTOMATIC_UPDATE",
+]);
+
+const toVersionCommentsMap = (activities: readonly CommentableActivity[]): Map<number, string> => {
+    const map = new Map<number, string>();
+    for (const a of activities) {
+        if (
+            COMMENT_SOURCE_ACTIVITY_TYPES.has(a.type) &&
+            a.scenarioVersionId != null &&
+            a.comment?.content.status === "AVAILABLE" &&
+            a.comment.content.value
+        ) {
+            map.set(a.scenarioVersionId, a.comment.content.value);
+        }
+    }
+    return map;
+};
 
 interface LoadMoreContextValue {
     hasMore: boolean;
@@ -89,6 +118,7 @@ const initState: State = {
     remoteVersionDiffs: null,
     hasMoreRemoteVersions: false,
     remoteVersionsNextOffset: 0,
+    remoteActivities: null,
 };
 
 interface State {
@@ -103,6 +133,7 @@ interface State {
     remoteVersionDiffs: Map<number, string[]> | null; // null = not yet loaded or error
     hasMoreRemoteVersions: boolean;
     remoteVersionsNextOffset: number;
+    remoteActivities: ActivitiesResponse["activities"] | null; // null = not yet loaded or error
 }
 
 interface Props {
@@ -118,22 +149,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const versions = useSelector(getVersions);
     const activities = useSelector(getActivities);
 
-    const versionComments = useMemo(() => {
-        const map = new Map<number, string>();
-        for (const activity of activities) {
-            if (activity.uiType !== "item") continue;
-            const a = activity as ItemActivity;
-            if (
-                (a.type === "SCENARIO_CREATED" || a.type === "SCENARIO_MODIFIED") &&
-                a.scenarioVersionId != null &&
-                a.comment?.content.status === "AVAILABLE" &&
-                a.comment.content.value
-            ) {
-                map.set(a.scenarioVersionId, a.comment.content.value);
-            }
-        }
-        return map;
-    }, [activities]);
+    const versionComments = useMemo(
+        () => toVersionCommentsMap(activities.filter((activity): activity is ItemActivity => activity.uiType === "item")),
+        [activities],
+    );
+
+    const remoteVersionComments = useMemo(() => toVersionCommentsMap(state.remoteActivities ?? []), [state.remoteActivities]);
 
     useEffect(() => {
         if (processName && otherEnvironment) {
@@ -143,30 +164,56 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         }
     }, [processName, otherEnvironment]);
 
+    const remoteVersionDiffsLoaded = state.remoteVersionDiffs !== null;
+
+    useEffect(() => {
+        // Deferred until the (connection-pool constrained, compare-heavy) diffs pagination has produced its
+        // first page - comments are supplementary (tooltips only), so they shouldn't compete for the remote
+        // environment's limited connection pool and delay the version dropdown from becoming usable.
+        if (processName && otherEnvironment && remoteVersionDiffsLoaded) {
+            HttpService.fetchRemoteActivities(processName).then((result) =>
+                setState((prevState) => ({ ...prevState, remoteActivities: result?.activities ?? null })),
+            );
+        }
+    }, [processName, otherEnvironment, remoteVersionDiffsLoaded]);
+
     useEffect(() => {
         if (processName && version && otherEnvironment) {
-            HttpService.fetchRemoteVersionsWithDifferences(processName, version, 0).then((result) => {
-                setState((prevState) => ({
-                    ...prevState,
-                    remoteVersionDiffs: result !== null ? toVersionDiffsMap(result.versions) : null,
-                    hasMoreRemoteVersions: result?.hasMore ?? false,
-                    remoteVersionsNextOffset: result?.pageSize ?? 0,
-                }));
-            });
+            const fetchFrom = (offset: number) => {
+                HttpService.fetchRemoteVersionsWithDifferences(processName, version, offset).then((result) => {
+                    if (result === null) return;
+                    setState((prev) => ({
+                        ...prev,
+                        remoteVersionDiffs: new Map([...(prev.remoteVersionDiffs ?? []), ...toVersionDiffsMap(result.versions)]),
+                        hasMoreRemoteVersions: result.hasMore,
+                        remoteVersionsNextOffset: offset + result.pageSize,
+                    }));
+                    if (result.versions.length === 0 && result.hasMore) {
+                        fetchFrom(offset + result.pageSize);
+                    }
+                });
+            };
+            fetchFrom(0);
         }
     }, [processName, version, otherEnvironment]);
 
     useEffect(() => {
         if (processName && version) {
-            HttpService.fetchVersionsWithDifferences(processName, version, 0).then((response) => {
-                const { versions, hasMore, pageSize } = response.data;
-                setState((prevState) => ({
-                    ...prevState,
-                    localVersionDiffs: toVersionDiffsMap(versions),
-                    hasMoreLocalVersions: hasMore,
-                    localVersionsNextOffset: pageSize,
-                }));
-            });
+            const fetchFrom = (offset: number) => {
+                HttpService.fetchVersionsWithDifferences(processName, version, offset).then((response) => {
+                    const { versions, hasMore, pageSize } = response.data;
+                    setState((prev) => ({
+                        ...prev,
+                        localVersionDiffs: new Map([...(prev.localVersionDiffs ?? []), ...toVersionDiffsMap(versions)]),
+                        hasMoreLocalVersions: hasMore,
+                        localVersionsNextOffset: offset + pageSize,
+                    }));
+                    if (versions.length === 0 && hasMore) {
+                        fetchFrom(offset + pageSize);
+                    }
+                });
+            };
+            fetchFrom(0);
         }
     }, [processName, version]);
 
@@ -221,11 +268,13 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const createVersionElement = useCallback(
         (version: ProcessVersionType, versionPrefix = "") => {
             const versionId = createVersionId(version, versionPrefix);
-            const comment = !versionPrefix ? versionComments.get(version.processVersionId) : undefined;
+            const comment = versionPrefix
+                ? remoteVersionComments.get(version.processVersionId)
+                : versionComments.get(version.processVersionId);
             const commentSuffix = comment ? ` (${comment})` : "";
             return `${versionDisplayString(versionId)} - ${formatAbsolutely(version.createDate)} ${version.user}${commentSuffix}`;
         },
-        [versionDisplayString, versionComments],
+        [versionDisplayString, versionComments, remoteVersionComments],
     );
 
     const enrichStickyNoteNode = (node: NodeType): StickyNoteNodeType => {
@@ -317,10 +366,14 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             const filtered = (state?.remoteVersions ?? []).filter((v) => remoteDiffs.has(v.processVersionId));
             return [
                 { label: "", value: "" },
-                ...filtered.map((v) => ({
-                    label: createVersionElement(v, remotePrefix),
-                    value: createVersionId(v, remotePrefix),
-                })),
+                ...filtered.map((v) => {
+                    const changedElements = remoteDiffs.get(v.processVersionId) ?? [];
+                    return {
+                        label: createVersionElement(v, remotePrefix),
+                        value: createVersionId(v, remotePrefix),
+                        description: changedElements.join("\n"),
+                    };
+                }),
             ];
         }
         const localDiffs = state.localVersionDiffs;
@@ -356,28 +409,40 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const loadMoreLocalVersions = useCallback(() => {
         if (!processName || !version) return;
-        HttpService.fetchVersionsWithDifferences(processName, version, state.localVersionsNextOffset).then((response) => {
-            const { versions, hasMore, pageSize } = response.data;
-            setState((prev) => ({
-                ...prev,
-                localVersionDiffs: new Map([...(prev.localVersionDiffs ?? []), ...toVersionDiffsMap(versions)]),
-                hasMoreLocalVersions: hasMore,
-                localVersionsNextOffset: prev.localVersionsNextOffset + pageSize,
-            }));
-        });
+        const fetchFrom = (offset: number) => {
+            HttpService.fetchVersionsWithDifferences(processName, version, offset).then((response) => {
+                const { versions, hasMore, pageSize } = response.data;
+                setState((prev) => ({
+                    ...prev,
+                    localVersionDiffs: new Map([...(prev.localVersionDiffs ?? []), ...toVersionDiffsMap(versions)]),
+                    hasMoreLocalVersions: hasMore,
+                    localVersionsNextOffset: offset + pageSize,
+                }));
+                if (versions.length === 0 && hasMore) {
+                    fetchFrom(offset + pageSize);
+                }
+            });
+        };
+        fetchFrom(state.localVersionsNextOffset);
     }, [processName, version, state.localVersionsNextOffset]);
 
     const loadMoreRemoteVersions = useCallback(() => {
         if (!processName || !version) return;
-        HttpService.fetchRemoteVersionsWithDifferences(processName, version, state.remoteVersionsNextOffset).then((result) => {
-            if (result === null) return;
-            setState((prev) => ({
-                ...prev,
-                remoteVersionDiffs: new Map([...(prev.remoteVersionDiffs ?? []), ...toVersionDiffsMap(result.versions)]),
-                hasMoreRemoteVersions: result.hasMore,
-                remoteVersionsNextOffset: prev.remoteVersionsNextOffset + result.pageSize,
-            }));
-        });
+        const fetchFrom = (offset: number) => {
+            HttpService.fetchRemoteVersionsWithDifferences(processName, version, offset).then((result) => {
+                if (result === null) return;
+                setState((prev) => ({
+                    ...prev,
+                    remoteVersionDiffs: new Map([...(prev.remoteVersionDiffs ?? []), ...toVersionDiffsMap(result.versions)]),
+                    hasMoreRemoteVersions: result.hasMore,
+                    remoteVersionsNextOffset: offset + result.pageSize,
+                }));
+                if (result.versions.length === 0 && result.hasMore) {
+                    fetchFrom(offset + result.pageSize);
+                }
+            });
+        };
+        fetchFrom(state.remoteVersionsNextOffset);
     }, [processName, version, state.remoteVersionsNextOffset]);
 
     const handleEnvironmentChange = useCallback(
