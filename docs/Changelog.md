@@ -15,7 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
-* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) The "Compare versions" dialog can now compare the current scenario version against another version on a configured remote (secondary) environment, not just against its own local history.
+* [#9399](https://github.com/TouK/nussknacker/pull/9399) The "Compare versions" dialog can now compare the current scenario version against another version on a configured remote (secondary) environment, not just against its own local history.
     * The version picker now only lists versions with a meaningful (non-layout-only) difference from the current version, and shows a tooltip with the list of changed nodes/edges/properties.
     * Versions are loaded a page at a time, with a "Load older versions…" option to fetch more.
     * See the [Migration Guide](MigrationGuide.md) for the `RemoteEnvironment` API change.

@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { FormControl, FormLabel } from "@mui/material";
+import { CircularProgress, FormControl, FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
 import i18next from "i18next";
 import { keys } from "lodash";
@@ -41,6 +41,7 @@ type DiffsPageState = {
     diffs: Map<number, string[]> | null; // null = not yet loaded
     hasMore: boolean;
     nextOffset: number;
+    isLoadingMore: boolean;
 };
 
 // Shared by the local and remote version pickers: fetches page 0 eagerly (so the dropdown has content as soon
@@ -51,22 +52,23 @@ type DiffsPageState = {
 const usePaginatedVersionDiffs = (
     fetchPage: ((offset: number) => Promise<VersionsWithDifferencesResponse | null>) | null,
 ): DiffsPageState & { loadMore: () => void } => {
-    const [state, setState] = useState<DiffsPageState>({ diffs: null, hasMore: false, nextOffset: 0 });
+    const [state, setState] = useState<DiffsPageState>({ diffs: null, hasMore: false, nextOffset: 0, isLoadingMore: false });
 
-    const applyPage = useCallback((offset: number, result: VersionsWithDifferencesResponse | null) => {
+    const applyPage = useCallback((offset: number, result: VersionsWithDifferencesResponse | null, isLoadingMore = false) => {
         setState((prev) =>
             result === null
-                ? { diffs: prev.diffs ?? new Map(), hasMore: false, nextOffset: offset }
+                ? { diffs: prev.diffs ?? new Map(), hasMore: false, nextOffset: offset, isLoadingMore }
                 : {
                       diffs: new Map([...(prev.diffs ?? []), ...toVersionDiffsMap(result.versions)]),
                       hasMore: result.hasMore,
                       nextOffset: offset + result.pageSize,
+                      isLoadingMore,
                   },
         );
     }, []);
 
     useEffect(() => {
-        setState({ diffs: null, hasMore: false, nextOffset: 0 });
+        setState({ diffs: null, hasMore: false, nextOffset: 0, isLoadingMore: false });
         if (fetchPage) {
             fetchPage(0).then((result) => applyPage(0, result));
         }
@@ -74,10 +76,15 @@ const usePaginatedVersionDiffs = (
 
     const loadMore = useCallback(() => {
         if (!fetchPage) return;
+        setState((prev) => ({ ...prev, isLoadingMore: true }));
+        // A page with 0 changed-elements versions still needs to be treated as "more to fetch": nothing to
+        // show, but hasMore may still be true, so we keep paging until we surface a page with content or
+        // run out of pages - the spinner needs to stay up for the whole chain, not just its first hop.
         const fetchFrom = (offset: number) => {
             fetchPage(offset).then((result) => {
-                applyPage(offset, result);
-                if (result !== null && result.versions.length === 0 && result.hasMore) {
+                const willContinue = result !== null && result.versions.length === 0 && result.hasMore;
+                applyPage(offset, result, willContinue);
+                if (willContinue) {
                     fetchFrom(offset + result.pageSize);
                 }
             });
@@ -119,8 +126,21 @@ const toVersionCommentsMap = (activities: readonly CommentableActivity[]): Map<n
 interface LoadMoreContextValue {
     hasMore: boolean;
     loadMore: () => void;
+    isLoadingMore: boolean;
 }
 const LoadMoreContext = React.createContext<LoadMoreContextValue | null>(null);
+
+const loadMoreRowStyle = css({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    padding: "8px 12px",
+    textAlign: "center",
+    fontSize: "0.85em",
+    opacity: 0.7,
+    borderTop: "1px solid rgba(128,128,128,0.2)",
+});
 
 const VersionMenuList = ({ children, ...props }: React.ComponentProps<typeof SelectComponents.MenuList>) => {
     const ctx = useContext(LoadMoreContext);
@@ -128,30 +148,40 @@ const VersionMenuList = ({ children, ...props }: React.ComponentProps<typeof Sel
     return (
         <SelectComponents.MenuList {...props}>
             {children}
-            {ctx?.hasMore && (
-                <div
-                    onMouseDown={(e) => {
-                        e.preventDefault();
-                        ctx.loadMore();
-                    }}
-                    className={css({
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                        textAlign: "center",
-                        fontSize: "0.85em",
-                        opacity: 0.7,
-                        borderTop: "1px solid rgba(128,128,128,0.2)",
-                        "&:hover": { opacity: 1, background: "rgba(128,128,128,0.1)" },
-                    })}
-                >
-                    {t("dialog.compareVersions.loadOlderVersions", "Load older versions…")}
+            {ctx?.isLoadingMore ? (
+                <div className={loadMoreRowStyle}>
+                    <CircularProgress size="0.85rem" />
+                    {t("dialog.compareVersions.loadingOlderVersions", "Loading older versions…")}
                 </div>
+            ) : (
+                ctx?.hasMore && (
+                    <div
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            ctx.loadMore();
+                        }}
+                        className={cx(
+                            loadMoreRowStyle,
+                            css({ cursor: "pointer", "&:hover": { opacity: 1, background: "rgba(128,128,128,0.1)" } }),
+                        )}
+                    >
+                        {t("dialog.compareVersions.loadOlderVersions", "Load older versions…")}
+                    </div>
+                )
             )}
         </SelectComponents.MenuList>
     );
 };
-const VersionOption = ({ children, innerProps, ...props }: React.ComponentProps<typeof SelectComponents.Option>) => (
-    <SelectComponents.Option {...props} innerProps={{ ...innerProps, title: (props.data as Option).description }}>
+// The version label may contain a trailing "\n<comment>" (see createVersionElement) - react-select's default
+// option styling collapses whitespace, so it has to be opted into preserving the line break explicitly.
+const versionOptionLabel = css({ whiteSpace: "pre-line !important" });
+
+const VersionOption = ({ children, innerProps, className, ...props }: React.ComponentProps<typeof SelectComponents.Option>) => (
+    <SelectComponents.Option
+        {...props}
+        innerProps={{ ...innerProps, title: (props.data as Option).description }}
+        className={cx(versionOptionLabel, className)}
+    >
         {children}
     </SelectComponents.Option>
 );
@@ -294,7 +324,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             const comment = versionPrefix
                 ? remoteVersionComments.get(version.processVersionId)
                 : versionComments.get(version.processVersionId);
-            const commentSuffix = comment ? ` (${comment})` : "";
+            const commentSuffix = comment ? `\n${comment}` : "";
             return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(version.createDate)}${commentSuffix}`;
         },
         [versionDisplayString, versionComments, remoteVersionComments],
@@ -465,8 +495,17 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         () => ({
             hasMore: state.environment === "local" ? localDiffsState.hasMore : remoteDiffsState.hasMore,
             loadMore: state.environment === "local" ? localDiffsState.loadMore : remoteDiffsState.loadMore,
+            isLoadingMore: state.environment === "local" ? localDiffsState.isLoadingMore : remoteDiffsState.isLoadingMore,
         }),
-        [state.environment, localDiffsState.hasMore, remoteDiffsState.hasMore, localDiffsState.loadMore, remoteDiffsState.loadMore],
+        [
+            state.environment,
+            localDiffsState.hasMore,
+            remoteDiffsState.hasMore,
+            localDiffsState.loadMore,
+            remoteDiffsState.loadMore,
+            localDiffsState.isLoadingMore,
+            remoteDiffsState.isLoadingMore,
+        ],
     );
 
     const environmentOptions: Option[] = useMemo(() => {
