@@ -95,7 +95,6 @@ object ScenarioGraphComparator {
   ): Option[UserDefinedAdditionalNodeFields] =
     additionalFields.map(_.copy(layoutData = None))
 
-  // Matches every NodeData subtype directly, instead of e.g. round-tripping through JSON and editing a subtree.
   private def withoutLayoutData(node: NodeData): NodeData = node match {
     case n: Source                   => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
     case n: Join                     => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
@@ -112,7 +111,6 @@ object ScenarioGraphComparator {
     case n: FragmentUsageOutput      => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
     case n: FragmentInputDefinition  => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
     case n: FragmentOutputDefinition => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
-    // additionalFields is hardcoded to None for BranchEndData, so there's no layoutData to clear.
     case n: BranchEndData => n
   }
 

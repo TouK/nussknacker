@@ -260,8 +260,6 @@ class ProcessesResources(
             }
           }
       } ~ path("processes" / ProcessNameSegment / "versions" / "graphs") { processName =>
-        // Used by other Nussknacker instances (via RemoteEnvironment.scenarioGraphsForVersions) to bulk-fetch
-        // graphs for several versions of this scenario in one round trip, instead of one request per version.
         (get & processId(processName) & parameters(Symbol("versionIds").as(CsvSeq[Long]))) {
           (processId, versionIdValues) =>
             complete {

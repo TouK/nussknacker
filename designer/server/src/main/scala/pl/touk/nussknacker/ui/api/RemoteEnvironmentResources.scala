@@ -144,7 +144,7 @@ class RemoteEnvironmentResources(
             }
           }
         } ~
-        path(ProcessNameSegment / "activity" / "activities") { processName =>
+        path(ProcessNameSegment / "activities") { processName =>
           (get & processId(processName)) { processId =>
             complete {
               remoteEnvironment.activities(processId.name).map(ScenarioActivities.apply)

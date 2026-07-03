@@ -79,14 +79,6 @@ object VersionsWithDifferencesService {
     } yield result
   }
 
-  /**
-    * @param fetchGraphs fetches the scenario graphs for a page of version ids - a local DB lookup for
-    *                     ProcessesResources, or a bulk HTTP call to a remote environment for RemoteEnvironmentResources.
-    * @param describeMissingGraph called for a version whose graph `fetchGraphs` didn't return (e.g. a remote
-    *                              environment too old to support the bulk-fetch endpoint). Defaults to dropping the
-    *                              version; RemoteEnvironmentResources overrides it to conservatively mark it as
-    *                              different instead, since it can't tell whether it actually differs.
-    */
   def compute(
       currentGraph: ScenarioGraph,
       allOtherVersionIds: List[VersionId],
