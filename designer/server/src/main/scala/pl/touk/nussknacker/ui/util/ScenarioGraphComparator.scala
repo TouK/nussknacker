@@ -1,15 +1,11 @@
 package pl.touk.nussknacker.ui.util
 
 import io.circe.generic.extras.ConfiguredJsonCodec
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.graph.node._
 
 object ScenarioGraphComparator {
-
-  import io.circe.{Encoder, Json}
-  import io.circe.syntax._
-  import pl.touk.nussknacker.engine.api.CirceUtil._
-  import pl.touk.nussknacker.engine.graph.node.NodeData._
 
   def compare(currentGraph: ScenarioGraph, otherGraph: ScenarioGraph): Map[String, Difference] = {
     val nodes = getDifferences(
@@ -88,19 +84,36 @@ object ScenarioGraphComparator {
     }.toList
 
   private def isLayoutOnlyNodeDiff(current: NodeData, other: NodeData): Boolean =
-    nodeJsonWithoutLayout(current, current.additionalFields) == nodeJsonWithoutLayout(other, other.additionalFields)
+    withoutLayoutData(current) == withoutLayoutData(other)
 
   private def isLayoutOnlyStickyNoteDiff(current: StickyNote, other: StickyNote): Boolean =
-    nodeJsonWithoutLayout(current, current.additionalFields) == nodeJsonWithoutLayout(other, other.additionalFields)
+    current.copy(additionalFields = withoutLayoutData(current.additionalFields)) ==
+      other.copy(additionalFields = withoutLayoutData(other.additionalFields))
 
-  // Rather than deleting a "layoutData" field by string path from the fully-serialized JSON (which would
-  // silently no-op - comparing the untouched JSON - if that path ever stopped matching), this replaces the
-  // "additionalFields" subtree with JSON built from a domain-level `UserDefinedAdditionalNodeFields` copy that
-  // has `layoutData` cleared. Renaming/removing the `layoutData` case class field breaks this at compile time.
-  private def nodeJsonWithoutLayout[A: Encoder](node: A, additionalFields: Option[UserDefinedAdditionalNodeFields]): Json = {
-    val json                 = node.asJson
-    val additionalFieldsJson = additionalFields.map(_.copy(layoutData = None)).asJson
-    json.hcursor.downField("additionalFields").set(additionalFieldsJson).top.getOrElse(json)
+  private def withoutLayoutData(
+      additionalFields: Option[UserDefinedAdditionalNodeFields]
+  ): Option[UserDefinedAdditionalNodeFields] =
+    additionalFields.map(_.copy(layoutData = None))
+
+  // Matches every NodeData subtype directly, instead of e.g. round-tripping through JSON and editing a subtree.
+  private def withoutLayoutData(node: NodeData): NodeData = node match {
+    case n: Source                   => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Join                     => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Filter                   => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Switch                   => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: VariableBuilder          => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Variable                 => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Split                    => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Enricher                 => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: CustomNode               => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Processor                => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: Sink                     => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: FragmentInput            => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: FragmentUsageOutput      => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: FragmentInputDefinition  => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    case n: FragmentOutputDefinition => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
+    // additionalFields is hardcoded to None for BranchEndData, so there's no layoutData to clear.
+    case n: BranchEndData => n
   }
 
   @ConfiguredJsonCodec sealed trait Difference {

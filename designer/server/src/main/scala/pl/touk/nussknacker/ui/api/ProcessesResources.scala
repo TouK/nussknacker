@@ -229,23 +229,12 @@ class ProcessesResources(
         (processName, currentVersionId) =>
           (get & processId(processName) & parameters(Symbol("offset").as[Int].withDefault(0))) { (processId, offset) =>
             complete {
-              for {
-                currentDetails <- processService.getProcessWithDetails(
-                  processId,
-                  currentVersionId,
-                  GetScenarioWithDetailsOptions.withScenarioGraph
-                )
-                allOtherVersionIds = currentDetails.history
-                  .getOrElse(Nil)
-                  .map(_.processVersionId)
-                  .filterNot(_ == currentVersionId)
-                result <- VersionsWithDifferencesService.compute(
-                  currentDetails.scenarioGraphUnsafe,
-                  allOtherVersionIds,
-                  offset,
-                  fetchGraphs = page => processService.getScenarioGraphsForVersionIds(processId, page)
-                )
-              } yield result
+              VersionsWithDifferencesService.computeForLocalVersions(
+                processService,
+                processId,
+                currentVersionId,
+                offset
+              )
             }
           }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
