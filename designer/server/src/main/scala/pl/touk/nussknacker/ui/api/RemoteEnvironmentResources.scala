@@ -121,17 +121,20 @@ class RemoteEnvironmentResources(
         } ~
         path(ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
           (processName, currentLocalVersionId) =>
-            (get & processId(processName) & parameters(Symbol("offset").as[Int].withDefault(0))) {
-              (processIdWithName, offset) =>
-                complete {
-                  VersionsWithDifferencesService.computeForRemoteVersions(
-                    processService,
-                    remoteEnvironment,
-                    processIdWithName,
-                    currentLocalVersionId,
-                    offset
-                  )
-                }
+            (get & processId(processName) & parameters(
+              Symbol("pageNumber").as[Int],
+              Symbol("pageSize").as[Int]
+            )) { (processIdWithName, pageNumber, pageSize) =>
+              complete {
+                VersionsWithDifferencesService.computeForRemoteVersions(
+                  processService,
+                  remoteEnvironment,
+                  processIdWithName,
+                  currentLocalVersionId,
+                  pageNumber,
+                  pageSize
+                )
+              }
             }
         } ~
         path(ProcessNameSegment / "versions") { processName =>

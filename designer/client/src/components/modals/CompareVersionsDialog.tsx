@@ -40,7 +40,7 @@ const toVersionDiffsMap = (versions: VersionsWithDifferencesResponse["versions"]
 type DiffsPageState = {
     diffs: Map<number, string[]> | null; // null = not yet loaded
     hasMore: boolean;
-    nextOffset: number;
+    nextPageNumber: number;
     isLoadingMore: boolean;
 };
 
@@ -50,25 +50,25 @@ type DiffsPageState = {
 // and normalizes a failed/unsupported fetch to a non-null empty map rather than leaving `diffs` stuck on null
 // forever, so dependent UI doesn't get permanently stuck in a "loading" state.
 const usePaginatedVersionDiffs = (
-    fetchPage: ((offset: number) => Promise<VersionsWithDifferencesResponse | null>) | null,
+    fetchPage: ((pageNumber: number) => Promise<VersionsWithDifferencesResponse | null>) | null,
 ): DiffsPageState & { loadMore: () => void } => {
-    const [state, setState] = useState<DiffsPageState>({ diffs: null, hasMore: false, nextOffset: 0, isLoadingMore: false });
+    const [state, setState] = useState<DiffsPageState>({ diffs: null, hasMore: false, nextPageNumber: 0, isLoadingMore: false });
 
-    const applyPage = useCallback((offset: number, result: VersionsWithDifferencesResponse | null, isLoadingMore = false) => {
+    const applyPage = useCallback((pageNumber: number, result: VersionsWithDifferencesResponse | null, isLoadingMore = false) => {
         setState((prev) =>
             result === null
-                ? { diffs: prev.diffs ?? new Map(), hasMore: false, nextOffset: offset, isLoadingMore }
+                ? { diffs: prev.diffs ?? new Map(), hasMore: false, nextPageNumber: pageNumber, isLoadingMore }
                 : {
                       diffs: new Map([...(prev.diffs ?? []), ...toVersionDiffsMap(result.versions)]),
                       hasMore: result.hasMore,
-                      nextOffset: offset + result.pageSize,
+                      nextPageNumber: pageNumber + 1,
                       isLoadingMore,
                   },
         );
     }, []);
 
     useEffect(() => {
-        setState({ diffs: null, hasMore: false, nextOffset: 0, isLoadingMore: false });
+        setState({ diffs: null, hasMore: false, nextPageNumber: 0, isLoadingMore: false });
         if (fetchPage) {
             fetchPage(0).then((result) => applyPage(0, result));
         }
@@ -80,17 +80,17 @@ const usePaginatedVersionDiffs = (
         // A page with 0 changed-elements versions still needs to be treated as "more to fetch": nothing to
         // show, but hasMore may still be true, so we keep paging until we surface a page with content or
         // run out of pages - the spinner needs to stay up for the whole chain, not just its first hop.
-        const fetchFrom = (offset: number) => {
-            fetchPage(offset).then((result) => {
+        const fetchFrom = (pageNumber: number) => {
+            fetchPage(pageNumber).then((result) => {
                 const willContinue = result !== null && result.versions.length === 0 && result.hasMore;
-                applyPage(offset, result, willContinue);
+                applyPage(pageNumber, result, willContinue);
                 if (willContinue) {
-                    fetchFrom(offset + result.pageSize);
+                    fetchFrom(pageNumber + 1);
                 }
             });
         };
-        fetchFrom(state.nextOffset);
-    }, [fetchPage, applyPage, state.nextOffset]);
+        fetchFrom(state.nextPageNumber);
+    }, [fetchPage, applyPage, state.nextPageNumber]);
 
     return { ...state, loadMore };
 };
@@ -236,11 +236,11 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         }
     }, [processName, otherEnvironment]);
 
-    const fetchLocalPage = useMemo<((offset: number) => Promise<VersionsWithDifferencesResponse | null>) | null>(
+    const fetchLocalPage = useMemo<((pageNumber: number) => Promise<VersionsWithDifferencesResponse | null>) | null>(
         () =>
             processName && version
-                ? (offset: number) =>
-                      HttpService.fetchVersionsWithDifferences(processName, version, offset)
+                ? (pageNumber: number) =>
+                      HttpService.fetchVersionsWithDifferences(processName, version, pageNumber)
                           .then((response) => response.data)
                           .catch(() => null)
                 : null,
@@ -248,10 +248,10 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     );
     const localDiffsState = usePaginatedVersionDiffs(fetchLocalPage);
 
-    const fetchRemotePage = useMemo<((offset: number) => Promise<VersionsWithDifferencesResponse | null>) | null>(
+    const fetchRemotePage = useMemo<((pageNumber: number) => Promise<VersionsWithDifferencesResponse | null>) | null>(
         () =>
             processName && version && otherEnvironment
-                ? (offset: number) => HttpService.fetchRemoteVersionsWithDifferences(processName, version, offset)
+                ? (pageNumber: number) => HttpService.fetchRemoteVersionsWithDifferences(processName, version, pageNumber)
                 : null,
         [processName, version, otherEnvironment],
     );

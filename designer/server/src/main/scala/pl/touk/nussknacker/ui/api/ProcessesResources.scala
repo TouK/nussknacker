@@ -227,13 +227,17 @@ class ProcessesResources(
         }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
         (processName, currentVersionId) =>
-          (get & processId(processName) & parameters(Symbol("offset").as[Int].withDefault(0))) { (processId, offset) =>
+          (get & processId(processName) & parameters(
+            Symbol("pageNumber").as[Int],
+            Symbol("pageSize").as[Int]
+          )) { (processId, pageNumber, pageSize) =>
             complete {
               VersionsWithDifferencesService.computeForLocalVersions(
                 processService,
                 processId,
                 currentVersionId,
-                offset
+                pageNumber,
+                pageSize
               )
             }
           }

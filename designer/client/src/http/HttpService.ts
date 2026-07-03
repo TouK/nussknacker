@@ -188,8 +188,11 @@ type DictOption = {
 export type VersionsWithDifferencesResponse = {
     versions: { versionId: number; changedElements: string[] }[];
     hasMore: boolean;
-    pageSize: number;
 };
+
+// The only place that decides the page size for versions-with-differences requests - the backend takes
+// whatever pageSize it's given, so this doesn't have to be kept in sync with a backend-side constant.
+export const VERSIONS_WITH_DIFFERENCES_PAGE_SIZE = 10;
 
 type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
@@ -976,10 +979,10 @@ class HttpService {
         return promise;
     }
 
-    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, offset = 0) {
+    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, pageNumber: number, pageSize = VERSIONS_WITH_DIFFERENCES_PAGE_SIZE) {
         const promise = api.get<VersionsWithDifferencesResponse>(
             `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
-            { params: { offset } },
+            { params: { pageNumber, pageSize } },
         );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToGetVersionsWithDifferences", "Failed to get versions with differences"), error),
@@ -990,12 +993,13 @@ class HttpService {
     fetchRemoteVersionsWithDifferences(
         processName: ProcessName,
         versionId: number,
-        offset = 0,
+        pageNumber: number,
+        pageSize = VERSIONS_WITH_DIFFERENCES_PAGE_SIZE,
     ): Promise<VersionsWithDifferencesResponse | null> {
         return api
             .get<VersionsWithDifferencesResponse>(
                 `/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
-                { params: { offset } },
+                { params: { pageNumber, pageSize } },
             )
             .then((response) => response.data)
             .catch(() => null);

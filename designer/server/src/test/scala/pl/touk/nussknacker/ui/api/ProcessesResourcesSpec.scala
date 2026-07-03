@@ -953,7 +953,7 @@ class ProcessesResourcesSpec
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
 
     Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences"
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?pageNumber=0&pageSize=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = responseAs[VersionsWithDifferences]
@@ -965,7 +965,7 @@ class ProcessesResourcesSpec
     createEmptyScenario(processName, category = Category1)
 
     Get(
-      s"/api/processes/$processName/1/versions-with-differences"
+      s"/api/processes/$processName/1/versions-with-differences?pageNumber=0&pageSize=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = responseAs[VersionsWithDifferences]
@@ -979,7 +979,7 @@ class ProcessesResourcesSpec
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
 
     Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?offset=0"
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?pageNumber=0&pageSize=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = responseAs[VersionsWithDifferences]
