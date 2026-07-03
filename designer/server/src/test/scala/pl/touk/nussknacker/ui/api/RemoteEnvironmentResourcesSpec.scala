@@ -194,7 +194,7 @@ class RemoteEnvironmentResourcesSpec
     // content via PUT - so the local graph to diff against is fetched at version 2, matching
     // ProcessTestData.validScenarioGraph (used below as the "no differences" remote version).
     saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[VersionsWithDifferences]
         result.versions.map(_.versionId.value) should contain(versionWithDiff.value)
@@ -235,7 +235,7 @@ class RemoteEnvironmentResourcesSpec
     )
 
     saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[VersionsWithDifferences]
         result.versions.map(_.versionId.value) should contain(versionWithUnknownDiff.value)

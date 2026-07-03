@@ -71,7 +71,6 @@ const localVersionsWithDifferences = {
         { versionId: 34, changedElements: [] },
     ],
     hasMore: false,
-    pageSize: 5,
 };
 
 describe("CompareVersionsDialog", () => {
@@ -93,7 +92,6 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [{ versionId: 1, changedElements: [] }],
             hasMore: false,
-            pageSize: 5,
         });
         mock.onGet(
             `/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/compare/${remoteVersions[0].processVersionId}`,
@@ -145,7 +143,6 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,
-            pageSize: 5,
         });
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/${scenario.history[1].processVersionId}`).replyOnce(
             200,
@@ -186,12 +183,10 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [{ versionId: 35, changedElements: ["Node 'x' modified"] }],
             hasMore: false,
-            pageSize: 5,
         });
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,
-            pageSize: 5,
         });
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/34`).replyOnce(200, {});
 
@@ -239,7 +234,6 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,
-            pageSize: 5,
         });
 
         render(
@@ -269,17 +263,14 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [{ versionId: 35, changedElements: [] }],
             hasMore: true,
-            pageSize: 1,
         });
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,
-            pageSize: 5,
         });
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [{ versionId: 34, changedElements: [] }],
             hasMore: false,
-            pageSize: 1,
         });
 
         render(
@@ -332,7 +323,6 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,
-            pageSize: 5,
         });
 
         render(

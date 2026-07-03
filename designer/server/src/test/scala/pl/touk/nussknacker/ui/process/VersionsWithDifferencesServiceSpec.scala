@@ -24,7 +24,8 @@ class VersionsWithDifferencesServiceSpec extends AnyFunSuite with Matchers with 
       .compute(
         currentGraph,
         List(identical, different),
-        offset = 0,
+        pageNumber = 0,
+        pageSize = 10,
         fetchGraphs = _ => Future.successful(Map(identical -> currentGraph, different -> differentGraph))
       )
       .futureValue
@@ -33,21 +34,38 @@ class VersionsWithDifferencesServiceSpec extends AnyFunSuite with Matchers with 
     result.hasMore shouldBe false
   }
 
-  test("paginates using the fixed page size and reports hasMore") {
-    val ids = (1 to VersionsWithDifferencesService.PageSize + 5).map(id => VersionId(id.toLong)).toList
+  test("paginates using the caller-supplied page size and reports hasMore") {
+    val ids = (1 to 15).map(id => VersionId(id.toLong)).toList
 
     val result = VersionsWithDifferencesService
       .compute(
         currentGraph,
         ids,
-        offset = 0,
+        pageNumber = 0,
+        pageSize = 10,
         fetchGraphs = page => Future.successful(page.map(_ -> differentGraph).toMap)
       )
       .futureValue
 
-    result.versions.size shouldBe VersionsWithDifferencesService.PageSize
+    result.versions.size shouldBe 10
     result.hasMore shouldBe true
-    result.pageSize shouldBe VersionsWithDifferencesService.PageSize
+  }
+
+  test("uses pageNumber to fetch subsequent pages") {
+    val ids = (1 to 15).map(id => VersionId(id.toLong)).toList
+
+    val result = VersionsWithDifferencesService
+      .compute(
+        currentGraph,
+        ids,
+        pageNumber = 1,
+        pageSize = 10,
+        fetchGraphs = page => Future.successful(page.map(_ -> differentGraph).toMap)
+      )
+      .futureValue
+
+    result.versions.map(_.versionId) shouldBe (11 to 15).map(id => VersionId(id.toLong)).toList
+    result.hasMore shouldBe false
   }
 
   test("drops a version with no fetched graph by default") {
@@ -57,7 +75,8 @@ class VersionsWithDifferencesServiceSpec extends AnyFunSuite with Matchers with 
       .compute(
         currentGraph,
         List(missing),
-        offset = 0,
+        pageNumber = 0,
+        pageSize = 10,
         fetchGraphs = _ => Future.successful(Map.empty)
       )
       .futureValue
@@ -72,7 +91,8 @@ class VersionsWithDifferencesServiceSpec extends AnyFunSuite with Matchers with 
       .compute(
         currentGraph,
         List(missing),
-        offset = 0,
+        pageNumber = 0,
+        pageSize = 10,
         fetchGraphs = _ => Future.successful(Map.empty),
         describeMissingGraph = versionId => Some(VersionWithDifference(versionId, List("unknown")))
       )
