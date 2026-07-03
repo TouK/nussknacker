@@ -72,8 +72,6 @@ class HttpRemoteEnvironment(
       result.fold(_ => List(), _.historyUnsafe)
     }
 
-  // Implementations should not fail the returned Future - errors resolve to an empty map, since a partial
-  // or incompatible response should just show fewer versions rather than break the comparison feature.
   override def scenarioGraphsForVersions(
       processName: ProcessName,
       versionIds: List[VersionId]
@@ -94,9 +92,6 @@ class HttpRemoteEnvironment(
         Map.empty
       }
 
-  // Comments are supplementary (used only for tooltips), so any incompatibility with the remote
-  // environment's response (e.g. a different Nussknacker version with an incompatible activities
-  // schema) is swallowed and results in an empty list rather than failing the whole comparison.
   override def activities(processName: ProcessName): Future[List[ScenarioActivity]] =
     invokeJson[ScenarioActivities](
       HttpMethods.GET,
@@ -113,13 +108,9 @@ class HttpRemoteEnvironment(
         List.empty
       }
 
-  // A 404 most likely means the remote environment is running an older Nussknacker version that doesn't
-  // expose this endpoint yet - expected and not actionable, so it's only logged at debug. Any other status
-  // (5xx, auth failures, ...) is a real problem on a reachable, up-to-date remote and is logged at warn,
-  // same severity as the NonFatal-exception branch below, so it isn't silently invisible in the logs.
   private def logFetchError(what: String, processName: ProcessName, error: NuDesignerError): Unit = error match {
     case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
-      logger.debug(
+      logger.warn(
         s"Remote environment doesn't support fetching $what for scenario ${processName.value} " +
           s"(likely an older Nussknacker version)"
       )

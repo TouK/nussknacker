@@ -112,9 +112,6 @@ class HttpRemoteEnvironmentSpec
     }
   }
 
-  // These two cases exercise the two branches of HttpRemoteEnvironment.logFetchError: a 404 (remote doesn't
-  // support the endpoint - e.g. an older Nussknacker version) and a 500 (a real, unexpected failure) both
-  // resolve to an empty result without failing the Future, but are logged at different severities.
   it should "resolve scenarioGraphsForVersions to an empty map when the remote returns 404 (unsupported endpoint)" in {
     val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
 

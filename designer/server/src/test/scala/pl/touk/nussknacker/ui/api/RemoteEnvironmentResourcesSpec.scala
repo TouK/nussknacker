@@ -164,8 +164,6 @@ class RemoteEnvironmentResourcesSpec
           )
         )
 
-      // versionWithDiff's graph differs from the local (ProcessTestData.validProcess) one,
-      // versionWithoutDiff's is identical to it.
       override def scenarioGraphsForVersions(
           pName: ProcessName,
           versionIds: List[VersionId]

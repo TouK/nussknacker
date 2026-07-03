@@ -44,11 +44,6 @@ type DiffsPageState = {
     isLoadingMore: boolean;
 };
 
-// Shared by the local and remote version pickers: fetches page 0 eagerly (so the dropdown has content as soon
-// as possible), resets when `fetchPage`'s identity changes (i.e. the caller's fetch key - process/version/
-// environment - changed, so any previously loaded pages are for a stale baseline and must not be kept around),
-// and normalizes a failed/unsupported fetch to a non-null empty map rather than leaving `diffs` stuck on null
-// forever, so dependent UI doesn't get permanently stuck in a "loading" state.
 const usePaginatedVersionDiffs = (
     fetchPage: ((pageNumber: number) => Promise<VersionsWithDifferencesResponse | null>) | null,
 ): DiffsPageState & { loadMore: () => void } => {
@@ -260,9 +255,6 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const remoteVersionDiffsLoaded = remoteDiffsState.diffs !== null;
 
     useEffect(() => {
-        // Deferred until the (connection-pool constrained, compare-heavy) diffs pagination has produced its
-        // first page - comments are supplementary (tooltips only), so they shouldn't compete for the remote
-        // environment's limited connection pool and delay the version dropdown from becoming usable.
         if (processName && otherEnvironment && remoteVersionDiffsLoaded) {
             HttpService.fetchRemoteActivities(processName).then((result) =>
                 setState((prevState) => ({ ...prevState, remoteActivities: result?.activities ?? null })),
@@ -416,9 +408,6 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         if (state.environment === "remote") {
             const remoteDiffs = remoteDiffsState.diffs;
             if (remoteDiffs === null) return [{ label: "", value: "" }];
-            // A version is listed if it has a meaningful diff, or it's the currently selected/predefined version -
-            // otherwise a version whose diff got filtered out (e.g. layout-only) would vanish from the dropdown
-            // while still being displayed below, leaving the "Version to compare" field blank.
             const filtered = (state?.remoteVersions ?? []).filter(
                 (v) => remoteDiffs.has(v.processVersionId) || createVersionId(v, remotePrefix) === state.otherVersion,
             );

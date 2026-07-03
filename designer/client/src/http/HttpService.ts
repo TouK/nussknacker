@@ -1112,7 +1112,7 @@ class HttpService {
     // (network, HTTP, or an unexpected response shape) is swallowed and treated as "no data".
     fetchRemoteActivities(scenarioName: string): Promise<ActivitiesResponse | null> {
         return api
-            .get<ActivitiesResponse>(`/remoteEnvironment/${encodeURIComponent(scenarioName)}/activity/activities`)
+            .get<ActivitiesResponse>(`/remoteEnvironment/${encodeURIComponent(scenarioName)}/activities`)
             .then((response) => response.data)
             .catch(() => null);
     }
