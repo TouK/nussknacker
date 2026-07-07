@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.{
   BranchParamName,
   HideType,
   HintText,
+  Label,
   LazyParameter,
   ParamName
 }
@@ -81,7 +82,8 @@ object ParameterExtractor {
       javaOptionalParameter = isJavaOptionalParameter,
       hintText = parameterConfig.hintText
         .orElse(parameterData.getAnnotation[HintText].map(_.value())),
-      labelOpt = parameterConfig.label,
+      labelOpt = parameterConfig.label
+        .orElse(parameterData.getAnnotation[Label].map(_.value())),
       category = category,
       // these features are available only for DynamicComponents
       changesCanReloadParameters = Some(false),
