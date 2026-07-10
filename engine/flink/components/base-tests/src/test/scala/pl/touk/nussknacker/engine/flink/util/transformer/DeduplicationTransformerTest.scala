@@ -45,7 +45,6 @@ class DeduplicationTransformerTest
       groupBy: String = "#input.key",
       value: String = "#input",
       filterCondition: String = "#incomingEntry.value.amount >= #previousEntry.value.amount + 20",
-      filterWatermarks: Boolean = false,
   ): CanonicalProcess = {
     val params: List[(String, Expression)] =
       List(
@@ -55,16 +54,11 @@ class DeduplicationTransformerTest
         "ttl"             -> "T(java.time.Duration).parse('PT1H')".spel
       )
 
-    val builder = ScenarioBuilder
+    ScenarioBuilder
       .streaming(getClass.getName + "-" + name)
       .source("start", TestScenarioRunner.testDataSource)
       .customNodeNoOutput("deduplication", "deduplication", params: _*)
-
-    val withFilter =
-      if (filterWatermarks) builder.filter("ignoreWatermarks", "#input.eventType != 'WATERMARK'".spel)
-      else builder
-
-    withFilter.emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input.amount".spel)
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input.amount".spel)
   }
 
   private val watermarkStrategy =
@@ -140,6 +134,23 @@ class DeduplicationTransformerTest
     result.validValue.successes shouldBe List(0)
   }
 
+  test("should treat event as new after a TTL gap without an artificial watermark carrier") {
+    val data = List(
+      DeduplicationTestRecord("sub1", 10, ts(0)),  // first event -> emitted
+      DeduplicationTestRecord("sub1", 20, ts(1)),  // within TTL -> deduplicated
+      DeduplicationTestRecord("sub1", 30, ts(70)), // gap 70min > TTL 1h -> treated as new -> emitted
+      DeduplicationTestRecord("sub1", 40, ts(71)), // within TTL again -> deduplicated
+    )
+
+    val result = runner.runWithData[DeduplicationTestRecord, Int](
+      deduplicationScenario("ttl-gap", value = "#input.amount", filterCondition = "false"),
+      data,
+      watermarkStrategy = Some(watermarkStrategy)
+    )
+
+    result.validValue.successes shouldBe List(10, 30)
+  }
+
   test("should emit all events when filter condition is always true") {
     val data = List(
       DeduplicationTestRecord("sub1", 0, ts(0)),
@@ -177,22 +188,6 @@ class DeduplicationTransformerTest
     errors.head.throwable.getMessage should include("/ by zero")
   }
 
-  test("should reset deduplication state and emit event after eviction period") {
-    val data = List(
-      DeduplicationTestRecord("sub1", 0, ts(0)),
-      DeduplicationTestRecord("other", 0, ts(61), eventType = "WATERMARK"),
-      DeduplicationTestRecord("sub1", 2, ts(122)),
-    )
-
-    val result = runner.runWithData[DeduplicationTestRecord, Int](
-      deduplicationScenario("eviction", filterWatermarks = true),
-      data,
-      watermarkStrategy = Some(watermarkStrategy)
-    )
-
-    result.validValue.successes shouldBe List(0, 2)
-  }
-
 }
 
 object DeduplicationTestRecord {
@@ -203,6 +198,5 @@ object DeduplicationTestRecord {
 case class DeduplicationTestRecord(
     key: String,
     amount: Int,
-    eventTimestamp: Long,
-    eventType: String = "NORMAL"
+    eventTimestamp: Long
 )

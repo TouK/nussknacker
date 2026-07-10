@@ -29,7 +29,7 @@ Deduplicates events based on a grouping key, remembering the last passed entry p
 | Group by         | Groups events for deduplication. Events with the same key share one deduplication entry.                                                                                             |
 | Value            | Value to track for deduplication. Accessible as `#previousEntry.value` and `#incomingEntry.value` in the filter condition.                                                           |
 | Filter condition | Logical expression determining when a record should pass through. If the condition is not met, the record is not passed to further processing. Use `#previousEntry` (existing state) and `#incomingEntry` (new value) to compare `timestamp` and `value`. Defaults to `false` (simple deduplication). |
-| TTL              | Time after which the deduplication entry expires. The timer resets with each incoming event for a given key. After this period of inactivity, the next event is treated as new.        |
+| TTL              | Time after which the deduplication entry expires. The timer resets with *each incoming event* for a given key. After this period of inactivity, the next event is treated as new.        |
 
 ## How it works
 
