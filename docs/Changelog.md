@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9413](https://github.com/TouK/nussknacker/pull/9413) `LatelyEvictableStateFunction` is now time-mode aware: eviction timers are registered according to a `timeMode` (defaults to `EventTime`, preserving existing behavior). Method signatures are unchanged; a minor API adaptation may be needed by some custom Flink components extending it - see the [Migration Guide](MigrationGuide.md).
 * [#9412](https://github.com/TouK/nussknacker/pull/9412) Fix: `deduplication` component now resets a key's state on the first event after the TTL gap, instead of relying on the watermark-driven eviction timer that, on a live stream, effectively never reset a deduplicated key.
 * [#9410](https://github.com/TouK/nussknacker/pull/9410) Feature: Add Label annotation support to ParameterExtractor
 * [#9396](https://github.com/TouK/nussknacker/pull/9396) Flink `components-api`: added reusable restore-able keyed operators (`RestorableKeyedOperator`, `RestorableOneInputFlushingKeyedOperator`) that re-pace every key's buffered events once after a state restore, and the end-of-input flush API now carries the key. See the [Migration Guide](MigrationGuide.md) for the API changes.
