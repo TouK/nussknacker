@@ -48,13 +48,16 @@ class DeduplicationTransformerTest
       groupBy: String = "#input.key",
       value: String = "#input",
       filterCondition: String = "#incomingEntry.value.amount >= #previousEntry.value.amount + 20",
+      ttl: String = "T(java.time.Duration).parse('PT1H')",
+      timeMode: String = "EventTime",
   ): CanonicalProcess = {
     val params: List[(String, Expression)] =
       List(
         "groupBy"         -> groupBy.spel,
         "value"           -> value.spel,
         "filterCondition" -> filterCondition.spel,
-        "ttl"             -> "T(java.time.Duration).parse('PT1H')".spel
+        "ttl"             -> ttl.spel,
+        "timeMode"        -> s"'$timeMode'".spel
       )
 
     ScenarioBuilder
@@ -189,6 +192,50 @@ class DeduplicationTransformerTest
     errors should have size 1
     errors.head.nodeId shouldBe Some("deduplication")
     errors.head.throwable.getMessage should include("/ by zero")
+  }
+
+  test("should pass at most N messages per window using #passedEventsCount and reset after a TTL gap") {
+    val data = List(
+      DeduplicationTestRecord("sub1", 1, ts(0)),  // first of window -> emitted (passed -> 1)
+      DeduplicationTestRecord("sub1", 2, ts(1)),  // passedEventsCount=1 < 2 -> emitted (passed -> 2)
+      DeduplicationTestRecord("sub1", 3, ts(2)),  // passedEventsCount=2 < 2 is false -> deduplicated
+      DeduplicationTestRecord("sub1", 4, ts(3)),  // still blocked
+      DeduplicationTestRecord("sub1", 5, ts(70)), // gap 70min > TTL 1h -> new window -> emitted
+    )
+
+    val result = runner.runWithData[DeduplicationTestRecord, Int](
+      deduplicationScenario(
+        "passed-count-cap",
+        value = "#input.amount",
+        filterCondition = "#passedEventsCount < 2"
+      ),
+      data,
+      timestampAssigner = Some(watermarkStrategy)
+    )
+
+    result.validValue.successes shouldBe List(1, 2, 5)
+  }
+
+  test("should sample arrivals within a window using #eventsCount") {
+    val data = List(
+      DeduplicationTestRecord("sub1", 1, ts(0)), // first of window -> emitted (eventsCount 0 -> 1)
+      DeduplicationTestRecord("sub1", 2, ts(1)), // eventsCount=1 -> 1 % 2 != 0 -> deduplicated
+      DeduplicationTestRecord("sub1", 3, ts(2)), // eventsCount=2 -> 2 % 2 == 0 -> emitted
+      DeduplicationTestRecord("sub1", 4, ts(3)), // eventsCount=3 -> deduplicated
+      DeduplicationTestRecord("sub1", 5, ts(4)), // eventsCount=4 -> emitted
+    )
+
+    val result = runner.runWithData[DeduplicationTestRecord, Int](
+      deduplicationScenario(
+        "events-count-sample",
+        value = "#input.amount",
+        filterCondition = "#eventsCount % 2 == 0"
+      ),
+      data,
+      timestampAssigner = Some(watermarkStrategy)
+    )
+
+    result.validValue.successes shouldBe List(1, 3, 5)
   }
 
 }
