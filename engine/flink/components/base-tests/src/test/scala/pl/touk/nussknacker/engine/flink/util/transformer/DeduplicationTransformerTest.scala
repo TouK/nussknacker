@@ -2,38 +2,35 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.typeinfo.TypeInfo
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.{ProcessName, SourceFactory}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
+
+import java.time.Duration
 
 class DeduplicationTransformerTest
     extends AnyFunSuite
-    with BeforeAndAfterAll
+    with FlinkSpec
     with Matchers
-    with ValidatedValuesDetailedMessage {
-
-  private lazy val flinkMiniClusterWithServices =
-    FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+    with ValidatedValuesDetailedMessage
+    with VeryPatientScalaFutures {
 
   private lazy val runner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
+    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .build()
-
-  override protected def afterAll(): Unit = {
-    super.afterAll()
-    flinkMiniClusterWithServices.close()
-  }
 
   private val baseTimestamp = 1_000_000L
 
@@ -45,13 +42,16 @@ class DeduplicationTransformerTest
       groupBy: String = "#input.key",
       value: String = "#input",
       filterCondition: String = "#incomingEntry.value.amount >= #previousEntry.value.amount + 20",
+      ttl: String = "T(java.time.Duration).parse('PT1H')",
+      timeMode: String = "EventTime",
   ): CanonicalProcess = {
     val params: List[(String, Expression)] =
       List(
         "groupBy"         -> groupBy.spel,
         "value"           -> value.spel,
         "filterCondition" -> filterCondition.spel,
-        "ttl"             -> "T(java.time.Duration).parse('PT1H')".spel
+        "ttl"             -> ttl.spel,
+        "timeMode"        -> s"'$timeMode'".spel
       )
 
     ScenarioBuilder
@@ -186,6 +186,121 @@ class DeduplicationTransformerTest
     errors should have size 1
     errors.head.nodeId shouldBe Some(NodeId("deduplication"))
     errors.head.throwable.getMessage should include("/ by zero")
+  }
+
+  test("should pass at most N messages per window using #passedEventsCount and reset after a TTL gap") {
+    val data = List(
+      DeduplicationTestRecord("sub1", 1, ts(0)),  // first of window -> emitted (passed -> 1)
+      DeduplicationTestRecord("sub1", 2, ts(1)),  // passedEventsCount=1 < 2 -> emitted (passed -> 2)
+      DeduplicationTestRecord("sub1", 3, ts(2)),  // passedEventsCount=2 < 2 is false -> deduplicated
+      DeduplicationTestRecord("sub1", 4, ts(3)),  // still blocked
+      DeduplicationTestRecord("sub1", 5, ts(70)), // gap 70min > TTL 1h -> new window -> emitted
+    )
+
+    val result = runner.runWithData[DeduplicationTestRecord, Int](
+      deduplicationScenario(
+        "passed-count-cap",
+        value = "#input.amount",
+        filterCondition = "#passedEventsCount < 2"
+      ),
+      data,
+      watermarkStrategy = Some(watermarkStrategy)
+    )
+
+    result.validValue.successes shouldBe List(1, 2, 5)
+  }
+
+  test("should sample arrivals within a window using #eventsCount") {
+    val data = List(
+      DeduplicationTestRecord("sub1", 1, ts(0)), // first of window -> emitted (eventsCount 0 -> 1)
+      DeduplicationTestRecord("sub1", 2, ts(1)), // eventsCount=1 -> 1 % 2 != 0 -> deduplicated
+      DeduplicationTestRecord("sub1", 3, ts(2)), // eventsCount=2 -> 2 % 2 == 0 -> emitted
+      DeduplicationTestRecord("sub1", 4, ts(3)), // eventsCount=3 -> deduplicated
+      DeduplicationTestRecord("sub1", 5, ts(4)), // eventsCount=4 -> emitted
+    )
+
+    val result = runner.runWithData[DeduplicationTestRecord, Int](
+      deduplicationScenario(
+        "events-count-sample",
+        value = "#input.amount",
+        filterCondition = "#eventsCount % 2 == 0"
+      ),
+      data,
+      watermarkStrategy = Some(watermarkStrategy)
+    )
+
+    result.validValue.successes shouldBe List(1, 3, 5)
+  }
+
+  test("should reset an idle key in processing time on the wall clock, with no watermark") {
+    // Bounded runWithData cannot show a wall-clock reset (the final watermark releases everything), so drive a
+    // blocking source via a detached run and observe emissions with a small TTL plus real waits.
+    implicit val scenarioName: ProcessName = ProcessName(getClass.getName + "-processing-time-reset")
+
+    val ttlMillis = 500L
+    val ttl       = s"T(java.time.Duration).ofMillis($ttlMillis)"
+    withBlockingDeduplicationScenario(scenarioName, ttl = ttl, timeMode = "ProcessingTime") { (source, fixture) =>
+      def emittedInts: List[Int] = fixture.testSinkResults.collect { case i: java.lang.Integer => i.intValue }.toList
+
+      // first event of the window is emitted
+      source.add(DeduplicationTestRecord("sub1", 10, 0L))
+      eventually {
+        emittedInts should contain(10)
+      }
+
+      // a second event within the TTL is deduplicated (filter condition is false)
+      source.add(DeduplicationTestRecord("sub1", 20, 0L))
+
+      // The processing-time TTL runs on the wall clock, which cannot be advanced in the mini-cluster, so real time
+      // must elapse before the key resets; then the same key opens a new window and emits again.
+      Thread.sleep(ttlMillis + 200)
+      source.add(DeduplicationTestRecord("sub1", 30, 0L))
+      eventually {
+        emittedInts should contain(30)
+      }
+
+      emittedInts should not contain 20
+    }
+  }
+
+  private def withBlockingDeduplicationScenario(
+      processName: ProcessName,
+      ttl: String,
+      timeMode: String
+  )(body: (BlockingQueueSource[DeduplicationTestRecord], ScenarioVerificationFixture) => Unit): Unit = {
+    val source = BlockingQueueSource.create[DeduplicationTestRecord](_ => 0L, Duration.ZERO)
+
+    val blockingRunner = TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .withExtraComponents(
+        List(
+          ComponentDefinition(
+            "blocking-source",
+            SourceFactory.noParamUnboundedStreamFactory[DeduplicationTestRecord](source)
+          )
+        )
+      )
+      .build()
+
+    val scenario = ScenarioBuilder
+      .streaming(processName.value)
+      .parallelism(1)
+      .source("start", "blocking-source")
+      .customNodeNoOutput(
+        "deduplication",
+        "deduplication",
+        "groupBy"         -> "#input.key".spel,
+        "value"           -> "#input.amount".spel,
+        "filterCondition" -> "false".spel,
+        "ttl"             -> ttl.spel,
+        "timeMode"        -> s"'$timeMode'".spel,
+      )
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input.amount".spel)
+
+    blockingRunner.withRunningScenario(scenario) { fixture =>
+      body(source, fixture)
+      source.finish()
+    }
   }
 
 }

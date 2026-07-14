@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9415](https://github.com/TouK/nussknacker/pull/9415) `deduplication` component: added processing-time support and two filter counters.
+    * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain used to measure the deduplication TTL. In processing time an idle key is reset on the wall clock, even with no traffic and no watermark; in event time the TTL is measured against the watermark and replays reproducibly.
+    * The default `timeMode` can be configured via the optional `components.base.deduplication.timeMode` setting; when not configured it defaults to `ProcessingTime`. **Note:** this changes the previous default behavior (event time) for deduplication nodes that do not set the parameter.
+    * The `filterCondition` gained two variables: `#passedEventsCount` (messages already emitted for the key in the current TTL window) and `#eventsCount` (messages already arrived for the key in the current window), enabling per-key caps and sampling, e.g. `#passedEventsCount < 5` or `#eventsCount % 10 == 0`.
 * [#9413](https://github.com/TouK/nussknacker/pull/9413) `LatelyEvictableStateFunction` is now time-mode aware: eviction timers are registered according to a `timeMode` (defaults to `EventTime`, preserving existing behavior). Method signatures are unchanged; a minor API adaptation may be needed by some custom Flink components extending it - see the [Migration Guide](MigrationGuide.md).
 * [#9412](https://github.com/TouK/nussknacker/pull/9412) Fix: `deduplication` component now resets a key's state on the first event after the TTL gap, instead of relying on the watermark-driven eviction timer that, on a live stream, effectively never reset a deduplicated key.
 * [#9410](https://github.com/TouK/nussknacker/pull/9410) Feature: Add Label annotation support to ParameterExtractor
