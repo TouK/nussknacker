@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.flink.api.{TimeMode, WithTimeMode}
 
 abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFunction[String, In, Out] {
 
@@ -48,7 +49,10 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
 
 abstract class LatelyEvictableStateFunction[In, Out, StateType, Key]
     extends KeyedProcessFunction[Key, In, Out]
-    with LatelyEvictableStateFunctionMixin[StateType] {
+    with LatelyEvictableStateFunctionMixin[In, Out, StateType, Key] {
+
+  // Defaults to event time for backward compatibility
+  override def timeMode: TimeMode = TimeMode.EventTime
 
   override def onTimer(
       timestamp: Long,
@@ -59,12 +63,16 @@ abstract class LatelyEvictableStateFunction[In, Out, StateType, Key]
   }
 
   protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[Key, In, Out]#Context): Unit = {
-    doMoveEvictionTime(ctx.timestamp() + offset, ctx.timerService())
+    doMoveEvictionTime(currentTime(ctx) + offset, ctx.timerService())
   }
 
 }
 
-trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with StateHolder[StateType] {
+trait LatelyEvictableStateFunctionMixin[In, Out, StateType, Key]
+    extends RichFunction
+    with StateHolder[StateType]
+    with WithTimeMode[Key, In, Out] {
+  self: KeyedProcessFunction[Key, In, Out] =>
 
   @transient
   protected var latestEvictionTimeForKey: ValueState[java.lang.Long] = _
@@ -92,7 +100,7 @@ trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with Sta
     if (noLaterEventsArrived) {
       evictStates()
     } else if (latestEvictionTimeValue != null) {
-      timerService.registerEventTimeTimer(latestEvictionTimeValue)
+      registerTimer(timerService, latestEvictionTimeValue)
     }
   }
 
@@ -109,7 +117,7 @@ trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with Sta
       latestEvictionTimeValue.longValue()
     }
     if (latestEvictionTimeValue == null) {
-      timeService.registerEventTimeTimer(maxEvictionTime)
+      registerTimer(timeService, maxEvictionTime)
     }
     latestEvictionTimeForKey.update(maxEvictionTime)
   }

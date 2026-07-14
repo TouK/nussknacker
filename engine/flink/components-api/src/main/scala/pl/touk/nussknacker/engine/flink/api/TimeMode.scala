@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.api
 
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
+import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 
 import java.time.Instant
@@ -43,11 +44,11 @@ trait WithTimeMode[K, IN, OUT] extends LazyLogging { self: KeyedProcessFunction[
     case TimeMode.ProcessingTime => ctx.timerService().currentProcessingTime()
   }
 
-  protected def registerTimer(ctx: FlinkCtx, fireTime: Long): Unit = {
+  protected def registerTimer(timerService: TimerService, fireTime: Long): Unit = {
     logger.trace(s"Registering timer: $timeMode, will fire on ${Instant.ofEpochMilli(fireTime)} ($fireTime)")
     timeMode match {
-      case TimeMode.EventTime      => ctx.timerService().registerEventTimeTimer(fireTime)
-      case TimeMode.ProcessingTime => ctx.timerService().registerProcessingTimeTimer(fireTime)
+      case TimeMode.EventTime      => timerService.registerEventTimeTimer(fireTime)
+      case TimeMode.ProcessingTime => timerService.registerProcessingTimeTimer(fireTime)
     }
   }
 

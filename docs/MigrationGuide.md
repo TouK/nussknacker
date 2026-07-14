@@ -15,6 +15,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   This is a **breaking change for Flink state** (savepoints/checkpoints) for scenarios that use `List` types.
   See [FLINK-35555](https://issues.apache.org/jira/browse/FLINK-35555).
 
+### Evictable state functions are now time-mode aware
+
+* [#9413](https://github.com/TouK/nussknacker/pull/9413) `LatelyEvictableStateFunction` now registers its eviction timers according to a `timeMode` (`EventTime` / `ProcessingTime`), defaulting to `EventTime` so existing components keep their event-time eviction. Method signatures are unchanged. Custom Flink components extending it only need to adapt if:
+    * they extend `LatelyEvictableStateFunctionMixin` directly - it gained type parameters and is now `LatelyEvictableStateFunctionMixin[In, Out, StateType, Key]` (was `[StateType]`);
+    * they declare their own `type FlinkCtx` alias - it now overrides the one introduced by `WithTimeMode`, so add the `override` modifier.
+  Override `def timeMode` to switch a component to processing-time eviction; leaving it unset keeps the previous event-time behavior.
+
 ### Configuration changes
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) [#7620](https://github.com/TouK/nussknacker/pull/7620) Added designer configuration: stickyNotesSettings 

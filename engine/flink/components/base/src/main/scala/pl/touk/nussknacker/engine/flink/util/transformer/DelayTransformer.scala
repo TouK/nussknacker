@@ -266,7 +266,7 @@ class DelayFunction(
       } else {
         val fireTime = currentTime(ctx) + delayMillis
         bufferEvent(fireTime, value)
-        registerTimer(ctx, fireTime)
+        registerTimer(ctx.timerService(), fireTime)
         bufferedEventsCount += 1
       }
     }
