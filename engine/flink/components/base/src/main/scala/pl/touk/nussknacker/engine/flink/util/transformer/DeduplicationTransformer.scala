@@ -241,7 +241,11 @@ private[transformer] class DeduplicationTransformerHandler(
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     handlingErrors(vwc.context) {
-      val previousEntry = Option(state.value())
+      // Expire the entry inline: the event-time eviction timer only fires on watermark advance, which in a
+      // live stream lags behind the data. If the event arrives after the stored deadline (lastSeenTs + ttl),
+      // treat it as new. Read the deadline before moveEvictionTime overwrites it.
+      val expired       = Option(latestEvictionTimeForKey.value()).forall(ctx.timestamp() > _)
+      val previousEntry = if (expired) None else Option(state.value())
       val value         = valueExpressionEvaluate(vwc.context)
       val incomingEntry = DeduplicationEntry(ctx.timestamp(), value)
       moveEvictionTime(ttlInMillis, ctx)
