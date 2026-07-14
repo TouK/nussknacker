@@ -21,9 +21,10 @@ class FlinkBaseComponentProvider extends ComponentProvider {
       componentProviderConfig: Config,
       componentDependencies: ComponentDependencies
   ): List[ComponentDefinition] = {
-    val docsConfig  = DocsConfig(componentProviderConfig)
-    val delayConfig = DelayConfig.fromConfig(componentProviderConfig)
-    FlinkBaseComponentProvider.create(docsConfig, delayConfig)
+    val docsConfig          = DocsConfig(componentProviderConfig)
+    val delayConfig         = DelayConfig.fromConfig(componentProviderConfig)
+    val deduplicationConfig = DeduplicationConfig.fromConfig(componentProviderConfig)
+    FlinkBaseComponentProvider.create(docsConfig, delayConfig, deduplicationConfig)
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
@@ -34,11 +35,12 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 object FlinkBaseComponentProvider {
 
   val Components: List[ComponentDefinition] =
-    create(DocsConfig.Default, DelayConfig.Default)
+    create(DocsConfig.Default, DelayConfig.Default, DeduplicationConfig.Default)
 
   def create(
       docsConfig: DocsConfig,
-      delayConfig: DelayConfig
+      delayConfig: DelayConfig,
+      deduplicationConfig: DeduplicationConfig
   ): List[ComponentDefinition] = {
     import docsConfig._
 
@@ -59,7 +61,11 @@ object FlinkBaseComponentProvider {
         .withRelativeDocs("DataSourcesAndSinks#delay"),
       ComponentDefinition("previousValue", PreviousValueTransformer, label = Some("Previous Value"))
         .withRelativeDocs("DataSourcesAndSinks#previousvalue"),
-      ComponentDefinition("deduplication", DeduplicationTransformer, label = Some("Deduplication"))
+      ComponentDefinition(
+        "deduplication",
+        new DeduplicationTransformer(deduplicationConfig),
+        label = Some("Deduplication")
+      )
         .withRelativeDocs("components/deduplication")
         .withDesignerWideId("deduplication"),
     )

@@ -24,19 +24,25 @@ import ModeStreaming from '/badges/modeStreaming.mdx';
 Deduplicates events based on a grouping key, remembering the last passed entry per key. The first event for a given key always passes through, and subsequent events are forwarded only if they satisfy the filter condition. By default, the filter condition is false, which means only the first event for a given key passes through (simple deduplication).
 ## Parameters and configuration
 
-| Name             | Description                                                                                                                                                                          |
-|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Group by         | Groups events for deduplication. Events with the same key share one deduplication entry.                                                                                             |
-| Value            | Value to track for deduplication. Accessible as `#previousEntry.value` and `#incomingEntry.value` in the filter condition.                                                           |
-| Filter condition | Logical expression determining when a record should pass through. If the condition is not met, the record is not passed to further processing. Use `#previousEntry` (existing state) and `#incomingEntry` (new value) to compare `timestamp` and `value`. Defaults to `false` (simple deduplication). |
-| TTL              | Time after which the deduplication entry expires. The timer resets with *each incoming event* for a given key. After this period of inactivity, the next event is treated as new.        |
+| Name             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Group by         | Groups events for deduplication. Events with the same key share one deduplication entry.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Value            | Value to track for deduplication. Accessible as `#previousEntry.value` and `#incomingEntry.value` in the filter condition.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Filter condition | Logical expression determining when a record should pass through. If the condition is not met, the record is not passed to further processing. Use `#previousEntry` (existing state) and `#incomingEntry` (new value) to compare `timestamp` and `value`, and `#passedEventsCount` / `#eventsCount` to cap or sample traffic per key. Defaults to `false` (simple deduplication).                                                                                                                                                                                           |
+| TTL              | Time after which the deduplication entry expires. The timer resets with *each incoming event* for a given key. After this period of inactivity, the next event is treated as new.                                                                                                                                                                                                                                                                                                                                                                                           |
+| Time mode        | Time domain used to measure the TTL. `Event time`: measured against the watermark, reproducible on replay, but an idle key is only reset once the watermark advances past the deadline (which requires either new events or a source emitting watermarks while idle). `Processing time` (default): measured on the wall clock, so an idle key is reset after the real-time TTL even with no traffic and no watermark. The default value of this parameter can be configured per installation via `components.base.deduplication.timeMode`; each node can still override it. |
+
+The filter condition exposes two per-key counters, both scoped to the current TTL window and reset when it expires:
+
+- `#passedEventsCount`: messages already emitted for the key in the current window, before the current event.
+- `#eventsCount`: messages already arrived for the key in the current window (including suppressed ones), before the current event.
 
 ## How it works
 
 1. An event arrives and is grouped by the **Group by** expression.
 2. If there is no existing entry for this key (first event or state expired), the event passes through.
-3. If an entry exists, the **Filter condition** is evaluated with `#previousEntry` (existing state) and `#incomingEntry` (new value), each containing `timestamp` and `value`. The event passes through only when the condition returns `true`.
-4. The **TTL** is an inactivity timeout: the timer resets on every incoming event for a given key, regardless of whether the event passes through or is filtered. After the TTL elapses with no events, the state is cleared.
+3. If an entry exists, the **Filter condition** is evaluated with `#previousEntry` (existing state) and `#incomingEntry` (new value), each containing `timestamp` and `value`, plus `#passedEventsCount` and `#eventsCount`. The event passes through only when the condition returns `true`.
+4. The **TTL** is an inactivity timeout: the timer resets on every incoming event for a given key, regardless of whether the event passes through or is filtered. After the TTL elapses with no events, the state is cleared. Whether the timeout is measured in event time or processing time is controlled by **Time mode**.
 
 ## Examples
 
@@ -70,3 +76,27 @@ To pass through events only when the `amount` increased by at least 20 compared 
 - TTL: `1 hour`
 
 If events arrive with `amount` values 0, 18, 19, 20, 38, 39, 40, the output will contain events with amounts 0, 20, 40. The first event (0) always passes. Events 18 and 19 are filtered because they don't reach 0 + 20. Event 20 passes and becomes the new baseline. Events 38 and 39 are filtered because they don't reach 20 + 20. Event 40 passes.
+
+### Limit how many messages pass per key
+
+To pass at most 5 messages per key within a window and block the rest until the window resets:
+
+- Group by: `#input.subscriptionId`
+- Value: `#input`
+- Filter condition: `#passedEventsCount < 5`
+- TTL: `10 seconds`
+
+`#passedEventsCount` counts messages already emitted for the key in the current window. The first event of a window always passes (the filter is not evaluated for it), so exactly 5 messages pass per window. After a 10-second gap for that key the window resets and another 5 may pass. Combine with a value condition to cap distinct changes, for example `#passedEventsCount < 3 && #incomingEntry.value != #previousEntry.value` passes at most 3 messages and only when the value changed.
+
+### Sample every tenth message
+
+- Group by: `#input.subscriptionId`
+- Value: `#input`
+- Filter condition: `#eventsCount % 10 == 0`
+- TTL: `1 minute`
+
+`#eventsCount` is how many messages already arrived for the key in the current window. This passes the first event of a window and then every tenth arrival for that key, a simple sampler.
+
+### Time mode
+
+By default `Time mode` is `Processing time`, so an idle key is reset on the wall clock after the TTL even if the whole stream goes idle. Set it to `Event time` for results that are reproducible on replay and driven by the watermark; in that mode an idle key is only reset once the watermark advances past the deadline.

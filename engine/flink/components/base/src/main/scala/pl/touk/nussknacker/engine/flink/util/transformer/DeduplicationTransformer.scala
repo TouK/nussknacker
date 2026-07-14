@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import com.typesafe.config.Config
 import org.apache.flink.api.common.functions.OpenContext
-import org.apache.flink.api.common.state.ValueStateDescriptor
+import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.definition.ParameterCategory.Advanced
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.flink.api.TimeMode
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -33,9 +35,9 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
-object DeduplicationTransformer extends DeduplicationTransformer
+object DeduplicationTransformer extends DeduplicationTransformer(DeduplicationConfig.Default)
 
-class DeduplicationTransformer
+class DeduplicationTransformer(config: DeduplicationConfig)
     extends CustomStreamTransformer
     with SingleInputDynamicComponent
     with WithExplicitTypesToExtract
@@ -86,15 +88,19 @@ class DeduplicationTransformer
           hintText = Some(
             "Logical expression determining when a record should pass through. " +
               "If the condition is not met, the record is not passed to further processing. " +
-              "Use #previousEntry (existing state) and #incomingEntry (new value) to compare timestamp and value."
+              "Use #previousEntry (existing state) and #incomingEntry (new value) to compare timestamp and value. " +
+              "Use #passedEventsCount (messages already emitted for the key in this window) and " +
+              "#eventsCount (messages already arrived for the key in this window) to cap or sample traffic."
           ),
           defaultValue = Some("false".spel),
           category = Advanced,
           additionalVariables = {
             val typeInfo = DeduplicationEntry.typed(valueType)
             Map(
-              "previousEntry" -> AdditionalVariableProvidedInRuntime(typeInfo),
-              "incomingEntry" -> AdditionalVariableProvidedInRuntime(typeInfo)
+              "previousEntry"     -> AdditionalVariableProvidedInRuntime(typeInfo),
+              "incomingEntry"     -> AdditionalVariableProvidedInRuntime(typeInfo),
+              "passedEventsCount" -> AdditionalVariableProvidedInRuntime(Typed[java.lang.Long]),
+              "eventsCount"       -> AdditionalVariableProvidedInRuntime(Typed[java.lang.Long])
             )
           }
         )
@@ -122,6 +128,31 @@ class DeduplicationTransformer
         )
     )
 
+  private val timeModeParamName = ParameterName("timeMode")
+
+  private val timeModeParamDeclaration = ParameterDeclaration
+    .mandatory[String](timeModeParamName)
+    .withCreator(modify =
+      param =>
+        param.copy(
+          labelOpt = Some("Time mode"),
+          hintText = Some(
+            "Selects the time domain used to measure the deduplication TTL.\n" +
+              "- Event time: the TTL is measured in event time; it gives reproducible results on replay and respects " +
+              "event order, but an idle key is only reset once the watermark advances past the deadline.\n" +
+              "- Processing time: the TTL is measured in processing time (wall clock); an idle key is reset after the " +
+              "real-time TTL even with no traffic and no watermark."
+          ),
+          defaultValue = Some(s"'${config.timeMode}'".spel),
+          category = Advanced,
+          editors = List(
+            FixedValuesParameterEditor(
+              TimeMode.values.map(mode => FixedExpressionValue(s"'$mode'", mode.label))
+            )
+          )
+        )
+    )
+
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
@@ -135,7 +166,8 @@ class DeduplicationTransformer
         ) =>
       NextParameters(
         filterConditionParamDeclaration.createParameter(valueTypingResult) ::
-          ttlParamDeclaration.createParameter() :: Nil
+          ttlParamDeclaration.createParameter() ::
+          timeModeParamDeclaration.createParameter() :: Nil
       )
     case TransformationStep(
           (`groupByParamName`, _) :: (`valueParamName`, FailedToDefineParameter(_)) :: Nil,
@@ -143,11 +175,12 @@ class DeduplicationTransformer
         ) =>
       NextParameters(
         filterConditionParamDeclaration.createParameter(Unknown) ::
-          ttlParamDeclaration.createParameter() :: Nil
+          ttlParamDeclaration.createParameter() ::
+          timeModeParamDeclaration.createParameter() :: Nil
       )
     case TransformationStep(
           (`groupByParamName`, _) :: (`valueParamName`, _) ::
-          (`filterConditionParamName`, _) :: (`ttlParamName`, _) :: Nil,
+          (`filterConditionParamName`, _) :: (`ttlParamName`, _) :: (`timeModeParamName`, _) :: Nil,
           _
         ) =>
       FinalResults(context)
@@ -164,6 +197,7 @@ class DeduplicationTransformer
     val value           = valueParamDeclaration.extractValueUnsafe(params)
     val filterCondition = filterConditionParamDeclaration.extractValueUnsafe(params)
     val ttl             = ttlParamDeclaration.extractValueUnsafe(params)
+    val timeMode        = TimeMode.fromName(timeModeParamDeclaration.extractValueUnsafe(params))
 
     FlinkCustomStreamTransformation((stream: DataStream[Context], ctx: FlinkCustomNodeContext) => {
 
@@ -175,6 +209,7 @@ class DeduplicationTransformer
             ttl.toMillis,
             value,
             TypeInformationDetection.instance.forType(value.returnType),
+            timeMode,
             ctx.lazyParameterHelper
           ),
           ctx.valueWithContextInfo.forNull[AnyRef]
@@ -184,6 +219,26 @@ class DeduplicationTransformer
   }
 
 }
+
+object DeduplicationConfig {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+  import TimeMode._
+
+  private[transformer] val DeduplicationConfigNamespace = "deduplication"
+
+  private[transformer] val Default: DeduplicationConfig = DeduplicationConfig(timeMode = TimeMode.ProcessingTime)
+
+  def fromConfig(config: Config, path: String = DeduplicationConfigNamespace): DeduplicationConfig =
+    Option
+      .when(config.hasPath(path))(config.as[DeduplicationConfig](path))
+      .getOrElse(Default)
+
+}
+
+final case class DeduplicationConfig(timeMode: TimeMode)
 
 object DeduplicationEntry {
 
@@ -210,6 +265,7 @@ private[transformer] class DeduplicationTransformerHandler(
     ttlInMillis: Long,
     valueExpression: LazyParameter[AnyRef],
     valueTypeInfo: TypeInformation[AnyRef],
+    override val timeMode: TimeMode,
     protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper
 ) extends LatelyEvictableStateFunction[
       ValueWithContext[String],
@@ -219,9 +275,18 @@ private[transformer] class DeduplicationTransformerHandler(
     ]
     with LazyParameterInterpreterFunction {
 
+  @transient private var eventsCountState: ValueState[java.lang.Long]       = _
+  @transient private var passedEventsCountState: ValueState[java.lang.Long] = _
+
   override def open(openContext: OpenContext): Unit = {
     super[LatelyEvictableStateFunction].open(openContext)
     super[LazyParameterInterpreterFunction].open(openContext)
+    eventsCountState = getRuntimeContext.getState(
+      new ValueStateDescriptor[java.lang.Long]("eventsCount", classOf[java.lang.Long])
+    )
+    passedEventsCountState = getRuntimeContext.getState(
+      new ValueStateDescriptor[java.lang.Long]("passedEventsCount", classOf[java.lang.Long])
+    )
   }
 
   override def close(): Unit = {
@@ -241,27 +306,50 @@ private[transformer] class DeduplicationTransformerHandler(
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     handlingErrors(vwc.context) {
-      // Expire the entry inline: the event-time eviction timer only fires on watermark advance, which in a
-      // live stream lags behind the data. If the event arrives after the stored deadline (lastSeenTs + ttl),
-      // treat it as new. Read the deadline before moveEvictionTime overwrites it.
-      val expired       = Option(latestEvictionTimeForKey.value()).forall(ctx.timestamp() > _)
-      val previousEntry = if (expired) None else Option(state.value())
+      // Expire the entry inline: the eviction timer only fires on watermark advance (event time) or the wall clock
+      // (processing time), which in a live stream can lag behind the data. If the event arrives after the stored
+      // deadline (last-seen + ttl), treat it as new. Read the deadline before moveEvictionTime overwrites it.
+      val now               = currentTime(ctx)
+      val expired           = Option(latestEvictionTimeForKey.value()).forall(now > _)
+      val previousEntry     = if (expired) None else Option(state.value())
+      val eventsCount       = counterValue(expired, eventsCountState)
+      val passedEventsCount = counterValue(expired, passedEventsCountState)
+      eventsCountState.update(eventsCount + 1)
       val value         = valueExpressionEvaluate(vwc.context)
       val incomingEntry = DeduplicationEntry(ctx.timestamp(), value)
       moveEvictionTime(ttlInMillis, ctx)
-      if (previousEntry.forall(shouldEmit(vwc, incomingEntry, _))) {
+      if (previousEntry.forall(shouldEmit(vwc, incomingEntry, passedEventsCount, eventsCount, _))) {
         state.update(incomingEntry)
+        passedEventsCountState.update(passedEventsCount + 1)
         out.collect(ValueWithContext(null, vwc.context))
       }
     }
   }
 
+  override protected def evictStates(): Unit = {
+    super.evictStates()
+    eventsCountState.clear()
+    passedEventsCountState.clear()
+  }
+
+  private def counterValue(expired: Boolean, state: ValueState[java.lang.Long]): java.lang.Long =
+    if (expired) 0L else Option(state.value()).getOrElse(0L)
+
   private def shouldEmit(
       vwc: ValueWithContext[_],
       incomingEntry: DeduplicationEntry,
+      passedEventsCount: java.lang.Long,
+      eventsCount: java.lang.Long,
       previousEntry: DeduplicationEntry
   ): Boolean = {
-    val ctx = vwc.context.withVariables(Map("previousEntry" -> previousEntry, "incomingEntry" -> incomingEntry))
+    val ctx = vwc.context.withVariables(
+      Map(
+        "previousEntry"     -> previousEntry,
+        "incomingEntry"     -> incomingEntry,
+        "passedEventsCount" -> passedEventsCount,
+        "eventsCount"       -> eventsCount
+      )
+    )
     filterConditionEvaluate(ctx)
   }
 
