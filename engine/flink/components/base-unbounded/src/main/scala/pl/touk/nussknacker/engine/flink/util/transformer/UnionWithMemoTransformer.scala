@@ -5,7 +5,6 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{NodeId, _}
@@ -160,10 +159,6 @@ class UnionMemoFunction(stateTimeout: Duration, typeInfo: TypeInformation[java.u
     extends LatelyEvictableStateFunction[ValueWithContext[
       StringKeyedValue[java.util.Map[String, AnyRef]]
     ], ValueWithContext[java.util.Map[String, AnyRef]], java.util.Map[String, AnyRef], String] {
-
-  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[
-    StringKeyedValue[java.util.Map[String, AnyRef]]
-  ], ValueWithContext[java.util.Map[String, AnyRef]]]#Context
 
   override protected def stateDescriptor: ValueStateDescriptor[java.util.Map[String, AnyRef]] = {
     new ValueStateDescriptor("state", typeInfo)
