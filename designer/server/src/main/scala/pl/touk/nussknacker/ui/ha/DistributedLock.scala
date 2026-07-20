@@ -9,7 +9,6 @@ import scala.concurrent.duration.FiniteDuration
 trait DistributedLock {
 
   // Owner-bypass: succeeds if the lock is expired OR already held by this instance
-  // (Kubernetes-lease semantics — acquire and renew in one atomic statement).
   def acquireOrRenew(name: String, duration: FiniteDuration): Future[Boolean]
 
   def release(name: String): Future[Unit]

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.ha
 
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
@@ -11,7 +10,7 @@ import scala.concurrent.duration._
 import scala.util.Using
 
 @Slow
-class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgresDbTesting with BeforeAndAfterEach {
+class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgresDbTesting {
 
   private val lockName = "test-lock"
   private val duration = 30.seconds
@@ -19,13 +18,6 @@ class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgr
   private def lock(instanceId: String) = SlickDistributedLock(testDbRef, instanceId, lockQueryTimeout = 5.seconds)
   private lazy val inst1               = lock("instance-1")
   private lazy val inst2               = lock("instance-2")
-
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    Using(testDbRef.db.createSession()) { session =>
-      session.prepareStatement(s"""DELETE FROM "${getSchemaName()}".distributed_locks""").execute()
-    }
-  }
 
   // --- acquireOrRenew ---
 
@@ -36,10 +28,6 @@ class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgr
   test("acquireOrRenew returns false when lock is held by another instance") {
     inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
     inst2.acquireOrRenew(lockName, duration).futureValue shouldBe false
-    inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
-    inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
-    inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
-    inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
     inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
   }
 

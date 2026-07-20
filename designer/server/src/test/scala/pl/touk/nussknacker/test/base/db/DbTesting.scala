@@ -92,6 +92,7 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
     session.prepareStatement(s"""delete from "${getSchemaName()}"."fingerprints"""").execute()
     session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenarios"""").execute()
     session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenario_deployments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."distributed_locks"""").execute()
   }
 
 }
