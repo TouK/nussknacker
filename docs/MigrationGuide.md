@@ -9,6 +9,33 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
+### High Availability (HA) mode
+
+* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) A new optional `ha` configuration block enables running multiple Designer instances concurrently.
+    * HA is disabled by default; add the block below to opt in:
+
+```hocon
+ha {
+  enabled: true
+
+  # Unique identifier for this instance; defaults to the hostname when absent.
+  # instanceId: "designer-1"
+
+  # How long a leader lock is valid without renewal (must be > leaderHeartbeatInterval;
+  # recommended: leaderLeaseDuration >= 3 * leaderHeartbeatInterval).
+  leaderLeaseDuration: 30s   # default
+
+  # How often the leader renews its lock.
+  leaderHeartbeatInterval: 10s    # default
+
+  # Maximum time a periodic scenario lock is held (covers the full deploy round-trip).
+  periodicLockDuration: 5m   # default
+
+  # Timeout for individual lock DB queries (must be < leaderHeartbeatInterval).
+  lockQueryTimeout: 5s   # default
+}
+```
+
 ### Evictable state functions are now time-mode aware
 
 * [#9413](https://github.com/TouK/nussknacker/pull/9413) `LatelyEvictableStateFunction` now registers its eviction timers according to a `timeMode` (`EventTime` / `ProcessingTime`), defaulting to `EventTime` so existing components keep their event-time eviction. Method signatures are unchanged. Custom Flink components extending it only need to adapt if:

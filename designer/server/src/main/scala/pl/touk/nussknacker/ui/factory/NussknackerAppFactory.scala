@@ -40,10 +40,15 @@ class NussknackerAppFactory(
       )
       _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
       _ = {
-        // We don't wait for recovery because it may take a while, and we don't want health check to detect that we have problem with application starting
-        recoverNotRunningDeploymentsThatShouldBeRunning(domainServices.reconciler)(
-          infrastructureServices.executionContextWithIORuntime
-        )
+        // Recovery is triggered each time this node acquires leadership rather than once at startup.
+        // A node that starts as a non-leader (another node holds the lease) would otherwise never
+        // run recovery even after winning leadership following a failover.
+        // The callback is dispatched asynchronously inside LeadershipService so it never blocks the heartbeat.
+        domainServices.leadership.onLeadershipAcquired { () =>
+          recoverNotRunningDeploymentsThatShouldBeRunning(domainServices.reconciler)(
+            infrastructureServices.executionContextWithIORuntime
+          )
+        }
       }
       _ <- startJmxReporter(infrastructureServices.metricsRegistry)
       _ <- createStartAndStopLoggingEntries()

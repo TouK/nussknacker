@@ -15,6 +15,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) Feature: High Availability (HA) mode for the Designer.
+    * Multiple Designer instances can now run concurrently. All instances serve requests; coordinated operations (such as recovering failed deployments) are performed by the elected leader only. If the leader fails, another instance takes over automatically.
+    * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>" }` — suitable for load-balancer routing.
+    * HA mode is **opt-in** and disabled by default; existing single-instance deployments require no changes. See the [Migration Guide](MigrationGuide.md) for configuration details.
 * [#9415](https://github.com/TouK/nussknacker/pull/9415) `deduplication` component: added processing-time support and two filter counters.
     * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain used to measure the deduplication TTL. In processing time an idle key is reset on the wall clock, even with no traffic and no watermark; in event time the TTL is measured against the watermark and replays reproducibly.
     * The default `timeMode` can be configured via the optional `components.base.deduplication.timeMode` setting; when not configured it defaults to `ProcessingTime`. **Note:** this changes the previous default behavior (event time) for deduplication nodes that do not set the parameter.

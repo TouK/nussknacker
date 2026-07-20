@@ -48,6 +48,27 @@ class SchemaInSqlDetectorSpec extends AnyFunSuite {
       """CREATE OR REPLACE FUNCTION "${profile.schemaName}".generate_random_uuid() RETURNS UUID AS 'BEGIN RETURN uuid_in(overlay(overlay(md5(random()::text || '':'' || random()::text) placing ''4'' from 13) placing to_hex(floor(random() * (11 - 8 + 1) + 8)::int)::text from 17)::cstring);END' LANGUAGE plpgsql;""",
       false
     ),
+    (
+      """INSERT INTO "#arg"."distributed_locks" (name, lock_until, locked_at, locked_by)
+             VALUES (
+               arg,
+               CURRENT_TIMESTAMP + CAST(arg || ' milliseconds' AS INTERVAL),
+               CURRENT_TIMESTAMP,
+               arg
+             ) ON CONFLICT (name) DO UPDATE SET
+               lock_until = EXCLUDED.lock_until,
+               locked_at  = CURRENT_TIMESTAMP,
+               locked_by  = EXCLUDED.locked_by
+             WHERE lock_until < CURRENT_TIMESTAMP
+                OR locked_by = arg""",
+      false
+    ),
+    (
+      """UPDATE "#arg"."distributed_locks"
+             SET lock_until = CURRENT_TIMESTAMP
+             WHERE name = arg AND locked_by = arg""",
+      false
+    ),
 
     // statements with NO required schema specified
     ("""DELETE FROM users WHERE id = 1""", true),

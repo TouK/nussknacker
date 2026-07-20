@@ -5,6 +5,7 @@ import derevo.derive
 import enumeratum._
 import enumeratum.EnumEntry.Uppercase
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
+import io.circe.generic.semiauto.deriveEncoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
@@ -74,6 +75,24 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
         )
       )
       .withSecurity(auth)
+
+  lazy val appLeaderEndpoint: PublicEndpoint[Unit, Unit, LeaderResponseDto, Any] =
+    baseNuApiEndpoint
+      .summary("Returns whether this instance is the current HA leader")
+      .tag("App")
+      .get
+      .in("app" / "leader")
+      .out(
+        statusCode(Ok).and(
+          jsonBody[LeaderResponseDto]
+            .example(
+              Example.of(
+                summary = Some("This instance is the leader"),
+                value = LeaderResponseDto(isLeader = true, instanceId = Some("instance-1"))
+              )
+            )
+        )
+      )
 
   lazy val processValidationHealthCheckEndpoint
       : SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto, Any] =
@@ -267,6 +286,17 @@ object AppApiEndpoints {
       }
 
       def apply() = new HealthCheckProcessSuccessResponseDto(status = Status.Ok, message = None, processes = None)
+    }
+
+    @derive(decoder, schema)
+    final case class LeaderResponseDto private (
+        isLeader: Boolean,
+        instanceId: Option[String],
+    )
+
+    object LeaderResponseDto {
+      implicit val encoder: Encoder[LeaderResponseDto] =
+        deriveEncoder[LeaderResponseDto].mapJson(_.dropNullValues)
     }
 
     @derive(encoder, decoder, schema)

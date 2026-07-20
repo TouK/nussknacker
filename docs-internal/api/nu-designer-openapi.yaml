@@ -321,6 +321,25 @@ paths:
                   summary: Application is healthy
                   value:
                     status: OK
+  /api/app/leader:
+    get:
+      tags:
+      - App
+      summary: Application leader check service
+      operationId: getApiAppLeader
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderResponseDto'
+              examples:
+                Example:
+                  summary: This instance is the leader
+                  value:
+                    isLeader: true
+                    instanceId: instance-1
   /api/app/buildInfo:
     get:
       tags:
@@ -7100,6 +7119,18 @@ components:
         y:
           type: integer
           format: int64
+    LeaderResponseDto:
+      title: LeaderResponseDto
+      type: object
+      required:
+      - isLeader
+      properties:
+        isLeader:
+          type: boolean
+        instanceId:
+          type:
+          - string
+          - 'null'
     List_Field:
       title: List_Field
       oneOf:

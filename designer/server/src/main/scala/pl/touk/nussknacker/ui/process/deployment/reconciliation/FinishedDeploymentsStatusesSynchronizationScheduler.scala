@@ -2,35 +2,37 @@ package pl.touk.nussknacker.ui.process.deployment.reconciliation
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import pl.touk.nussknacker.ui.ha.Leadership
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Try
 
-// TODO: Properly handle HA setup: synchronizeAll() should be invoked only on one instance of designer in a time
 object FinishedDeploymentsStatusesSynchronizationScheduler extends LazyLogging {
 
   def resource(
       actorSystem: ActorSystem,
       reconciler: ScenarioDeploymentReconciler,
-      config: FinishedDeploymentsStatusesSynchronizationConfig
+      config: FinishedDeploymentsStatusesSynchronizationConfig,
+      leadership: Leadership
   ): Resource[IO, Cancellable] = {
     import actorSystem.dispatcher
 
     Resource.make(IO {
       actorSystem.scheduler.scheduleAtFixedRate(0 seconds, config.delayBetweenSynchronizations) { () =>
-        Try(
-          Await.result(reconciler.synchronizeEngineFinishedDeploymentsLocalStatuses(), config.synchronizationTimeout)
-        ).failed.foreach { ex =>
-          logger.error(
-            s"Error during finished deployments statuses synchronization. Synchronization will be retried in ${config.delayBetweenSynchronizations}",
-            ex
-          )
+        if (leadership.isLeader()) {
+          Try(
+            Await.result(reconciler.synchronizeEngineFinishedDeploymentsLocalStatuses(), config.synchronizationTimeout)
+          ).failed.foreach { ex =>
+            logger.error(
+              s"Error during finished deployments statuses synchronization. Synchronization will be retried in ${config.delayBetweenSynchronizations}",
+              ex
+            )
+          }
+        } else {
+          logger.debug("Skipping finished deployments statuses synchronization — not a leader")
         }
       }
     }) { scheduledJob =>

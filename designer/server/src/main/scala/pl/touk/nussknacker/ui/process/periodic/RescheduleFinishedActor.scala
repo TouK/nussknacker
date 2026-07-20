@@ -10,12 +10,12 @@ import scala.util.{Failure, Success}
 
 object RescheduleFinishedActor {
 
-  def props(service: PeriodicProcessService, interval: FiniteDuration): Props = {
-    props(service.handleFinished, interval)
+  def props(service: PeriodicProcessService, lock: PeriodicLock, interval: FiniteDuration): Props = {
+    props(service.handleFinished, lock, interval)
   }
 
-  private[periodic] def props(handleFinished: => Future[Unit], interval: FiniteDuration): Props = {
-    Props(new RescheduleFinishedActor(handleFinished, interval))
+  private[periodic] def props(handleFinished: => Future[Unit], lock: PeriodicLock, interval: FiniteDuration): Props = {
+    Props(new RescheduleFinishedActor(handleFinished, lock, interval))
   }
 
   private case object CheckStates
@@ -23,7 +23,7 @@ object RescheduleFinishedActor {
   private case object CheckStatesCompleted
 }
 
-class RescheduleFinishedActor(handleFinished: => Future[Unit], interval: FiniteDuration)
+class RescheduleFinishedActor(handleFinished: => Future[Unit], lock: PeriodicLock, interval: FiniteDuration)
     extends Actor
     with Timers
     with LazyLogging {
@@ -37,12 +37,21 @@ class RescheduleFinishedActor(handleFinished: => Future[Unit], interval: FiniteD
 
   override def receive: Receive = {
     case CheckStates =>
-      logger.trace("Checking scenarios to be rescheduled or marked as failed")
-      handleFinished onComplete {
-        case Success(_) =>
+      lock.acquireOrRenew().onComplete {
+        case Success(false) =>
+          logger.trace("Periodic lock not acquired, skipping rescheduling")
           self ! CheckStatesCompleted
+        case Success(true) =>
+          logger.trace("Checking scenarios to be rescheduled or marked as failed")
+          handleFinished.onComplete {
+            case Success(_) =>
+              self ! CheckStatesCompleted
+            case Failure(exception) =>
+              logger.error("Checking scenarios to be rescheduled or marked as failed finished with error", exception)
+              self ! CheckStatesCompleted
+          }
         case Failure(exception) =>
-          logger.error("Checking scenarios to be rescheduled or marked as failed finished with error", exception)
+          logger.warn("Failed to acquire periodic lock for rescheduling", exception)
           self ! CheckStatesCompleted
       }
     case CheckStatesCompleted =>

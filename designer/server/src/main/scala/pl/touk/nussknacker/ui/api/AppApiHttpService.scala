@@ -9,14 +9,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.scenariodetails.{
-  ScenarioStatusDetailsDto,
-  ScenarioStatusDto,
-  ScenarioStatusNameWrapperDto
-}
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDetailsDto, ScenarioStatusDto}
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.ha.Leadership
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -32,7 +29,8 @@ class AppApiHttpService(
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
-    shouldExposeConfig: Boolean
+    shouldExposeConfig: Boolean,
+    leadership: Leadership
 )(implicit ec: ExecutionContextWithIORuntime)
     extends BaseHttpService(authManager)
     with LazyLogging {
@@ -45,6 +43,18 @@ class AppApiHttpService(
     appApiEndpoints.appHealthCheckEndpoint
       .serverLogicSuccess { _ =>
         Future.successful(HealthCheckProcessSuccessResponseDto())
+      }
+  }
+
+  expose {
+    appApiEndpoints.appLeaderEndpoint
+      .serverLogicSuccess { _ =>
+        Future.successful(
+          LeaderResponseDto(
+            leadership.isLeader(),
+            leadership.instanceId
+          )
+        )
       }
   }
 

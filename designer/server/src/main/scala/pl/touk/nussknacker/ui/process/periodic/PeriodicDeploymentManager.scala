@@ -57,12 +57,13 @@ object PeriodicDeploymentManager {
     // if the actors (with the same names) created before reload aren't fully stopped (and their names freed) yet
     val deploymentActor = createActorWithRetry(
       s"periodic-${schedulingConfig.processingType}-deployer",
-      DeploymentActor.props(service, schedulingConfig.deployInterval),
+      DeploymentActor.props(service, schedulingDependencies.periodicLock, schedulingConfig.deployInterval),
       dmDependencies.actorSystem
     )
     val rescheduleFinishedActor = createActorWithRetry(
       s"periodic-${schedulingConfig.processingType}-rescheduler",
-      RescheduleFinishedActor.props(service, schedulingConfig.rescheduleCheckInterval),
+      RescheduleFinishedActor
+        .props(service, schedulingDependencies.periodicLock, schedulingConfig.rescheduleCheckInterval),
       dmDependencies.actorSystem
     )
 

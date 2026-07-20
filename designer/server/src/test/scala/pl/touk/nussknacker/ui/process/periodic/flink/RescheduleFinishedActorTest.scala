@@ -5,6 +5,8 @@ import org.apache.pekko.testkit.{TestKit, TestKitBase, TestProbe}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.ui.ha.DistributedLock
+import pl.touk.nussknacker.ui.process.periodic.PeriodicLock
 import pl.touk.nussknacker.ui.process.periodic.RescheduleFinishedActor
 
 import scala.concurrent.Future
@@ -20,6 +22,14 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
   }
+
+  private def lockReturning(value: Boolean) = new PeriodicLock(
+    new DistributedLock {
+      def acquireOrRenew(name: String, duration: FiniteDuration) = Future.successful(value)
+      def release(name: String)                                  = Future.unit
+    },
+    0.seconds
+  )
 
   test("should invoke handle finished repeatedly") {
     shouldInvokeHandleFinishedRepeatedly(Future.successful(()))
@@ -37,12 +47,25 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
       probe.ref ! s"invoked $counter"
       result
     }
-    val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, interval))
+    val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, lockReturning(true), interval))
 
     within(maxWaitTime) {
       probe.expectMsg("invoked 1")
       probe.expectMsg("invoked 2")
     }
+
+    system.stop(actor)
+  }
+
+  test("should not invoke handle finished if lock is not acquired") {
+    val probe = TestProbe()
+    def handleFinished: Future[Unit] = {
+      probe.ref ! "invoked"
+      Future.successful(())
+    }
+    val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, lockReturning(false), interval))
+
+    probe.expectNoMessage(maxWaitTime)
 
     system.stop(actor)
   }

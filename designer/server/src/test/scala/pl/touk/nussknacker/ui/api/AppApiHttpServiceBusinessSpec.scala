@@ -202,6 +202,22 @@ class AppApiHttpServiceBusinessSpec
     }
   }
 
+  "The app leader endpoint should" - {
+    "return leader status with no instanceId when HA is disabled" in {
+      given()
+        .when()
+        .noAuth()
+        .get(s"$nuDesignerHttpAddress/api/app/leader")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |  "isLeader": true
+             |}""".stripMargin
+        )
+    }
+  }
+
   "The app build info endpoint should" - {
     "return build info" in {
       given()
