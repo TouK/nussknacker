@@ -92,7 +92,6 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
     session.prepareStatement(s"""delete from "${getSchemaName()}"."fingerprints"""").execute()
     session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenarios"""").execute()
     session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenario_deployments"""").execute()
-    session.prepareStatement(s"""delete from "${getSchemaName()}"."distributed_locks"""").execute()
   }
 
 }
@@ -109,5 +108,13 @@ trait WithPostgresDbTesting
   self: Suite =>
 
   implicit val pc: PatienceConfig = PatienceConfig(Span(20, Seconds), Span(1, Second))
+
+  override def cleanDB(): Try[Unit] = {
+    val superResult = super.cleanDB()
+    val locksResult = Using(testDbRef.db.createSession()) { session =>
+      session.prepareStatement(s"""delete from "${getSchemaName()}"."distributed_locks"""").execute()
+    }.map(_ => ())
+    superResult.flatMap(_ => locksResult)
+  }
 
 }
