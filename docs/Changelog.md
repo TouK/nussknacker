@@ -15,7 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
-* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) Feature: High Availability (HA) mode for the Designer.
+* [#9416](https://github.com/TouK/nussknacker/pull/9416) Feature: High Availability (HA) mode for the Designer.
     * Multiple Designer instances can now run concurrently. All instances serve requests; coordinated operations (such as recovering failed deployments) are performed by the elected leader only. If the leader fails, another instance takes over automatically.
     * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>" }` — suitable for load-balancer routing.
     * HA mode is **opt-in** and disabled by default; existing single-instance deployments require no changes. See the [Migration Guide](MigrationGuide.md) for configuration details.

@@ -11,7 +11,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### High Availability (HA) mode
 
-* [#XXXX](https://github.com/TouK/nussknacker/pull/XXXX) A new optional `ha` configuration block enables running multiple Designer instances concurrently.
+* [#9416](https://github.com/TouK/nussknacker/pull/9416) A new optional `ha` configuration block enables running multiple Designer instances concurrently.
     * HA is disabled by default; add the block below to opt in:
 
 ```hocon
