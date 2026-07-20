@@ -109,12 +109,4 @@ trait WithPostgresDbTesting
 
   implicit val pc: PatienceConfig = PatienceConfig(Span(20, Seconds), Span(1, Second))
 
-  override def cleanDB(): Try[Unit] = {
-    val superResult = super.cleanDB()
-    val locksResult = Using(testDbRef.db.createSession()) { session =>
-      session.prepareStatement(s"""delete from "${getSchemaName()}"."distributed_locks"""").execute()
-    }.map(_ => ())
-    superResult.flatMap(_ => locksResult)
-  }
-
 }
