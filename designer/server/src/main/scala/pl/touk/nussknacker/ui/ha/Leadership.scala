@@ -93,7 +93,7 @@ class LeadershipService(
                 logger.warn("Leader heartbeat failed — relinquishing leadership", ex)
               }
           }
-          scheduleHeartbeat()
+          if (!shuttingDown.get()) scheduleHeartbeat()
         }
       }
     }

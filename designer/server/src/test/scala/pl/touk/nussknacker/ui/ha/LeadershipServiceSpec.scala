@@ -8,8 +8,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class LeadershipServiceSpec extends AnyFunSuite with TestKitBase with Matchers with BeforeAndAfterAll with Eventually {
@@ -155,10 +155,9 @@ class LeadershipServiceSpec extends AnyFunSuite with TestKitBase with Matchers w
       Future.successful(true)
     }
     eventually { service.isLeader() shouldBe true }
-    service.stop()
-    Thread.sleep(heartbeatInterval.toMillis * 3) // let any in-flight callback finish
+    Await.result(service.stop(), heartbeatInterval * 10)
     val countAfterStop = callCount
-    Thread.sleep(heartbeatInterval.toMillis * 5) // verify no new calls are scheduled
+    Thread.sleep(heartbeatInterval.toMillis * 5) // verify no new heartbeats are scheduled after stop
     callCount shouldBe countAfterStop
   }
 

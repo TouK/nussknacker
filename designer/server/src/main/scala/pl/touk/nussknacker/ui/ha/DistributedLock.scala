@@ -47,7 +47,8 @@ class SlickDistributedLock(
   override def release(name: String): Future[Unit] =
     run(releaseLock(name))
 
-  private val lockQueryTimeoutSeconds = lockQueryTimeout.toSeconds.toInt
+  // toSeconds truncates; JDBC setQueryTimeout(0) means "no timeout", so round up to at least 1 s
+  private val lockQueryTimeoutSeconds = Math.max(1, lockQueryTimeout.toSeconds.toInt)
 
   private def acquireOrRenewLock(name: String, durationMillis: Long): DBIO[Boolean] = {
     sqlu"""INSERT INTO "#${profile.schemaName}"."distributed_locks" (name, lock_until, locked_at, locked_by)

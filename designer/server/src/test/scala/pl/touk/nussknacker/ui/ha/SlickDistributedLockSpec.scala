@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.ha
 
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
@@ -7,20 +8,19 @@ import pl.touk.nussknacker.test.base.db.WithPostgresDbTesting
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.util.{Try, Using}
+import scala.util.Using
 
 @Slow
-class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgresDbTesting {
+class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgresDbTesting with BeforeAndAfterEach {
 
   private val lockName = "test-lock"
   private val duration = 30.seconds
 
-  override def cleanDB(): Try[Unit] = {
-    val superResult = super.cleanDB()
-    val locksResult = Using(testDbRef.db.createSession()) { session =>
-      session.prepareStatement(s"""DELETE FROM "${getSchemaName()}"."distributed_locks"""").execute()
-    }.map(_ => ())
-    superResult.flatMap(_ => locksResult)
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    Using(testDbRef.db.createSession()) { session =>
+      session.prepareStatement(s"""DELETE FROM "${getSchemaName()}".distributed_locks""").execute()
+    }
   }
 
   private def lock(instanceId: String) = SlickDistributedLock(testDbRef, instanceId, lockQueryTimeout = 5.seconds)
