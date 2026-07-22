@@ -4,16 +4,18 @@ import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalidNel, Valid}
 import cats.implicits._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.{EagerParameterEvaluationResult, JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler.CompiledNodeParameters
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   MultipleInputBranchesNodeInputValidationContext,
   NodeInputValidationContext,
+  ParameterEvaluator,
   SingleInputNodeInputValidationContext
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
@@ -40,7 +42,14 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
+import scala.util.Try
+
 object ExpressionCompiler {
+
+  final case class CompiledNodeParameters(
+      parameters: List[(TypedParameter, Parameter)],
+      evaluationResults: Map[ParameterName, EagerParameterEvaluationResult]
+  )
 
   def withOptimization(
       loader: ClassLoader,
@@ -127,6 +136,9 @@ class ExpressionCompiler(
     expressionEvaluator: ExpressionEvaluator
 ) {
 
+  // Runtime-evaluator slot is unused here (only compile-time value resolution)
+  private lazy val parameterEvaluator = new ParameterEvaluator(expressionEvaluator, expressionEvaluator, this)
+
   // used only for services and fragments - in places where component is an Executor instead of a factory
   // that creates Executor
   def compileExecutorComponentNodeParameters(
@@ -142,9 +154,11 @@ class ExpressionCompiler(
       nodeParameters = nodeParameters,
       nodeBranchParameters = List.empty,
       inputContext = inputContext,
-      treatEagerParametersAsLazy = true
-    ).flatMap { compiledParamsWithDefs =>
-      compiledParamsWithDefs
+      treatEagerParametersAsLazy = true,
+      // services and fragments have no earlier parameters-evaluation pass whose results could be reused
+      evaluatedParamsResults = Map.empty
+    ).flatMap { compiledNodeParams =>
+      compiledNodeParams.parameters
         .map {
           case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
             paramDef.validators
@@ -165,11 +179,12 @@ class ExpressionCompiler(
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
       inputContext: NodeInputValidationContext,
-      treatEagerParametersAsLazy: Boolean = false
+      treatEagerParametersAsLazy: Boolean = false,
+      evaluatedParamsResults: Map[ParameterName, EagerParameterEvaluationResult]
   )(
       implicit nodeId: NodeId,
       jobData: JobData
-  ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
+  ): IorNel[PartSubGraphCompilationError, ExpressionCompiler.CompiledNodeParameters] = {
     def compileParameters(parameterByName: Map[ParameterName, NodeParameter]) = {
       val adjustedParameters = NodeParametersAdjuster.adjustNonBranchParameters(
         parameterDefinitions,
@@ -212,6 +227,62 @@ class ExpressionCompiler(
       val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
       allCompiledParams
     }
+
+    // Evaluates the parameters against the dummy context so custom validators can inspect values the typer
+    // can't determine statically (e.g. `T(...).parse('...')`). Skips params whose result nothing would use:
+    // literals (the typer already knows their value), params with no validators, and params whose expression
+    // reads context variables (see `isContextFree`) - those are validated only at runtime.
+    def evaluateParamsForCompileTimeValidation(
+        compiledParams: List[(TypedParameter, Parameter)]
+    ): Map[ParameterName, EagerParameterEvaluationResult] =
+      compiledParams.flatMap { case (typedParam, paramDef) =>
+        def literalValueNotSet: Boolean = typedParam.typedValue match {
+          case single: SingleBranchTypedValue =>
+            single.typedExpression.returnType.valueOpt.isEmpty
+          case MultipleBranchesTypedValue(valueByBranchId) =>
+            valueByBranchId.values.exists(_.typedExpression.returnType.valueOpt.isEmpty)
+        }
+
+        def safelyEvaluable: Boolean = typedParam.typedValue match {
+          case single: SingleBranchTypedValue =>
+            (!paramDef.isLazyParameter && !treatEagerParametersAsLazy) || isContextFree(single, paramDef)
+          case MultipleBranchesTypedValue(valueByBranchId) =>
+            // Branches whose value the typer already knows skip the (costly) `isContextFree` check - a value the
+            // typer could fold is a literal, so it can't read the context and is safe to evaluate as-is.
+            valueByBranchId.values.forall(value =>
+              value.typedExpression.returnType.valueOpt.isDefined || isContextFree(value, paramDef)
+            )
+        }
+
+        evaluatedParamsResults.get(typedParam.name) match {
+          case Some(alreadyEvaluated) =>
+            Some(typedParam.name -> alreadyEvaluated)
+          case None if paramDef.validators.nonEmpty && literalValueNotSet && safelyEvaluable =>
+            // evaluateEagerParameter evaluates by value, ignoring isLazyParameter - it works for lazy params too.
+            // Evaluation may throw (e.g. a runtime error in the expression); such params are skipped - the value
+            // simply isn't handed to validators and compilation is not aborted.
+            Try(parameterEvaluator.evaluateEagerParameter(typedParam, paramDef)).toOption.map(typedParam.name -> _)
+          case None =>
+            None
+        }
+
+      }.toMap
+
+    // Checks that the expression doesn't read context variables (absent from the dummy context, they would resolve
+    // to null) by recompiling it against a context with only globals and fixed-value additional variables.
+    def isContextFree(single: SingleBranchTypedValue, paramDef: Parameter): Boolean = {
+      val fixedValueAdditionalVariables = paramDef.additionalVariables.collect {
+        case (name, additionalVariable: AdditionalVariableWithFixedValue) => name -> additionalVariable.typingResult
+      }
+
+      val contextFreeCtx =
+        single.expressionInputValidationContext.clearVariables.copy(localVariables = fixedValueAdditionalVariables)
+
+      val rawExpression = single.typedExpression.expression.toExpression
+
+      compile(rawExpression, Some(paramDef.name), contextFreeCtx, paramDef.typ).isValid
+    }
+
     for {
       parameterByName <- nodeParameters
         .map(param => (param.name, param))
@@ -220,17 +291,23 @@ class ExpressionCompiler(
         .toIor
       compiledParams <- compileParameters(parameterByName).toIor
       paramValidatorsMap     = parameterValidatorsMap(parameterDefinitions, inputContext.globalVariables)
-      customValidatorsResult = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap)
+      evaluatedParamsResults = evaluateParamsForCompileTimeValidation(compiledParams)
+      customValidatorsResult =
+        CompileTimeParameterValidation.validateWithCustomValidators(
+          compiledParams,
+          paramValidatorsMap,
+          evaluatedParamsResults
+        )
       // We want to accumulate errors from custom validators, but also preserve typing information from allCompiledParams
       // even if custom validators return some errors
       _ <- customValidatorsResult.toIor.addRight(())
-    } yield compiledParams
+    } yield CompiledNodeParameters(compiledParams, evaluatedParamsResults)
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(
       implicit nodeId: NodeId,
       jobData: JobData
-  ) =
+  ): Map[ParameterName, ValidatedNel[PartSubGraphCompilationError, List[Validator]]] =
     parameterDefinitions
       .map(p => p.name -> p.validators.map { v => compileValidator(v, p.name, p.typ, globalVariables) }.sequence)
       .toMap

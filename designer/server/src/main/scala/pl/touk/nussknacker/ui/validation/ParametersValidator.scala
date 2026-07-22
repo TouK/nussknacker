@@ -58,6 +58,7 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
         nodeParameters = evaluatedParameters,
         nodeBranchParameters = Nil,
         inputContext = SingleInputNodeInputValidationContext(context),
+        evaluatedParamsResults = Map.empty,
       )
       .left
       .fold(List.empty[NodeValidationError])(_.map(PrettyValidationErrors.formatErrorMessage).toList)

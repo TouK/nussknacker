@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefin
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -39,6 +40,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     ComponentDefinition("producingTupleTransformer", ProducingTupleTransformer),
     ComponentDefinition("unionTransformer", UnionTransformer),
     ComponentDefinition("unionTransformerWithMainBranch", UnionTransformerWithMainBranch),
+    ComponentDefinition("unionTransformerWithEagerBranchParam", UnionTransformerWithEagerBranchParam),
     ComponentDefinition("nonEndingCustomNodeReturningTransformation", NonEndingCustomNodeReturningTransformation),
     ComponentDefinition("nonEndingCustomNodeReturningUnit", NonEndingCustomNodeReturningUnit),
     ComponentDefinition("addingVariableOptionalEndingCustomNode", AddingVariableOptionalEndingStreamTransformer),
@@ -600,6 +602,54 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     validationResult.result should matchPattern { case Valid(_) =>
     }
   }
+
+  test("NotBlankValidator rejects an eager branch param whose evaluated value is blank") {
+    // '.substring(1)' can't be folded by the typer, so the value comes from compile-time evaluation
+    val process = processWithEagerBranchLabels(
+      branch1Label = "'a'.substring(1)".spel,
+      branch2Label = "'main'".spel
+    )
+
+    val validationResult = validate(process)
+    validationResult.result should matchPattern {
+      case Invalid(
+            NonEmptyList(BlankParameter(_, _, ParameterName("label for branch branch1"), "join1"), Nil)
+          ) =>
+    }
+  }
+
+  test("NotBlankValidator allows an eager branch param whose evaluated value is not blank") {
+    val process = processWithEagerBranchLabels(
+      branch1Label = "'ab'.substring(1)".spel,
+      branch2Label = "'main'".spel
+    )
+
+    val validationResult = validate(process)
+    validationResult.result shouldBe Symbol("valid")
+  }
+
+  private def processWithEagerBranchLabels(branch1Label: Expression, branch2Label: Expression) =
+    ScenarioBuilder
+      .streaming("proc1")
+      .sources(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("sourceId2", "mySource")
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .join(
+            "join1",
+            "unionTransformerWithEagerBranchParam",
+            Some("outPutVar"),
+            List(
+              "branch1" -> List("value" -> "'ala'".spel, "label" -> branch1Label),
+              "branch2" -> List("value" -> "123".spel, "label" -> branch2Label)
+            )
+          )
+          .emptySink("sink", "dummySink")
+      )
 
   test("validate union using variables in branches with custom nodes") {
     val process = ScenarioBuilder
