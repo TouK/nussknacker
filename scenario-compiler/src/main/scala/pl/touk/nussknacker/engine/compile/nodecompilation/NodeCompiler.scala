@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.ComponentExecutorFactory.ComponentExecutorDependencies
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler.CompiledNodeParameters
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{
   CompilesTo,
   EnricherCompilationResult,
@@ -238,7 +239,7 @@ class NodeCompiler(
     new StaticComponentOutputValidationContextDeterminer(globalVariablesPreparer)
 
   private val parametersEvaluator =
-    new ParameterEvaluator(globalVariablesPreparer, listeners, expressionCompiler)
+    ParameterEvaluator(globalVariablesPreparer, listeners, expressionCompiler)
 
   private val factory = new ComponentExecutorFactory(parametersEvaluator)
 
@@ -741,20 +742,29 @@ class NodeCompiler(
               nodeInputValidationContext = inputContext
             )
             .map {
-              case TransformationResult(Nil, computedParameters, outputValidationContext, finalState, nodeParameters) =>
+              case TransformationResult(
+                    Nil,
+                    computedParameters,
+                    outputValidationContext,
+                    finalState,
+                    nodeParameters,
+                    eagerEvaluatedParamsResults
+                  ) =>
                 val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
                 val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
                 val (typingInfo, validComponentExecutor) = withCompiledParameters[ComponentExecutor](
                   parameterDefinitionsToUse = computedParameters,
                   nodeParameters = withoutRedundant,
                   nodeBranchParameters = nodeData.branchParametersOrEmpty,
-                  nodeInputValidationContext = inputContext
-                ) { compiledParameters =>
+                  nodeInputValidationContext = inputContext,
+                  evaluatedParamsResults = eagerEvaluatedParamsResults
+                ) { compiledNodeParameters =>
                   factory
                     .createComponentExecutor[ComponentExecutor](
                       new ComponentExecutorDependencies(
                         componentDefinition = componentDefinition,
-                        compiledParameters = compiledParameters,
+                        compiledParameters = compiledNodeParameters.parameters,
+                        compilationEvaluationResults = compiledNodeParameters.evaluationResults,
                         nodeCompilationDependencies = nodeCompilationDependencies,
                         nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
                         invocationContext =
@@ -768,7 +778,7 @@ class NodeCompiler(
                   outputValidationContext,
                   validComponentExecutor.map((_, withoutRedundant))
                 )
-              case TransformationResult(h :: t, computedParameters, outputContext, _, _) =>
+              case TransformationResult(h :: t, computedParameters, outputContext, _, _, _) =>
                 // TODO: typing info here??
                 (
                   Map.empty[String, ExpressionTypingInfo],
@@ -788,14 +798,17 @@ class NodeCompiler(
           parameterDefinitionsToUse = staticComponent.parameters,
           nodeParameters = nodeData.parametersOrEmpty,
           nodeBranchParameters = nodeData.branchParametersOrEmpty,
-          nodeInputValidationContext = inputContext
-        ) { compiledParameters =>
+          nodeInputValidationContext = inputContext,
+          // static components have no earlier parameters-evaluation pass whose results could be reused
+          evaluatedParamsResults = Map.empty
+        ) { compiledNodeParameters =>
           factory
             .createComponentExecutor[Any]( // We expect either ComponentExecutor or ContextTransformation
               new ComponentExecutorDependencies(
                 componentDefinition = componentDefinition,
                 nodeCompilationDependencies = createNodeCompilationDependencies(nodeData, inputContext),
-                compiledParameters = compiledParameters,
+                compiledParameters = compiledNodeParameters.parameters,
+                compilationEvaluationResults = compiledNodeParameters.evaluationResults,
                 nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
                 invocationContext = None,
               )
@@ -839,7 +852,8 @@ class NodeCompiler(
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
       nodeInputValidationContext: NodeInputValidationContext,
-  )(f: List[(TypedParameter, Parameter)] => IorNel[ProcessCompilationError, T])(
+      evaluatedParamsResults: Map[ParameterName, EagerParameterEvaluationResult],
+  )(f: CompiledNodeParameters => IorNel[ProcessCompilationError, T])(
       implicit nodeId: NodeId,
       nodeName: NodeName,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
@@ -847,16 +861,17 @@ class NodeCompiler(
     import scenarioCompilationDependencies._
 
     val compiledExecutorWithTypingInfo = for {
-      compiledParameters <- expressionCompiler
+      compiledNodeParameters <- expressionCompiler
         .compileNodeParameters(
           parameterDefinitions = parameterDefinitionsToUse,
           nodeParameters = nodeParameters,
           nodeBranchParameters = nodeBranchParameters,
           inputContext = nodeInputValidationContext,
+          evaluatedParamsResults = evaluatedParamsResults,
         )
-      result <- f(compiledParameters)
+      result <- f(compiledNodeParameters)
     } yield {
-      val typingInfo = compiledParameters.flatMap {
+      val typingInfo = compiledNodeParameters.parameters.flatMap {
         case (TypedParameter(name, SingleBranchTypedValue(TypedExpression(_, typingInfo), _)), _) =>
           List(name.value -> typingInfo)
         case (TypedParameter(paramName, MultipleBranchesTypedValue(valueByBranch)), _) =>

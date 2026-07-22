@@ -13,22 +13,29 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationS
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.expression.parse.{MultipleBranchesTypedValue, SingleBranchTypedValue, TypedExpression}
-import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
+object ParameterEvaluator {
+
+  def apply(
+      globalVariablesPreparer: GlobalVariablesPreparer,
+      listeners: Seq[ProcessListener],
+      expressionCompiler: ExpressionCompiler
+  ): ParameterEvaluator =
+    new ParameterEvaluator(
+      compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer),
+      runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners),
+      expressionCompiler = expressionCompiler
+    )
+
+}
+
 class ParameterEvaluator(
-    globalVariablesPreparer: GlobalVariablesPreparer,
-    listeners: Seq[ProcessListener],
+    compileTimeExpressionEvaluator: ExpressionEvaluator,
+    runtimeExpressionEvaluator: ExpressionEvaluator,
     expressionCompiler: ExpressionCompiler,
 ) {
-
-  private val compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-
-  private val runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(
-    globalVariablesPreparer,
-    listeners,
-  )
 
   private val contextToUse: Context = Context.dummy
 
@@ -50,7 +57,7 @@ class ParameterEvaluator(
     if (definition.isLazyParameter) {
       Right(evaluateLazyParameter(typedParameter, definition))
     } else {
-      prepareEagerParameter(typedParameter, definition)
+      evaluateEagerParameter(typedParameter, definition)
     }
   }
 
@@ -78,7 +85,7 @@ class ParameterEvaluator(
     }
   }
 
-  private def prepareEagerParameter(
+  def evaluateEagerParameter(
       param: TypedParameter,
       definition: ParameterDef
   )(
@@ -89,17 +96,17 @@ class ParameterEvaluator(
       case (name, AdditionalVariableWithFixedValue(value, _)) =>
         name -> value
     }
-    val augumentedCtx = contextToUse.withVariables(additionalDefinitions)
+    val augmentedCtx = contextToUse.withVariables(additionalDefinitions)
 
     param.typedValue match {
       case single: SingleBranchTypedValue if !definition.branchParam =>
-        evaluateSync(CompiledParameter(single.typedExpression, definition), augumentedCtx).map { evaluatedValue =>
+        evaluateSync(CompiledParameter(single.typedExpression, definition), augmentedCtx).map { evaluatedValue =>
           SingleEagerParameterEvaluationResult(evaluatedValue, single.typedExpression.returnType)
         }
       case MultipleBranchesTypedValue(valueByBranchId) if definition.branchParam =>
         valueByBranchId.toList
           .map { case (branchId, exp) =>
-            evaluateSync(CompiledParameter(exp.typedExpression, definition), augumentedCtx).map(branchId -> _)
+            evaluateSync(CompiledParameter(exp.typedExpression, definition), augmentedCtx).map(branchId -> _)
           }
           .sequence
           .map(_.toMap)
@@ -115,7 +122,7 @@ class ParameterEvaluator(
 
   private def prepareLazyParameterExpression(
       definition: ParameterDef,
-      exprValue: TypedExpression,
+      typedExpression: TypedExpression,
       validationContext: ValidationContext
   )(
       implicit jobData: JobData,
@@ -125,9 +132,9 @@ class ParameterEvaluator(
     val creator = new EvaluableLazyParameterCreator[Nothing](
       nodeId,
       definition,
-      graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
+      typedExpression.expression.toExpression,
       validationContext,
-      exprValue.returnType
+      typedExpression.returnType
     )
     lazyParameterCreationStrategy match {
       case EvaluableLazyParameterStrategy =>
@@ -135,7 +142,7 @@ class ParameterEvaluator(
           expressionCompiler.compileValidatorsOrThrow(definition, validationContext.globalVariables)
         new EvaluableLazyParameter[Nothing](
           creator,
-          CompiledParameter(exprValue, definition, compiledValidators),
+          CompiledParameter(typedExpression, definition, compiledValidators),
           runtimeExpressionEvaluator,
           nodeId,
           jobData

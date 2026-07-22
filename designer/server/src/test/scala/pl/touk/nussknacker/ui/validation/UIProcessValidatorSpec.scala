@@ -1680,14 +1680,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test(
-    "ValidationExpressionParameterValidator should not fail if expression value is not compile-time evaluable"
+    "ValidationExpressionParameterValidator should not fail if expression reads context variables and is not evaluated at compile time"
   ) {
     val process = processWithService(
       LocalDateTimeParameterService.serviceId,
       List(
         NodeParameter(
           ParameterName("localDateTimeParam"),
-          Expression.spel("T(java.time.LocalDateTime).now")
+          Expression.spel("T(java.time.LocalDateTime).parse(#input.toString)")
         ),
       )
     )
@@ -2677,7 +2677,7 @@ private object UIProcessValidatorSpec {
     @MethodToInvoke
     def method(
         @ParamName("localDateTimeParam")
-        localDateTimeParam: Option[LocalDateTime]
+        localDateTimeParam: LazyParameter[LocalDateTime]
     ): Future[String] = ???
 
   }

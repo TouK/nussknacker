@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.Instant
-import javax.validation.constraints.NotBlank
+import javax.validation.constraints.{Min, NotBlank}
 import scala.concurrent.Future
 import scala.reflect.{classTag, ClassTag}
 
@@ -142,6 +142,26 @@ object validationHelpers {
 
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
+        }
+        .notImplemented[DummyStreamTransformerImplementation]
+    }
+
+  }
+
+  object UnionTransformerWithEagerBranchParam extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(
+        @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[_]],
+        @BranchParamName("label") @NotBlank labelByBranchId: Map[String, String],
+        @OutputVariableName variableName: String
+    ): JoinContextTransformation = {
+      ContextTransformation.join
+        .definedBy { contexts =>
+          val newType = Typed.record(contexts.toSeq.map { case (branchId, _) =>
+            branchId -> valueByBranchId(branchId).returnType
+          })
+          Valid(ValidationContext(Map(variableName -> newType)))
         }
         .notImplemented[DummyStreamTransformerImplementation]
     }
@@ -284,6 +304,46 @@ object validationHelpers {
     ): Validated[Unit, Int] = finalState.get
 
     override def nodeDependencies: List[NodeDependency] = List.empty
+  }
+
+  object EagerValueValidatingTransformer extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(@ParamName("value") @Min(value = 5) value: java.lang.Long): ContextTransformation =
+      ContextTransformation
+        .definedBy(Valid(_))
+        .notImplemented[DummyStreamTransformerImplementation]
+
+  }
+
+  object LazyValueValidatingTransformer extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(@ParamName("value") @Min(value = 5) value: LazyParameter[java.lang.Long]): ContextTransformation =
+      ContextTransformation
+        .definedBy(Valid(_))
+        .notImplemented[DummyStreamTransformerImplementation]
+
+  }
+
+  object OptionalEagerValueValidatingTransformer extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(@ParamName("value") @Min(value = 5) value: Option[java.lang.Long]): ContextTransformation =
+      ContextTransformation
+        .definedBy(Valid(_))
+        .notImplemented[DummyStreamTransformerImplementation]
+
+  }
+
+  object JavaOptionalEagerValueValidatingTransformer extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(@ParamName("value") @Min(value = 5) value: java.util.Optional[java.lang.Long]): ContextTransformation =
+      ContextTransformation
+        .definedBy(Valid(_))
+        .notImplemented[DummyStreamTransformerImplementation]
+
   }
 
   class GenericParametersSource extends SourceFactory with GenericParameters with UnboundedStreamComponent {
