@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.ComponentExecutorFactory.ComponentExecutorDependencies
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
@@ -38,7 +39,10 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       }
     val paramsMap = Params.fromParameterEvaluationResultMap(
       deps.compiledParameters.map { case (tp, p) =>
-        p.name -> parameterEvaluator.evaluateParameter(tp, p)
+        // Reuse eager results precomputed during node parameters compilation. Entries for lazy params are skipped -
+        // they are validation-only snapshots (context-free != deterministic, e.g. `#DATE.now()`) is not LazyParameter
+        val precomputedResult = if (p.isLazyParameter) None else deps.compilationEvaluationResults.get(p.name)
+        p.name -> precomputedResult.getOrElse(parameterEvaluator.evaluateParameter(tp, p))
       }.toMap
     )
 
@@ -59,6 +63,7 @@ object ComponentExecutorFactory {
       val componentDefinition: ComponentDefinitionWithImplementation,
       val nodeCompilationDependencies: NodeCompilationDependencies,
       val compiledParameters: List[(TypedParameter, Parameter)],
+      val compilationEvaluationResults: Map[ParameterName, EagerParameterEvaluationResult],
       val nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
       val invocationContext: Option[ComponentImplementationSpecificInvocationContext],
   ) {

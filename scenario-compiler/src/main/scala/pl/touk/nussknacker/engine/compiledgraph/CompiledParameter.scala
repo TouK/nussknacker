@@ -33,8 +33,7 @@ final case class CompiledParameter(
     validators: List[Validator],
 ) extends BaseCompiledParameter {
 
-  val expressionForValidation: Expression =
-    Expression(expression.language, expression.original)
+  val expressionForValidation: Expression = expression.toExpression
 
   lazy val runtimeValidators: List[RuntimeValidator] =
     validators.collect { case v: RuntimeValidator => v }

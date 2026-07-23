@@ -11,9 +11,18 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
+import pl.touk.nussknacker.engine.compile.{
+  CompileTimeParameterValidation,
+  ExpressionCompiler,
+  NodeValidationExceptionHandler
+}
+import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator.{
+  CompiledParameterWithValidators,
+  EvaluatedNodeParameter,
+  EvaluatedParameter
+}
 import pl.touk.nussknacker.engine.compile.nodecompilation.ImplicitSourceOutputVariableHandler.NodeDataExt
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.NodeCompilationDependencies
@@ -89,7 +98,7 @@ class DynamicNodeValidator(
 
     @tailrec
     final def processRemainingTransformationSteps(
-        evaluatedNodeParametersSoFar: List[(Parameter, BaseDefinedParameter)],
+        evaluatedNodeParametersSoFar: List[EvaluatedNodeParameter],
         stateForFar: Option[component.State],
         errors: List[ProcessCompilationError],
         nodeParameters: List[NodeParameter]
@@ -98,7 +107,7 @@ class DynamicNodeValidator(
         evaluatedNodeParametersSoFar
           // unfortunately, this cast is needed as we have no easy way to statically check if Parameter definitions
           // are branch or not...
-          .map(a => (a._1.name, a._2.asInstanceOf[component.DefinedParameter])),
+          .map(a => (a.definition.name, a.evaluatedParameter.asInstanceOf[component.DefinedParameter])),
         stateForFar
       )
 
@@ -112,10 +121,11 @@ class DynamicNodeValidator(
         Valid(
           TransformationResult(
             errors ++ fallbackResult.errors,
-            evaluatedNodeParametersSoFar.map(_._1),
+            evaluatedNodeParametersSoFar.map(_.definition),
             fallbackResult.finalContext,
             fallbackResult.state,
-            nodeParameters
+            nodeParameters,
+            eagerResultsOf(evaluatedNodeParametersSoFar)
           )
         )
       }
@@ -131,14 +141,15 @@ class DynamicNodeValidator(
               val allErrors = (errorsCombined ++ errors).distinct
               // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
               val finalParametersDefinition =
-                evaluatedNodeParametersSoFar.map(_._1).transformLast(_.copy(changesCanReloadParameters = false))
+                evaluatedNodeParametersSoFar.map(_.definition).transformLast(_.copy(changesCanReloadParameters = false))
               Valid(
                 TransformationResult(
                   allErrors,
                   finalParametersDefinition,
                   finalContext,
                   state,
-                  nodeParameters
+                  nodeParameters,
+                  eagerResultsOf(evaluatedNodeParametersSoFar)
                 )
               )
             case component.NextParameters(Nil, _, _) =>
@@ -158,14 +169,25 @@ class DynamicNodeValidator(
                 newParametersDefinition.foldLeft(
                   (evaluatedNodeParametersSoFar, errorsCombined ++ newParameterErrors, nodeParameters)
                 ) { case ((evaluatedNodeParametersAcc, errorsAcc, nodeParametersAcc), newParameterDefinition) =>
-                  val parameterEvaluationResult = evaluateParameter(newParameterDefinition, nodeParametersAcc)
-                  val (paramEvaluationError, newEvaluatedParam, extraNodeParamOpt) = parameterEvaluationResult
-                    .map { case (evaluatedValue, extraNodeParamOpt) =>
-                      (List.empty[ProcessCompilationError], evaluatedValue, extraNodeParamOpt)
-                    }
-                    .valueOr(ne => (ne.toList, FailedToDefineParameter(ne), None))
+                  val parameterEvaluationResult =
+                    evaluateAndValidateParameter(newParameterDefinition, nodeParametersAcc)
+                  val (paramEvaluationError, newEvaluatedParam, eagerResultOpt, extraNodeParamOpt) =
+                    parameterEvaluationResult
+                      .map { evaluated =>
+                        (
+                          List.empty[ProcessCompilationError],
+                          evaluated.definedParameter,
+                          evaluated.eagerEvaluationResultOpt,
+                          evaluated.extraNodeParamOpt
+                        )
+                      }
+                      .valueOr(ne => (ne.toList, FailedToDefineParameter(ne), None, None))
                   (
-                    evaluatedNodeParametersAcc :+ (newParameterDefinition, newEvaluatedParam),
+                    evaluatedNodeParametersAcc :+ EvaluatedNodeParameter(
+                      newParameterDefinition,
+                      newEvaluatedParam,
+                      eagerResultOpt
+                    ),
                     errorsAcc ++ paramEvaluationError,
                     nodeParametersAcc ++ extraNodeParamOpt
                   )
@@ -188,31 +210,51 @@ class DynamicNodeValidator(
           Valid(
             TransformationResult(
               errors ++ fallbackResult.errors,
-              evaluatedNodeParametersSoFar.map(_._1),
+              evaluatedNodeParametersSoFar.map(_.definition),
               fallbackResult.finalContext,
               fallbackResult.state,
-              nodeParameters
+              nodeParameters,
+              eagerResultsOf(evaluatedNodeParametersSoFar)
             )
           )
       }
     }
 
-    private def evaluateParameter(
+    private def eagerResultsOf(
+        evaluatedParameters: List[EvaluatedNodeParameter]
+    ): Map[ParameterName, EagerParameterEvaluationResult] =
+      evaluatedParameters.flatMap { evaluated =>
+        evaluated.eagerEvaluationResultOpt.map(evaluated.definition.name -> _)
+      }.toMap
+
+    private def evaluateAndValidateParameter(
         parameterDefinition: Parameter,
         nodeParameters: List[NodeParameter]
-    ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[NodeParameter])] = {
-      val compiledParameter = compileParameter(parameterDefinition, nodeParameters)
-      compiledParameter.map { case (typedParameter, extraNodeParamOpt) =>
-        val definedParam =
-          parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition) match {
-            case SingleEagerParameterEvaluationResult(value, returnType) => DefinedEagerParameter(value, returnType)
-            case SingleLazyParameterEvaluationResult(lazyParameter) => DefinedLazyParameter(lazyParameter.returnType)
+    ): ValidatedNel[ProcessCompilationError, EvaluatedParameter] = {
+      compileParameter(parameterDefinition, nodeParameters).andThen {
+        case CompiledParameterWithValidators(typedParameter, validators, extraNodeParamOpt) =>
+          // Evaluate the parameter once and reuse that single result both to build the DefinedParameter and to feed the
+          // value to compile-time validators, so the same expression isn't evaluated twice. An evaluation failure
+          // throws and is turned into a node error by NodeValidationExceptionHandler, like any other parameter
+          // evaluation.
+          val evaluationResult = parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition)
+          val definedParameter = evaluationResult match {
+            case SingleEagerParameterEvaluationResult(value, returnType) =>
+              DefinedEagerParameter(value, returnType)
+            case SingleLazyParameterEvaluationResult(lazyParameter) =>
+              DefinedLazyParameter(lazyParameter.returnType)
             case BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId) =>
               DefinedEagerBranchParameter(valueByBranchId, returnTypeByBranchId)
             case BranchLazyParameterEvaluationResult(lazyParamByBranchId) =>
               DefinedLazyBranchParameter(lazyParamByBranchId.mapValuesNow(_.returnType))
           }
-        (definedParam, extraNodeParamOpt)
+          val eagerResultOpt = evaluationResult match {
+            case eager: EagerParameterEvaluationResult => Some(eager)
+            case _: LazyParameterEvaluationResult      => None
+          }
+          CompileTimeParameterValidation
+            .validate(validators, typedParameter, eagerResultOpt)
+            .map(_ => EvaluatedParameter(definedParameter, eagerResultOpt, extraNodeParamOpt))
       }
     }
 
@@ -220,7 +262,7 @@ class DynamicNodeValidator(
     //       we should unify them a bit in the future
     private def compileParameter(parameter: Parameter, nodeParameters: List[NodeParameter]): ValidatedNel[
       ProcessCompilationError,
-      (TypedParameter, Option[NodeParameter])
+      CompiledParameterWithValidators
     ] = if (parameter.branchParam) {
       compileBranchParameter(parameter)
     } else {
@@ -229,7 +271,7 @@ class DynamicNodeValidator(
 
     private def compileBranchParameter(
         parameter: Parameter
-    ): ValidatedNel[ProcessCompilationError, (TypedParameter, None.type)] = {
+    ): ValidatedNel[ProcessCompilationError, CompiledParameterWithValidators] = {
       val branchContexts  = inputContext.asInstanceOf[Map[String, ValidationContext]]
       val globalVariables = branchContexts.headOption.map(_._2.globalVariables).getOrElse(Map.empty)
 
@@ -250,7 +292,7 @@ class DynamicNodeValidator(
           validatorsCompilationResult.andThen { validators =>
             expressionCompiler
               .compileBranchParam(branchParams, branchContexts, parameter)
-              .andThen(typedParam => Validations.validate(validators, typedParam).map(_ => (typedParam, None)))
+              .map(typedParam => CompiledParameterWithValidators(typedParam, validators, extraNodeParamOpt = None))
           }
         }
     }
@@ -258,7 +300,7 @@ class DynamicNodeValidator(
     private def compileSingleParameter(
         parameter: Parameter,
         nodeParameters: List[NodeParameter]
-    ): ValidatedNel[PartSubGraphCompilationError, (TypedParameter, Option[NodeParameter])] = {
+    ): ValidatedNel[PartSubGraphCompilationError, CompiledParameterWithValidators] = {
       val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
         val paramToAdd =
           NodeParameter(parameter.name, parameter.finalDefaultValue)
@@ -279,7 +321,7 @@ class DynamicNodeValidator(
       validatorsCompilationResult.andThen { validators =>
         expressionCompiler
           .compileParam(singleParam, ctxToUse, parameter)
-          .andThen(typedParam => Validations.validate(validators, typedParam).map(_ => (typedParam, extraNodeParamOpt)))
+          .map(typedParam => CompiledParameterWithValidators(typedParam, validators, extraNodeParamOpt))
       }
     }
 
@@ -289,13 +331,33 @@ class DynamicNodeValidator(
 
 object DynamicNodeValidator {
 
+  private final case class CompiledParameterWithValidators(
+      typedParameter: TypedParameter,
+      validators: List[Validator],
+      extraNodeParamOpt: Option[NodeParameter]
+  )
+
+  private final case class EvaluatedParameter(
+      definedParameter: BaseDefinedParameter,
+      eagerEvaluationResultOpt: Option[EagerParameterEvaluationResult],
+      extraNodeParamOpt: Option[NodeParameter]
+  )
+
+  // Carries the evaluated parameters accumulated across transformation steps together with the (optional) eager
+  // evaluation result, so it can later be reused for compile-time validation and by the component executor factory.
+  private final case class EvaluatedNodeParameter(
+      definition: Parameter,
+      evaluatedParameter: BaseDefinedParameter,
+      eagerEvaluationResultOpt: Option[EagerParameterEvaluationResult]
+  )
+
   def apply(modelData: ModelData): DynamicNodeValidator = {
     val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
     val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData)
     new DynamicNodeValidator(
       expressionCompiler,
       globalVariablesPreparer,
-      new ParameterEvaluator(
+      ParameterEvaluator(
         globalVariablesPreparer,
         Seq.empty,
         expressionCompiler,
@@ -311,5 +373,6 @@ case class TransformationResult(
     parameters: List[Parameter],
     outputContext: ValidationContext,
     finalState: Option[Any],
-    nodeParameters: List[NodeParameter]
+    nodeParameters: List[NodeParameter],
+    evaluatedParamsResults: Map[ParameterName, EagerParameterEvaluationResult]
 )
