@@ -56,7 +56,7 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite wi
   private def determine(editors: List[ParameterEditor]): Option[Expression] = {
     EditorPossibleValuesBasedDefaultValueDeterminer.determineParameterDefaultValue(
       DefaultValueDeterminerParameters(
-        ParameterData(Unknown, List.empty),
+        ParameterData(Unknown, annotations = List.empty, isLazyParameter = false),
         isOptional = false,
         ParameterConfig.empty,
         editors

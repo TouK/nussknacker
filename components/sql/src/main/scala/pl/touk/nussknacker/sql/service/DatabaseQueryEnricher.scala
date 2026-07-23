@@ -34,9 +34,12 @@ object DatabaseQueryEnricher {
   final val cacheTTLParamDeclaration: ParameterExtractor[Duration] with ParameterCreatorWithNoDependency =
     ParameterDeclaration
       .optional[Duration](cacheTTLParamName)
-      .withCreator(
-        modify =
-          _.copy(editors = List(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
+      .withCreator(modify =
+        param =>
+          param.copy(
+            editors = List(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))),
+            validators = param.validators :+ CompileTimePositiveDurationValidator
+          )
       )
 
   final val queryParamName: ParameterName = ParameterName("Query")

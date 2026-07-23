@@ -39,7 +39,7 @@ class ParameterCategoryExtractorTest extends AnyFunSuite with OptionValues with 
 
   private def getFirstParam(name: String, params: Class[_]*): ParameterData = {
     val parameter = this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
-    ParameterData(parameter, Typed.typedClass(parameter.getType))
+    ParameterData(parameter, Typed.typedClass(parameter.getType), isLazyParameter = false)
   }
 
 }
