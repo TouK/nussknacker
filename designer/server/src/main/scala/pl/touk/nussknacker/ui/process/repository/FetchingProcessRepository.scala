@@ -44,7 +44,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
   def fetchScenarioJsonsForVersionIds(
       processId: ProcessId,
       versionIds: Seq[VersionId]
-  )(implicit ec: ExecutionContext): F[Map[VersionId, CanonicalProcess]]
+  )(implicit user: LoggedUser, ec: ExecutionContext): F[Map[VersionId, CanonicalProcess]]
 
   def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]]
 

@@ -43,6 +43,8 @@ class RemoteEnvironmentResources(
     with ProcessDirectives
     with NuPathMatchers {
 
+  private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
+
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("remoteEnvironment") {
       // TODO This endpoint is used by an external project. We should consider moving its logic to this project
@@ -125,15 +127,19 @@ class RemoteEnvironmentResources(
               Symbol("pageNumber").as[Int],
               Symbol("pageSize").as[Int]
             )) { (processIdWithName, pageNumber, pageSize) =>
-              complete {
-                VersionsWithDifferencesService.computeForRemoteVersions(
-                  processService,
-                  remoteEnvironment,
-                  processIdWithName,
-                  currentLocalVersionId,
-                  pageNumber,
-                  pageSize
-                )
+              validate(
+                VersionsWithDifferencesService.isValidPaging(pageNumber, pageSize),
+                s"pageNumber must be >= 0 and pageSize must be between ${VersionsWithDifferencesService.MinPageSize} and ${VersionsWithDifferencesService.MaxPageSize}"
+              ) {
+                complete {
+                  versionsWithDifferencesService.computeForRemoteVersions(
+                    remoteEnvironment,
+                    processIdWithName,
+                    currentLocalVersionId,
+                    pageNumber,
+                    pageSize
+                  )
+                }
               }
             }
         } ~

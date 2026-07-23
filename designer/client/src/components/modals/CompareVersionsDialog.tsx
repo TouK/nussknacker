@@ -2,7 +2,7 @@
 import { css, cx } from "@emotion/css";
 import { CircularProgress, FormControl, FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
-import i18next from "i18next";
+import i18next, { type TFunction } from "i18next";
 import { keys } from "lodash";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,39 +34,58 @@ import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 type Environment = "local" | "remote";
 
-const toVersionDiffsMap = (versions: VersionsWithDifferencesResponse["versions"]): Map<number, string[]> =>
-    new Map(versions.map(({ versionId, changedElements }) => [versionId, changedElements]));
+type VersionDiffInfo = { changedElements: string[]; differencesUnknown: boolean };
+
+const toVersionDiffsMap = (versions: VersionsWithDifferencesResponse["versions"]): Map<number, VersionDiffInfo> =>
+    new Map(versions.map(({ versionId, changedElements, differencesUnknown }) => [versionId, { changedElements, differencesUnknown }]));
+
+const describeVersionDiff = (diffInfo: VersionDiffInfo | undefined, t: TFunction): string => {
+    if (!diffInfo) return "";
+    return diffInfo.differencesUnknown
+        ? t("dialog.compareVersions.unknownDifferences", "Unable to determine differences with the remote environment")
+        : diffInfo.changedElements.join("\n");
+};
 
 type DiffsPageState = {
-    diffs: Map<number, string[]> | null; // null = not yet loaded
+    diffs: Map<number, VersionDiffInfo> | null; // null = not yet loaded
     hasMore: boolean;
     nextPageNumber: number;
     isLoadingMore: boolean;
+    error: boolean;
 };
+
+const initialDiffsPageState: DiffsPageState = { diffs: null, hasMore: false, nextPageNumber: 0, isLoadingMore: false, error: false };
 
 const usePaginatedVersionDiffs = (
     fetchPage: ((pageNumber: number) => Promise<VersionsWithDifferencesResponse | null>) | null,
 ): DiffsPageState & { loadMore: () => void } => {
-    const [state, setState] = useState<DiffsPageState>({ diffs: null, hasMore: false, nextPageNumber: 0, isLoadingMore: false });
+    const [state, setState] = useState<DiffsPageState>(initialDiffsPageState);
 
     const applyPage = useCallback((pageNumber: number, result: VersionsWithDifferencesResponse | null, isLoadingMore = false) => {
         setState((prev) =>
             result === null
-                ? { diffs: prev.diffs ?? new Map(), hasMore: false, nextPageNumber: pageNumber, isLoadingMore }
+                ? { diffs: prev.diffs, hasMore: prev.hasMore, nextPageNumber: pageNumber, isLoadingMore, error: true }
                 : {
                       diffs: new Map([...(prev.diffs ?? []), ...toVersionDiffsMap(result.versions)]),
                       hasMore: result.hasMore,
                       nextPageNumber: pageNumber + 1,
                       isLoadingMore,
+                      error: false,
                   },
         );
     }, []);
 
     useEffect(() => {
-        setState({ diffs: null, hasMore: false, nextPageNumber: 0, isLoadingMore: false });
+        let cancelled = false;
+        setState(initialDiffsPageState);
         if (fetchPage) {
-            fetchPage(0).then((result) => applyPage(0, result));
+            fetchPage(0).then((result) => {
+                if (!cancelled) applyPage(0, result);
+            });
         }
+        return () => {
+            cancelled = true;
+        };
     }, [fetchPage, applyPage]);
 
     const loadMore = useCallback(() => {
@@ -181,7 +200,6 @@ const VersionOption = ({ children, innerProps, className, ...props }: React.Comp
     </SelectComponents.Option>
 );
 const VERSION_MENU_COMPONENTS = { MenuList: VersionMenuList, Option: VersionOption };
-
 
 const initState: State = {
     environment: "local",
@@ -317,7 +335,9 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 ? remoteVersionComments.get(version.processVersionId)
                 : versionComments.get(version.processVersionId);
             const commentSuffix = comment ? `\n${comment}` : "";
-            return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(version.createDate)}${commentSuffix}`;
+            return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(
+                version.createDate,
+            )}${commentSuffix}`;
         },
         [versionDisplayString, versionComments, remoteVersionComments],
     );
@@ -407,40 +427,36 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const versionOptions: Option[] = useMemo(() => {
         if (state.environment === "remote") {
             const remoteDiffs = remoteDiffsState.diffs;
-            if (remoteDiffs === null) return [{ label: "", value: "" }];
+            const remoteError = remoteDiffsState.error;
+            if (remoteDiffs === null && !remoteError) return [{ label: "", value: "" }];
             const filtered = (state?.remoteVersions ?? []).filter(
-                (v) => remoteDiffs.has(v.processVersionId) || createVersionId(v, remotePrefix) === state.otherVersion,
+                (v) => remoteError || remoteDiffs?.has(v.processVersionId) || createVersionId(v, remotePrefix) === state.otherVersion,
             );
             return [
                 { label: "", value: "" },
-                ...filtered.map((v) => {
-                    const changedElements = remoteDiffs.get(v.processVersionId) ?? [];
-                    return {
-                        label: createVersionElement(v, remotePrefix),
-                        value: createVersionId(v, remotePrefix),
-                        description: changedElements.join("\n"),
-                    };
-                }),
+                ...filtered.map((v) => ({
+                    label: createVersionElement(v, remotePrefix),
+                    value: createVersionId(v, remotePrefix),
+                    description: describeVersionDiff(remoteDiffs?.get(v.processVersionId), t),
+                })),
             ];
         }
         const localDiffs = localDiffsState.diffs;
-        if (localDiffs === null) return [{ label: "", value: "" }];
+        const localError = localDiffsState.error;
+        if (localDiffs === null && !localError) return [{ label: "", value: "" }];
         return [
             { label: "", value: "" },
             ...versions
                 .filter(
                     (v) =>
                         version !== v.processVersionId &&
-                        (localDiffs.has(v.processVersionId) || createVersionId(v) === state.otherVersion),
+                        (localError || localDiffs?.has(v.processVersionId) || createVersionId(v) === state.otherVersion),
                 )
-                .map((v) => {
-                    const changedElements = localDiffs.get(v.processVersionId) ?? [];
-                    return {
-                        label: createVersionElement(v),
-                        value: createVersionId(v),
-                        description: changedElements.join("\n"),
-                    };
-                }),
+                .map((v) => ({
+                    label: createVersionElement(v),
+                    value: createVersionId(v),
+                    description: describeVersionDiff(localDiffs?.get(v.processVersionId), t),
+                })),
         ];
     }, [
         createVersionElement,
@@ -448,9 +464,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         state.otherVersion,
         state?.remoteVersions,
         remoteDiffsState.diffs,
+        remoteDiffsState.error,
         localDiffsState.diffs,
+        localDiffsState.error,
         version,
         versions,
+        t,
     ]);
 
     const differenceOptions: Option[] = useMemo(() => {
@@ -467,18 +486,15 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         ];
     }, [isLayoutChangeOnly, state?.difference]);
 
-    const handleEnvironmentChange = useCallback(
-        (env: string) => {
-            setState((prev) => ({
-                ...prev,
-                environment: env as Environment,
-                otherVersion: null,
-                currentDiffId: null,
-                difference: null,
-            }));
-        },
-        [],
-    );
+    const handleEnvironmentChange = useCallback((env: string) => {
+        setState((prev) => ({
+            ...prev,
+            environment: env as Environment,
+            otherVersion: null,
+            currentDiffId: null,
+            difference: null,
+        }));
+    }, []);
 
     const loadMoreContextValue = useMemo<LoadMoreContextValue>(
         () => ({

@@ -186,7 +186,7 @@ type DictOption = {
 };
 
 export type VersionsWithDifferencesResponse = {
-    versions: { versionId: number; changedElements: string[] }[];
+    versions: { versionId: number; changedElements: string[]; differencesUnknown: boolean }[];
     hasMore: boolean;
 };
 
@@ -979,13 +979,21 @@ class HttpService {
         return promise;
     }
 
-    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, pageNumber: number, pageSize = VERSIONS_WITH_DIFFERENCES_PAGE_SIZE) {
+    fetchVersionsWithDifferences(
+        processName: ProcessName,
+        versionId: number,
+        pageNumber: number,
+        pageSize = VERSIONS_WITH_DIFFERENCES_PAGE_SIZE,
+    ) {
         const promise = api.get<VersionsWithDifferencesResponse>(
             `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
             { params: { pageNumber, pageSize } },
         );
         promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetVersionsWithDifferences", "Failed to get versions with differences"), error),
+            this.#addError(
+                i18next.t("notification.error.failedToGetVersionsWithDifferences", "Failed to get versions with differences"),
+                error,
+            ),
         );
         return promise;
     }
@@ -1002,7 +1010,15 @@ class HttpService {
                 { params: { pageNumber, pageSize } },
             )
             .then((response) => response.data)
-            .catch(() => null);
+            .catch((error) =>
+                this.#addError(
+                    i18next.t(
+                        "notification.error.failedToGetRemoteVersionsWithDifferences",
+                        "Failed to get versions with differences from the remote environment",
+                    ),
+                    error,
+                ).then(() => null),
+            );
     }
 
     fetchRemoteVersions(processName: ProcessName) {

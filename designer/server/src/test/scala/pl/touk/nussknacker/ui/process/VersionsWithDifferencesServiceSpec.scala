@@ -94,11 +94,30 @@ class VersionsWithDifferencesServiceSpec extends AnyFunSuite with Matchers with 
         pageNumber = 0,
         pageSize = 10,
         fetchGraphs = _ => Future.successful(Map.empty),
-        describeMissingGraph = versionId => Some(VersionWithDifference(versionId, List("unknown")))
+        describeMissingGraph = versionId => Some(VersionWithDifference(versionId, Nil, differencesUnknown = true))
       )
       .futureValue
 
-    result.versions shouldBe List(VersionWithDifference(missing, List("unknown")))
+    result.versions shouldBe List(VersionWithDifference(missing, Nil, differencesUnknown = true))
+  }
+
+  test("rejects pageSize below the minimum") {
+    VersionsWithDifferencesService.isValidPaging(pageNumber = 0, pageSize = 0) shouldBe false
+  }
+
+  test("rejects pageSize above the maximum") {
+    VersionsWithDifferencesService.isValidPaging(
+      pageNumber = 0,
+      pageSize = VersionsWithDifferencesService.MaxPageSize + 1
+    ) shouldBe false
+  }
+
+  test("rejects a negative pageNumber") {
+    VersionsWithDifferencesService.isValidPaging(pageNumber = -1, pageSize = 10) shouldBe false
+  }
+
+  test("accepts a pageSize within bounds and a non-negative pageNumber") {
+    VersionsWithDifferencesService.isValidPaging(pageNumber = 0, pageSize = 10) shouldBe true
   }
 
 }

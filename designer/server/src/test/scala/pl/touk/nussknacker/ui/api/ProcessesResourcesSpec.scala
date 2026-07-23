@@ -951,13 +951,16 @@ class ProcessesResourcesSpec
   test("return versions with meaningful differences excluding identical versions") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
 
     Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?pageNumber=0&pageSize=10"
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?pageNumber=0&pageSize=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = responseAs[VersionsWithDifferences]
       result.versions.map(_.versionId.value) should contain(1L)
+      result.versions.map(_.versionId.value) should contain(3L)
+      result.versions.map(_.versionId.value) should not contain 2L
     }
   }
 
@@ -974,16 +977,43 @@ class ProcessesResourcesSpec
     }
   }
 
-  test("return hasMore true when there are more versions beyond the page") {
+  test("return hasMore true when there are more versions beyond the page, false on the last page") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
 
     Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?pageNumber=0&pageSize=10"
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?pageNumber=0&pageSize=1"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val result = responseAs[VersionsWithDifferences]
-      result.hasMore shouldBe false
+      responseAs[VersionsWithDifferences].hasMore shouldBe true
+    }
+
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?pageNumber=2&pageSize=1"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[VersionsWithDifferences].hasMore shouldBe false
+    }
+  }
+
+  test("reject an invalid pageSize for versions-with-differences") {
+    createEmptyScenario(processName, category = Category1)
+
+    Get(
+      s"/api/processes/$processName/1/versions-with-differences?pageNumber=0&pageSize=0"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
+  test("do not return scenario graphs for versions in a category the user cannot read") {
+    createEmptyScenario(processName, category = Category2)
+
+    Get(
+      s"/api/processes/$processName/versions/graphs?versionIds=1"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.NotFound
     }
   }
 

@@ -89,60 +89,72 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  test("hasMeaningfulDifferences returns false for empty diff") {
+  test("describeMeaningfulDiffs returns empty for identical graphs") {
     val current = toDisplayable(_.emptySink("end", "testSink"))
     val diff    = ScenarioGraphComparator.compare(current, current)
-    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe false
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) shouldBe empty
   }
 
-  test("hasMeaningfulDifferences returns true for node content change") {
+  test("describeMeaningfulDiffs describes a node content change") {
     val current = toDisplayable(_.filter("filter1", "#input == 4".spel).emptySink("end", "testSink"))
     val other   = toDisplayable(_.filter("filter1", "#input == 8".spel).emptySink("end", "testSink"))
     val diff    = ScenarioGraphComparator.compare(current, other)
-    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) shouldBe List("Node 'filter1' modified")
   }
 
-  test("hasMeaningfulDifferences returns false when only layoutData differs") {
+  test("describeMeaningfulDiffs is empty when only layoutData differs") {
     val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
     val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
     val nodeWithLayoutA = Filter("filter1", "#input == 4".spel, additionalFields = layoutA)
     val nodeWithLayoutB = Filter("filter1", "#input == 4".spel, additionalFields = layoutB)
     val diff            = Map("Node 'filter1'" -> NodeDifferent("filter1", nodeWithLayoutA, nodeWithLayoutB))
-    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe false
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) shouldBe empty
   }
 
-  test("hasMeaningfulDifferences returns true when layout and content both differ") {
+  test("describeMeaningfulDiffs describes the change when layout and content both differ") {
     val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
     val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
     val nodeWithLayoutA = Filter("filter1", "#input == 4".spel, additionalFields = layoutA)
     val nodeWithLayoutB = Filter("filter1", "#input == 8".spel, additionalFields = layoutB)
     val diff            = Map("Node 'filter1'" -> NodeDifferent("filter1", nodeWithLayoutA, nodeWithLayoutB))
-    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) shouldBe List("Node 'filter1' modified")
   }
 
-  test("hasMeaningfulDifferences returns true for edge differences regardless of layout") {
+  test("describeMeaningfulDiffs describes added and removed nodes and edges, regardless of layout") {
+    val current = toDisplayable(_.filter("filter1", "#input == 4".spel).emptySink("end", "testSink"))
+    val other   = toDisplayable(_.emptySink("end", "testSink"))
+    val diff    = ScenarioGraphComparator.compare(current, other)
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) should contain theSameElementsAs List(
+      "Node 'filter1' added",
+      "Edge 'start' → 'filter1' added",
+      "Edge 'filter1' → 'end' added",
+      "Edge 'start' → 'end' removed"
+    )
+  }
+
+  test("describeMeaningfulDiffs describes an edge change") {
     val current = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("current")))
     val other   = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("other")))
     val diff    = ScenarioGraphComparator.compare(current, other)
-    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) shouldBe List("Edge 'switch1' → 'end1' modified")
   }
 
-  test("hasMeaningfulDifferences returns false when only a sticky note's layoutData differs") {
+  test("describeMeaningfulDiffs is empty when only a sticky note's layoutData differs") {
     val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
     val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
     val noteWithLayoutA = StickyNote("note1", "content", "#fff", Dimensions(200, 100), layoutA)
     val noteWithLayoutB = StickyNote("note1", "content", "#fff", Dimensions(200, 100), layoutB)
-    val diff             = Map("Node 'note1'" -> StickyNoteDifferent("note1", noteWithLayoutA, noteWithLayoutB))
-    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe false
+    val diff            = Map("Node 'note1'" -> StickyNoteDifferent("note1", noteWithLayoutA, noteWithLayoutB))
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) shouldBe empty
   }
 
-  test("hasMeaningfulDifferences returns true when a sticky note's content differs") {
+  test("describeMeaningfulDiffs describes a sticky note content change") {
     val layoutA = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(10, 20))))
     val layoutB = Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(99, 99))))
     val noteWithLayoutA = StickyNote("note1", "content A", "#fff", Dimensions(200, 100), layoutA)
     val noteWithLayoutB = StickyNote("note1", "content B", "#fff", Dimensions(200, 100), layoutB)
-    val diff             = Map("Node 'note1'" -> StickyNoteDifferent("note1", noteWithLayoutA, noteWithLayoutB))
-    ScenarioGraphComparator.hasMeaningfulDifferences(diff) shouldBe true
+    val diff            = Map("Node 'note1'" -> StickyNoteDifferent("note1", noteWithLayoutA, noteWithLayoutB))
+    ScenarioGraphComparator.describeMeaningfulDiffs(diff) shouldBe List("Note 'note1' modified")
   }
 
   test("detect changed description") {

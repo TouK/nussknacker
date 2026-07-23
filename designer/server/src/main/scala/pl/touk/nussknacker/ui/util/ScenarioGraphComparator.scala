@@ -67,8 +67,6 @@ object ScenarioGraphComparator {
       case _                                           => true
     }
 
-  def hasMeaningfulDifferences(diff: Map[String, Difference]): Boolean = meaningfulDiffs(diff).nonEmpty
-
   def describeMeaningfulDiffs(diff: Map[String, Difference]): List[String] =
     meaningfulDiffs(diff).values.map {
       case NodeDifferent(id, _, _)              => s"Node '$id' modified"
@@ -111,7 +109,7 @@ object ScenarioGraphComparator {
     case n: FragmentUsageOutput      => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
     case n: FragmentInputDefinition  => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
     case n: FragmentOutputDefinition => n.copy(additionalFields = withoutLayoutData(n.additionalFields))
-    case n: BranchEndData => n
+    case n: BranchEndData            => n
   }
 
   @ConfiguredJsonCodec sealed trait Difference {

@@ -28,13 +28,19 @@ trait RemoteEnvironment {
       remoteProcessVersion: Option[VersionId]
   ): Future[Either[NuDesignerError, Map[String, Difference]]]
 
+  // Implementations must not fail this Future to signal that the remote environment is unreachable or
+  // doesn't support this call (e.g. an older Nussknacker version) - callers treat an empty List the same
+  // as "no versions", so a failed Future would surface as a 500 instead.
   def processVersions(processName: ProcessName): Future[List[ScenarioVersion]]
 
+  // Same must-not-fail contract as processVersions: a version missing from the result is treated as
+  // "couldn't be fetched", not as an error.
   def scenarioGraphsForVersions(
       processName: ProcessName,
       versionIds: List[VersionId]
   ): Future[Map[VersionId, ScenarioGraph]]
 
+  // Same must-not-fail contract as processVersions.
   def activities(processName: ProcessName): Future[List[ScenarioActivity]]
 
   def migrate(

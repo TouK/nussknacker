@@ -45,6 +45,8 @@ class ProcessesResources(
 
   import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller._
 
+  private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
+
   def securedRoute(implicit user: LoggedUser): Route = {
     encodeResponse {
       path("archive") {
@@ -231,14 +233,18 @@ class ProcessesResources(
             Symbol("pageNumber").as[Int],
             Symbol("pageSize").as[Int]
           )) { (processId, pageNumber, pageSize) =>
-            complete {
-              VersionsWithDifferencesService.computeForLocalVersions(
-                processService,
-                processId,
-                currentVersionId,
-                pageNumber,
-                pageSize
-              )
+            validate(
+              VersionsWithDifferencesService.isValidPaging(pageNumber, pageSize),
+              s"pageNumber must be >= 0 and pageSize must be between ${VersionsWithDifferencesService.MinPageSize} and ${VersionsWithDifferencesService.MaxPageSize}"
+            ) {
+              complete {
+                versionsWithDifferencesService.computeForLocalVersions(
+                  processId,
+                  currentVersionId,
+                  pageNumber,
+                  pageSize
+                )
+              }
             }
           }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {

@@ -16,6 +16,7 @@ import org.apache.pekko.http.scaladsl.model.{
   StatusCodes,
   Uri
 }
+import org.apache.pekko.http.scaladsl.model.Uri.Query
 import org.apache.pekko.stream.Materializer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
@@ -26,10 +27,13 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{ScenarioActivities, ScenarioActivity}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentSpec.MockRemoteEnvironment
 import pl.touk.nussknacker.ui.security.api.{ImpersonatedUserData, ImpersonationSupported, LoggedUser, RealLoggedUser}
 
+import java.time.Instant
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class HttpRemoteEnvironmentSpec
@@ -109,6 +113,67 @@ class HttpRemoteEnvironmentSpec
 
     whenReady(remoteEnvironment.compare(scenarioGraph, name, None)) { result =>
       result shouldBe Symbol("right")
+    }
+  }
+
+  it should "fetch and decode scenario graphs for the requested versions in a single bulk request" in {
+    val scenarioGraph = ProcessTestData.validScenarioGraph
+    val v1            = VersionId(1)
+    val v2            = VersionId(2)
+
+    val remoteEnvironment = new MockRemoteEnvironment {
+      override protected def request(
+          path: Uri,
+          method: HttpMethod,
+          request: MessageEntity,
+          headers: Seq[HttpHeader]
+      ): Future[HttpResponse] = {
+        val expectedUri = baseUri
+          .withPath(baseUri.path + "/processes/proc1/versions/graphs")
+          .withQuery(Query(("versionIds", "1,2")))
+        if (path == expectedUri && method == HttpMethods.GET) {
+          Marshal(VersionGraphs(List(VersionGraph(v1, scenarioGraph), VersionGraph(v2, scenarioGraph))))
+            .to[RequestEntity]
+            .map(entity => HttpResponse(StatusCodes.OK, entity = entity))
+        } else {
+          throw new AssertionError(s"Not expected ${method.value} $path")
+        }
+      }
+    }
+
+    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(v1, v2))) { result =>
+      result shouldBe Map(v1 -> scenarioGraph, v2 -> scenarioGraph)
+    }
+  }
+
+  it should "fetch and decode activities" in {
+    val activity = ScenarioActivity.forScenarioCreated(
+      id = UUID.fromString("80c95497-3b53-4435-b2d9-ae73c5766213"),
+      user = "some user",
+      date = Instant.parse("2024-01-17T14:21:17Z"),
+      scenarioVersionId = Some(1),
+    )
+
+    val remoteEnvironment = new MockRemoteEnvironment {
+      override protected def request(
+          path: Uri,
+          method: HttpMethod,
+          request: MessageEntity,
+          headers: Seq[HttpHeader]
+      ): Future[HttpResponse] = {
+        val expectedUri = baseUri.withPath(baseUri.path + "/processes/proc1/activity/activities")
+        if (path == expectedUri && method == HttpMethods.GET) {
+          Marshal(ScenarioActivities(List(activity)))
+            .to[RequestEntity]
+            .map(entity => HttpResponse(StatusCodes.OK, entity = entity))
+        } else {
+          throw new AssertionError(s"Not expected ${method.value} $path")
+        }
+      }
+    }
+
+    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
+      result shouldBe List(activity)
     }
   }
 

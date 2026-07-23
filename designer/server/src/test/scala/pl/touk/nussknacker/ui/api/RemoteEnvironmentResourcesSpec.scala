@@ -20,7 +20,7 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{ScenarioActivities, ScenarioActivity}
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
@@ -237,6 +237,39 @@ class RemoteEnvironmentResourcesSpec
         status shouldEqual StatusCodes.OK
         val result = responseAs[VersionsWithDifferences]
         result.versions.map(_.versionId.value) should contain(versionWithUnknownDiff.value)
+      }
+    }
+  }
+
+  it should "return activities from the remote environment" in {
+    val activity = ScenarioActivity.forScenarioCreated(
+      id = java.util.UUID.fromString("80c95497-3b53-4435-b2d9-ae73c5766213"),
+      user = "some user",
+      date = java.time.Instant.parse("2024-01-17T14:21:17Z"),
+      scenarioVersionId = Some(1),
+    )
+
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def activities(pName: ProcessName): Future[List[ScenarioActivity]] =
+        Future.successful(List(activity))
+    }
+
+    val route = withPermissions(
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        processService,
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
+      ),
+      Permission.Read
+    )
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/activities") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[ScenarioActivities] shouldBe ScenarioActivities(List(activity))
       }
     }
   }

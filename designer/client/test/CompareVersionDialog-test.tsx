@@ -67,8 +67,8 @@ const DOWN_ARROW = { keyCode: 40 };
 
 const localVersionsWithDifferences = {
     versions: [
-        { versionId: 35, changedElements: [] },
-        { versionId: 34, changedElements: [] },
+        { versionId: 35, changedElements: [], differencesUnknown: false },
+        { versionId: 34, changedElements: [], differencesUnknown: false },
     ],
     hasMore: false,
 };
@@ -88,9 +88,12 @@ describe("CompareVersionsDialog", () => {
         ];
 
         mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, remoteVersions);
-        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(
+            200,
+            localVersionsWithDifferences,
+        );
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
-            versions: [{ versionId: 1, changedElements: [] }],
+            versions: [{ versionId: 1, changedElements: [], differencesUnknown: false }],
             hasMore: false,
         });
         mock.onGet(
@@ -139,7 +142,10 @@ describe("CompareVersionsDialog", () => {
         ];
 
         mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, remoteVersions);
-        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(
+            200,
+            localVersionsWithDifferences,
+        );
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,
@@ -181,7 +187,7 @@ describe("CompareVersionsDialog", () => {
         // version 34 (the predefined one) is absent from the returned page - e.g. it only had a layout-only
         // diff, filtered out server-side - while version 35 does have a meaningful diff.
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
-            versions: [{ versionId: 35, changedElements: ["Node 'x' modified"] }],
+            versions: [{ versionId: 35, changedElements: ["Node 'x' modified"], differencesUnknown: false }],
             hasMore: false,
         });
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
@@ -230,7 +236,10 @@ describe("CompareVersionsDialog", () => {
         });
 
         mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
-        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(
+            200,
+            localVersionsWithDifferences,
+        );
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,
@@ -261,7 +270,7 @@ describe("CompareVersionsDialog", () => {
     it("should show a loading spinner while fetching an older page of versions, and hide it once the page arrives", async () => {
         mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
-            versions: [{ versionId: 35, changedElements: [] }],
+            versions: [{ versionId: 35, changedElements: [], differencesUnknown: false }],
             hasMore: true,
         });
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
@@ -269,7 +278,7 @@ describe("CompareVersionsDialog", () => {
             hasMore: false,
         });
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
-            versions: [{ versionId: 34, changedElements: [] }],
+            versions: [{ versionId: 34, changedElements: [], differencesUnknown: false }],
             hasMore: false,
         });
 
@@ -306,6 +315,35 @@ describe("CompareVersionsDialog", () => {
         expect(screen.queryByText("dialog.compareVersions.loadOlderVersions")).not.toBeInTheDocument();
     });
 
+    it("should fall back to the unfiltered local version list when the versions-with-differences request fails", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(500);
+        mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
+            versions: [],
+            hasMore: false,
+        });
+
+        render(
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <CompareVersionsDialog
+                        data={{
+                            title: "compare versions",
+                            kind: 12,
+                            id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                            meta: { scenarioVersionId: undefined },
+                        }}
+                    />
+                </Provider>
+            </NuThemeProvider>,
+        );
+
+        fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
+
+        expect(await screen.findByText("35 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+    });
+
     it("should show the local environment's configured name in the environment picker when set", async () => {
         const storeWithLocalEnvironmentName = mockStore({
             graphReducer,
@@ -319,7 +357,10 @@ describe("CompareVersionsDialog", () => {
         });
 
         mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
-        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(
+            200,
+            localVersionsWithDifferences,
+        );
         mock.onGet(`/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`).replyOnce(200, {
             versions: [],
             hasMore: false,

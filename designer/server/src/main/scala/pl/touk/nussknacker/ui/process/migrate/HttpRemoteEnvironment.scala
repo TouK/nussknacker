@@ -68,8 +68,17 @@ class HttpRemoteEnvironment(
     invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
       List("processes", processName.value)
-    ).map { result =>
-      result.fold(_ => List(), _.historyUnsafe)
+    ).map {
+      _.fold(
+        error => {
+          logFetchError("scenario versions", processName, error)
+          List.empty[ScenarioVersion]
+        },
+        _.historyUnsafe
+      )
+    }.recover { case NonFatal(ex) =>
+      logger.warn(s"Failed to fetch scenario versions from remote environment for scenario ${processName.value}", ex)
+      List.empty
     }
 
   override def scenarioGraphsForVersions(
@@ -80,33 +89,35 @@ class HttpRemoteEnvironment(
       HttpMethods.GET,
       List("processes", processName.value, "versions", "graphs"),
       Query(("versionIds", versionIds.map(_.value).mkString(",")))
-    ).map(_.fold(
+    ).map(
+      _.fold(
         error => {
           logFetchError("scenario graphs", processName, error)
           Map.empty[VersionId, ScenarioGraph]
         },
         _.versions.map(g => g.versionId -> g.scenarioGraph).toMap
-      ))
-      .recover { case NonFatal(ex) =>
-        logger.warn(s"Failed to fetch scenario graphs from remote environment for scenario ${processName.value}", ex)
-        Map.empty
-      }
+      )
+    ).recover { case NonFatal(ex) =>
+      logger.warn(s"Failed to fetch scenario graphs from remote environment for scenario ${processName.value}", ex)
+      Map.empty
+    }
 
   override def activities(processName: ProcessName): Future[List[ScenarioActivity]] =
     invokeJson[ScenarioActivities](
       HttpMethods.GET,
       List("processes", processName.value, "activity", "activities")
-    ).map(_.fold(
+    ).map(
+      _.fold(
         error => {
           logFetchError("activities", processName, error)
           List.empty[ScenarioActivity]
         },
         _.activities
-      ))
-      .recover { case NonFatal(ex) =>
-        logger.warn(s"Failed to fetch activities from remote environment for scenario ${processName.value}", ex)
-        List.empty
-      }
+      )
+    ).recover { case NonFatal(ex) =>
+      logger.warn(s"Failed to fetch activities from remote environment for scenario ${processName.value}", ex)
+      List.empty
+    }
 
   private def logFetchError(what: String, processName: ProcessName, error: NuDesignerError): Unit = error match {
     case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
