@@ -127,10 +127,12 @@ class RemoteEnvironmentResources(
               Symbol("pageNumber").as[Int],
               Symbol("pageSize").as[Int]
             )) { (processIdWithName, pageNumber, pageSize) =>
-              validate(
-                VersionsWithDifferencesService.isValidPaging(pageNumber, pageSize),
-                s"pageNumber must be >= 0 and pageSize must be between ${VersionsWithDifferencesService.MinPageSize} and ${VersionsWithDifferencesService.MaxPageSize}"
-              ) {
+              if (!VersionsWithDifferencesService.isValidPaging(pageNumber, pageSize)) {
+                complete(
+                  StatusCodes.BadRequest,
+                  s"pageNumber must be >= 0 and pageSize must be between ${VersionsWithDifferencesService.MinPageSize} and ${VersionsWithDifferencesService.MaxPageSize}"
+                )
+              } else {
                 complete {
                   versionsWithDifferencesService.computeForRemoteVersions(
                     remoteEnvironment,
