@@ -10,13 +10,19 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.validation.{CompileTimeEvaluableValue, CustomValidator}
+import pl.touk.nussknacker.engine.api.validation.{
+  CompileTimeEvaluableValue,
+  CustomValidator,
+  NonNegativeDuration,
+  PositiveDuration,
+  ValidatorMode
+}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.parameter.{OptionalDeterminer, ParameterData}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-import java.time.LocalDate
+import java.time.{Duration, LocalDate}
 import java.util.Optional
 import javax.annotation.Nullable
 import javax.validation.constraints.{Max, Min, NotBlank}
@@ -60,6 +66,16 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   private val minimalAndMaximalValueBigDecimalParam =
     getFirstParam("minimalAndMaximalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
 
+  private val nonNegativeDurationParam = getFirstParam("nonNegativeDurationAnnotatedParam", classOf[Duration])
+  private val positiveDurationParam    = getFirstParam("positiveDurationAnnotatedParam", classOf[Duration])
+
+  private val compileTimeNonNegativeDurationParam =
+    getFirstParam("compileTimeNonNegativeDurationAnnotatedParam", classOf[Duration])
+  private val compileTimePositiveDurationParam =
+    getFirstParam("compileTimePositiveDurationAnnotatedParam", classOf[Duration])
+  private val fullNonNegativeDurationParam = getFirstParam("fullNonNegativeDurationAnnotatedParam", classOf[Duration])
+  private val fullPositiveDurationParam    = getFirstParam("fullPositiveDurationAnnotatedParam", classOf[Duration])
+
   private val customValidatorParam = getFirstParam("customValidatorAnnotatedParam", classOf[String])
 
   private def notAnnotated(param: String) = ()
@@ -95,6 +111,26 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   private def minimalAndMaximalValueIntegerAnnotatedParam(@Min(value = 0) @Max(value = 1) value: Int) = ()
 
   private def minimalAndMaximalValueBigDecimalAnnotatedParam(@Min(value = 0) @Max(value = 1) value: BigDecimal) = ()
+
+  private def nonNegativeDurationAnnotatedParam(@NonNegativeDuration nonNegativeDuration: Duration) = ()
+
+  private def positiveDurationAnnotatedParam(@PositiveDuration positiveDuration: Duration) = ()
+
+  private def compileTimeNonNegativeDurationAnnotatedParam(
+      @NonNegativeDuration(mode = ValidatorMode.COMPILE_TIME) nonNegativeDuration: Duration
+  ) = ()
+
+  private def compileTimePositiveDurationAnnotatedParam(
+      @PositiveDuration(mode = ValidatorMode.COMPILE_TIME) positiveDuration: Duration
+  ) = ()
+
+  private def fullNonNegativeDurationAnnotatedParam(
+      @NonNegativeDuration(mode = ValidatorMode.COMPILE_TIME_AND_RUNTIME) nonNegativeDuration: Duration
+  ) = ()
+
+  private def fullPositiveDurationAnnotatedParam(
+      @PositiveDuration(mode = ValidatorMode.COMPILE_TIME_AND_RUNTIME) positiveDuration: Duration
+  ) = ()
 
   private def customValidatorAnnotatedParam(@CustomValidator(classOf[SampleCustomValidator]) param: String) = ()
 
@@ -218,6 +254,69 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
       List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
   }
 
+  test(
+    "extract compile-time nonNegativeDuration validator when @NonNegativeDuration (AUTO) detected on an eager param"
+  ) {
+    ValidatorsExtractor.extract(validatorParams(nonNegativeDurationParam)) shouldBe
+      List(MandatoryParameterValidator, CompileTimeNonNegativeDurationValidator)
+  }
+
+  test("extract compile-time positiveDuration validator when @PositiveDuration (AUTO) detected on an eager param") {
+    ValidatorsExtractor.extract(validatorParams(positiveDurationParam)) shouldBe
+      List(MandatoryParameterValidator, CompileTimePositiveDurationValidator)
+  }
+
+  test("extract full nonNegativeDuration validator when @NonNegativeDuration (AUTO) detected on a lazy param") {
+    ValidatorsExtractor.extract(validatorParams(nonNegativeDurationParam, isLazyParameter = true)) shouldBe
+      List(MandatoryParameterValidator, NonNegativeDurationValidator)
+  }
+
+  test("extract full positiveDuration validator when @PositiveDuration (AUTO) detected on a lazy param") {
+    ValidatorsExtractor.extract(validatorParams(positiveDurationParam, isLazyParameter = true)) shouldBe
+      List(MandatoryParameterValidator, PositiveDurationValidator)
+  }
+
+  test(
+    "extract compile-time nonNegativeDuration validator when @NonNegativeDuration(COMPILE_TIME) forces it on a lazy param"
+  ) {
+    ValidatorsExtractor.extract(validatorParams(compileTimeNonNegativeDurationParam, isLazyParameter = true)) shouldBe
+      List(MandatoryParameterValidator, CompileTimeNonNegativeDurationValidator)
+  }
+
+  test(
+    "extract compile-time positiveDuration validator when @PositiveDuration(COMPILE_TIME) forces it on a lazy param"
+  ) {
+    ValidatorsExtractor.extract(validatorParams(compileTimePositiveDurationParam, isLazyParameter = true)) shouldBe
+      List(MandatoryParameterValidator, CompileTimePositiveDurationValidator)
+  }
+
+  test(
+    "extract full nonNegativeDuration validator when @NonNegativeDuration(COMPILE_TIME_AND_RUNTIME) forces it on an eager param"
+  ) {
+    ValidatorsExtractor.extract(validatorParams(fullNonNegativeDurationParam)) shouldBe
+      List(MandatoryParameterValidator, NonNegativeDurationValidator)
+  }
+
+  test(
+    "extract full positiveDuration validator when @PositiveDuration(COMPILE_TIME_AND_RUNTIME) forces it on an eager param"
+  ) {
+    ValidatorsExtractor.extract(validatorParams(fullPositiveDurationParam)) shouldBe
+      List(MandatoryParameterValidator, PositiveDurationValidator)
+  }
+
+  test("throw with the list of supported modes when the resolved mode has no validator") {
+    val ex = intercept[IllegalArgumentException] {
+      ValidatorsExtractor.validatorForMode(
+        validatorParams(positiveDurationParam),
+        classOf[PositiveDuration],
+        ValidatorMode.COMPILE_TIME_AND_RUNTIME,
+        Map(ValidatorMode.COMPILE_TIME -> CompileTimePositiveDurationValidator)
+      )
+    }
+    ex.getMessage shouldBe
+      "@PositiveDuration does not support the COMPILE_TIME_AND_RUNTIME mode. Supported modes: COMPILE_TIME."
+  }
+
   test("extract custom validator when @CustomValidator annotation detected") {
     val extracted = ValidatorsExtractor.extract(validatorParams(customValidatorParam))
     extracted should have size 2
@@ -236,9 +335,11 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   private def validatorParams(
       rawJavaParam: java.lang.reflect.Parameter,
       parameterConfig: ParameterConfig = ParameterConfig.empty,
-      globalParametersConfig: GlobalParametersConfig = GlobalParametersConfig.default
+      globalParametersConfig: GlobalParametersConfig = GlobalParametersConfig.default,
+      isLazyParameter: Boolean = false
   ) = {
-    val parameterData   = ParameterData(rawJavaParam, ClassDefinitionExtractor.extractParameterType(rawJavaParam))
+    val parameterData =
+      ParameterData(rawJavaParam, ClassDefinitionExtractor.extractParameterType(rawJavaParam), isLazyParameter)
     val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig)
     ValidatorExtractorParameters(
       parameterData,

@@ -1,9 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidDurationParameter
+import pl.touk.nussknacker.engine.api.definition.NonNegativeDurationValidation
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -115,6 +118,29 @@ class DelayTransformerTest extends AnyFunSuite with FlinkSpec with Matchers with
     val result = runner.runWithData[DelayTestRecord, Int](scenario, data, timestampAssigner = Some(watermarkStrategy))
     result.validValue.successes should contain theSameElementsAs List(1, 2, 3)
     result.validValue.errors shouldBe empty
+  }
+
+  test("should reject a constant negative delay at compile time") {
+    implicit val scenarioName: ProcessName = ProcessName(getClass.getName + "-constant-negative-delay")
+    val scenario =
+      createScenario(scenarioName, TestScenarioRunner.testDataSource, delay = "PT-1S", timeMode = TimeMode.EventTime)
+
+    val runner = TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .build()
+
+    val result = runner.runWithData[DelayTestRecord, Int](scenario, List.empty)
+    result.invalidValue should matchPattern {
+      case NonEmptyList(
+            InvalidDurationParameter(
+              NonNegativeDurationValidation.Message,
+              NonNegativeDurationValidation.Description,
+              DelayTransformer.delayParamName,
+              "delay"
+            ),
+            Nil
+          ) =>
+    }
   }
 
   private def createScenario(

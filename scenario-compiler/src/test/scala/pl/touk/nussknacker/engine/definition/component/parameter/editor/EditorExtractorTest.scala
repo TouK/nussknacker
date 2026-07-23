@@ -252,7 +252,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
 
   private def getFirstParam(name: String, params: Class[_]*) = {
     val parameter = this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
-    ParameterData(parameter, Typed.typedClass(parameter.getType))
+    ParameterData(parameter, Typed.typedClass(parameter.getType), isLazyParameter = false)
   }
 
   private def getSimpleParamByType[T: ClassTag] = {
@@ -260,7 +260,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       .find(_.getName == "simpleParams")
       .flatMap(_.getParameters.find(_.getType == implicitly[ClassTag[T]].runtimeClass))
       .get
-    ParameterData(parameter, Typed.typedClass(parameter.getType))
+    ParameterData(parameter, Typed.typedClass(parameter.getType), isLazyParameter = false)
   }
 
 }

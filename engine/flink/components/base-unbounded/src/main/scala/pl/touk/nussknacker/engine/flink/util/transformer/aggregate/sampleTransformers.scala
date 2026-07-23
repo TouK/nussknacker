@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.validation.PositiveDuration
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
 import java.time.temporal.ChronoUnit
@@ -59,13 +60,14 @@ object sampleTransformers {
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
         @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')")
         @HintText(
-          "Adding seconds to a long window (e.g. 6 hours 30 seconds) forces second-level state granularity, significantly increasing state size. Use the widest time unit alignment possible (e.g. 6 hours)."
+          "Adding seconds to a long window (e.g. 6 hours 30 seconds) forces second-level state granularity, significantly increasing state size. Use the widest time unit alignment possible (e.g. 6 hours). Must be a positive duration."
         )
         @Editor(
           `type` = EditorType.DURATION_EDITOR,
           timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
         )
         @Editor(`type` = EditorType.SPEL_EDITOR)
+        @PositiveDuration
         length: java.time.Duration,
         @ParamName("emitWhenEventLeft") @DefaultValue("false") emitWhenEventLeft: Boolean,
         @OutputVariableName variableName: String
@@ -132,6 +134,7 @@ object sampleTransformers {
           timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
         )
         @Editor(`type` = EditorType.SPEL_EDITOR)
+        @PositiveDuration
         length: java.time.Duration,
         @ParamName("emitWhen") trigger: TumblingWindowTrigger,
         @OutputVariableName variableName: String
@@ -205,6 +208,7 @@ object sampleTransformers {
           timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
         )
         @Editor(`type` = EditorType.SPEL_EDITOR)
+        @PositiveDuration
         sessionTimeout: java.time.Duration,
         @ParamName("emitWhen") trigger: SessionWindowTrigger,
         @OutputVariableName variableName: String

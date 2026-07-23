@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.api.validation.NonNegativeDuration
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
@@ -58,6 +59,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
   @MethodToInvoke
   def create(
       @ParamName("schedule")
+      @NonNegativeDuration
       @Editor(
         `type` = EditorType.DURATION_EDITOR,
         timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)

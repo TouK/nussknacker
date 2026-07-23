@@ -43,7 +43,7 @@ object StandardParameterEnrichment {
       parameterConfig: ParameterConfig,
       globalParametersConfig: GlobalParametersConfig
   ): Parameter = {
-    val parameterData = ParameterData(original.typ, Nil)
+    val parameterData = ParameterData(original.typ, annotations = Nil, original.isLazyParameter)
     val finalEditors = original.editors
       .orElseIfEmpty(EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig))
     val finalValidators =
