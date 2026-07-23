@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.context.{
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.validation.PositiveDuration
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
@@ -50,7 +51,7 @@ class UnionWithMemoTransformer(
   def execute(
       @BranchParamName("key") keyByBranchId: Map[String, LazyParameter[CharSequence]],
       @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[AnyRef]],
-      @ParamName("stateTimeout") stateTimeout: Duration,
+      @ParamName("stateTimeout") @PositiveDuration stateTimeout: Duration,
       @OutputVariableName variableName: String
   )(implicit nodeId: NodeId): JoinContextTransformation =
     ContextTransformation.join

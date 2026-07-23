@@ -1,12 +1,16 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.{Gauge => FlinkGauge}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidDurationParameter
+import pl.touk.nussknacker.engine.api.definition.NonNegativeDurationValidation
 import pl.touk.nussknacker.engine.api.exception.ParameterRuntimeValidationException
 import pl.touk.nussknacker.engine.api.process.{ProcessName, SourceFactory}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -43,6 +47,10 @@ class DelayTransformerTest
 
   private val watermarkStrategy =
     WatermarkStrategyUtils.afterEachEvent[DelayTestRecord]((record: DelayTestRecord, _: Long) => record.eventTimestamp)
+
+  private lazy val runner = TestScenarioRunner
+    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .build()
 
   // The two holding tests use withBlockingDelayScenario: a BlockingQueueSource driven via a detached run, so they can
   // observe the intermediate state and assert that events are actually *held* until the delay passes. Bounded
@@ -115,10 +123,6 @@ class DelayTransformerTest
       DelayTestRecord("B", 4, 0L),
     )
 
-    val runner = TestScenarioRunner
-      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .build()
-
     val result = runner.runWithData[DelayTestRecord, Int](scenario, data, watermarkStrategy = Some(watermarkStrategy))
     result.validValue.successes should contain theSameElementsAs List(1, 2, 3, 4)
 
@@ -141,10 +145,6 @@ class DelayTransformerTest
       DelayTestRecord("A", 3, 0L),
       DelayTestRecord("B", 4, 0L),
     )
-
-    val runner = TestScenarioRunner
-      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .build()
 
     val result = runner.runWithData[DelayTestRecord, Int](scenario, data)
     result.validValue.successes should contain theSameElementsAs List(1, 2, 3, 4)
@@ -170,10 +170,6 @@ class DelayTransformerTest
       DelayTestRecord("B", 4, 0L, 120000L),
     )
 
-    val runner = TestScenarioRunner
-      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .build()
-
     val result = runner.runWithData[DelayTestRecord, Int](scenario, data, watermarkStrategy = Some(watermarkStrategy))
     result.validValue.successes should contain theSameElementsAs List(1, 2, 3, 4)
     result.validValue.errors shouldBe empty
@@ -194,10 +190,6 @@ class DelayTransformerTest
       DelayTestRecord("B", 2, 0L, -1L), // -> null delay -> error
       DelayTestRecord("A", 3, 0L, 0L),
     )
-
-    val runner = TestScenarioRunner
-      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .build()
 
     val result = runner.runWithData[DelayTestRecord, Int](scenario, data, watermarkStrategy = Some(watermarkStrategy))
     result.validValue.successes should contain theSameElementsAs List(1, 3)
@@ -224,13 +216,28 @@ class DelayTransformerTest
       DelayTestRecord("A", 3, 0L, 1000L),
     )
 
-    val runner = TestScenarioRunner
-      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .build()
-
     val result = runner.runWithData[DelayTestRecord, Int](scenario, data, watermarkStrategy = Some(watermarkStrategy))
     result.validValue.successes should contain theSameElementsAs List(1, 2, 3)
     result.validValue.errors shouldBe empty
+  }
+
+  test("should reject a constant negative delay at compile time") {
+    implicit val scenarioName: ProcessName = ProcessName(getClass.getName + "-constant-negative-delay")
+    val scenario =
+      createScenario(scenarioName, TestScenarioRunner.testDataSource, delay = "PT-1S", timeMode = TimeMode.EventTime)
+
+    val result = runner.runWithData[DelayTestRecord, Int](scenario, List.empty)
+    result.invalidValue should matchPattern {
+      case NonEmptyList(
+            InvalidDurationParameter(
+              NonNegativeDurationValidation.Message,
+              NonNegativeDurationValidation.Description,
+              DelayTransformer.delayParamName,
+              NodeId("delay")
+            ),
+            Nil
+          ) =>
+    }
   }
 
   private def createScenario(

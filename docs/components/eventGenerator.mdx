@@ -35,7 +35,7 @@ There are two primary use cases for this component:
 
 | Name                  | Description                                       |
 |-----------------------|---------------------------------------------------|
-| Schedule              | Specifies how often events will be sent           |
+| Schedule              | Specifies how often events will be sent. Must not be negative; zero generates events at the maximum rate.           |
 | Value                 | Expression specifying data payload that event will contain. Expression will be evaluated for every generated event |
 
 
@@ -45,4 +45,4 @@ There are two primary use cases for this component:
 |-----------------------|-------------------------|
 | Count                 | Number of events that will be generated at every run|
 | Event time            | Expression which evaluates to the time when the event was created. |
-| Max out-of-orderness  | The maximum amount of time the event is allowed to be late before being ignored when computing the result for time-based stream transformations: aggregates in time windows and joins. To read more about this mechanism see Flink documentation         |
+| Max out-of-orderness  | The maximum amount of time the event is allowed to be late before being ignored when computing the result for time-based stream transformations: aggregates in time windows and joins. Must not be negative. To read more about this mechanism see Flink documentation         |

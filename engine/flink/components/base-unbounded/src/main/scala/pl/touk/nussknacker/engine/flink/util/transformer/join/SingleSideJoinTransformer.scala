@@ -252,8 +252,11 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) wi
       )
 
   val WindowLengthParamName: ParameterName = ParameterName("windowLength")
+
   val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
-    ParameterDeclaration.mandatory[Duration](WindowLengthParamName).withCreator()
+    ParameterDeclaration
+      .mandatory[Duration](WindowLengthParamName)
+      .withCreator(modify = param => param.copy(validators = param.validators :+ CompileTimePositiveDurationValidator))
 
   val AggregateByParamName: ParameterName = ParameterName("aggregateBy")
 
