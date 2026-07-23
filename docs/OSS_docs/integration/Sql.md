@@ -15,7 +15,7 @@ It supports:
 
 - real time database lookup - a simplified mode where you can select from table and filter for a specified key
 - both `databaseQueryEnricher` as well as `databaseLookupEnricher` can cache query results
-- you can specify cache TTL (Time To Live) duration via `Cache TTL` property
+- you can specify cache TTL (Time To Live) duration via `Cache TTL` property; when set, it must be a positive duration
 - for `databaseQueryEnricher` you can specify `Result Strategy`
     - `Result set` - for retrieving whole query result set
     - `Single result` for retrieving a single value

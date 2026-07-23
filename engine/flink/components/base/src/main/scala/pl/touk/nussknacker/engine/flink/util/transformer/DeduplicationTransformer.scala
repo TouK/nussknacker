@@ -117,14 +117,15 @@ class DeduplicationTransformer(config: DeduplicationConfig)
           hintText = Some(
             "Time after which the deduplication entry expires. " +
               "The timer resets with each incoming event for a given key. " +
-              "After this period of inactivity, the next event is treated as new."
+              "After this period of inactivity, the next event is treated as new. " +
+              "It must be a positive duration (a non-positive TTL would disable deduplication)."
           ),
           editors = List(
             DurationParameterEditor(
               List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
             )
           ),
-          validators = param.validators :+ NotNullValidator
+          validators = param.validators :+ NotNullValidator :+ CompileTimePositiveDurationValidator
         )
     )
 

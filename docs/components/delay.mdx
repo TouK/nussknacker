@@ -27,7 +27,8 @@ Events are grouped by the **Key by** expression, and each event is delayed indep
 
 The **Delay** is evaluated per event, so it can be a constant or an expression computed from the
 incoming event (for example derived from an event field). A `null` value sends the event to the
-error handler; a negative duration is treated as no delay, so the event is released immediately.
+error handler. The delay must not be negative; a non-positive duration computed per event is treated
+as no delay, so the event is released immediately.
 Because the delay can differ between events, releases are ordered by each event's computed release
 time, which may differ from the input order.
 

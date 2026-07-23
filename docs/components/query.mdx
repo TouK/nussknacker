@@ -32,7 +32,7 @@ The Query enricher allows to bring to the scenario data returned by an SQL SELEC
 |-----------------------|---------------------------------------------------|
 |  Result strategy | If a query returns more than just one record and you need just one, you can set result strategy option to `single result` - this will ensure that only one db record will be used to populate the variable which holds output from this node. |
 |  Query           | The SQL SELECT statement. If parameter(s) need to be passed to the SQL query, use "?" as a placeholder for a parameter value; Nussknacker will dynamically adjust the node configuration window to include the entry field for the parameter(s). |
-|  Cache TTL       | How long the lookup result can be cached. Lookups which use cached values are faster  |
+|  Cache TTL       | How long the lookup result can be cached. Lookups which use cached values are faster. When set, it must be a positive duration.  |
 | arg1, .., argN   | Arguments to be supplied to the SELECT statement. |
 | Output variable name | This variable will contain the result of the query  |
 

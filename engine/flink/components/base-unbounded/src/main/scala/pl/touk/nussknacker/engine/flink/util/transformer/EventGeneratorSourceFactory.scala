@@ -63,15 +63,16 @@ object EventGeneratorSourceFactory
 
   private val scheduleParameterDeclaration = ParameterDeclaration
     .mandatory[Duration](scheduleParameterName)
-    .withCreator(
-      _.copy(
+    .withCreator(param =>
+      param.copy(
         editors = List(
           new DurationParameterEditor(
             List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
           ),
           SpelParameterEditor
         ),
-        defaultValue = Some("T(java.time.Duration).parse('PT1M')".spel)
+        defaultValue = Some("T(java.time.Duration).parse('PT1M')".spel),
+        validators = param.validators :+ CompileTimeNonNegativeDurationValidator
       )
     )
 

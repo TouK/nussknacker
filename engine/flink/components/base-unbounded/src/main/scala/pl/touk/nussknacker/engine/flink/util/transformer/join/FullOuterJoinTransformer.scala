@@ -261,7 +261,10 @@ object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) with Unbo
     ParameterDeclaration.branchLazyMandatory[AnyRef](AggregateByParamName).withCreator()
 
   val WindowLengthParamName: ParameterName = ParameterName("windowLength")
+
   val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
-    ParameterDeclaration.mandatory[Duration](WindowLengthParamName).withCreator()
+    ParameterDeclaration
+      .mandatory[Duration](WindowLengthParamName)
+      .withCreator(modify = param => param.copy(validators = param.validators :+ CompileTimePositiveDurationValidator))
 
 }

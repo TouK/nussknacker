@@ -85,7 +85,8 @@ trait WatermarkStrategyValidationHandler extends SingleInputDynamicComponent {
           s"The maximum amount of time an element is allowed to be late before being ignored when computing the result for time-based stream transformations. " +
             s"To read more about this mechanism see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("dev/datastream/event-time/built_in/#fixed-amount-of-lateness")})"
         ),
-        category = ParameterCategory.Advanced
+        category = ParameterCategory.Advanced,
+        validators = List(CompileTimeNonNegativeDurationValidator)
       )
 
   protected def isIdlenessParameterAvailable: Boolean = true
@@ -103,7 +104,8 @@ trait WatermarkStrategyValidationHandler extends SingleInputDynamicComponent {
           s"The time period after which $splitName is marked as idle if no events are received from it. " +
             s"To read more about this mechanism see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources")})"
         ),
-        category = ParameterCategory.Advanced
+        category = ParameterCategory.Advanced,
+        validators = List(CompileTimePositiveDurationValidator)
       )
 
   protected def maxOutOfOrdernessDefaultValueExpression: Expression = "T(java.time.Duration).parse('PT10S')".spel

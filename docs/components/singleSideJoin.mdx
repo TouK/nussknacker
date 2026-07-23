@@ -44,7 +44,7 @@ Single-side-join can be an attractive and very fast alternative to database look
 | key          | Expression, which is used to match events from different branches; separate expression for each branch. The expression in this field can refer to events and their associated variables (including `#input`) from their respective branches only.  |
 | Output variable name | the name of the variable which will hold the results of the aggregator function. |
 | Aggregator   | Aggregator function; see [this document](/docs/components/aggregatesInTimeWindows.mdx#common-to-all-window-types) for the list of available aggregator functions. |
-| WindowLength | See Description section for explanation |
+| WindowLength | Must be a positive duration. See Description section for explanation |
 | AggregateBy  | an input to the *aggregator* function; for each event with the same groupBy value which qualifies to the time window, the *aggregateBy* expression is evaluated and fed to the *aggregator* function. As the aggregator function is applied to events from the joined branch, you can refer to variables present in the joined branch only. |
 
 
