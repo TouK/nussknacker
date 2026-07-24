@@ -6,8 +6,8 @@ on:
         description: "Version that will be published"
         required: true
         type: string
-      git_source_branch:
-        description: "Source branch"
+      docker_image_branch:
+        description: "Branch identifier used for the docker '-latest' image tag (GitHub CI prefixes it with 'gh-')"
         required: true
         type: string
     secrets:
@@ -26,7 +26,7 @@ jobs:
     env:
       addDevArtifacts: true
       NUSSKNACKER_VERSION: ${{ inputs.nussknacker_version }}
-      GIT_SOURCE_BRANCH: ${{ inputs.git_source_branch }}
+      GIT_SOURCE_BRANCH: ${{ inputs.docker_image_branch }}
       SONATYPE_USERNAME: ${{ secrets.sonatype_user }}
       SONATYPE_PASSWORD: ${{ secrets.sonatype_password }}
     steps:
