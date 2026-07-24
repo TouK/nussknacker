@@ -36,6 +36,7 @@ jobs:
       fe_changes_count: ${{ steps.filter.outputs.fe_changes_count }}
       all_changes_count: ${{ steps.filter.outputs.all_changes_count }}
       git_source_branch: ${{ steps.variables.outputs.git_source_branch }}
+      docker_image_branch: ${{ steps.variables.outputs.docker_image_branch }}
       nk_snapshot_version: ${{ steps.variables.outputs.nk_snapshot_version }}
       scala_version_matrix: ${{ steps.variables.outputs.scala_version_matrix }}
     steps:
@@ -63,7 +64,10 @@ jobs:
           SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9._-]/\_/g' | awk '{print tolower($0)}'`
           VERSION_SUFFIX="-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-${GITHUB_SHA::9}"
           NK_SNAPSHOT_VERSION=`cat version.sbt | sed -e 's/.*:= *"//' -e 's/" *//' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/"`
+          # git_source_branch stays the real branch (used for the snapshot PR base); docker_image_branch drives the docker '-latest' tag.
+          DOCKER_IMAGE_BRANCH="gh-${GIT_SOURCE_BRANCH}"
           echo "git_source_branch=$GIT_SOURCE_BRANCH" >> $GITHUB_OUTPUT
+          echo "docker_image_branch=$DOCKER_IMAGE_BRANCH" >> $GITHUB_OUTPUT
           echo "nk_snapshot_version=$NK_SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
           if [[ $CROSS_BUILD == 'true' ]]; then
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
@@ -328,7 +332,7 @@ jobs:
       # have this conditional logic in this step. We force building images on our "special" branches because run between merges
       # could cause that cypress tests will be run at stale image.
       shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.docker_image_branch }}
       BE_PORT: 7251
     steps:
       # On self-hosted runners, docker can have some obsolete containers. Because of that, we clean them all
@@ -397,9 +401,10 @@ jobs:
         shell: bash
         run: |
           # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
-          NK_REF_VERSION=`[ "${GITHUB_REF}" != "" ] && echo "${GITHUB_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
-          NK_BASE_REF_VERSION=`[ "${NK_REF_VERSION}" != "" ] && echo "${NK_REF_VERSION}" || [ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
-          echo "NUSSKNACKER_VERSION=`[ \"${NK_BASE_REF_VERSION}\" != \"\" ] && echo \"${NK_BASE_REF_VERSION}\" || echo staging-latest`" >> $GITHUB_ENV
+          # GitHub CI publishes every branch image with a 'gh-' prefix, so prefix the resolved branch tag with 'gh-' when picking the image to pull.
+          NK_REF_VERSION=`[ "${GITHUB_REF}" != "" ] && echo "${GITHUB_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' -e 's/^/gh-/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
+          NK_BASE_REF_VERSION=`[ "${NK_REF_VERSION}" != "" ] && echo "${NK_REF_VERSION}" || [ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' -e 's/^/gh-/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
+          echo "NUSSKNACKER_VERSION=`[ \"${NK_BASE_REF_VERSION}\" != \"\" ] && echo \"${NK_BASE_REF_VERSION}\" || echo gh-staging-latest`" >> $GITHUB_ENV
       - name: FE tests e2e on pulled image
         if: ${{ env.shouldBuildImage == 'false' }}
         env:
@@ -485,7 +490,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release') }}
     with:
       nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
-      git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
+      docker_image_branch: ${{ needs.setup.outputs.docker_image_branch }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
@@ -499,7 +504,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.head_ref, 'preview') }}
     with:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
-      git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
+      docker_image_branch: ${{ needs.setup.outputs.docker_image_branch }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
