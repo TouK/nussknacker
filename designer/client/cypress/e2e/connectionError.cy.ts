@@ -9,6 +9,12 @@ describe("Connection error", () => {
         cy.deleteAllTestProcesses({ filter: NAME, force: true });
     });
 
+    after(() => {
+        // without this cleanup both scenarios created here (filter fixture) survive the run
+        // and pollute components usage counts in the next run on the same backend
+        cy.deleteAllTestProcesses({ filter: NAME, force: true });
+    });
+
     beforeEach(() => {
         cy.viewport(1400, 1000);
     });

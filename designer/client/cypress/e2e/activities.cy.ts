@@ -40,7 +40,9 @@ describe("Activities", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        // force: a failure between deployScenario and cancelScenario leaves the scenario deployed;
+        // archive/delete then respond with 409 and the leftover pollutes components usage counts in later specs
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
