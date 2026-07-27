@@ -22,6 +22,11 @@ describe("Compare", () => {
         cy.contains("Version to compare").get("#otherVersion input").select(1);
         cy.contains("Difference to pick").get("#differentVersion input").select(1);
         cy.contains(/^cancel$/i).should("be.visible");
+        // properties validation warnings load asynchronously; without this wait
+        // screenshots are taken in an unstable state on slow CI runners
+        cy.get("[data-testid=window]")
+            .contains(/threads will be used on environment/)
+            .should("exist");
         cy.get("[data-testid=window]").matchImage();
         cy.get("button[name=zoom]").click();
         cy.get("[data-testid=window]").matchImage();
