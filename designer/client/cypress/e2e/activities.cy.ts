@@ -129,6 +129,9 @@ describe("Activities", () => {
         });
 
         cy.deployScenario();
+        // the deployment activity is stored asynchronously after deploy; clicking "running version"
+        // computes search results only once, so on slow CI it finds nothing when clicked too early
+        cy.contains(/^Deployment$/).should("exist");
         cy.get('[data-testid="runningVersion"]').click();
         cy.get('[aria-selected="true"]').find('[aria-label="tool:Deployment"]').should("be.visible");
         cy.cancelScenario();
