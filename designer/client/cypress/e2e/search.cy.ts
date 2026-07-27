@@ -78,10 +78,12 @@ describe("Search Panel View", { testIsolation: false }, () => {
 
             cy.contains(/^submit$/i).click();
 
-            cy.get("input[data-selector='NODES_IN_SCENARIO']").should(
-                "have.value",
-                "name:(bounded,dynamic,send,enricher) type:(sink,enricher)",
-            );
+            // the order of selectors in the composed query is not deterministic
+            cy.get("input[data-selector='NODES_IN_SCENARIO']").should(($input) => {
+                const value = String($input.val());
+                expect(value).to.contain("name:(bounded,dynamic,send,enricher)");
+                expect(value).to.contain("type:(sink,enricher)");
+            });
 
             cy.contains("enricher");
             cy.contains("sendSms");
