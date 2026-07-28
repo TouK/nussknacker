@@ -17,8 +17,37 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 * [#9416](https://github.com/TouK/nussknacker/pull/9416) Feature: High Availability (HA) mode for the Designer.
     * Multiple Designer instances can now run concurrently. All instances serve requests; coordinated operations (such as recovering failed deployments) are performed by the elected leader only. If the leader fails, another instance takes over automatically.
-    * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>" }` — suitable for load-balancer routing.
-    * HA mode is **opt-in** and disabled by default; existing single-instance deployments require no changes. See the [Migration Guide](MigrationGuide.md) for configuration details.
+    * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>", "isHaEnabled": true/false }` — suitable for load-balancer routing.
+    * **Requires PostgreSQL** as the designer database.
+    * HA mode is **opt-in** and disabled by default; existing single-instance deployments require no changes. Example configuration:
+```hocon
+ha {
+  enabled: true
+
+  # Unique identifier for this instance; defaults to the hostname when absent.
+  # instanceId: "designer-1"
+
+  leader {
+    # How often the leader renews its lock.
+    heartbeatInterval: 10s   # default
+
+    # How long a leader lock is valid without renewal (must be > heartbeatInterval;
+    # recommended: leaseDuration >= 3 * heartbeatInterval).
+    leaseDuration: 30s   # default
+
+    # When true (default), the leader lock is released on graceful shutdown so another
+    # instance can take over immediately. Set to false to let the same instance
+    # re-acquire its lock on restart without waiting for lease expiry.
+    releaseOnStop: true   # default
+  }
+
+  # Maximum time a periodic scenario lock is held (covers the full deploy round-trip).
+  periodicLockDuration: 5m   # default
+
+  # Timeout for individual lock DB queries (must be < leader.heartbeatInterval).
+  lockQueryTimeout: 5s   # default
+}
+```
 * [#9415](https://github.com/TouK/nussknacker/pull/9415) `deduplication` component: added processing-time support and two filter counters.
     * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain used to measure the deduplication TTL. In processing time an idle key is reset on the wall clock, even with no traffic and no watermark; in event time the TTL is measured against the watermark and replays reproducibly.
     * The default `timeMode` can be configured via the optional `components.base.deduplication.timeMode` setting; when not configured it defaults to `ProcessingTime`. **Note:** this changes the previous default behavior (event time) for deduplication nodes that do not set the parameter.

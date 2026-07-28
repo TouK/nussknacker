@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.config.{Config, ConfigFactory}
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.tags.Slow
@@ -10,17 +11,31 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.NuRestAssureExtensions._
 import pl.touk.nussknacker.test.RestAssuredVerboseLoggingIfValidationFails
 import pl.touk.nussknacker.test.base.it.NuItTestWithPostgres
-import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 
 import scala.util.Using
 
 @Slow
 class AppApiHttpServiceHaSpec
     extends AnyFreeSpecLike
+    with BeforeAndAfterEach
     with Eventually
     with NuItTestWithPostgres
     with WithSimplifiedDesignerConfig
     with RestAssuredVerboseLoggingIfValidationFails {
+
+  override protected def afterEach(): Unit = {
+    Using(testDbRef.db.createSession()) { session =>
+      session
+        .prepareStatement(
+          s"""UPDATE "${getSchemaName()}"."distributed_locks"
+             |SET lock_until = LOCALTIMESTAMP - INTERVAL '1 second'
+             |WHERE name = 'designer-leader'""".stripMargin
+        )
+        .execute()
+    }.get
+    super.afterEach()
+  }
 
   override def designerRawConfig: Config =
     ConfigFactory
@@ -28,8 +43,10 @@ class AppApiHttpServiceHaSpec
         """ha {
           |  enabled: true
           |  instanceId: "test-instance"
-          |  leaderLeaseDuration: 30s
-          |  leaderHeartbeatInterval: 2s
+          |  leader {
+          |    leaseDuration: 30s
+          |    heartbeatInterval: 2s
+          |  }
           |  lockQueryTimeout: 1s
           |}""".stripMargin
       )
@@ -51,7 +68,7 @@ class AppApiHttpServiceHaSpec
                |WHERE name = 'designer-leader'""".stripMargin
           )
           .execute()
-      }
+      }.get
 
       eventually(timeout(Span(15, Seconds)), interval(Span(500, Millis))) {
         assertIsLeader(expected = false)
@@ -68,8 +85,9 @@ class AppApiHttpServiceHaSpec
       .statusCode(200)
       .equalsJsonBody(
         s"""{
-           |  "isLeader": $expected,
-           |  "instanceId": "test-instance"
+           |  "instanceId": "test-instance",
+           |  "isHaEnabled": true,
+           |  "isLeader": $expected
            |}""".stripMargin
       )
 

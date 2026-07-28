@@ -9,7 +9,8 @@ import pl.touk.nussknacker.ui.ha.DistributedLock
 import pl.touk.nussknacker.ui.process.periodic.PeriodicLock
 import pl.touk.nussknacker.ui.process.periodic.RescheduleFinishedActor
 
-import scala.concurrent.Future
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
 
 class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matchers with BeforeAndAfterAll {
@@ -25,10 +26,10 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
 
   private def lockReturning(value: Boolean) = new PeriodicLock(
     new DistributedLock {
-      def acquireOrRenew(name: String, duration: FiniteDuration) = Future.successful(value)
-      def release(name: String)                                  = Future.unit
+      override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Boolean] = Future.successful(value)
+      override def release(name: String): Future[Boolean]                                  = Future.successful(true)
     },
-    0.seconds
+    None
   )
 
   test("should invoke handle finished repeatedly") {
@@ -66,6 +67,107 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
     val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, lockReturning(false), interval))
 
     probe.expectNoMessage(maxWaitTime)
+
+    system.stop(actor)
+  }
+
+  test("should renew lock on each tick while handle finished is running") {
+    val acquireCount  = new AtomicInteger(0)
+    val finishPromise = Promise[Unit]()
+    val probe         = TestProbe()
+
+    val lock = new PeriodicLock(
+      new DistributedLock {
+        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Boolean] = {
+          acquireCount.incrementAndGet()
+          Future.successful(true)
+        }
+        override def release(name: String): Future[Boolean] = Future.successful(true)
+      },
+      None
+    )
+
+    def handleFinished: Future[Unit] = { probe.ref ! "started"; finishPromise.future }
+
+    val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, lock, interval))
+
+    within(maxWaitTime) { probe.expectMsg("started") }
+    Thread.sleep((interval * 5).toMillis)
+    acquireCount.get() should be > 1
+
+    finishPromise.success(())
+    system.stop(actor)
+  }
+
+  test("should complete handle finished even if lock is lost during execution") {
+    val acquireCount  = new AtomicInteger(0)
+    val finishPromise = Promise[Unit]()
+    val probe         = TestProbe()
+
+    val lock = new PeriodicLock(
+      new DistributedLock {
+        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Boolean] =
+          Future.successful(acquireCount.getAndIncrement() == 0)
+        override def release(name: String): Future[Boolean] = Future.successful(true)
+      },
+      None
+    )
+
+    def handleFinished: Future[Unit] = { probe.ref ! "started"; finishPromise.future }
+
+    val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, lock, interval))
+
+    within(maxWaitTime) { probe.expectMsg("started") }
+    Thread.sleep((interval * 3).toMillis) // renewal ticks return false — lock lost
+    finishPromise.success(())             // completes despite lock loss
+    probe.expectNoMessage(interval * 3)   // actor alive, no second invocation (lock still lost)
+
+    system.stop(actor)
+  }
+
+  test("should not invoke handle finished concurrently") {
+    val invocationCount = new AtomicInteger(0)
+    val finishPromise   = Promise[Unit]()
+    val probe           = TestProbe()
+
+    def handleFinished: Future[Unit] = {
+      invocationCount.incrementAndGet()
+      probe.ref ! "started"
+      finishPromise.future
+    }
+
+    val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, lockReturning(true), interval))
+
+    within(maxWaitTime) { probe.expectMsg("started") }
+    Thread.sleep((interval * 5).toMillis) // multiple ticks fire — none should re-invoke handleFinished
+    invocationCount.get() shouldBe 1
+
+    finishPromise.success(())
+    within(maxWaitTime) { probe.expectMsg("started") } // second invocation only after first completes
+    invocationCount.get() shouldBe 2
+
+    system.stop(actor)
+  }
+
+  test("should retry on next tick after lock acquisition failure") {
+    val acquireCount = new AtomicInteger(0)
+    val probe        = TestProbe()
+
+    val lock = new PeriodicLock(
+      new DistributedLock {
+        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Boolean] =
+          if (acquireCount.getAndIncrement() < 2) Future.failed(new RuntimeException("db error"))
+          else Future.successful(true)
+        override def release(name: String): Future[Boolean] = Future.successful(true)
+      },
+      None
+    )
+
+    def handleFinished: Future[Unit] = { probe.ref ! "invoked"; Future.successful(()) }
+
+    val actor = system.actorOf(RescheduleFinishedActor.props(handleFinished, lock, interval))
+
+    within(maxWaitTime) { probe.expectMsg("invoked") }
 
     system.stop(actor)
   }

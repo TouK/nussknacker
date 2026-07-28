@@ -29,8 +29,8 @@ class AppApiHttpService(
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
+    leadership: Leadership,
     shouldExposeConfig: Boolean,
-    leadership: Leadership
 )(implicit ec: ExecutionContextWithIORuntime)
     extends BaseHttpService(authManager)
     with LazyLogging {
@@ -51,8 +51,9 @@ class AppApiHttpService(
       .serverLogicSuccess { _ =>
         Future.successful(
           LeaderResponseDto(
-            leadership.isLeader(),
-            leadership.instanceId
+            instanceId = leadership.instanceId,
+            isHaEnabled = leadership.isHaEnabled,
+            isLeader = leadership.isLeader(),
           )
         )
       }

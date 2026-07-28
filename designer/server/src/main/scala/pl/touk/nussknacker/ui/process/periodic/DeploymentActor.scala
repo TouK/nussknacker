@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.periodic
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.{Actor, Props, Timers}
 import org.apache.pekko.pattern.pipe
-import pl.touk.nussknacker.ui.process.periodic.DeploymentActor._
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeployment
 
 import scala.concurrent.Future
@@ -29,13 +28,15 @@ object DeploymentActor {
     Props(new DeploymentActor(findToBeDeployed, deploy, lock, interval))
   }
 
-  private[periodic] case object CheckToBeDeployed
+  private sealed trait Msg
 
-  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment])
+  private object Msg {
+    case object CheckToBeDeployed                                         extends Msg
+    case class WaitingForDeployment(ids: List[PeriodicProcessDeployment]) extends Msg
+    case class LockAcquisitionResult(result: Try[Boolean])                extends Msg
+    case object DeploymentCompleted                                       extends Msg
+  }
 
-  private case class LockAcquisitionResult(result: Try[Boolean])
-
-  private case object DeploymentCompleted
 }
 
 class DeploymentActor(
@@ -49,60 +50,74 @@ class DeploymentActor(
 
   import context.dispatcher
 
+  import DeploymentActor._
+  import DeploymentActor.Msg._
+
   override def preStart(): Unit = {
     logger.info(s"Initializing with $interval interval")
     timers.startTimerAtFixedRate(key = "checkToBeDeployed", msg = CheckToBeDeployed, interval = interval)
   }
 
-  override def receive: Receive = {
+  override def receive: Receive = inState(handleIdle)
+
+  private def inState(f: Msg => Unit): Receive = { case msg: Msg => f(msg) }
+
+  private def handleIdle(msg: Msg): Unit = msg match {
     case CheckToBeDeployed =>
       logger.trace("Checking scenarios to be deployed")
-      findToBeDeployed.onComplete {
-        case Success(runDetailsSeq) =>
+      findToBeDeployed
+        .map { runDetailsSeq =>
           logger.debug(s"Found ${runDetailsSeq.size} to be deployed: ${runDetailsSeq.map(_.display)}")
-          self ! WaitingForDeployment(runDetailsSeq.toList)
-        case Failure(exception) =>
-          logger.error("Finding scenarios to be deployed failed unexpectedly", exception)
-      }
-    case WaitingForDeployment(Nil) =>
+          WaitingForDeployment(runDetailsSeq.toList)
+        }
+        .recover { case ex =>
+          logger.error("Finding scenarios to be deployed failed unexpectedly", ex)
+          WaitingForDeployment(Nil)
+        }
+        .pipeTo(self)
+    case WaitingForDeployment(Nil) => ()
     case WaitingForDeployment(runDetails :: _) =>
-      context.become(acquiringLock(runDetails))
+      context.become(inState(handleAcquiringLock(runDetails)))
       lock
         .acquireOrRenew()
         .transform(r => Success(LockAcquisitionResult(r))) pipeTo self
+    case LockAcquisitionResult(_) => ()
+    case DeploymentCompleted      => ()
   }
 
-  private def acquiringLock(runDetails: PeriodicProcessDeployment): Receive = {
-    case CheckToBeDeployed => ()
+  private def handleAcquiringLock(runDetails: PeriodicProcessDeployment)(msg: Msg): Unit = msg match {
+    case CheckToBeDeployed       => ()
+    case WaitingForDeployment(_) => ()
     case LockAcquisitionResult(Success(true)) =>
       logger.info(s"Found a scenario to be deployed: ${runDetails.display}")
-      context.become(receiveOngoingDeployment(runDetails))
-      deploy(runDetails).onComplete {
-        case Success(_) =>
-          self ! DeploymentCompleted
-        case Failure(exception) =>
-          logger.error(s"Deployment of ${runDetails.display} failed unexpectedly", exception)
-          self ! DeploymentCompleted
-      }
+      context.become(inState(handleOngoingDeployment(runDetails)))
+      deploy(runDetails)
+        .map(_ => DeploymentCompleted)
+        .recover { case ex =>
+          logger.error(s"Deployment of ${runDetails.display} failed unexpectedly", ex)
+          DeploymentCompleted
+        }
+        .pipeTo(self)
     case LockAcquisitionResult(Success(false)) =>
       logger.trace("Deployment lock not acquired, skipping")
-      context.become(receive)
+      context.become(inState(handleIdle))
     case LockAcquisitionResult(Failure(exception)) =>
       logger.warn("Failed to acquire deployment lock", exception)
-      context.become(receive)
+      context.become(inState(handleIdle))
+    case DeploymentCompleted => ()
   }
 
-  private def receiveOngoingDeployment(
-      runDetails: PeriodicProcessDeployment
-  ): Receive = {
+  private def handleOngoingDeployment(runDetails: PeriodicProcessDeployment)(msg: Msg): Unit = msg match {
     case CheckToBeDeployed =>
+      // TODO: on lock loss, update deployment status in DB so other nodes don't re-deploy the same scenario
       lock.acquireOrRenew().onComplete {
         case Success(false)     => logger.warn(s"Lost deployment lock while deploying ${runDetails.display}")
         case Failure(exception) => logger.warn(s"Failed to renew deployment lock for ${runDetails.display}", exception)
         case _                  => ()
       }
-    case DeploymentCompleted =>
-      context.become(receive)
+    case WaitingForDeployment(_)  => ()
+    case LockAcquisitionResult(_) => ()
+    case DeploymentCompleted      => context.become(inState(handleIdle))
   }
 
 }

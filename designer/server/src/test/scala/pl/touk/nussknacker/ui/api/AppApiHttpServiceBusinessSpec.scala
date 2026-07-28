@@ -203,7 +203,7 @@ class AppApiHttpServiceBusinessSpec
   }
 
   "The app leader endpoint should" - {
-    "return leader status with no instanceId when HA is disabled" in {
+    "return leader status with instanceId and haEnabled=false when HA is disabled" in {
       given()
         .when()
         .noAuth()
@@ -212,7 +212,9 @@ class AppApiHttpServiceBusinessSpec
         .statusCode(200)
         .equalsJsonBody(
           s"""{
-             |  "isLeader": true
+             |  "isLeader": true,
+             |  "instanceId": "test-instance",
+             |  "isHaEnabled": false
              |}""".stripMargin
         )
     }
@@ -392,6 +394,8 @@ class AppApiHttpServiceBusinessSpec
 
   private def originDesignerConfig = {
     super.designerRawConfig
+      .withValue("ha.enabled", fromAnyRef(false))
+      .withValue("ha.instanceId", fromAnyRef("test-instance"))
       .withValue("enableConfigEndpoint", fromAnyRef(true))
       .withValue(
         "globalBuildInfo",

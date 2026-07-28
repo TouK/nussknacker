@@ -7,13 +7,11 @@ import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.util.SLF4JBridgeHandlerRegistrar
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteFactory}
 
 import java.time.Clock
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.Future
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
@@ -39,33 +37,30 @@ class NussknackerAppFactory(
         domainServices = domainServices
       )
       _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
-      _ = {
-        // Recovery is triggered each time this node acquires leadership rather than once at startup.
-        // A node that starts as a non-leader (another node holds the lease) would otherwise never
-        // run recovery even after winning leadership following a failover.
-        // The callback is dispatched asynchronously inside LeadershipService so it never blocks the heartbeat.
-        domainServices.leadership.onLeadershipAcquired { () =>
-          recoverNotRunningDeploymentsThatShouldBeRunning(domainServices.reconciler)(
-            infrastructureServices.executionContextWithIORuntime
-          )
-        }
-      }
+      _ <- Resource.eval(registerDeploymentRecovery(domainServices, infrastructureServices))
       _ <- startJmxReporter(infrastructureServices.metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
   }
 
-  private def recoverNotRunningDeploymentsThatShouldBeRunning(
-      reconciler: ScenarioDeploymentReconciler
-  )(implicit ec: ExecutionContext): Unit = {
-    reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart).onComplete {
-      case Success(_) =>
-      case Failure(
-            exception
-          ) => // It is done just in case, it rather shouldn't happen because we have exception handling for each recovered deployment
-        logger.error("Error while deployments recovery", exception)
+  // Recovery is triggered each time this node acquires leadership rather than once at startup.
+  // A node that starts as a non-leader (another node holds the lease) would otherwise never
+  // run recovery even after winning leadership following a failover.
+  private def registerDeploymentRecovery(
+      domainServices: DomainServices,
+      infrastructureServices: InfrastructureServices,
+  ): IO[Unit] =
+    domainServices.leadership.onLeadershipAcquired { () =>
+      IO.fromFuture(
+        IO(
+          domainServices.reconciler
+            .recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart)
+            .recover { case exception => logger.error("Error while deployments recovery", exception) }(
+              infrastructureServices.executionContextWithIORuntime
+            )
+        )
+      )
     }
-  }
 
   private def startJmxReporter(metricsRegistry: MetricRegistry) = {
     Resource.eval(IO(JmxReporter.forRegistry(metricsRegistry).build().start()))

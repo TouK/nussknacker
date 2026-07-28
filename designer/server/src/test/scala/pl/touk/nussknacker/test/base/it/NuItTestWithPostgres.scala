@@ -18,14 +18,15 @@ trait NuItTestWithPostgres
     with BeforeAndAfterAll {
   this: Suite with WithDesignerConfig =>
 
-  private val port = nextPort()
+  private var port: Int = 0
 
-  val nuDesignerHttpAddress = s"http://localhost:$port"
+  def nuDesignerHttpAddress: String = s"http://localhost:$port"
 
   private var releaseAppResources: IO[Unit] = IO.unit
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    port = nextPort()
     val designerConfigLoader = new SimpleConfigLoadingDesignerConfigLoader(adjustNuTestConfig())
     releaseAppResources = new NussknackerAppFactory(designerConfigLoader)
       .createApp(clock = clock)

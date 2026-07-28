@@ -139,7 +139,6 @@ object DomainServices extends LazyLogging {
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
       distributedLock            = DistributedLock(alreadyLoadedConfig.haMode, dbRef)
       periodicLock <- PeriodicLock.create(alreadyLoadedConfig.haMode, distributedLock)
-      leadership   <- Leadership.create(alreadyLoadedConfig.haMode, distributedLock, actorSystem)
       deploymentData <- DeploymentManagersLoader.load(
         alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader,
@@ -207,6 +206,7 @@ object DomainServices extends LazyLogging {
         ),
         dbioRunner
       )
+      leadership <- Leadership.create(alreadyLoadedConfig.haMode, distributedLock, clock)
       _ <- DeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         deploymentsStatusesSynchronizer,

@@ -5,7 +5,6 @@ import derevo.derive
 import enumeratum._
 import enumeratum.EnumEntry.Uppercase
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
-import io.circe.generic.semiauto.deriveEncoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
@@ -88,7 +87,7 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
             .example(
               Example.of(
                 summary = Some("This instance is the leader"),
-                value = LeaderResponseDto(isLeader = true, instanceId = Some("instance-1"))
+                value = LeaderResponseDto(instanceId = "instance-1", isHaEnabled = true, isLeader = true)
               )
             )
         )
@@ -288,16 +287,12 @@ object AppApiEndpoints {
       def apply() = new HealthCheckProcessSuccessResponseDto(status = Status.Ok, message = None, processes = None)
     }
 
-    @derive(decoder, schema)
+    @derive(encoder, decoder, schema)
     final case class LeaderResponseDto private (
+        instanceId: String,
+        isHaEnabled: Boolean,
         isLeader: Boolean,
-        instanceId: Option[String],
     )
-
-    object LeaderResponseDto {
-      implicit val encoder: Encoder[LeaderResponseDto] =
-        deriveEncoder[LeaderResponseDto].mapJson(_.dropNullValues)
-    }
 
     @derive(encoder, decoder, schema)
     final case class HealthCheckProcessErrorResponseDto private (

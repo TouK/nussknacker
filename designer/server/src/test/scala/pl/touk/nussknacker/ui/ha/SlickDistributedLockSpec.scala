@@ -19,7 +19,7 @@ class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgr
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     Using(testDbRef.db.createSession()) { session =>
-      session.prepareStatement(s"""DELETE FROM "${getSchemaName()}".distributed_locks""").execute()
+      session.prepareStatement(s"""TRUNCATE TABLE "${getSchemaName()}".distributed_locks""").execute()
     }
   }
 
@@ -53,19 +53,19 @@ class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgr
 
   test("release allows another instance to acquire the lock") {
     inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
-    inst1.release(lockName).futureValue
+    inst1.release(lockName).futureValue shouldBe true
     inst2.acquireOrRenew(lockName, duration).futureValue shouldBe true
   }
 
   test("release by non-holder does not release the lock") {
     inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
-    inst2.release(lockName).futureValue
+    inst2.release(lockName).futureValue shouldBe false
     inst2.acquireOrRenew(lockName, duration).futureValue shouldBe false
   }
 
   test("acquireOrRenew can re-acquire own lock after release (locked_by bypass)") {
     inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
-    inst1.release(lockName).futureValue
+    inst1.release(lockName).futureValue shouldBe true
     // After release lock_until = now — both conditions in WHERE match for inst1
     inst1.acquireOrRenew(lockName, duration).futureValue shouldBe true
   }

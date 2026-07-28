@@ -49,23 +49,24 @@ class SchemaInSqlDetectorSpec extends AnyFunSuite {
       false
     ),
     (
-      """INSERT INTO "#arg"."distributed_locks" (name, lock_until, locked_at, locked_by)
+      """INSERT INTO #arg.distributed_locks AS dl (name, lock_until, locked_at, locked_by)
              VALUES (
                arg,
-               CURRENT_TIMESTAMP + CAST(arg || ' milliseconds' AS INTERVAL),
-               CURRENT_TIMESTAMP,
+               LOCALTIMESTAMP + INTERVAL 'arg milliseconds',
+               LOCALTIMESTAMP,
                arg
-             ) ON CONFLICT (name) DO UPDATE SET
+             )
+             ON CONFLICT (name) DO UPDATE SET
                lock_until = EXCLUDED.lock_until,
-               locked_at  = CURRENT_TIMESTAMP,
+               locked_at  = LOCALTIMESTAMP,
                locked_by  = EXCLUDED.locked_by
-             WHERE lock_until < CURRENT_TIMESTAMP
-                OR locked_by = arg""",
+             WHERE dl.lock_until < LOCALTIMESTAMP
+                OR dl.locked_by = arg""",
       false
     ),
     (
-      """UPDATE "#arg"."distributed_locks"
-             SET lock_until = CURRENT_TIMESTAMP
+      """UPDATE #arg.distributed_locks
+             SET lock_until = LOCALTIMESTAMP
              WHERE name = arg AND locked_by = arg""",
       false
     ),

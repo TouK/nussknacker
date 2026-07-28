@@ -6,17 +6,23 @@ import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
 import java.net.InetAddress
 import scala.concurrent.duration._
+import scala.util.Try
 
 sealed trait HaMode
 
 object HaMode {
 
-  case object Disabled extends HaMode
+  final case class Disabled(instanceId: String) extends HaMode
+
+  final case class LeaderConfig(
+      heartbeatInterval: FiniteDuration,
+      leaseDuration: FiniteDuration,
+      releaseOnStop: Boolean,
+  )
 
   final case class Enabled(
       instanceId: String,
-      leaderLeaseDuration: FiniteDuration,
-      leaderHeartbeatInterval: FiniteDuration,
+      leader: LeaderConfig,
       periodicLockDuration: FiniteDuration,
       lockQueryTimeout: FiniteDuration,
   ) extends HaMode
@@ -25,30 +31,48 @@ object HaMode {
     if (config.hasPath("ha.enabled") && config.getBoolean("ha.enabled")) {
       val cfg = config.as[EnabledConfig]("ha")
       val enabled = Enabled(
-        instanceId = cfg.instanceId.getOrElse(InetAddress.getLocalHost.getHostName),
-        leaderLeaseDuration = cfg.leaderLeaseDuration,
-        leaderHeartbeatInterval = cfg.leaderHeartbeatInterval,
+        instanceId = cfg.instanceId.getOrElse(defaultInstanceId),
+        leader = LeaderConfig(
+          heartbeatInterval = cfg.leader.heartbeatInterval,
+          leaseDuration = cfg.leader.leaseDuration,
+          releaseOnStop = cfg.leader.releaseOnStop,
+        ),
         periodicLockDuration = cfg.periodicLockDuration,
         lockQueryTimeout = cfg.lockQueryTimeout,
       )
-      if (enabled.lockQueryTimeout >= enabled.leaderHeartbeatInterval)
+      if (enabled.lockQueryTimeout >= enabled.leader.heartbeatInterval)
         throw new IllegalArgumentException(
-          s"ha.lockQueryTimeout (${enabled.lockQueryTimeout}) must be less than ha.leaderHeartbeatInterval (${enabled.leaderHeartbeatInterval})."
+          s"ha.lockQueryTimeout (${enabled.lockQueryTimeout}) must be less than ha.leader.heartbeatInterval (${enabled.leader.heartbeatInterval})."
         )
-      if (enabled.leaderLeaseDuration <= enabled.leaderHeartbeatInterval)
+      if (enabled.leader.leaseDuration <= enabled.leader.heartbeatInterval)
         throw new IllegalArgumentException(
-          s"ha.leaderLeaseDuration (${enabled.leaderLeaseDuration}) must be greater than ha.leaderHeartbeatInterval (${enabled.leaderHeartbeatInterval}). " +
-            s"Recommended: leaderLeaseDuration >= 3 * leaderHeartbeatInterval."
+          s"ha.leader.leaseDuration (${enabled.leader.leaseDuration}) must be greater than ha.leader.heartbeatInterval (${enabled.leader.heartbeatInterval}). " +
+            s"Recommended: leaseDuration >= 3 * heartbeatInterval."
         )
       enabled
     } else {
-      Disabled
+      val instanceId =
+        if (config.hasPath("ha.instanceId")) config.getString("ha.instanceId")
+        else defaultInstanceId
+      Disabled(instanceId)
     }
+
+  private def defaultInstanceId: String =
+    Try(InetAddress.getLocalHost.getHostName).getOrElse(
+      throw new IllegalArgumentException(
+        "Cannot determine instanceId automatically (getLocalHost failed). Set ha.instanceId explicitly in the config."
+      )
+    )
+
+  private final case class LeaderEnabledConfig(
+      heartbeatInterval: FiniteDuration = 10.seconds,
+      leaseDuration: FiniteDuration = 30.seconds,
+      releaseOnStop: Boolean = true,
+  )
 
   private final case class EnabledConfig(
       instanceId: Option[String] = None,
-      leaderLeaseDuration: FiniteDuration = 30.seconds,
-      leaderHeartbeatInterval: FiniteDuration = 10.seconds,
+      leader: LeaderEnabledConfig = LeaderEnabledConfig(),
       periodicLockDuration: FiniteDuration = 5.minutes,
       lockQueryTimeout: FiniteDuration = 5.seconds,
   )
