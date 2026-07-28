@@ -36,8 +36,9 @@ class NussknackerAppFactory(
         infrastructureServices = infrastructureServices,
         domainServices = domainServices
       )
-      _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
       _ <- Resource.eval(registerDeploymentRecovery(domainServices, infrastructureServices))
+      _ <- domainServices.leadership.startHeartbeat()
+      _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
       _ <- startJmxReporter(infrastructureServices.metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()

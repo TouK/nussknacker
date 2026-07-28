@@ -63,7 +63,7 @@ class SlickDistributedLock(
                lock_until = EXCLUDED.lock_until,
                locked_at  = LOCALTIMESTAMP,
                locked_by  = EXCLUDED.locked_by
-             WHERE dl.lock_until < LOCALTIMESTAMP
+             WHERE dl.lock_until <= LOCALTIMESTAMP
                 OR dl.locked_by = $instanceId"""
       .withStatementParameters(statementInit = _.setQueryTimeout(lockQueryTimeoutSeconds))
   }.map(_ > 0)
