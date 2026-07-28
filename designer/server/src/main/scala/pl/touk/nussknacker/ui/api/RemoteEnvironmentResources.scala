@@ -18,7 +18,11 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
-import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
+import pl.touk.nussknacker.ui.process.migrate.{
+  RemoteEnvironment,
+  RemoteEnvironmentCommunicationError,
+  RemoteScenarioVersions
+}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -147,15 +151,25 @@ class RemoteEnvironmentResources(
         } ~
         path(ProcessNameSegment / "versions") { processName =>
           (get & processId(processName)) { processId =>
-            complete {
-              remoteEnvironment.processVersions(processId.name)
+            canRead(processId) {
+              onSuccess(remoteEnvironment.processVersions(processId.name)) {
+                case RemoteScenarioVersions(versions, false) =>
+                  complete(versions)
+                case RemoteScenarioVersions(_, true) =>
+                  complete(
+                    StatusCodes.BadGateway,
+                    s"Could not fetch scenario versions from the ${remoteEnvironment.environmentId} environment"
+                  )
+              }
             }
           }
         } ~
         path(ProcessNameSegment / "activities") { processName =>
           (get & processId(processName)) { processId =>
-            complete {
-              remoteEnvironment.activities(processId.name).map(ScenarioActivities.apply)
+            canRead(processId) {
+              complete {
+                remoteEnvironment.activities(processId.name).map(ScenarioActivities.apply)
+              }
             }
           }
         }

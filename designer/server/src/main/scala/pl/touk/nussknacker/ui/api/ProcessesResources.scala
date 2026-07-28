@@ -270,10 +270,17 @@ class ProcessesResources(
       } ~ path("processes" / ProcessNameSegment / "versions" / "graphs") { processName =>
         (get & processId(processName) & parameters(Symbol("versionIds").as(CsvSeq[Long]))) {
           (processId, versionIdValues) =>
-            complete {
-              val versionIds = versionIdValues.map(VersionId(_)).toList
-              processService.getScenarioGraphsForVersionIds(processId, versionIds).map { graphs =>
-                VersionGraphs(versionIds.flatMap(id => graphs.get(id).map(VersionGraph(id, _))))
+            if (versionIdValues.size > VersionsWithDifferencesService.MaxPageSize) {
+              complete(
+                StatusCodes.BadRequest,
+                s"versionIds must contain at most ${VersionsWithDifferencesService.MaxPageSize} ids"
+              )
+            } else {
+              complete {
+                val versionIds = versionIdValues.map(VersionId(_)).toList
+                processService.getScenarioGraphsForVersionIds(processId, versionIds).map { graphs =>
+                  VersionGraphs(versionIds.flatMap(id => graphs.get(id).map(VersionGraph(id, _))))
+                }
               }
             }
         }

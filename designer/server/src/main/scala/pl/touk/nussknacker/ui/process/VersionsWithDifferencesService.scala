@@ -27,7 +27,8 @@ object VersionsWithDifferencesService {
 
   @JsonCodec final case class VersionsWithDifferences(
       versions: List[VersionWithDifference],
-      hasMore: Boolean
+      hasMore: Boolean,
+      remoteUnavailable: Boolean = false
   )
 
   def compute(
@@ -60,9 +61,13 @@ object VersionsWithDifferencesService {
   }
 
   private def paginate(ids: List[VersionId], pageNumber: Int, pageSize: Int): (List[VersionId], Boolean) = {
-    val offset = pageNumber * pageSize
-    val page   = ids.slice(offset, offset + pageSize)
-    (page, offset + pageSize < ids.size)
+    val offset = pageNumber.toLong * pageSize
+    if (offset >= ids.size) {
+      (Nil, false)
+    } else {
+      val offsetInt = offset.toInt
+      (ids.slice(offsetInt, offsetInt + pageSize), offsetInt + pageSize < ids.size)
+    }
   }
 
 }
@@ -111,19 +116,18 @@ class VersionsWithDifferencesService(processService: ProcessService) {
     for {
       localDetails      <- localDetailsFuture
       allRemoteVersions <- allRemoteVersionsFuture
-      result <- VersionsWithDifferencesService.compute(
-        localDetails.scenarioGraphUnsafe,
-        allRemoteVersions.map(_.processVersionId),
-        pageNumber,
-        pageSize,
-        // A single bulk round trip for the whole page, instead of one remote HTTP call per version.
-        fetchGraphs = page => remoteEnvironment.scenarioGraphsForVersions(processIdWithName.name, page),
-        // The remote environment didn't return a graph for this version (e.g. it's running a
-        // Nussknacker version older than this bulk-fetch endpoint). We can't tell whether it
-        // actually differs, so we conservatively mark it as different rather than silently
-        // hiding a version that might have real, unreviewed changes.
-        describeMissingGraph = versionId => Some(VersionWithDifference(versionId, Nil, differencesUnknown = true))
-      )
+      result <-
+        if (allRemoteVersions.remoteUnavailable) {
+          Future.successful(VersionsWithDifferences(Nil, hasMore = false, remoteUnavailable = true))
+        } else
+          VersionsWithDifferencesService.compute(
+            localDetails.scenarioGraphUnsafe,
+            allRemoteVersions.versions.map(_.processVersionId),
+            pageNumber,
+            pageSize,
+            fetchGraphs = page => remoteEnvironment.scenarioGraphsForVersions(processIdWithName.name, page),
+            describeMissingGraph = versionId => Some(VersionWithDifference(versionId, Nil, differencesUnknown = true))
+          )
     } yield result
   }
 

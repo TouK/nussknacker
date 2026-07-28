@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWit
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
+  RemoteScenarioVersions,
   TestMigrationResult
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -156,11 +157,14 @@ class RemoteEnvironmentResourcesSpec
     val versionWithoutDiff = VersionId(2)
 
     val remoteEnvironment = new MockRemoteEnvironment() {
-      override def processVersions(pName: ProcessName): Future[List[ScenarioVersion]] =
+      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
         Future.successful(
-          List(
-            ScenarioVersion(versionWithDiff, Instant.now(), "user"),
-            ScenarioVersion(versionWithoutDiff, Instant.now(), "user"),
+          RemoteScenarioVersions(
+            List(
+              ScenarioVersion(versionWithDiff, Instant.now(), "user"),
+              ScenarioVersion(versionWithoutDiff, Instant.now(), "user"),
+            ),
+            remoteUnavailable = false
           )
         )
 
@@ -208,8 +212,10 @@ class RemoteEnvironmentResourcesSpec
     val versionWithUnknownDiff = VersionId(1)
 
     val remoteEnvironment = new MockRemoteEnvironment() {
-      override def processVersions(pName: ProcessName): Future[List[ScenarioVersion]] =
-        Future.successful(List(ScenarioVersion(versionWithUnknownDiff, Instant.now(), "user")))
+      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
+        Future.successful(
+          RemoteScenarioVersions(List(ScenarioVersion(versionWithUnknownDiff, Instant.now(), "user")), remoteUnavailable = false)
+        )
 
       // Simulates a remote environment that doesn't support the bulk graphs endpoint yet
       // (e.g. an older Nussknacker version) - RemoteEnvironment.scenarioGraphsForVersions
@@ -270,6 +276,100 @@ class RemoteEnvironmentResourcesSpec
       Get(s"/remoteEnvironment/$processName/activities") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[ScenarioActivities] shouldBe ScenarioActivities(List(activity))
+      }
+    }
+  }
+
+  it should "not expose remote activities and versions to a user without read access to the scenario" in {
+    val activity = ScenarioActivity.forScenarioCreated(
+      id = java.util.UUID.fromString("80c95497-3b53-4435-b2d9-ae73c5766213"),
+      user = "some user",
+      date = java.time.Instant.parse("2024-01-17T14:21:17Z"),
+      scenarioVersionId = Some(1),
+    )
+
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def activities(pName: ProcessName): Future[List[ScenarioActivity]] =
+        Future.successful(List(activity))
+
+      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
+        Future.successful(
+          RemoteScenarioVersions(List(ScenarioVersion(VersionId(1), java.time.Instant.now(), "user")), remoteUnavailable = false)
+        )
+    }
+
+    // The remote environment is queried with the designer's own service account, so without an explicit
+    // check any authenticated user could read a scenario they have no access to - comments included.
+    val routeWithoutReadPermission = withPermissions(
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        processService,
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
+      )
+    )
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/activities") ~> routeWithoutReadPermission ~> check {
+        status shouldEqual StatusCodes.Forbidden
+      }
+      Get(s"/remoteEnvironment/$processName/versions") ~> routeWithoutReadPermission ~> check {
+        status shouldEqual StatusCodes.Forbidden
+      }
+    }
+  }
+
+  it should "not expose remote versions with differences to a user without read access to the scenario" in {
+    val routeWithoutReadPermission = withPermissions(
+      new RemoteEnvironmentResources(
+        new MockRemoteEnvironment,
+        processService,
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
+      )
+    )
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(
+        s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10"
+      ) ~> routeWithoutReadPermission ~> check {
+        status shouldEqual StatusCodes.NotFound
+      }
+    }
+  }
+
+  it should "report that the remote environment is unavailable instead of an empty list of versions" in {
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
+        Future.successful(RemoteScenarioVersions(List.empty, remoteUnavailable = true))
+    }
+
+    val route = withPermissions(
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        processService,
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
+      ),
+      Permission.Read
+    )
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        val result = responseAs[VersionsWithDifferences]
+        result.versions shouldBe empty
+        result.hasMore shouldBe false
+        result.remoteUnavailable shouldBe true
+      }
+      Get(s"/remoteEnvironment/$processName/versions") ~> route ~> check {
+        status shouldEqual StatusCodes.BadGateway
       }
     }
   }
@@ -337,7 +437,8 @@ class RemoteEnvironmentResourcesSpec
       )
     }
 
-    override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] = Future.successful(List())
+    override def processVersions(processName: ProcessName): Future[RemoteScenarioVersions] =
+      Future.successful(RemoteScenarioVersions(List.empty, remoteUnavailable = false))
 
     override def scenarioGraphsForVersions(
         processName: ProcessName,

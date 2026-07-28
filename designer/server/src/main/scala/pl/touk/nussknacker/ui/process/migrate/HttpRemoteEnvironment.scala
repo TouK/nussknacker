@@ -64,7 +64,7 @@ class HttpRemoteEnvironment(
 
   def closeAsync(): Future[Unit] = http.shutdownAllConnectionPools()
 
-  override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] =
+  override def processVersions(processName: ProcessName): Future[RemoteScenarioVersions] =
     invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
       List("processes", processName.value)
@@ -72,13 +72,13 @@ class HttpRemoteEnvironment(
       _.fold(
         error => {
           logFetchError("scenario versions", processName, error)
-          List.empty[ScenarioVersion]
+          RemoteScenarioVersions(Nil, remoteUnavailable = !isScenarioAbsentOnRemote(error))
         },
-        _.historyUnsafe
+        details => RemoteScenarioVersions(details.historyUnsafe, remoteUnavailable = false)
       )
     }.recover { case NonFatal(ex) =>
-      logger.warn(s"Failed to fetch scenario versions from remote environment for scenario ${processName.value}", ex)
-      List.empty
+      logger.error(s"Failed to fetch scenario versions from remote environment for scenario ${processName.value}", ex)
+      RemoteScenarioVersions(Nil, remoteUnavailable = true)
     }
 
   override def scenarioGraphsForVersions(
@@ -119,11 +119,22 @@ class HttpRemoteEnvironment(
       List.empty
     }
 
+  private def isScenarioAbsentOnRemote(error: NuDesignerError): Boolean = error match {
+    case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) => true
+    case _                                                           => false
+  }
+
   private def logFetchError(what: String, processName: ProcessName, error: NuDesignerError): Unit = error match {
     case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
       logger.warn(
-        s"Remote environment doesn't support fetching $what for scenario ${processName.value} " +
-          s"(likely an older Nussknacker version)"
+        s"Remote environment doesn't have $what for scenario ${processName.value} " +
+          s"(scenario not migrated there, or an older Nussknacker version without this endpoint)"
+      )
+    case RemoteEnvironmentCommunicationError(statusCode, message)
+        if statusCode == StatusCodes.Unauthorized || statusCode == StatusCodes.Forbidden =>
+      logger.error(
+        s"Remote environment rejected our credentials while fetching $what for scenario " +
+          s"${processName.value}: $statusCode $message. Check the remote environment configuration."
       )
     case RemoteEnvironmentCommunicationError(statusCode, message) =>
       logger.warn(

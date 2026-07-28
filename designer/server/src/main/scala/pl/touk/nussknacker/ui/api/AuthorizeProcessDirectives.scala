@@ -28,6 +28,10 @@ trait AuthorizeProcessDirectives {
     hasUserPermissionInProcess(processIdAndUser, Permission.Write)
   }
 
+  def canRead(processIdAndUser: (ProcessId, LoggedUser)): Directive0 = {
+    hasUserPermissionInProcess(processIdAndUser, Permission.Read)
+  }
+
   private def canInProcess(processId: ProcessId, permission: Permission, user: LoggedUser): Directive0 = {
     Directives.authorizeAsync(_ => processAuthorizer.check(processId, permission, user))
   }

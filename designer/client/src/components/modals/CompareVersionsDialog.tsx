@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { CircularProgress, FormControl, FormLabel } from "@mui/material";
+import { CircularProgress, FormControl, FormHelperText, FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
 import i18next, { type TFunction } from "i18next";
 import { keys } from "lodash";
@@ -52,9 +52,17 @@ type DiffsPageState = {
     nextPageNumber: number;
     isLoadingMore: boolean;
     error: boolean;
+    unavailable: boolean;
 };
 
-const initialDiffsPageState: DiffsPageState = { diffs: null, hasMore: false, nextPageNumber: 0, isLoadingMore: false, error: false };
+const initialDiffsPageState: DiffsPageState = {
+    diffs: null,
+    hasMore: false,
+    nextPageNumber: 0,
+    isLoadingMore: false,
+    error: false,
+    unavailable: false,
+};
 
 const usePaginatedVersionDiffs = (
     fetchPage: ((pageNumber: number) => Promise<VersionsWithDifferencesResponse | null>) | null,
@@ -64,13 +72,21 @@ const usePaginatedVersionDiffs = (
     const applyPage = useCallback((pageNumber: number, result: VersionsWithDifferencesResponse | null, isLoadingMore = false) => {
         setState((prev) =>
             result === null
-                ? { diffs: prev.diffs, hasMore: prev.hasMore, nextPageNumber: pageNumber, isLoadingMore, error: true }
+                ? {
+                      diffs: prev.diffs,
+                      hasMore: prev.hasMore,
+                      nextPageNumber: pageNumber,
+                      isLoadingMore,
+                      error: true,
+                      unavailable: prev.unavailable,
+                  }
                 : {
                       diffs: new Map([...(prev.diffs ?? []), ...toVersionDiffsMap(result.versions)]),
                       hasMore: result.hasMore,
                       nextPageNumber: pageNumber + 1,
                       isLoadingMore,
                       error: false,
+                      unavailable: Boolean(result.remoteUnavailable),
                   },
         );
     }, []);
@@ -530,6 +546,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 <FormControl>
                     <FormLabel>{t("dialog.compareVersions.environment", "Environment")}</FormLabel>
                     <TypeSelect
+                        readOnly={Boolean(predefinedOtherVersion)}
                         id="environment"
                         onChange={handleEnvironmentChange}
                         value={environmentOptions.find((o) => o.value === state.environment)}
@@ -552,6 +569,13 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                         selectComponents={VERSION_MENU_COMPONENTS}
                     />
                 </LoadMoreContext.Provider>
+                {state.environment === "remote" && remoteDiffsState.unavailable && (
+                    <FormHelperText error>
+                        {t("dialog.compareVersions.remoteUnavailable", "Could not reach the {{name}} environment", {
+                            name: otherEnvironment,
+                        })}
+                    </FormHelperText>
+                )}
             </FormControl>
             {state.otherVersion ? (
                 <div>

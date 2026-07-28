@@ -188,6 +188,9 @@ type DictOption = {
 export type VersionsWithDifferencesResponse = {
     versions: { versionId: number; changedElements: string[]; differencesUnknown: boolean }[];
     hasMore: boolean;
+    // Remote environment endpoint only: true means the versions list is empty because the remote environment
+    // could not be reached, not because every remote version is identical.
+    remoteUnavailable?: boolean;
 };
 
 // The only place that decides the page size for versions-with-differences requests - the backend takes
@@ -1124,13 +1127,18 @@ class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
-    // The secondary environment may run an incompatible Nussknacker version, so any error
-    // (network, HTTP, or an unexpected response shape) is swallowed and treated as "no data".
+    // Comments from the remote environment are a nice-to-have decoration of the version list, so a failure
+    // here degrades the list rather than breaking the dialog. Note that problems with the *remote* side
+    // (unreachable, older Nussknacker version, ...) are already folded into an empty 200 by the designer -
+    // what this catch swallows are failures of the local designer call itself.
     fetchRemoteActivities(scenarioName: string): Promise<ActivitiesResponse | null> {
         return api
             .get<ActivitiesResponse>(`/remoteEnvironment/${encodeURIComponent(scenarioName)}/activities`)
             .then((response) => response.data)
-            .catch(() => null);
+            .catch((error) => {
+                console.warn("Failed to fetch activities from the remote environment", error);
+                return null;
+            });
     }
 
     sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
