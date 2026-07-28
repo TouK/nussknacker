@@ -39,7 +39,7 @@ There are however important differences in the way UnionMemo works:
 |-----------------------|---------------------------------------------------|
 | key                   | Expression, which used to match events from the incoming branches |
 | value                 | The result of this expression will be put in the a field of the output variable. The name of the field will be the same as branch id |
-| stateTimeout          | Defines for how long events are memoized          |
+| stateTimeout          | Defines for how long events are memoized. Must be a positive duration.          |
 | Output variable name  | This variable will hold result of the UnionMemo node |
  
 

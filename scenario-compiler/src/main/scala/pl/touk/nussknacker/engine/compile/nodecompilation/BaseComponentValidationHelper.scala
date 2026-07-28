@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.valid
-import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{MandatoryExpressionValidator, NotNullValidator, ParameterValidator}
@@ -37,13 +37,14 @@ object BaseComponentValidationHelper {
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
       paramName: ParameterName,
       inputContext: SingleInputNodeInputValidationContext
-  )(implicit nodeId: NodeId) = {
+  )(implicit nodeId: NodeId): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
     expression
       .map { expr =>
-        Validations
+        CompileTimeParameterValidation
           .validate(
             List(validator),
-            TypedParameter(paramName, SingleBranchTypedValue(expr, inputContext.validationContext))
+            TypedParameter(paramName, SingleBranchTypedValue(expr, inputContext.validationContext)),
+            evaluatedResult = None
           )
           .map(_ => ())
       }

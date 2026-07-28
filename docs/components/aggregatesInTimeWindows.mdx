@@ -132,13 +132,13 @@ Parameters specific to the aggregate-session:
 |Name                   | Description                                       |
 |-----------------------|---------------------------------------------------|
 | endSessionCondition   | The Aggregate Session window can close not only on timeout; it will also close when the expression entered in this field evaluates to true. Set this parameter to `false` if the only way to close the window is through session timeout.   |
-| sessionTimeout        | Aggregate Session window will close after this time since the last event.   |
+| sessionTimeout        | Aggregate Session window will close after this time since the last event. Must be a positive duration.   |
 | emitWhen              | determines when the event with the result of the aggregation will be emitted. Possible values are:<br/>`On each event` - Window won't be emitted on session end, but after each event. This can be useful when we want to know values of aggregations while session is in progress, but we're not interested in specific event ending the session.<br/> `After session end` - the aggregate event will be emitted only after session window closes.  |
 
 
 ### Aggregate Sliding specific
 
-The sliding window 'slides' the aggregation window over the events and emits an aggregate whenever a new event arrives ("enters the window"). This is different from the tumbling window, where new window starts regardless of whether event arrived or not.
+The sliding window 'slides' the aggregation window over the events and emits an aggregate whenever a new event arrives ("enters the window"). This is different from the tumbling window, where new window starts regardless of whether event arrived or not. The window length must be a positive duration.
 
 
 <figure>
@@ -194,7 +194,7 @@ Parameters specific to the aggregate-tumbling:
 
 |Name          | Description                                       |
 |--------------|--------------------------------------------------|
-| windowLength | Length of the tumbling window   |
+| windowLength | Length of the tumbling window. Must be a positive duration.   |
 | emitWhen     | Determines when the event with the result of the aggregation will be emitted. Possible values are:<br/> - On each event<br/>- After window closes<br/> - After window closes, also when no event for key - we produce extra zero aggregate for each key when no data arrived   |
 |    |    |
 |    |    |

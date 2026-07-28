@@ -31,7 +31,7 @@ The Lookup enricher allows to bring to the scenario data looked up in the databa
 | Name         | Description                                       |
 |-----------------------|---------------------------------------------------|
 |  Table       | Table to be to looked up                          |
-|  Cache TTL   | How long the lookup result can be cached. Lookups which use cached values are faster  |
+|  Cache TTL   | How long the lookup result can be cached. Lookups which use cached values are faster. When set, it must be a positive duration.  |
 | Key column   | Column which will be used to match the `Key value`. Typically some kind of an identifier  |
 | Key value    | Value used to search through the table for the matching record.    |
 |  Output variable name | This variable will contain the result of the Lookup  |

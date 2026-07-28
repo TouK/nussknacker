@@ -94,6 +94,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "genericTransformerUsingParameterValidator",
           GenericParametersTransformerUsingParameterValidator
         ),
+        ComponentDefinition("eagerValueValidating", EagerValueValidatingTransformer),
+        ComponentDefinition("lazyValueValidating", LazyValueValidatingTransformer),
+        ComponentDefinition("optionalEagerValueValidating", OptionalEagerValueValidatingTransformer),
+        ComponentDefinition("javaOptionalEagerValueValidating", JavaOptionalEagerValueValidatingTransformer),
         ComponentDefinition("stringService", SimpleStringService),
         ComponentDefinition("genericParametersThrowingException", GenericParametersThrowingException),
         ComponentDefinition("missingParamHandleGenericNodeTransformation", MissingParamHandleDynamicComponent$),
@@ -294,6 +298,100 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty
       )
     ) { case ValidationPerformed(InvalidPropertyFixedValue(_, _, "666", _, _) :: Nil, _, _, _) =>
+    }
+  }
+
+  private val valueValidationCases = Table(
+    ("description", "component", "valueExpression", "expectViolation"),
+    (
+      "non-optional, method-call below @Min",
+      "eagerValueValidating",
+      "T(java.time.Duration).parse('PT3S').getSeconds()",
+      true
+    ),
+    (
+      "non-optional, method-call at/above @Min",
+      "eagerValueValidating",
+      "T(java.time.Duration).parse('PT9S').getSeconds()",
+      false
+    ),
+    ("non-optional, literal below @Min", "eagerValueValidating", "3L", true),
+    ("non-optional, literal at/above @Min", "eagerValueValidating", "9L", false),
+    (
+      "scala Option, method-call below @Min",
+      "optionalEagerValueValidating",
+      "T(java.time.Duration).parse('PT3S').getSeconds()",
+      true
+    ),
+    (
+      "scala Option, method-call at/above @Min",
+      "optionalEagerValueValidating",
+      "T(java.time.Duration).parse('PT9S').getSeconds()",
+      false
+    ),
+    (
+      "java Optional, method-call below @Min",
+      "javaOptionalEagerValueValidating",
+      "T(java.time.Duration).parse('PT3S').getSeconds()",
+      true
+    ),
+    (
+      "java Optional, method-call at/above @Min",
+      "javaOptionalEagerValueValidating",
+      "T(java.time.Duration).parse('PT9S').getSeconds()",
+      false
+    ),
+    (
+      "lazy with context-free expression, method-call below @Min",
+      "lazyValueValidating",
+      "T(java.time.Duration).parse('PT3S').getSeconds()",
+      true
+    ),
+    (
+      "lazy with context-free expression, method-call at/above @Min",
+      "lazyValueValidating",
+      "T(java.time.Duration).parse('PT9S').getSeconds()",
+      false
+    ),
+  )
+
+  forAll(valueValidationCases) { (description, component, valueExpression, expectViolation) =>
+    test(s"should value-validate a @Min param with $description") {
+      inside(
+        validate(
+          CustomNode(
+            NodeId("tst1"),
+            NodeName("tst1"),
+            None,
+            component,
+            List(par("value", valueExpression))
+          ),
+          Map.empty
+        )
+      ) { case ValidationPerformed(errors, _, _, _) =>
+        if (expectViolation)
+          errors should matchPattern {
+            case LowerThanRequiredParameter(_, _, ParameterName("value"), NodeId("tst1")) :: Nil =>
+          }
+        else
+          errors shouldBe empty
+      }
+    }
+  }
+
+  test("should not value-validate a lazy @Min param whose expression reads context variables") {
+    inside(
+      validate(
+        CustomNode(
+          NodeId("tst1"),
+          NodeName("tst1"),
+          None,
+          "lazyValueValidating",
+          List(par("value", "#longValue")),
+        ),
+        Map("longValue" -> Typed[java.lang.Long])
+      )
+    ) { case ValidationPerformed(Nil, _, _, _) =>
     }
   }
 

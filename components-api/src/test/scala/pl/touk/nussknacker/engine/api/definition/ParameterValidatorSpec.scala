@@ -1,11 +1,16 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import cats.data.Validated
+import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidDurationParameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
+
+import java.time.Duration
 
 class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks with Matchers {
 
@@ -352,6 +357,139 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
       validator
         .isValid(ParameterName("dummy"), Expression.spel(expression), value)
         .isValid shouldBe expected
+    }
+  }
+
+  test("NonNegative duration validators compile-time validation") {
+    forAll(
+      Table(
+        "validator",
+        NonNegativeDurationValidator,
+        CompileTimeNonNegativeDurationValidator,
+      )
+    ) { validator =>
+      forAll(
+        Table(
+          ("value", "isValid"),
+          (Some(Duration.ofSeconds(-1)), false),
+          (Some(Duration.ZERO), true),
+          (Some(Duration.ofSeconds(5)), true),
+          (None, true),
+          (Some(null), true),
+          (Some("not a duration"), true),
+        )
+      ) { (value, expected) =>
+        validator.isValid(ParameterName("dummy"), Expression.spel(""), value, None).isValid shouldBe expected
+      }
+    }
+  }
+
+  test("Positive duration validators compile-time validation") {
+    forAll(
+      Table(
+        "validator",
+        PositiveDurationValidator,
+        CompileTimePositiveDurationValidator,
+      )
+    ) { validator =>
+      forAll(
+        Table(
+          ("value", "isValid"),
+          (Some(Duration.ofSeconds(-1)), false),
+          (Some(Duration.ZERO), false),
+          (Some(Duration.ofMillis(1)), true),
+          (Some(Duration.ofSeconds(5)), true),
+          (None, true),
+          (Some(null), true),
+          (Some("not a duration"), true),
+        )
+      ) { (value, expected) =>
+        validator.isValid(ParameterName("dummy"), Expression.spel(""), value, None).isValid shouldBe expected
+      }
+    }
+  }
+
+  test("NonNegativeDurationValidator runtime validation") {
+    forAll(
+      Table(
+        ("value", "isValid"),
+        (Duration.ofSeconds(-1), false),
+        (Duration.ZERO, true),
+        (Duration.ofSeconds(5), true),
+        (null, true),
+        ("not a duration", true),
+      )
+    ) { (value, expected) =>
+      NonNegativeDurationValidator.isValid(ParameterName("dummy"), Expression.spel(""), value).isValid shouldBe expected
+    }
+  }
+
+  test("PositiveDurationValidator runtime validation") {
+    forAll(
+      Table(
+        ("value", "isValid"),
+        (Duration.ofSeconds(-1), false),
+        (Duration.ZERO, false),
+        (Duration.ofMillis(1), true),
+        (null, true),
+        ("not a duration", true),
+      )
+    ) { (value, expected) =>
+      PositiveDurationValidator.isValid(ParameterName("dummy"), Expression.spel(""), value).isValid shouldBe expected
+    }
+  }
+
+  test("duration-bound validators carry the expected message and description in the compile-time error") {
+    forAll(
+      Table(
+        ("validator", "invalidValue", "message", "description"),
+        (
+          NonNegativeDurationValidator,
+          Duration.ofSeconds(-1),
+          NonNegativeDurationValidation.Message,
+          NonNegativeDurationValidation.Description
+        ),
+        (
+          CompileTimeNonNegativeDurationValidator,
+          Duration.ofSeconds(-1),
+          NonNegativeDurationValidation.Message,
+          NonNegativeDurationValidation.Description
+        ),
+        (
+          PositiveDurationValidator,
+          Duration.ZERO,
+          PositiveDurationValidation.Message,
+          PositiveDurationValidation.Description
+        ),
+        (
+          CompileTimePositiveDurationValidator,
+          Duration.ZERO,
+          PositiveDurationValidation.Message,
+          PositiveDurationValidation.Description
+        ),
+      )
+    ) { (validator, invalidValue, message, description) =>
+      validator.isValid(ParameterName("dummy"), Expression.spel(""), Some(invalidValue), None) match {
+        case Validated.Invalid(error: InvalidDurationParameter) =>
+          error.message shouldBe message
+          error.description shouldBe description
+        case other => fail(s"Expected an invalid InvalidDurationParameter, got: $other")
+      }
+    }
+  }
+
+  test("duration-bound validators round-trip through the ParameterValidator codec") {
+    forAll(
+      Table(
+        "validator",
+        NonNegativeDurationValidator,
+        CompileTimeNonNegativeDurationValidator,
+        PositiveDurationValidator,
+        CompileTimePositiveDurationValidator,
+      )
+    ) { validator =>
+      val encoded: ParameterValidator = validator
+      encoded.asJson.as[ParameterValidator] shouldBe Right(validator)
     }
   }
 

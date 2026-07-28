@@ -43,7 +43,7 @@ If an event cannot be matched, then a new event is still emitted, but the aggreg
 | Key          | Expression, which is used to match events from different branches; separate expression for each branch. The expression in this field can refer to events and their associated variables (including `#input`) from their respective branches only.  |
 | AggregateBy  | The input to the *aggregator* function; separate for each branch. Only variables associated with the event from the given branch can be used in the *AggregateBy* expression. |
 | Aggregator   | Aggregator function; separate for each branch. See [this document](/docs/components/aggregatesInTimeWindows.mdx#common-to-all-window-types) for the list of available aggregator functions. |
-| WindowLength | See above for explanation |
+| WindowLength | See above for explanation. Must be a positive duration. |
 | Output variable name | the name of the variable which will hold the results of the *aggregator* function. |
 
 Content of the output variable:

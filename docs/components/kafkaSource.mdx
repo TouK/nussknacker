@@ -37,8 +37,8 @@ import ModeRequestResponse from '/badges/modeRequestResponse.mdx';
 | Name                  | Description             |
 |-----------------------|-------------------------|
 | Event time            | Expression which evaluates to the time when the event was created. For Kafka sources, creation timestamp is available in the Kafka event and can be accessed in SpEL as `#inputMeta.timestamp`. Check [here](/docs/scenariosAuthoring/streamingProcessingMode.md#predefined-variables)  |
-| Max out-of-orderness               | The maximum amount of time an element is allowed to be late before being ignored when computing the result for time-based stream transformations: aggregates in time windows and joins. To read more about this mechanism see Flink documentation         |
-| Idleness              | The time period after which partition is marked as idle if no events are received from it. To read more about this mechanism see [Flink documentation](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources).
+| Max out-of-orderness               | The maximum amount of time an element is allowed to be late before being ignored when computing the result for time-based stream transformations: aggregates in time windows and joins. Must not be negative. To read more about this mechanism see Flink documentation         |
+| Idleness              | The time period after which partition is marked as idle if no events are received from it. Must be a positive duration. To read more about this mechanism see [Flink documentation](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources).
 
 
 ## Additional considerations
