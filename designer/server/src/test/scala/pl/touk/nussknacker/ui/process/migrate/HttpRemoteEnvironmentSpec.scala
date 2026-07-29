@@ -5,6 +5,7 @@ import io.circe.syntax.EncoderOps
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model.{
+  ContentTypes,
   HttpEntity,
   HttpHeader,
   HttpMethod,
@@ -209,6 +210,63 @@ class HttpRemoteEnvironmentSpec
     }
   }
 
+  // The must-not-fail contract of RemoteEnvironment covers more than error status codes: a connection
+  // failure and a 200 whose body we can't decode both have to resolve to "no data", or the whole
+  // versions-with-differences call would blow up with a 500.
+  it should "resolve to no data when the remote environment is unreachable" in {
+    val remoteEnvironment = mockRemoteEnvironmentFailingWith(new java.net.ConnectException("Connection refused"))
+
+    whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
+      result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
+    }
+    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
+      result shouldBe Map.empty
+    }
+    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
+      result shouldBe List.empty
+    }
+  }
+
+  it should "resolve to no data when the remote environment returns an undecodable 200 body" in {
+    val remoteEnvironment = new MockRemoteEnvironment {
+      override protected def request(
+          path: Uri,
+          method: HttpMethod,
+          request: MessageEntity,
+          headers: Seq[HttpHeader]
+      ): Future[HttpResponse] =
+        Future.successful(
+          HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, """{"unexpected":true}"""))
+        )
+    }
+
+    whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
+      result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
+    }
+    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
+      result shouldBe Map.empty
+    }
+    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
+      result shouldBe List.empty
+    }
+  }
+
+  it should "report the remote environment as available when the scenario is simply absent there (404)" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
+
+    whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
+      result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = false)
+    }
+  }
+
+  it should "report the remote environment as unavailable when it rejects our credentials" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.Unauthorized)
+
+    whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
+      result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
+    }
+  }
+
   private def mockRemoteEnvironmentReturning(statusCode: StatusCode) = new MockRemoteEnvironment {
     override protected def request(
         path: Uri,
@@ -216,6 +274,15 @@ class HttpRemoteEnvironmentSpec
         request: MessageEntity,
         headers: Seq[HttpHeader]
     ): Future[HttpResponse] = Future.successful(HttpResponse(statusCode, entity = HttpEntity("error")))
+  }
+
+  private def mockRemoteEnvironmentFailingWith(exception: Throwable) = new MockRemoteEnvironment {
+    override protected def request(
+        path: Uri,
+        method: HttpMethod,
+        request: MessageEntity,
+        headers: Seq[HttpHeader]
+    ): Future[HttpResponse] = Future.failed(exception)
   }
 
   it should "handle request without labels in decoder fallback to migrate the scenario from/to older versions of NU" in {

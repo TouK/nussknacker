@@ -57,7 +57,9 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
+import pl.touk.nussknacker.ui.process.migrate.VersionGraphs
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
@@ -1014,6 +1016,44 @@ class ProcessesResourcesSpec
       s"/api/processes/$processName/versions/graphs?versionIds=1"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.NotFound
+    }
+  }
+
+  test("do not return versions with differences for a scenario in a category the user cannot read") {
+    createEmptyScenario(processName, category = Category2)
+
+    Get(
+      s"/api/processes/$processName/1/versions-with-differences?pageNumber=0&pageSize=10"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+  }
+
+  test("return scenario graphs for the requested versions, skipping versions that have no stored graph") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+
+    // 999 doesn't exist - the endpoint returns what it has instead of failing, since its caller
+    // (HttpRemoteEnvironment.scenarioGraphsForVersions) treats a missing version as "unknown differences".
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/versions/graphs?versionIds=1,2,999"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val result = responseAs[VersionGraphs]
+      result.versions.map(_.versionId.value) shouldBe List(1L, 2L)
+      val version2Graph = result.versions.find(_.versionId == VersionId(2)).get.scenarioGraph
+      version2Graph.nodes.map(_.id) shouldBe ProcessTestData.validScenarioGraph.nodes.map(_.id)
+    }
+  }
+
+  test("reject a request for scenario graphs of more versions than a single page holds") {
+    createEmptyScenario(processName, category = Category1)
+
+    val tooManyVersionIds = (1 to VersionsWithDifferencesService.MaxPageSize + 1).mkString(",")
+    Get(
+      s"/api/processes/$processName/versions/graphs?versionIds=$tooManyVersionIds"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.BadRequest
     }
   }
 

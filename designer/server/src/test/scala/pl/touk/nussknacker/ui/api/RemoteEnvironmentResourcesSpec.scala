@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import org.apache.pekko.http.scaladsl.server
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import org.scalatest.{BeforeAndAfterEach, Inside}
@@ -214,7 +215,10 @@ class RemoteEnvironmentResourcesSpec
     val remoteEnvironment = new MockRemoteEnvironment() {
       override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
         Future.successful(
-          RemoteScenarioVersions(List(ScenarioVersion(versionWithUnknownDiff, Instant.now(), "user")), remoteUnavailable = false)
+          RemoteScenarioVersions(
+            List(ScenarioVersion(versionWithUnknownDiff, Instant.now(), "user")),
+            remoteUnavailable = false
+          )
         )
 
       // Simulates a remote environment that doesn't support the bulk graphs endpoint yet
@@ -294,7 +298,10 @@ class RemoteEnvironmentResourcesSpec
 
       override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
         Future.successful(
-          RemoteScenarioVersions(List(ScenarioVersion(VersionId(1), java.time.Instant.now(), "user")), remoteUnavailable = false)
+          RemoteScenarioVersions(
+            List(ScenarioVersion(VersionId(1), java.time.Instant.now(), "user")),
+            remoteUnavailable = false
+          )
         )
     }
 
@@ -313,10 +320,10 @@ class RemoteEnvironmentResourcesSpec
 
     saveCanonicalProcess(ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processName/activities") ~> routeWithoutReadPermission ~> check {
-        status shouldEqual StatusCodes.Forbidden
+        rejection shouldBe server.AuthorizationFailedRejection
       }
       Get(s"/remoteEnvironment/$processName/versions") ~> routeWithoutReadPermission ~> check {
-        status shouldEqual StatusCodes.Forbidden
+        rejection shouldBe server.AuthorizationFailedRejection
       }
     }
   }

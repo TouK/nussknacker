@@ -121,7 +121,7 @@ class HttpRemoteEnvironment(
 
   private def isScenarioAbsentOnRemote(error: NuDesignerError): Boolean = error match {
     case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) => true
-    case _                                                           => false
+    case _                                                            => false
   }
 
   private def logFetchError(what: String, processName: ProcessName, error: NuDesignerError): Unit = error match {

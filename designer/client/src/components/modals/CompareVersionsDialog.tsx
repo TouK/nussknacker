@@ -259,9 +259,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     useEffect(() => {
         if (processName && otherEnvironment) {
-            HttpService.fetchRemoteVersions(processName).then((response) =>
-                setState((prevState) => ({ ...prevState, remoteVersions: response.data || [] })),
-            );
+            HttpService.fetchRemoteVersions(processName)
+                .then((response) => setState((prevState) => ({ ...prevState, remoteVersions: response.data || [] })))
+                // An unreachable remote environment answers with an error status here (HttpService already
+                // reports it), so treat it as "no versions to offer" - the versions-with-differences call
+                // is what tells the user the remote could not be reached.
+                .catch(() => setState((prevState) => ({ ...prevState, remoteVersions: [] })));
         }
     }, [processName, otherEnvironment]);
 

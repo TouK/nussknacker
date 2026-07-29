@@ -120,4 +120,21 @@ class VersionsWithDifferencesServiceSpec extends AnyFunSuite with Matchers with 
     VersionsWithDifferencesService.isValidPaging(pageNumber = 0, pageSize = 10) shouldBe true
   }
 
+  // A pageNumber large enough to overflow Int arithmetic used to wrap to a negative offset, producing an
+  // empty page with hasMore = true - which the client reads as "keep paging", i.e. an endless chain.
+  test("reports the end of the list for a pageNumber whose offset overflows Int arithmetic") {
+    val result = VersionsWithDifferencesService
+      .compute(
+        currentGraph,
+        List(VersionId(1), VersionId(2)),
+        pageNumber = Int.MaxValue,
+        pageSize = 100,
+        fetchGraphs = page => Future.successful(page.map(_ -> differentGraph).toMap)
+      )
+      .futureValue
+
+    result.versions shouldBe empty
+    result.hasMore shouldBe false
+  }
+
 }

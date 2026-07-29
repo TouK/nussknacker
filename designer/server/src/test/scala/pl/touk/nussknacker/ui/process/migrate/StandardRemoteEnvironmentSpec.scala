@@ -8,7 +8,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
@@ -159,7 +159,7 @@ object StandardRemoteEnvironmentSpec {
       batchSize = 100
     )
 
-    override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] = ???
+    override def processVersions(processName: ProcessName): Future[RemoteScenarioVersions] = ???
 
     override def scenarioGraphsForVersions(
         processName: ProcessName,

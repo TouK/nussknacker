@@ -73,7 +73,46 @@ const localVersionsWithDifferences = {
     hasMore: false,
 };
 
+const remoteVersion = (processVersionId: number): ProcessVersionType => ({
+    processVersionId,
+    createDate: "2024-05-31",
+    user: "test",
+    modelVersion: 4,
+    actions: [],
+});
+
+const renderDialog = (options: { store?: ReturnType<typeof mockStore>; predefinedVersionId?: string } = {}) =>
+    render(
+        <NuThemeProvider>
+            <Provider store={options.store ?? store}>
+                <CompareVersionsDialog
+                    data={{
+                        title: "compare versions",
+                        kind: 12,
+                        id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                        meta: { scenarioVersionId: options.predefinedVersionId },
+                    }}
+                />
+            </Provider>
+        </NuThemeProvider>,
+    );
+
+const localVersionsWithDifferencesUrl = () => `/processes/${scenario.name}/${scenario.processVersionId}/versions-with-differences`;
+const remoteVersionsWithDifferencesUrl = () => `/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/versions-with-differences`;
+
+const switchToRemoteEnvironment = async () => {
+    // the mocked useTranslation returns the raw key, ignoring interpolation
+    fireEvent.keyDown(await screen.findByText("dialog.compareVersions.local"), DOWN_ARROW);
+    fireEvent.click(await screen.findByText("dialog.compareVersions.remoteWithName"));
+};
+
 describe("CompareVersionsDialog", () => {
+    beforeEach(() => {
+        // handlers are registered per test with replyOnce - without this, one left unconsumed would be
+        // picked up by the next test and make it pass or fail for the wrong reason
+        mock.resetHandlers();
+    });
+
     afterAll(() => {
         mock.resetHandlers();
     });
@@ -386,5 +425,124 @@ describe("CompareVersionsDialog", () => {
         expect(await screen.findByText("dialog.compareVersions.localWithName")).toBeInTheDocument();
         fireEvent.keyDown(screen.getByText("dialog.compareVersions.localWithName"), DOWN_ARROW);
         expect(await screen.findByText("dialog.compareVersions.remoteWithName")).toBeInTheDocument();
+    });
+
+    it("should keep paging past a page whose versions are all filtered out, until one with content arrives", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], hasMore: false });
+        // page 0 has content, page 1 is entirely filtered out server-side, page 2 has content again -
+        // a single hop would stop on the empty page and leave the spinner up with nothing new shown
+        mock.onGet(localVersionsWithDifferencesUrl())
+            .replyOnce(200, { versions: [{ versionId: 35, changedElements: [], differencesUnknown: false }], hasMore: true })
+            .onGet(localVersionsWithDifferencesUrl())
+            .replyOnce(200, { versions: [], hasMore: true })
+            .onGet(localVersionsWithDifferencesUrl())
+            .replyOnce(200, { versions: [{ versionId: 34, changedElements: [], differencesUnknown: false }], hasMore: false });
+
+        renderDialog();
+
+        fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
+        fireEvent.mouseDown(await screen.findByText("dialog.compareVersions.loadOlderVersions"));
+
+        // only page 2 contains version 34, so seeing it proves the chain continued past the empty page 1
+        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        });
+        expect(screen.queryByText("dialog.compareVersions.loadOlderVersions")).not.toBeInTheDocument();
+    });
+
+    it("should stop paging and hide the spinner when a request in the middle of the chain fails", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], hasMore: false });
+        mock.onGet(localVersionsWithDifferencesUrl())
+            .replyOnce(200, { versions: [{ versionId: 35, changedElements: [], differencesUnknown: false }], hasMore: true })
+            .onGet(localVersionsWithDifferencesUrl())
+            .replyOnce(200, { versions: [], hasMore: true })
+            .onGet(localVersionsWithDifferencesUrl())
+            .replyOnce(500);
+
+        renderDialog();
+
+        fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
+        fireEvent.mouseDown(await screen.findByText("dialog.compareVersions.loadOlderVersions"));
+
+        // a failure must break the chain rather than leave a spinner spinning forever
+        await waitFor(() => {
+            expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        });
+        // and the list falls back to the unfiltered versions instead of dead-ending
+        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+    });
+
+    it("should fall back to the unfiltered remote version list when the remote versions-with-differences request fails", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, [remoteVersion(1), remoteVersion(2)]);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(500);
+
+        renderDialog();
+
+        await switchToRemoteEnvironment();
+        fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
+
+        expect(await screen.findByText("1 on remote environment - created by test 2024-05-31|00:00")).toBeInTheDocument();
+        expect(await screen.findByText("2 on remote environment - created by test 2024-05-31|00:00")).toBeInTheDocument();
+    });
+
+    it("should describe a version's changed elements in its tooltip", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], hasMore: false });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [{ versionId: 35, changedElements: ["Node 'x' modified", "Node 'y' added"], differencesUnknown: false }],
+            hasMore: false,
+        });
+
+        renderDialog();
+
+        fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
+
+        // the default normalizer collapses the newline the elements are joined with, so opt out of it
+        expect(await screen.findByTitle("Node 'x' modified\nNode 'y' added", { normalizer: (value) => value })).toBeInTheDocument();
+    });
+
+    it("should mark a remote version whose differences could not be determined", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, [remoteVersion(1)]);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [{ versionId: 1, changedElements: [], differencesUnknown: true }],
+            hasMore: false,
+        });
+
+        renderDialog();
+
+        await switchToRemoteEnvironment();
+        fireEvent.keyDown(await screen.findByText("Select..."), DOWN_ARROW);
+
+        expect(await screen.findByTitle("dialog.compareVersions.unknownDifferences")).toBeInTheDocument();
+    });
+
+    it("should say that the remote environment could not be reached instead of showing nothing to compare", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(500);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], hasMore: false, remoteUnavailable: true });
+
+        renderDialog();
+
+        await switchToRemoteEnvironment();
+
+        expect(await screen.findByText("dialog.compareVersions.remoteUnavailable")).toBeInTheDocument();
+    });
+
+    it("should not let the environment be switched when the version is predefined", async () => {
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, []);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], hasMore: false });
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/34`).replyOnce(200, {});
+
+        renderDialog({ predefinedVersionId: "34" });
+
+        // switching would clear the read-only version select and dead-end the dialog until it's reopened
+        fireEvent.keyDown(await screen.findByText("dialog.compareVersions.local"), DOWN_ARROW);
+        expect(screen.queryByText("dialog.compareVersions.remoteWithName")).not.toBeInTheDocument();
     });
 });
