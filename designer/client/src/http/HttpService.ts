@@ -189,7 +189,6 @@ export type VersionWithDifference = {
     versionId: number;
     changedElements: string[];
     differencesUnknown: boolean;
-    comment?: string;
     totalChangedElements?: number;
 };
 
@@ -198,6 +197,9 @@ export type VersionsWithDifferencesResponse = {
     // Versions older than this one were not compared, so nothing is claimed about them. Absent when the
     // whole history was compared.
     oldestComparedVersionId?: number;
+    // Keyed by version id, and covering every version - including ones that were not compared. Sent only by
+    // the remote-environment endpoint; local comments come from the scenario's own activities.
+    versionComments?: Record<string, string>;
     remoteUnavailable?: boolean;
 };
 

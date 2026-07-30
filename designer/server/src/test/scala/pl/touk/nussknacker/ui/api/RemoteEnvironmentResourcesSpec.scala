@@ -225,7 +225,7 @@ class RemoteEnvironmentResourcesSpec
     }
   }
 
-  it should "attach each remote version's latest comment to the differences it reports" in {
+  it should "report the latest comment for every remote version, compared or not" in {
     def activity(versionId: Long, comment: String, date: String, activityType: ScenarioActivityType) =
       ScenarioActivity(
         id = UUID.randomUUID(),
@@ -267,6 +267,8 @@ class RemoteEnvironmentResourcesSpec
             // newest first, so that dropping the sort would answer "first save" here
             activity(7, "restart", "2024-01-18T10:00:00Z", ScenarioActivityType.ScenarioDeployed),
             activity(7, "first save", "2024-01-17T14:21:17Z", ScenarioActivityType.ScenarioCreated),
+            // a version the differences answer says nothing about - it was not compared, or does not differ
+            activity(99, "an older version's comment", "2024-01-16T10:00:00Z", ScenarioActivityType.ScenarioCreated),
           )
         )
     }
@@ -277,7 +279,9 @@ class RemoteEnvironmentResourcesSpec
       Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[VersionsWithDifferences]
-        result.versions.map(v => v.versionId.value -> v.comment) shouldBe List(7L -> Some("restart"), 8L -> None)
+        // keyed by version rather than attached to the differences, so a version that was not compared -
+        // and is still listed by the client - keeps its comment
+        result.versionComments shouldBe Map(7L -> "restart", 99L -> "an older version's comment")
       }
     }
   }

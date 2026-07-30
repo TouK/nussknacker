@@ -474,7 +474,8 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(remoteVersionsUrl()).replyOnce(200, [remoteVersion(1)]);
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
         mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, {
-            versions: [{ ...changedVersion(1), comment: "Deployed to prod" }],
+            versions: [changedVersion(1)],
+            versionComments: { 1: "Deployed to prod" },
         });
 
         renderDialog();
@@ -482,6 +483,25 @@ describe("CompareVersionsDialog", () => {
         await openVersionPicker();
 
         expect(await screen.findByText("Deployed to prod")).toBeInTheDocument();
+    });
+
+    // Comments come from the activity list, which costs no graph, so they cover every version - including
+    // ones past the comparison limit, which are listed without their differences.
+    it("should show a remote version's comment even when that version was not compared", async () => {
+        mock.onGet(remoteVersionsUrl()).replyOnce(200, [remoteVersion(1), remoteVersion(2)]);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [changedVersion(2)],
+            oldestComparedVersionId: 2,
+            versionComments: { 1: "Older, never compared", 2: "Recent" },
+        });
+
+        renderDialog();
+        await switchToRemoteEnvironment();
+        await openVersionPicker();
+
+        expect(await screen.findByText("Older, never compared")).toBeInTheDocument();
+        expect(screen.getByText("Recent")).toBeInTheDocument();
     });
 
     it("should load the scenario's activities itself", async () => {

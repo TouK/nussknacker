@@ -36,7 +36,6 @@ object VersionsWithDifferencesService {
       versionId: VersionId,
       changedElements: List[String],
       differencesUnknown: Boolean,
-      comment: Option[String] = None,
       totalChangedElements: Option[Int] = None
   )
 
@@ -45,6 +44,10 @@ object VersionsWithDifferencesService {
       // The oldest version this answer covers. Versions older than it were not compared, so nothing is
       // claimed about them either way. Absent when the whole history was compared.
       oldestComparedVersionId: Option[VersionId] = None,
+      // Every version's comment, including versions that were not compared or do not differ - they come
+      // from the activity list, which costs no graph. Set only by the endpoint proxying to a remote
+      // environment; for local versions the client already holds the activities.
+      versionComments: Map[Long, String] = Map.empty,
       // set only by the endpoint proxying to a remote environment, which is the only one with a remote to
       // say anything about
       remoteUnavailable: Option[Boolean] = None
@@ -183,9 +186,7 @@ class VersionsWithDifferencesService(processService: ProcessService) {
       remoteResult <- remoteResultFuture
       comments     <- commentsFuture
     } yield remoteResult
-      .map(result =>
-        result.copy(versions = result.versions.map(v => v.copy(comment = comments.get(v.versionId.value))))
-      )
+      .map(_.copy(versionComments = comments))
       .getOrElse(VersionsWithDifferences(Nil, remoteUnavailable = Some(true)))
   }
 

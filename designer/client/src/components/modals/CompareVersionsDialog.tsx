@@ -36,7 +36,6 @@ type Environment = "local" | "remote";
 type VersionDiffInfo = {
     changedElements: string[];
     differencesUnknown: boolean;
-    comment?: string;
     totalChangedElements?: number;
 };
 
@@ -45,14 +44,15 @@ const MAX_DESCRIBED_CHANGES = 20;
 type VersionDiffsResponse = {
     versions: VersionWithDifference[];
     oldestComparedVersionId?: number;
+    versionComments?: Record<string, string>;
     remoteUnavailable?: boolean;
 };
 
 const toVersionDiffsMap = (versions: VersionWithDifference[]): Map<number, VersionDiffInfo> =>
     new Map(
-        versions.map(({ versionId, changedElements, differencesUnknown, comment, totalChangedElements }) => [
+        versions.map(({ versionId, changedElements, differencesUnknown, totalChangedElements }) => [
             versionId,
-            { changedElements, differencesUnknown, comment, totalChangedElements },
+            { changedElements, differencesUnknown, totalChangedElements },
         ]),
     );
 
@@ -73,11 +73,13 @@ type DiffsState = {
     diffs: Map<number, VersionDiffInfo> | null; // null = not yet loaded
     // versions older than this were not compared; undefined means the whole history was
     oldestCompared?: number;
+    // covers every version, not only the compared ones
+    comments: Record<string, string>;
     error: boolean;
     unavailable: boolean;
 };
 
-const initialDiffsState: DiffsState = { diffs: null, error: false, unavailable: false };
+const initialDiffsState: DiffsState = { diffs: null, comments: {}, error: false, unavailable: false };
 
 const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | null): DiffsState => {
     const [state, setState] = useState<DiffsState>(initialDiffsState);
@@ -93,10 +95,11 @@ const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | n
             if (generation !== generationRef.current) return;
             setState(
                 result === null
-                    ? { diffs: null, error: true, unavailable: false }
+                    ? { diffs: null, comments: {}, error: true, unavailable: false }
                     : {
                           diffs: toVersionDiffsMap(result.versions),
                           oldestCompared: result.oldestComparedVersionId,
+                          comments: result.versionComments ?? {},
                           error: false,
                           unavailable: Boolean(result.remoteUnavailable),
                       },
@@ -239,6 +242,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const {
         diffs: activeDiffs,
         oldestCompared,
+        comments: remoteVersionComments,
         error: activeDiffsError,
     } = state.environment === "remote" ? remoteDiffsState : localDiffsState;
     const isLoadingVersions = activeDiffs === null && !activeDiffsError;
@@ -321,8 +325,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const versionComment = useCallback(
         (version: ProcessVersionType, versionPrefix = "") =>
-            versionPrefix ? activeDiffs?.get(version.processVersionId)?.comment : versionComments.get(version.processVersionId),
-        [versionComments, activeDiffs],
+            versionPrefix ? remoteVersionComments[version.processVersionId] : versionComments.get(version.processVersionId),
+        [versionComments, remoteVersionComments],
     );
 
     const enrichStickyNoteNode = (node: NodeType): StickyNoteNodeType => {
