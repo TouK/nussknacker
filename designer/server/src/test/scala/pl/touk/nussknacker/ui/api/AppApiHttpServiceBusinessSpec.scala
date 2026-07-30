@@ -212,9 +212,9 @@ class AppApiHttpServiceBusinessSpec
         .statusCode(200)
         .equalsJsonBody(
           s"""{
+             |  "haEnabled": false,
+             |  "instanceId": "test-instance"
              |  "isLeader": true,
-             |  "instanceId": "test-instance",
-             |  "isHaEnabled": false
              |}""".stripMargin
         )
     }

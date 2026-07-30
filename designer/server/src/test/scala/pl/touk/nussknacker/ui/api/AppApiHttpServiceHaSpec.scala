@@ -29,7 +29,7 @@ class AppApiHttpServiceHaSpec
       session
         .prepareStatement(
           s"""UPDATE "${getSchemaName()}"."distributed_locks"
-             |SET lock_until = LOCALTIMESTAMP - INTERVAL '1 second'
+             |SET lock_until = CURRENT_TIMESTAMP - INTERVAL '1 second'
              |WHERE name = 'designer-leader'""".stripMargin
         )
         .execute()
@@ -85,9 +85,9 @@ class AppApiHttpServiceHaSpec
       .statusCode(200)
       .equalsJsonBody(
         s"""{
-           |  "instanceId": "test-instance",
-           |  "isHaEnabled": true,
-           |  "isLeader": $expected
+           |  "haEnabled": true,
+           |  "isLeader": $expected,
+           |  "instanceId": "test-instance"
            |}""".stripMargin
       )
 

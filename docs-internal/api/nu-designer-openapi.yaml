@@ -338,8 +338,8 @@ paths:
                 Example:
                   summary: This instance is the leader
                   value:
+                    haEnabled: true
                     instanceId: instance-1
-                    isHaEnabled: true
                     isLeader: true
   /api/app/buildInfo:
     get:
@@ -7124,14 +7124,14 @@ components:
       title: LeaderResponseDto
       type: object
       required:
+      - haEnabled
       - instanceId
-      - isHaEnabled
       - isLeader
       properties:
+        haEnabled:
+          type: boolean
         instanceId:
           type: string
-        isHaEnabled:
-          type: boolean
         isLeader:
           type: boolean
     List_Field:

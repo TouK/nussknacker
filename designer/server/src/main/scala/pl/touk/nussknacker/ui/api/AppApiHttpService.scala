@@ -51,8 +51,8 @@ class AppApiHttpService(
       .serverLogicSuccess { _ =>
         Future.successful(
           LeaderResponseDto(
+            haEnabled = leadership.haEnabled,
             instanceId = leadership.instanceId,
-            isHaEnabled = leadership.isHaEnabled,
             isLeader = leadership.isLeader(),
           )
         )

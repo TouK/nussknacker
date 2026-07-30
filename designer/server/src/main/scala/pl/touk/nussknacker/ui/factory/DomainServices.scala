@@ -39,7 +39,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
 import pl.touk.nussknacker.ui.process.periodic.{
   DefaultProcessingTypeActionService,
   DefaultSchedulingScenarioActivitiesRepository,
-  PeriodicLock,
+  PeriodicDeploymentLock,
   SchedulingDependencies
 }
 import pl.touk.nussknacker.ui.process.processingtype._
@@ -138,7 +138,7 @@ object DomainServices extends LazyLogging {
       )
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
       distributedLock            = DistributedLock(alreadyLoadedConfig.haMode, dbRef)
-      periodicLock <- PeriodicLock.create(alreadyLoadedConfig.haMode, distributedLock)
+      periodicLock <- PeriodicDeploymentLock.create(alreadyLoadedConfig.haMode, distributedLock)
       deploymentData <- DeploymentManagersLoader.load(
         alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader,
@@ -434,7 +434,7 @@ object DomainServices extends LazyLogging {
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      periodicLock: PeriodicLock,
+      periodicLock: PeriodicDeploymentLock,
       processingType: ProcessingType
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)

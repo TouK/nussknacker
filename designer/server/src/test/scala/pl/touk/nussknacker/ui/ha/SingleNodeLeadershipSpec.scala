@@ -28,8 +28,8 @@ class SingleNodeLeadershipSpec extends AnyFunSuite with Matchers with BeforeAndA
     new SingleNodeLeadership(instanceId = "test").isLeader() shouldBe true
   }
 
-  test("isHaEnabled returns false") {
-    new SingleNodeLeadership(instanceId = "test").isHaEnabled shouldBe false
+  test("haEnabled returns false") {
+    new SingleNodeLeadership(instanceId = "test").haEnabled shouldBe false
   }
 
   test("instanceId returns the configured value") {
@@ -39,7 +39,7 @@ class SingleNodeLeadershipSpec extends AnyFunSuite with Matchers with BeforeAndA
   test("onLeadershipAcquired fires callback when startHeartbeat is called") {
     @volatile var fired = false
     val service         = new SingleNodeLeadership(instanceId = "test")
-    service.onLeadershipAcquired(() => IO { fired = true }).unsafeRunSync()
+    service.onLeadershipAcquired(IO { fired = true }).unsafeRunSync()
     service.startHeartbeat().use(_ => IO(eventually { fired shouldBe true })).unsafeRunSync()
   }
 
@@ -47,8 +47,8 @@ class SingleNodeLeadershipSpec extends AnyFunSuite with Matchers with BeforeAndA
     @volatile var count1 = 0
     @volatile var count2 = 0
     val service          = new SingleNodeLeadership(instanceId = "test")
-    service.onLeadershipAcquired(() => IO { count1 += 1 }).unsafeRunSync()
-    service.onLeadershipAcquired(() => IO { count2 += 1 }).unsafeRunSync()
+    service.onLeadershipAcquired(IO { count1 += 1 }).unsafeRunSync()
+    service.onLeadershipAcquired(IO { count2 += 1 }).unsafeRunSync()
     service
       .startHeartbeat()
       .use(_ =>
@@ -63,7 +63,7 @@ class SingleNodeLeadershipSpec extends AnyFunSuite with Matchers with BeforeAndA
   test("onLeadershipAcquired fires each callback exactly once") {
     @volatile var count = 0
     val service         = new SingleNodeLeadership(instanceId = "test")
-    service.onLeadershipAcquired(() => IO { count += 1 }).unsafeRunSync()
+    service.onLeadershipAcquired(IO { count += 1 }).unsafeRunSync()
     service
       .startHeartbeat()
       .use(_ =>
@@ -79,10 +79,36 @@ class SingleNodeLeadershipSpec extends AnyFunSuite with Matchers with BeforeAndA
   test("onLeadershipLost is a no-op") {
     @volatile var fired = false
     val service         = new SingleNodeLeadership(instanceId = "test")
-    service.onLeadershipLost(() => IO { fired = true }).unsafeRunSync()
+    service.onLeadershipLost(IO { fired = true }).unsafeRunSync()
     service
       .startHeartbeat()
       .use(_ => IO { Thread.sleep(100); fired shouldBe false })
+      .unsafeRunSync()
+  }
+
+  test("onLeadershipAcquired raises IllegalStateException when registered after startHeartbeat") {
+    val service = new SingleNodeLeadership(instanceId = "test")
+    service
+      .startHeartbeat()
+      .use(_ =>
+        IO {
+          the[IllegalStateException] thrownBy service.onLeadershipAcquired(IO.unit).unsafeRunSync() should have message
+            "Callbacks must be registered before startHeartbeat() is called"
+        }
+      )
+      .unsafeRunSync()
+  }
+
+  test("onLeadershipLost raises IllegalStateException when registered after startHeartbeat") {
+    val service = new SingleNodeLeadership(instanceId = "test")
+    service
+      .startHeartbeat()
+      .use(_ =>
+        IO {
+          the[IllegalStateException] thrownBy service.onLeadershipLost(IO.unit).unsafeRunSync() should have message
+            "Callbacks must be registered before startHeartbeat() is called"
+        }
+      )
       .unsafeRunSync()
   }
 

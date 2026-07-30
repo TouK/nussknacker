@@ -17,7 +17,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 * [#9416](https://github.com/TouK/nussknacker/pull/9416) Feature: High Availability (HA) mode for the Designer.
     * Multiple Designer instances can now run concurrently. All instances serve requests; coordinated operations (such as recovering failed deployments) are performed by the elected leader only. If the leader fails, another instance takes over automatically.
-    * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>", "isHaEnabled": true/false }` — suitable for load-balancer routing.
+    * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>", "haEnabled": true/false }` — suitable for load-balancer routing.
     * **Requires PostgreSQL** as the designer database.
     * HA mode is **opt-in** and disabled by default; existing single-instance deployments require no changes. Example configuration:
 ```hocon

@@ -87,7 +87,7 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
             .example(
               Example.of(
                 summary = Some("This instance is the leader"),
-                value = LeaderResponseDto(instanceId = "instance-1", isHaEnabled = true, isLeader = true)
+                value = LeaderResponseDto(haEnabled = true, isLeader = true, instanceId = "instance-1")
               )
             )
         )
@@ -289,8 +289,8 @@ object AppApiEndpoints {
 
     @derive(encoder, decoder, schema)
     final case class LeaderResponseDto private (
+        haEnabled: Boolean,
         instanceId: String,
-        isHaEnabled: Boolean,
         isLeader: Boolean,
     )
 

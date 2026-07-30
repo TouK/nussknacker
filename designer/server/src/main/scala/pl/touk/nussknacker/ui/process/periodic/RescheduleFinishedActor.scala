@@ -11,11 +11,15 @@ import scala.util.{Failure, Success, Try}
 
 object RescheduleFinishedActor {
 
-  def props(service: PeriodicProcessService, lock: PeriodicLock, interval: FiniteDuration): Props = {
+  def props(service: PeriodicProcessService, lock: PeriodicDeploymentLock, interval: FiniteDuration): Props = {
     props(service.handleFinished, lock, interval)
   }
 
-  private[periodic] def props(handleFinished: => Future[Unit], lock: PeriodicLock, interval: FiniteDuration): Props = {
+  private[periodic] def props(
+      handleFinished: => Future[Unit],
+      lock: PeriodicDeploymentLock,
+      interval: FiniteDuration
+  ): Props = {
     Props(new RescheduleFinishedActor(handleFinished, lock, interval))
   }
 
@@ -29,7 +33,7 @@ object RescheduleFinishedActor {
 
 }
 
-class RescheduleFinishedActor(handleFinished: => Future[Unit], lock: PeriodicLock, interval: FiniteDuration)
+class RescheduleFinishedActor(handleFinished: => Future[Unit], lock: PeriodicDeploymentLock, interval: FiniteDuration)
     extends Actor
     with Timers
     with LazyLogging {
@@ -60,7 +64,7 @@ class RescheduleFinishedActor(handleFinished: => Future[Unit], lock: PeriodicLoc
     case LockResult(Success(true)) =>
       logger.trace("Checking scenarios to be rescheduled or marked as failed")
       context.become(inState(handleRunning))
-      handleFinished
+      Future(handleFinished).flatten
         .map(_ => CheckStatesCompleted)
         .recover { case ex =>
           logger.error("Checking scenarios to be rescheduled or marked as failed finished with error", ex)

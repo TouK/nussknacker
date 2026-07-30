@@ -15,9 +15,9 @@ object HaMode {
   final case class Disabled(instanceId: String) extends HaMode
 
   final case class LeaderConfig(
-      heartbeatInterval: FiniteDuration,
-      leaseDuration: FiniteDuration,
-      releaseOnStop: Boolean,
+      heartbeatInterval: FiniteDuration = 10.seconds,
+      leaseDuration: FiniteDuration = 30.seconds,
+      releaseOnStop: Boolean = true,
   )
 
   final case class Enabled(
@@ -32,11 +32,7 @@ object HaMode {
       val cfg = config.as[EnabledConfig]("ha")
       val enabled = Enabled(
         instanceId = cfg.instanceId.getOrElse(defaultInstanceId),
-        leader = LeaderConfig(
-          heartbeatInterval = cfg.leader.heartbeatInterval,
-          leaseDuration = cfg.leader.leaseDuration,
-          releaseOnStop = cfg.leader.releaseOnStop,
-        ),
+        leader = cfg.leader,
         periodicLockDuration = cfg.periodicLockDuration,
         lockQueryTimeout = cfg.lockQueryTimeout,
       )
@@ -64,15 +60,9 @@ object HaMode {
       )
     )
 
-  private final case class LeaderEnabledConfig(
-      heartbeatInterval: FiniteDuration = 10.seconds,
-      leaseDuration: FiniteDuration = 30.seconds,
-      releaseOnStop: Boolean = true,
-  )
-
   private final case class EnabledConfig(
       instanceId: Option[String] = None,
-      leader: LeaderEnabledConfig = LeaderEnabledConfig(),
+      leader: LeaderConfig = LeaderConfig(),
       periodicLockDuration: FiniteDuration = 5.minutes,
       lockQueryTimeout: FiniteDuration = 5.seconds,
   )

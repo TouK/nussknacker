@@ -44,14 +44,15 @@ class NussknackerAppFactory(
     } yield ()
   }
 
-  // Recovery is triggered each time this node acquires leadership rather than once at startup.
-  // A node that starts as a non-leader (another node holds the lease) would otherwise never
-  // run recovery even after winning leadership following a failover.
+  /** Recovery is triggered each time this node acquires leadership rather than once at startup.
+    * A node that starts as a non-leader (another node holds the lease) would otherwise never
+    * run recovery even after winning leadership following a failover.
+    */
   private def registerDeploymentRecovery(
       domainServices: DomainServices,
       infrastructureServices: InfrastructureServices,
   ): IO[Unit] =
-    domainServices.leadership.onLeadershipAcquired { () =>
+    domainServices.leadership.onLeadershipAcquired(
       IO.fromFuture(
         IO(
           domainServices.reconciler
@@ -61,7 +62,7 @@ class NussknackerAppFactory(
             )
         )
       )
-    }
+    )
 
   private def startJmxReporter(metricsRegistry: MetricRegistry) = {
     Resource.eval(IO(JmxReporter.forRegistry(metricsRegistry).build().start()))
