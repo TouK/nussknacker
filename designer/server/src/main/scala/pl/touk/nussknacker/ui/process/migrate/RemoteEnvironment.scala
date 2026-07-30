@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
@@ -33,7 +32,8 @@ trait RemoteEnvironment {
   // full graphs across the network. None means the answer could not be obtained at all.
   def versionsWithDifferences(
       processName: ProcessName,
-      scenarioGraph: ScenarioGraph
+      scenarioGraph: ScenarioGraph,
+      limit: Int
   ): Future[Option[VersionsWithDifferences]]
 
   // Same must-not-fail contract as processVersions.

@@ -7,25 +7,22 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{
-  PagedVersionsWithDifferences,
-  VersionsWithDifferences,
-  VersionWithDifference
-}
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{VersionsWithDifferences, VersionWithDifference}
 import pl.touk.nussknacker.ui.process.migrate.RemoteEnvironment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 
-import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 
 object VersionsWithDifferencesService {
 
-  val MinLimit = 1
+  // How many of the most recent versions are compared when the caller does not say. Comparing a version
+  // means loading and diffing its stored graph, so the whole history is not something to walk by default.
+  val DefaultVersionsCompared = 50
 
-  val MaxLimit = 25
+  val MinVersionsCompared = 1
 
-  val MaxVersionsScannedPerRequest = 100
+  val MaxVersionsCompared = 500
 
   val MaxGraphsPerFetch = 25
 
@@ -33,8 +30,7 @@ object VersionsWithDifferencesService {
 
   val MaxSuppliedGraphBytes: Long = 32 * 1024 * 1024
 
-  def isValidPaging(offset: Int, limit: Int): Boolean =
-    offset >= 0 && limit >= MinLimit && limit <= MaxLimit
+  def isValidLimit(limit: Int): Boolean = limit >= MinVersionsCompared && limit <= MaxVersionsCompared
 
   @JsonCodec final case class VersionWithDifference(
       versionId: VersionId,
@@ -44,9 +40,11 @@ object VersionsWithDifferencesService {
       totalChangedElements: Option[Int] = None
   )
 
-  /** The answer for one scenario's whole history, for the cross-environment comparison, which is unpaged. */
   final case class VersionsWithDifferences(
       versions: List[VersionWithDifference],
+      // The oldest version this answer covers. Versions older than it were not compared, so nothing is
+      // claimed about them either way. Absent when the whole history was compared.
+      oldestComparedVersionId: Option[VersionId] = None,
       // set only by the endpoint proxying to a remote environment, which is the only one with a remote to
       // say anything about
       remoteUnavailable: Option[Boolean] = None
@@ -61,92 +59,20 @@ object VersionsWithDifferencesService {
 
   }
 
-  final case class PagedVersionsWithDifferences(
-      versions: List[VersionWithDifference],
-      // counts versions scanned, not versions returned - identical ones are skipped and must not be rescanned
-      nextOffset: Option[Int]
-  )
-
-  object PagedVersionsWithDifferences {
-
-    implicit val encoder: Encoder[PagedVersionsWithDifferences] =
-      deriveEncoder[PagedVersionsWithDifferences].mapJson(_.deepDropNullValues)
-
-    implicit val decoder: Decoder[PagedVersionsWithDifferences] = deriveDecoder[PagedVersionsWithDifferences]
-
-  }
-
   /**
-   * Returns up to `limit` versions that meaningfully differ from `currentGraph`, scanning forward from
-   * `offset` past versions that turn out to be identical, up to `MaxVersionsScannedPerRequest`.
+   * Which of the `limit` most recent versions meaningfully differ from `currentGraph`, fetching their
+   * graphs a chunk at a time. `allVersionIds` is expected newest-first.
    */
   def compute(
       currentGraph: ScenarioGraph,
-      allOtherVersionIds: List[VersionId],
-      offset: Int,
-      limit: Int,
-      fetchGraphs: List[VersionId] => Future[Map[VersionId, ScenarioGraph]],
-      describeMissingGraph: VersionId => Option[VersionWithDifference] = _ => None
-  )(implicit ec: ExecutionContext): Future[PagedVersionsWithDifferences] = {
-    val preparedCurrentGraph = ScenarioGraphComparator.PreparedCurrentGraph(currentGraph)
-
-    def describe(versionId: VersionId, graphs: Map[VersionId, ScenarioGraph]): Option[VersionWithDifference] =
-      describeVersion(preparedCurrentGraph, versionId, graphs, describeMissingGraph)
-
-    // fetching may overshoot what the page still needs, consuming must not - the overshot versions are
-    // what the next request resumes at
-    @tailrec
-    def takeUntilFull(
-        chunk: List[VersionId],
-        graphs: Map[VersionId, ScenarioGraph],
-        wanted: Int,
-        consumed: Int,
-        found: List[VersionWithDifference]
-    ): (Int, List[VersionWithDifference]) = chunk match {
-      case _ if wanted <= 0 => (consumed, found.reverse)
-      case Nil              => (consumed, found.reverse)
-      case versionId :: rest =>
-        describe(versionId, graphs) match {
-          case Some(difference) => takeUntilFull(rest, graphs, wanted - 1, consumed + 1, difference :: found)
-          case None             => takeUntilFull(rest, graphs, wanted, consumed + 1, found)
-        }
-    }
-
-    def scan(
-        remaining: List[VersionId],
-        scanned: Int,
-        collected: List[VersionWithDifference]
-    ): Future[PagedVersionsWithDifferences] = {
-      if (remaining.isEmpty) {
-        Future.successful(PagedVersionsWithDifferences(collected, nextOffset = None))
-      } else if (collected.size >= limit || scanned >= MaxVersionsScannedPerRequest) {
-        Future.successful(PagedVersionsWithDifferences(collected, nextOffset = Some(offset + scanned)))
-      } else {
-        val chunkSize = math.min(MaxVersionsScannedPerRequest - scanned, MaxGraphsPerFetch)
-        val chunk     = remaining.take(chunkSize)
-        val wanted    = limit - collected.size
-        fetchGraphs(chunk).flatMap { graphs =>
-          val (consumed, found) = takeUntilFull(chunk, graphs, wanted, consumed = 0, found = Nil)
-          scan(remaining.drop(consumed), scanned + consumed, collected ++ found)
-        }
-      }
-    }
-
-    scan(allOtherVersionIds.drop(offset), scanned = 0, collected = Nil)
-  }
-
-  /**
-   * Every version that meaningfully differs from `currentGraph`, with no paging and no scan budget. For
-   * the cross-environment comparison, where asking costs a whole scenario graph in the request body and
-   * the answer is only a summary per version - paging it would re-send the graph rather than save anything.
-   */
-  def computeAll(
-      currentGraph: ScenarioGraph,
       allVersionIds: List[VersionId],
-      fetchGraphs: List[VersionId] => Future[Map[VersionId, ScenarioGraph]],
-      describeMissingGraph: VersionId => Option[VersionWithDifference] = _ => None
+      limit: Int,
+      fetchGraphs: List[VersionId] => Future[Map[VersionId, ScenarioGraph]]
   )(implicit ec: ExecutionContext): Future[VersionsWithDifferences] = {
     val preparedCurrentGraph = ScenarioGraphComparator.PreparedCurrentGraph(currentGraph)
+    val compared             = allVersionIds.take(limit)
+    // by id rather than by position, so the caller does not have to assume we ordered the list the way it did
+    val oldestCompared = Option.when(compared.sizeCompare(allVersionIds) < 0)(compared.minBy(_.value))
 
     def scan(remaining: List[VersionId], collected: List[VersionWithDifference]): Future[List[VersionWithDifference]] =
       if (remaining.isEmpty) {
@@ -154,19 +80,18 @@ object VersionsWithDifferencesService {
       } else {
         val chunk = remaining.take(MaxGraphsPerFetch)
         fetchGraphs(chunk).flatMap { graphs =>
-          val found = chunk.flatMap(describeVersion(preparedCurrentGraph, _, graphs, describeMissingGraph))
+          val found = chunk.flatMap(describeVersion(preparedCurrentGraph, _, graphs))
           scan(remaining.drop(chunk.size), collected ++ found)
         }
       }
 
-    scan(allVersionIds, Nil).map(VersionsWithDifferences(_))
+    scan(compared, Nil).map(VersionsWithDifferences(_, oldestCompared))
   }
 
   private def describeVersion(
       preparedCurrentGraph: ScenarioGraphComparator.PreparedCurrentGraph,
       versionId: VersionId,
-      graphs: Map[VersionId, ScenarioGraph],
-      describeMissingGraph: VersionId => Option[VersionWithDifference]
+      graphs: Map[VersionId, ScenarioGraph]
   ): Option[VersionWithDifference] =
     graphs.get(versionId) match {
       case Some(otherGraph) =>
@@ -179,8 +104,10 @@ object VersionsWithDifferencesService {
             totalChangedElements = Option.when(changed.sizeIs > MaxChangedElementsPerVersion)(changed.size)
           )
         )
+      // a version we hold but cannot decode - reported rather than dropped, so it stays selectable and says
+      // why it cannot describe itself
       case None =>
-        describeMissingGraph(versionId)
+        Some(VersionWithDifference(versionId, Nil, differencesUnknown = true))
     }
 
 }
@@ -190,9 +117,8 @@ class VersionsWithDifferencesService(processService: ProcessService) {
   def computeForLocalVersions(
       processIdWithName: ProcessIdWithName,
       currentVersionId: VersionId,
-      offset: Int,
       limit: Int
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[PagedVersionsWithDifferences] = {
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[VersionsWithDifferences] = {
     for {
       currentDetails <- processService.getProcessWithDetails(
         processIdWithName,
@@ -206,9 +132,8 @@ class VersionsWithDifferencesService(processService: ProcessService) {
       result <- VersionsWithDifferencesService.compute(
         currentDetails.scenarioGraphUnsafe,
         allOtherVersionIds,
-        offset,
         limit,
-        fetchGraphs = page => processService.getScenarioGraphsForVersionIds(processIdWithName, page)
+        fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
       )
     } yield result
   }
@@ -219,7 +144,8 @@ class VersionsWithDifferencesService(processService: ProcessService) {
    */
   def computeAgainstSuppliedGraph(
       processIdWithName: ProcessIdWithName,
-      suppliedGraph: ScenarioGraph
+      suppliedGraph: ScenarioGraph,
+      limit: Int
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[VersionsWithDifferences] = {
     for {
       details <- processService.getLatestProcessWithDetails(
@@ -227,11 +153,11 @@ class VersionsWithDifferencesService(processService: ProcessService) {
         GetScenarioWithDetailsOptions.detailsOnly
       )
       allVersionIds = details.history.getOrElse(Nil).map(_.processVersionId)
-      result <- VersionsWithDifferencesService.computeAll(
+      result <- VersionsWithDifferencesService.compute(
         suppliedGraph,
         allVersionIds,
-        fetchGraphs = page => processService.getScenarioGraphsForVersionIds(processIdWithName, page),
-        describeMissingGraph = versionId => Some(VersionWithDifference(versionId, Nil, differencesUnknown = true))
+        limit,
+        fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
       )
     } yield result
   }
@@ -239,7 +165,8 @@ class VersionsWithDifferencesService(processService: ProcessService) {
   def computeForRemoteVersions(
       remoteEnvironment: RemoteEnvironment,
       processIdWithName: ProcessIdWithName,
-      currentLocalVersionId: VersionId
+      currentLocalVersionId: VersionId,
+      limit: Int
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[VersionsWithDifferences] = {
     for {
       localDetails <- processService.getProcessWithDetails(
@@ -249,7 +176,8 @@ class VersionsWithDifferencesService(processService: ProcessService) {
       )
       remoteResultFuture = remoteEnvironment.versionsWithDifferences(
         processIdWithName.name,
-        localDetails.scenarioGraphUnsafe
+        localDetails.scenarioGraphUnsafe,
+        limit
       )
       commentsFuture = remoteEnvironment.activities(processIdWithName.name).map(versionComments)
       remoteResult <- remoteResultFuture

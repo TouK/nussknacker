@@ -84,7 +84,7 @@ object ScenarioGraphComparator {
       .toMap
   }
 
-  def meaningfulDiffs(diff: Map[String, Difference]): Map[String, Difference] =
+  private def meaningfulDiffs(diff: Map[String, Difference]): Map[String, Difference] =
     diff.filter {
       case (_, NodeDifferent(_, current, other))       => !isLayoutOnlyNodeDiff(current, other)
       case (_, StickyNoteDifferent(_, current, other)) => !isLayoutOnlyStickyNoteDiff(current, other)

@@ -84,18 +84,19 @@ class HttpRemoteEnvironment(
 
   override def versionsWithDifferences(
       processName: ProcessName,
-      scenarioGraph: ScenarioGraph
+      scenarioGraph: ScenarioGraph,
+      limit: Int
   ): Future[Option[VersionsWithDifferences]] =
     invokeJson[VersionsWithDifferences](
       HttpMethods.POST,
       List("processes", processName.value, "versions-with-differences"),
-      Query.Empty,
+      Query(("limit", limit.toString)),
       HttpEntity(ContentTypes.`application/json`, scenarioGraph.asJson.noSpaces)
     ).flatMap(
       _.fold(
         error => {
           logFetchError("version differences", processName, error)
-          emptyIfRemoteReachable(error)
+          emptyIfScenarioAbsent(processName, error)
         },
         result => Future.successful(Some(result))
       )
@@ -121,13 +122,38 @@ class HttpRemoteEnvironment(
       List.empty
     }
 
-  // a 404 is ambiguous - the remote may not hold the scenario, our account may lack read access there, or
-  // the uri may be wrong - so the health endpoint decides whether the remote itself is reachable
-  private def emptyIfRemoteReachable(error: NuDesignerError): Future[Option[VersionsWithDifferences]] =
-    isRemoteUnavailable(error).map {
-      case true  => None
-      case false => Some(VersionsWithDifferences(Nil))
-    }
+  /**
+   * A 404 here has two very different meanings: the remote does not hold this scenario, which is an
+   * ordinary empty answer, or the remote is old enough not to have this endpoint at all, which means we
+   * could not compare and must say so. Asking whether the scenario itself is there separates them - a
+   * remote that answers for the scenario but 404s the comparison is one that cannot do the comparison.
+   */
+  private def emptyIfScenarioAbsent(
+      processName: ProcessName,
+      error: NuDesignerError
+  ): Future[Option[VersionsWithDifferences]] = error match {
+    case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
+      scenarioExistsOnRemote(processName).map {
+        case true =>
+          logger.warn(
+            s"Remote environment holds scenario ${processName.value} but returned 404 for the version " +
+              s"comparison endpoint - it likely runs a Nussknacker version without it"
+          )
+          None
+        case false => Some(VersionsWithDifferences(Nil))
+      }
+    case _ => Future.successful(None)
+  }
+
+  private def scenarioExistsOnRemote(processName: ProcessName): Future[Boolean] =
+    invokeForSuccess(
+      HttpMethods.GET,
+      List("processes", processName.value),
+      Query(("skipValidateAndResolve", "true")),
+      HttpEntity.Empty,
+      headers = Nil
+    ).map(_.isRight)
+      .recover { case NonFatal(_) => false }
 
   private def isRemoteUnavailable(error: NuDesignerError): Future[Boolean] = error match {
     case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) => isRemoteReachable.map(!_)

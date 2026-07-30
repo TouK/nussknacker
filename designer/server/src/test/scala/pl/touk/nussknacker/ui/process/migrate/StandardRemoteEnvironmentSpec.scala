@@ -164,7 +164,8 @@ object StandardRemoteEnvironmentSpec {
 
     override def versionsWithDifferences(
         processName: ProcessName,
-        scenarioGraph: ScenarioGraph
+        scenarioGraph: ScenarioGraph,
+        limit: Int
     ): Future[Option[VersionsWithDifferences]] = ???
 
     override def activities(processName: ProcessName): Future[List[ScenarioActivity]] = ???

@@ -193,18 +193,17 @@ export type VersionWithDifference = {
     totalChangedElements?: number;
 };
 
-// Answers for a scenario's whole history at once.
 export type VersionsWithDifferencesResponse = {
     versions: VersionWithDifference[];
+    // Versions older than this one were not compared, so nothing is claimed about them. Absent when the
+    // whole history was compared.
+    oldestComparedVersionId?: number;
     remoteUnavailable?: boolean;
 };
 
-export type PagedVersionsWithDifferencesResponse = {
-    versions: VersionWithDifference[];
-    nextOffset: number | null;
-};
-
-export const VERSIONS_WITH_DIFFERENCES_LIMIT = 10;
+// How many of the most recent versions are compared by default, and what the user may raise it to.
+export const DEFAULT_VERSIONS_COMPARED = 50;
+export const VERSIONS_COMPARED_OPTIONS = [25, 50, 100, 250, 500];
 
 type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
@@ -276,9 +275,8 @@ class HttpService {
     }
 
     fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
-        const promise = api
-            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
-            .then(({ data, ...response }): AxiosResponse<ProcessDefinitionData> => ({
+        const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`).then(
+            ({ data, ...response }): AxiosResponse<ProcessDefinitionData> => ({
                 ...response,
                 data: {
                     ...data,
@@ -287,7 +285,8 @@ class HttpService {
                         components: components.map(fixBranchParametersTemplate).map(fixAggregateParameters),
                     })),
                 },
-            }));
+            }),
+        );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );
@@ -991,10 +990,10 @@ class HttpService {
         return promise;
     }
 
-    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, offset: number, limit = VERSIONS_WITH_DIFFERENCES_LIMIT) {
-        const promise = api.get<PagedVersionsWithDifferencesResponse>(
+    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, limit: number) {
+        const promise = api.get<VersionsWithDifferencesResponse>(
             `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
-            { params: { offset, limit } },
+            { params: { limit } },
         );
         promise.catch((error) =>
             this.#addError(
@@ -1005,10 +1004,15 @@ class HttpService {
         return promise;
     }
 
-    fetchRemoteVersionsWithDifferences(processName: ProcessName, versionId: number): Promise<VersionsWithDifferencesResponse | null> {
+    fetchRemoteVersionsWithDifferences(
+        processName: ProcessName,
+        versionId: number,
+        limit: number,
+    ): Promise<VersionsWithDifferencesResponse | null> {
         return api
             .get<VersionsWithDifferencesResponse>(
                 `/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
+                { params: { limit } },
             )
             .then((response) => response.data)
             .catch((error) =>
@@ -1186,8 +1190,8 @@ class HttpService {
             errorResponseData instanceof Blob
                 ? await errorResponseData.text()
                 : typeof errorResponseData === "string"
-                  ? errorResponseData
-                  : JSON.stringify(errorResponseData);
+                ? errorResponseData
+                : JSON.stringify(errorResponseData);
 
         this.#addErrorMessage(message, errorMessage, showErrorText);
         return Promise.resolve(error);

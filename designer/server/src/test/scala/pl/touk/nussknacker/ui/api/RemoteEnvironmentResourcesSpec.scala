@@ -27,6 +27,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
   ScenarioActivityCommentContent,
   ScenarioActivityType
 }
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{VersionsWithDifferences, VersionWithDifference}
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
@@ -182,7 +183,8 @@ class RemoteEnvironmentResourcesSpec
     val remoteEnvironment = new MockRemoteEnvironment() {
       override def versionsWithDifferences(
           pName: ProcessName,
-          scenarioGraph: ScenarioGraph
+          scenarioGraph: ScenarioGraph,
+          limit: Int
       ): Future[Option[VersionsWithDifferences]] = {
         sentGraph.set(scenarioGraph)
         calls.incrementAndGet()
@@ -206,7 +208,8 @@ class RemoteEnvironmentResourcesSpec
     val remoteEnvironment = new MockRemoteEnvironment() {
       override def versionsWithDifferences(
           pName: ProcessName,
-          scenarioGraph: ScenarioGraph
+          scenarioGraph: ScenarioGraph,
+          limit: Int
       ): Future[Option[VersionsWithDifferences]] = Future.successful(None)
     }
 
@@ -244,7 +247,8 @@ class RemoteEnvironmentResourcesSpec
     val remoteEnvironment = new MockRemoteEnvironment() {
       override def versionsWithDifferences(
           pName: ProcessName,
-          scenarioGraph: ScenarioGraph
+          scenarioGraph: ScenarioGraph,
+          limit: Int
       ): Future[Option[VersionsWithDifferences]] =
         Future.successful(
           Some(
@@ -260,8 +264,9 @@ class RemoteEnvironmentResourcesSpec
       override def activities(pName: ProcessName): Future[List[ScenarioActivity]] =
         Future.successful(
           List(
-            activity(7, "first save", "2024-01-17T14:21:17Z", ScenarioActivityType.ScenarioCreated),
+            // newest first, so that dropping the sort would answer "first save" here
             activity(7, "restart", "2024-01-18T10:00:00Z", ScenarioActivityType.ScenarioDeployed),
+            activity(7, "first save", "2024-01-17T14:21:17Z", ScenarioActivityType.ScenarioCreated),
           )
         )
     }
@@ -309,6 +314,56 @@ class RemoteEnvironmentResourcesSpec
     }
   }
 
+  // The remote bounds its own work with this, so it has to arrive there rather than being applied to the
+  // answer after the remote has already walked its whole history.
+  it should "pass the comparison limit through to the remote environment" in {
+    val sentLimit = new AtomicInteger()
+
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def versionsWithDifferences(
+          pName: ProcessName,
+          scenarioGraph: ScenarioGraph,
+          limit: Int
+      ): Future[Option[VersionsWithDifferences]] = {
+        sentLimit.set(limit)
+        Future.successful(Some(VersionsWithDifferences(Nil)))
+      }
+    }
+
+    val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences?limit=7") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        sentLimit.get() shouldBe 7
+      }
+    }
+  }
+
+  it should "ask the remote environment for a bounded number of versions when no limit is given" in {
+    val sentLimit = new AtomicInteger()
+
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def versionsWithDifferences(
+          pName: ProcessName,
+          scenarioGraph: ScenarioGraph,
+          limit: Int
+      ): Future[Option[VersionsWithDifferences]] = {
+        sentLimit.set(limit)
+        Future.successful(Some(VersionsWithDifferences(Nil)))
+      }
+    }
+
+    val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        sentLimit.get() shouldBe VersionsWithDifferencesService.DefaultVersionsCompared
+      }
+    }
+  }
+
   it should "report that the remote environment is unavailable instead of an empty list of versions" in {
     val remoteEnvironment = new MockRemoteEnvironment() {
       override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
@@ -318,14 +373,25 @@ class RemoteEnvironmentResourcesSpec
     val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
 
     saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
-        status shouldEqual StatusCodes.OK
-        val result = responseAs[VersionsWithDifferences]
-        result.versions shouldBe empty
-        result.remoteUnavailable shouldBe Some(true)
-      }
       Get(s"/remoteEnvironment/$processName/versions") ~> route ~> check {
         status shouldEqual StatusCodes.BadGateway
+      }
+    }
+  }
+
+  it should "return the remote environment's versions when it can be reached" in {
+    val remoteVersion = ScenarioVersion(VersionId(3), Instant.parse("2024-01-17T14:21:17Z"), "some user")
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
+        Future.successful(RemoteScenarioVersions(List(remoteVersion), remoteUnavailable = false))
+    }
+
+    val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/versions") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[List[ScenarioVersion]] shouldBe List(remoteVersion)
       }
     }
   }
@@ -398,7 +464,8 @@ class RemoteEnvironmentResourcesSpec
 
     override def versionsWithDifferences(
         processName: ProcessName,
-        scenarioGraph: ScenarioGraph
+        scenarioGraph: ScenarioGraph,
+        limit: Int
     ): Future[Option[VersionsWithDifferences]] = Future.successful(None)
 
     override def activities(processName: ProcessName): Future[List[ScenarioActivity]] = Future.successful(List())

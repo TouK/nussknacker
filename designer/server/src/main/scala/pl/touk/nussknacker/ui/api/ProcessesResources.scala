@@ -48,16 +48,15 @@ class ProcessesResources(
   private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
 
   // completed rather than rejected, so this does not depend on a rejection handler above the route
-  private def versionsPagingParameters: Directive[(Int, Int)] =
-    parameters(Symbol("offset").as[Int], Symbol("limit").as[Int]).tflatMap {
-      case paging @ (offset, limit) if VersionsWithDifferencesService.isValidPaging(offset, limit) =>
-        tprovide(paging)
+  private def versionsToCompare: Directive[Tuple1[Int]] =
+    parameter(Symbol("limit").as[Int].withDefault(VersionsWithDifferencesService.DefaultVersionsCompared)).flatMap {
+      case limit if VersionsWithDifferencesService.isValidLimit(limit) => provide(limit)
       case _ =>
-        Directive[(Int, Int)] { _ =>
+        Directive[Tuple1[Int]] { _ =>
           complete(
             StatusCodes.BadRequest,
-            s"offset must be >= 0 and limit must be between " +
-              s"${VersionsWithDifferencesService.MinLimit} and ${VersionsWithDifferencesService.MaxLimit}"
+            s"limit must be between ${VersionsWithDifferencesService.MinVersionsCompared} " +
+              s"and ${VersionsWithDifferencesService.MaxVersionsCompared}"
           )
         }
     }
@@ -244,14 +243,9 @@ class ProcessesResources(
         }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
         (processName, currentVersionId) =>
-          (get & processId(processName) & versionsPagingParameters) { (processId, offset, limit) =>
+          (get & processId(processName) & versionsToCompare) { (processId, limit) =>
             complete {
-              versionsWithDifferencesService.computeForLocalVersions(
-                processId,
-                currentVersionId,
-                offset,
-                limit
-              )
+              versionsWithDifferencesService.computeForLocalVersions(processId, currentVersionId, limit)
             }
           }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
@@ -273,13 +267,13 @@ class ProcessesResources(
             }
           }
       } ~ path("processes" / ProcessNameSegment / "versions-with-differences") { processName =>
-        (post & processId(processName)) { processId =>
+        (post & processId(processName) & versionsToCompare) { (processId, limit) =>
           // both must precede `entity`, which streams and parses the body
           canRead(processId) {
             withSizeLimit(VersionsWithDifferencesService.MaxSuppliedGraphBytes) {
               entity(as[ScenarioGraph]) { suppliedGraph =>
                 complete {
-                  versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph)
+                  versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)
                 }
               }
             }

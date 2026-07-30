@@ -141,8 +141,10 @@ class HttpRemoteEnvironmentSpec
           request: MessageEntity,
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
+        // with the limit on the wire: the remote bounds its own work with it, so it has to be sent
         val expectedUri = baseUri
           .withPath(baseUri.path + "/processes/proc1/versions-with-differences")
+          .withQuery(Query(("limit", "10")))
         if (path == expectedUri && method == HttpMethods.POST) {
           Unmarshaller.stringUnmarshaller(request).flatMap { body =>
             sentBody.set(body)
@@ -154,27 +156,46 @@ class HttpRemoteEnvironmentSpec
       }
     }
 
-    whenReady(remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), scenarioGraph)) { result =>
+    whenReady(remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), scenarioGraph, limit = 10)) { result =>
       result shouldBe Some(answer)
       io.circe.parser.decode[ScenarioGraph](sentBody.get()) shouldBe Right(scenarioGraph)
     }
   }
 
-  // 404 from a healthy remote means it does not hold this scenario, which is not the same as being unable
-  // to answer - reporting it as the latter puts an error in front of the user for an ordinary situation.
-  it should "resolve versionsWithDifferences to an empty answer when the scenario is absent from a healthy remote" in {
+  // A remote that does not hold the scenario is not a remote that failed to answer, and reporting it as one
+  // puts an error in front of the user for an ordinary situation.
+  it should "resolve versionsWithDifferences to an empty answer when the scenario is absent from the remote" in {
     val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
 
     whenReady(
-      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe Some(VersionsWithDifferences(Nil)) }
   }
 
-  it should "resolve versionsWithDifferences to None when a 404 comes from an unreachable remote" in {
-    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound, healthy = false)
+  // The other reason for a 404: the remote holds the scenario but runs a Nussknacker without this endpoint.
+  // Answering "no version differs" there would state something we never established.
+  it should "resolve versionsWithDifferences to None when the remote has the scenario but not the endpoint" in {
+    val remoteEnvironment = new MockRemoteEnvironment {
+      override protected def request(
+          path: Uri,
+          method: HttpMethod,
+          request: MessageEntity,
+          headers: Seq[HttpHeader]
+      ): Future[HttpResponse] =
+        if (method == HttpMethods.GET && path.path.toString.endsWith("/processes/proc1")) {
+          Marshal(
+            ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
+              wrapGraphWithScenarioDetailsEntity(ProcessName("proc1"), ProcessTestData.validScenarioGraph),
+              ProcessTestData.sampleScenarioParameters
+            )
+          ).to[RequestEntity].map(entity => HttpResponse(StatusCodes.OK, entity = entity))
+        } else {
+          Future.successful(HttpResponse(StatusCodes.NotFound, entity = HttpEntity("not found")))
+        }
+    }
 
     whenReady(
-      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
   }
 
@@ -182,7 +203,7 @@ class HttpRemoteEnvironmentSpec
     val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.InternalServerError)
 
     whenReady(
-      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
   }
 
@@ -243,7 +264,7 @@ class HttpRemoteEnvironmentSpec
       result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
     }
     whenReady(
-      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
     whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
       result shouldBe List.empty
@@ -267,7 +288,7 @@ class HttpRemoteEnvironmentSpec
       result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
     }
     whenReady(
-      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
     whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
       result shouldBe List.empty

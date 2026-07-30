@@ -1,21 +1,20 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { CircularProgress, FormControl, FormHelperText, FormLabel } from "@mui/material";
+import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
 import i18next, { type TFunction } from "i18next";
 import { keys } from "lodash";
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { components as SelectComponents } from "react-select";
 
-import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
 import HttpService from "../../http/HttpService";
+import { DEFAULT_VERSIONS_COMPARED, VERSIONS_COMPARED_OPTIONS } from "../../http/HttpService";
 import type { VersionWithDifference } from "../../http/HttpService";
-import { getActivities } from "../../reducers/selectors/activities";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getEnvironmentAlert, getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import type { NodeType, StickyNoteNodeType } from "../../types";
@@ -29,7 +28,6 @@ import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { StickyNoteType } from "../graph/utils/stickyNotesUtils";
 import type { ProcessVersionType } from "../Process/types";
 import { PropertiesForm } from "../properties";
-import type { ItemActivity } from "../toolbars/activities/ActivitiesPanel";
 import type { ActivitiesResponse } from "../toolbars/activities/types";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
@@ -44,9 +42,11 @@ type VersionDiffInfo = {
 
 const MAX_DESCRIBED_CHANGES = 20;
 
-// `nextOffset` is absent from the endpoint that answers for a whole history at once, which reads the same
-// as an exhausted list.
-type VersionDiffsResponse = { versions: VersionWithDifference[]; nextOffset?: number | null; remoteUnavailable?: boolean };
+type VersionDiffsResponse = {
+    versions: VersionWithDifference[];
+    oldestComparedVersionId?: number;
+    remoteUnavailable?: boolean;
+};
 
 const toVersionDiffsMap = (versions: VersionWithDifference[]): Map<number, VersionDiffInfo> =>
     new Map(
@@ -71,60 +71,40 @@ const describeVersionDiff = (diffInfo: VersionDiffInfo | undefined, t: TFunction
 
 type DiffsState = {
     diffs: Map<number, VersionDiffInfo> | null; // null = not yet loaded
-    nextOffset: number | null; // null = the version list is exhausted
-    isLoadingMore: boolean;
+    // versions older than this were not compared; undefined means the whole history was
+    oldestCompared?: number;
     error: boolean;
     unavailable: boolean;
 };
 
-const initialDiffsState: DiffsState = {
-    diffs: null,
-    nextOffset: 0,
-    isLoadingMore: false,
-    error: false,
-    unavailable: false,
-};
+const initialDiffsState: DiffsState = { diffs: null, error: false, unavailable: false };
 
-const usePaginatedVersionDiffs = (
-    fetchPage: ((offset: number) => Promise<VersionDiffsResponse | null>) | null,
-): DiffsState & { loadMore: () => void; hasMore: boolean } => {
+const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | null): DiffsState => {
     const [state, setState] = useState<DiffsState>(initialDiffsState);
-    // a save while the dialog is open changes `fetchPage`, and the response in flight for the old version
-    // must not be merged into the state that reset for the new one
+    // a save while the dialog is open changes `fetch`, and the response in flight for the old version must
+    // not be merged into the state that reset for the new one
     const generationRef = useRef(0);
-
-    const applyPage = useCallback((generation: number, offset: number, result: VersionDiffsResponse | null) => {
-        if (generation !== generationRef.current) return;
-        setState((prev) =>
-            result === null
-                ? { ...prev, nextOffset: offset, isLoadingMore: false, error: true }
-                : {
-                      diffs: new Map([...(prev.diffs ?? []), ...toVersionDiffsMap(result.versions)]),
-                      nextOffset: result.nextOffset ?? null,
-                      isLoadingMore: false,
-                      error: false,
-                      unavailable: Boolean(result.remoteUnavailable),
-                  },
-        );
-    }, []);
 
     useEffect(() => {
         const generation = ++generationRef.current;
         setState(initialDiffsState);
-        if (fetchPage) {
-            fetchPage(0).then((result) => applyPage(generation, 0, result));
-        }
-    }, [fetchPage, applyPage]);
+        if (!fetch) return;
+        fetch().then((result) => {
+            if (generation !== generationRef.current) return;
+            setState(
+                result === null
+                    ? { diffs: null, error: true, unavailable: false }
+                    : {
+                          diffs: toVersionDiffsMap(result.versions),
+                          oldestCompared: result.oldestComparedVersionId,
+                          error: false,
+                          unavailable: Boolean(result.remoteUnavailable),
+                      },
+            );
+        });
+    }, [fetch]);
 
-    const loadMore = useCallback(() => {
-        if (!fetchPage || state.nextOffset === null || state.isLoadingMore) return;
-        const generation = generationRef.current;
-        const offset = state.nextOffset;
-        setState((prev) => ({ ...prev, isLoadingMore: true, error: false }));
-        fetchPage(offset).then((result) => applyPage(generation, offset, result));
-    }, [fetchPage, applyPage, state.nextOffset, state.isLoadingMore]);
-
-    return { ...state, hasMore: state.diffs !== null && state.nextOffset !== null, loadMore };
+    return state;
 };
 
 type CommentableActivity = Pick<ActivitiesResponse["activities"][number], "scenarioVersionId" | "comment" | "date">;
@@ -143,63 +123,6 @@ const toVersionCommentsMap = (activities: readonly CommentableActivity[]): Map<n
         }
     }
     return map;
-};
-
-interface LoadMoreContextValue {
-    hasMore: boolean;
-    loadMore: () => void;
-    isLoadingMore: boolean;
-    failed: boolean;
-}
-const LoadMoreContext = React.createContext<LoadMoreContextValue | null>(null);
-
-const loadMoreRowStyle = css({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "6px",
-    padding: "8px 12px",
-    textAlign: "center",
-    fontSize: "0.85em",
-    opacity: 0.7,
-    borderTop: "1px solid rgba(128,128,128,0.2)",
-});
-
-const VersionMenuList = ({ children, ...props }: React.ComponentProps<typeof SelectComponents.MenuList>) => {
-    const ctx = useContext(LoadMoreContext);
-    const { t } = useTranslation();
-    const loadMore = () => ctx?.loadMore();
-    return (
-        <SelectComponents.MenuList {...props}>
-            {children}
-            {ctx?.isLoadingMore ? (
-                <div className={loadMoreRowStyle}>
-                    <CircularProgress size="0.85rem" />
-                    {t("dialog.compareVersions.loadingMoreVersions", "Loading more versions…")}
-                </div>
-            ) : (
-                ctx?.hasMore && (
-                    // not focusable - react-select keeps focus on its own input, so keyboard users reach this
-                    // through onMenuScrollToBottom instead
-                    <div
-                        aria-hidden
-                        onMouseDown={(e) => {
-                            e.preventDefault();
-                            loadMore();
-                        }}
-                        className={cx(
-                            loadMoreRowStyle,
-                            css({ cursor: "pointer", "&:hover": { opacity: 1, background: "rgba(128,128,128,0.1)" } }),
-                        )}
-                    >
-                        {ctx.failed
-                            ? t("dialog.compareVersions.retryLoadMoreVersions", "Could not load more versions — retry")
-                            : t("dialog.compareVersions.loadMoreVersions", "Load more versions…")}
-                    </div>
-                )
-            )}
-        </SelectComponents.MenuList>
-    );
 };
 
 const versionCommentStyle = css({
@@ -221,7 +144,7 @@ const VersionOption = ({ children, innerProps, ...props }: React.ComponentProps<
     );
 };
 
-const VERSION_MENU_COMPONENTS = { MenuList: VersionMenuList, Option: VersionOption };
+const VERSION_MENU_COMPONENTS = { Option: VersionOption };
 
 const noNewVersionOptions = () => false;
 
@@ -250,69 +173,73 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const remotePrefix = "remote-";
 
     const { t } = useTranslation();
-    const dispatch = useDispatch();
     const [state, setState] = useState<State>(initState);
     const processName = useSelector(getProcessName);
     const version = useSelector(getProcessVersionId);
     const otherEnvironment = useSelector(getTargetEnvironmentId);
     const { content: localEnvironmentName } = useSelector(getEnvironmentAlert);
     const versions = useSelector(getVersions);
-    const activities = useSelector(getActivities);
 
-    const versionComments = useMemo(
-        () => toVersionCommentsMap(activities.filter((activity): activity is ItemActivity => activity.uiType === "item")),
-        [activities],
-    );
-
-    // keyed by scenario, not a plain flag: the store can still hold the previously opened scenario's
-    // activities, which a flag would mistake for this one's
-    const activitiesRequestedFor = useRef<string | null>(null);
+    // Fetched here rather than read from the store: the store does not record which scenario its activities
+    // belong to, and dispatching a refresh would reset the Activities panel's search and expand state.
+    const [activities, setActivities] = useState<CommentableActivity[]>([]);
     useEffect(() => {
-        if (processName && activitiesRequestedFor.current !== processName) {
-            activitiesRequestedFor.current = processName;
-            dispatch(getScenarioActivities(processName));
-        }
-    }, [processName, dispatch]);
+        if (!processName) return;
+        let current = true;
+        HttpService.fetchActivities(processName)
+            .then((response) => current && setActivities(response.data.activities))
+            .catch(() => current && setActivities([]));
+        return () => {
+            current = false;
+        };
+    }, [processName]);
 
-    const remoteSelected = state.environment === "remote";
+    const versionComments = useMemo(() => toVersionCommentsMap(activities), [activities]);
+
+    // Latched rather than tracking the current selection, so that switching back and forth between
+    // environments does not discard what was already fetched and ask the remote all over again.
+    const [remoteRequested, setRemoteRequested] = useState(false);
+    useEffect(() => {
+        if (state.environment === "remote") setRemoteRequested(true);
+    }, [state.environment]);
 
     useEffect(() => {
-        if (processName && otherEnvironment && remoteSelected) {
+        if (processName && otherEnvironment && remoteRequested) {
             HttpService.fetchRemoteVersions(processName)
                 .then((response) =>
                     setState((prevState) => ({ ...prevState, remoteVersions: response.data || [], remoteVersionsFailed: false })),
                 )
                 .catch(() => setState((prevState) => ({ ...prevState, remoteVersions: [], remoteVersionsFailed: true })));
         }
-    }, [processName, otherEnvironment, remoteSelected]);
+    }, [processName, otherEnvironment, remoteRequested]);
 
-    const fetchLocalPage = useMemo<((offset: number) => Promise<VersionDiffsResponse | null>) | null>(
+    const [versionsCompared, setVersionsCompared] = useState(DEFAULT_VERSIONS_COMPARED);
+
+    const fetchLocalDiffs = useMemo<(() => Promise<VersionDiffsResponse | null>) | null>(
         () =>
             processName && version
-                ? (offset: number) =>
-                      HttpService.fetchVersionsWithDifferences(processName, version, offset)
+                ? () =>
+                      HttpService.fetchVersionsWithDifferences(processName, version, versionsCompared)
                           .then((response) => response.data)
                           .catch(() => null)
                 : null,
-        [processName, version],
+        [processName, version, versionsCompared],
     );
-    const localDiffsState = usePaginatedVersionDiffs(fetchLocalPage);
+    const localDiffsState = useVersionDiffs(fetchLocalDiffs);
 
-    const fetchRemotePage = useMemo<(() => Promise<VersionDiffsResponse | null>) | null>(
+    const fetchRemoteDiffs = useMemo<(() => Promise<VersionDiffsResponse | null>) | null>(
         () =>
-            processName && version && otherEnvironment && remoteSelected
-                ? () => HttpService.fetchRemoteVersionsWithDifferences(processName, version)
+            processName && version && otherEnvironment && remoteRequested
+                ? () => HttpService.fetchRemoteVersionsWithDifferences(processName, version, versionsCompared)
                 : null,
-        [processName, version, otherEnvironment, remoteSelected],
+        [processName, version, otherEnvironment, remoteRequested, versionsCompared],
     );
-    const remoteDiffsState = usePaginatedVersionDiffs(fetchRemotePage);
+    const remoteDiffsState = useVersionDiffs(fetchRemoteDiffs);
 
     const {
         diffs: activeDiffs,
+        oldestCompared,
         error: activeDiffsError,
-        hasMore,
-        isLoadingMore,
-        loadMore,
     } = state.environment === "remote" ? remoteDiffsState : localDiffsState;
     const isLoadingVersions = activeDiffs === null && !activeDiffsError;
     const showUnfilteredVersions = activeDiffs === null && activeDiffsError;
@@ -353,6 +280,17 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             loadVersion(predefinedOtherVersion);
         }
     }, [loadVersion, predefinedOtherVersion]);
+
+    // Saving while the dialog is open makes a new version current, and the difference on screen is then
+    // against a version that no longer is - recompare rather than leave it captioned "Current version".
+    const comparedAgainst = useRef(version);
+    useEffect(() => {
+        if (comparedAgainst.current === version) return;
+        comparedAgainst.current = version;
+        if (state.otherVersion) {
+            loadVersion(state.otherVersion);
+        }
+    }, [version, loadVersion, state.otherVersion]);
 
     const isRemote = (versionId: string) => {
         return versionId.startsWith(remotePrefix);
@@ -477,7 +415,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
         const isRemoteEnvironment = state.environment === "remote";
         const prefix = isRemoteEnvironment ? remotePrefix : "";
-        const candidates = isRemoteEnvironment ? (state?.remoteVersions ?? []) : versions.filter((v) => version !== v.processVersionId);
+        const candidates = isRemoteEnvironment ? state?.remoteVersions ?? [] : versions.filter((v) => version !== v.processVersionId);
 
         const isSelected = (v: ProcessVersionType) => createVersionId(v, prefix) === state.otherVersion;
 
@@ -490,14 +428,21 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
         if (isLoadingVersions) return [...clearOption, ...candidates.filter(isSelected).map(toOption)];
 
+        // A version older than the compared window was never looked at, so filtering it out would claim it
+        // is identical to the current one. Those are listed as they were before this dialog filtered at all.
+        const wasCompared = (v: ProcessVersionType) => oldestCompared === undefined || v.processVersionId >= oldestCompared;
+
         return [
             ...clearOption,
-            ...candidates.filter((v) => showUnfilteredVersions || activeDiffs?.has(v.processVersionId) || isSelected(v)).map(toOption),
+            ...candidates
+                .filter((v) => showUnfilteredVersions || !wasCompared(v) || activeDiffs?.has(v.processVersionId) || isSelected(v))
+                .map(toOption),
         ];
     }, [
         createVersionElement,
         versionComment,
         activeDiffs,
+        oldestCompared,
         isLoadingVersions,
         showUnfilteredVersions,
         state.environment,
@@ -507,6 +452,15 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         versions,
         t,
     ]);
+
+    const versionsComparedOptions: Option[] = useMemo(
+        () => VERSIONS_COMPARED_OPTIONS.map((count) => ({ label: String(count), value: String(count) })),
+        [],
+    );
+
+    // Offered once there is something it could change - either history the current setting does not reach,
+    // or a setting the user has already moved off the default and may want to move back.
+    const showVersionsComparedControl = oldestCompared !== undefined || versionsCompared !== DEFAULT_VERSIONS_COMPARED;
 
     const differenceOptions: Option[] = useMemo(() => {
         return [
@@ -532,21 +486,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         }));
     }, []);
 
-    const loadMoreContextValue = useMemo<LoadMoreContextValue>(
-        () => ({ hasMore, loadMore, isLoadingMore, failed: activeDiffsError }),
-        [hasMore, loadMore, isLoadingMore, activeDiffsError],
-    );
-
-    const handleMenuScrollToBottom = useCallback(() => {
-        if (hasMore) loadMore();
-    }, [hasMore, loadMore]);
-
     const noVersionsMessage = useCallback(
-        () =>
-            hasMore
-                ? t("dialog.compareVersions.noVersionsFoundYet", "No differing version found yet - load more to keep looking")
+        ({ inputValue }: { inputValue: string }) =>
+            inputValue
+                ? t("dialog.compareVersions.noVersionsMatching", "No version matches '{{query}}'", { query: inputValue })
                 : t("dialog.compareVersions.noVersionsToCompare", "No other version differs from this one"),
-        [hasMore, t],
+        [t],
     );
 
     const environmentOptions: Option[] = useMemo(() => {
@@ -577,22 +522,19 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             )}
             <FormControl>
                 <FormLabel>Version to compare</FormLabel>
-                <LoadMoreContext.Provider value={loadMoreContextValue}>
-                    <TypeSelect
-                        readOnly={Boolean(predefinedOtherVersion)}
-                        autoFocus={true}
-                        id="otherVersion"
-                        onChange={loadVersion}
-                        value={versionOptions.find((option) => option.value === state.otherVersion)}
-                        options={versionOptions}
-                        fieldErrors={[]}
-                        selectComponents={VERSION_MENU_COMPONENTS}
-                        isLoading={isLoadingVersions}
-                        isValidNewOption={noNewVersionOptions}
-                        noOptionsMessage={noVersionsMessage}
-                        onMenuScrollToBottom={handleMenuScrollToBottom}
-                    />
-                </LoadMoreContext.Provider>
+                <TypeSelect
+                    readOnly={Boolean(predefinedOtherVersion)}
+                    autoFocus={true}
+                    id="otherVersion"
+                    onChange={loadVersion}
+                    value={versionOptions.find((option) => option.value === state.otherVersion)}
+                    options={versionOptions}
+                    fieldErrors={[]}
+                    selectComponents={VERSION_MENU_COMPONENTS}
+                    isLoading={isLoadingVersions}
+                    isValidNewOption={noNewVersionOptions}
+                    noOptionsMessage={noVersionsMessage}
+                />
                 {state.environment === "remote" && (remoteDiffsState.unavailable || state.remoteVersionsFailed) && (
                     <FormHelperText error>
                         {t("dialog.compareVersions.remoteUnavailable", "Could not compare versions with the {{name}} environment", {
@@ -600,14 +542,36 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                         })}
                     </FormHelperText>
                 )}
+                {oldestCompared !== undefined && (
+                    <FormHelperText>
+                        {t(
+                            "dialog.compareVersions.comparedRecentOnly",
+                            "Compared the {{count}} most recent versions - older ones are listed without their differences.",
+                            { count: versionsCompared },
+                        )}
+                    </FormHelperText>
+                )}
             </FormControl>
+            {showVersionsComparedControl && (
+                <FormControl>
+                    <FormLabel>{t("dialog.compareVersions.versionsCompared", "Versions to compare in detail")}</FormLabel>
+                    <TypeSelect
+                        id="versionsCompared"
+                        onChange={(value) => setVersionsCompared(Number(value))}
+                        value={versionsComparedOptions.find((o) => o.value === String(versionsCompared))}
+                        options={versionsComparedOptions}
+                        fieldErrors={[]}
+                        isValidNewOption={noNewVersionOptions}
+                    />
+                </FormControl>
+            )}
             {state.otherVersion ? (
                 <div>
                     <FormControl>
                         <FormLabel>Difference to pick</FormLabel>
                         <TypeSelect
                             id="differentVersion"
-                            onChange={(value) => setState({ ...state, currentDiffId: value })}
+                            onChange={(value) => setState((prev) => ({ ...prev, currentDiffId: value }))}
                             value={differenceOptions.find((option) => option.value === state.currentDiffId)}
                             options={differenceOptions}
                             fieldErrors={[]}

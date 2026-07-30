@@ -55,7 +55,7 @@ const graphReducer = {
     },
 };
 
-const buildStore = (options: { activities?: unknown[]; environmentAlert?: { content: string } } = {}) =>
+const buildStore = (options: { environmentAlert?: { content: string } } = {}) =>
     mockStore({
         graphReducer,
         settings: {
@@ -64,7 +64,7 @@ const buildStore = (options: { activities?: unknown[]; environmentAlert?: { cont
                 ...(options.environmentAlert ? { environmentAlert: options.environmentAlert } : {}),
             },
         },
-        processActivity: { activities: options.activities ?? [] },
+        processActivity: { activities: [] },
     });
 
 const store = buildStore();
@@ -79,10 +79,7 @@ const changedVersion = (versionId: number) => ({
     differencesUnknown: false,
 });
 
-const localVersionsWithDifferences = {
-    versions: [changedVersion(35), changedVersion(34)],
-    nextOffset: null,
-};
+const localVersionsWithDifferences = { versions: [changedVersion(35), changedVersion(34)] };
 
 const remoteVersion = (processVersionId: number): ProcessVersionType => ({
     processVersionId,
@@ -92,16 +89,24 @@ const remoteVersion = (processVersionId: number): ProcessVersionType => ({
     actions: [],
 });
 
-const comment = (scenarioVersionId: number, value: string, date = "2024-05-31T10:00:00Z", type = "SCENARIO_MODIFIED") => ({
+const comment = (
+    scenarioVersionId: number,
+    value: string,
+    date = "2024-05-31T10:00:00Z",
+    type = "SCENARIO_MODIFIED",
+    status = "AVAILABLE",
+) => ({
     id: `activity-${scenarioVersionId}-${value}`,
-    uiType: "item",
     type,
     user: "admin",
     date,
     scenarioVersionId,
-    comment: { content: { status: "AVAILABLE", value }, lastModifiedBy: "admin", lastModifiedAt: date },
+    comment: { content: { status, value }, lastModifiedBy: "admin", lastModifiedAt: date },
     additionalFields: [],
 });
+
+const withActivities = (...activities: unknown[]) =>
+    mock.onGet(`/processes/${scenario.name}/activity/activities`).reply(200, { activities });
 
 const renderDialog = (options: { store?: ReturnType<typeof mockStore>; predefinedVersionId?: string } = {}) =>
     render(
@@ -182,7 +187,8 @@ describe("CompareVersionsDialog", () => {
 
         const remoteRequests = mock.history.get.filter((r) => r.url === remoteVersionsWithDifferencesUrl());
         expect(remoteRequests).toHaveLength(1);
-        expect(remoteRequests[0].params).toBeUndefined();
+        // the remote bounds its own work with this, so it has to be asked for
+        expect(remoteRequests[0].params).toEqual({ limit: 50 });
     });
 
     it("should compare against a local version when one is selected", async () => {
@@ -199,7 +205,7 @@ describe("CompareVersionsDialog", () => {
     });
 
     it("should hide a version that has no meaningful difference from the current one", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(35)], nextOffset: null });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(35)] });
 
         renderDialog();
         await openVersionPicker();
@@ -209,7 +215,7 @@ describe("CompareVersionsDialog", () => {
     });
 
     it("should keep the predefined version visible in the dropdown even when it has no meaningful diff", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(35)], nextOffset: null });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(35)] });
         mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/34`).replyOnce(200, {});
 
         renderDialog({ predefinedVersionId: "34" });
@@ -248,26 +254,6 @@ describe("CompareVersionsDialog", () => {
         expect(await screen.findByText("dialog.compareVersions.remoteUnavailable")).toBeInTheDocument();
     });
 
-    it("should page on demand and stop offering to load more once the list is exhausted", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(35)], nextOffset: 1 });
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(34)], nextOffset: null });
-
-        renderDialog();
-        await openVersionPicker();
-
-        const loadMoreRow = await screen.findByText("dialog.compareVersions.loadMoreVersions");
-        expect(screen.queryByText("34 - created by admin 2024-05-31|00:00")).not.toBeInTheDocument();
-
-        fireEvent.mouseDown(loadMoreRow);
-
-        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
-        await waitFor(() => {
-            expect(screen.queryByText("dialog.compareVersions.loadMoreVersions")).not.toBeInTheDocument();
-        });
-        const pagedRequests = mock.history.get.filter((r) => r.url === localVersionsWithDifferencesUrl());
-        expect(pagedRequests.map((r) => r.params.offset)).toEqual([0, 1]);
-    });
-
     it("should say it is loading rather than showing an empty picker while the first page loads", async () => {
         let releaseFirstPage: () => void;
         const firstPageLoaded = new Promise<void>((resolve) => {
@@ -291,7 +277,7 @@ describe("CompareVersionsDialog", () => {
     });
 
     it("should say there is nothing to compare against when no version differs", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], nextOffset: null });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [] });
 
         renderDialog();
         await openVersionPicker();
@@ -299,56 +285,63 @@ describe("CompareVersionsDialog", () => {
         expect(await screen.findByText("dialog.compareVersions.noVersionsToCompare")).toBeInTheDocument();
     });
 
-    it("should offer a retry after a page request fails, and load the page on retry", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(35)], nextOffset: 1 });
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(500);
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(34)], nextOffset: null });
-
-        renderDialog();
-        await openVersionPicker();
-
-        fireEvent.mouseDown(await screen.findByText("dialog.compareVersions.loadMoreVersions"));
-
-        const retryRow = await screen.findByText("dialog.compareVersions.retryLoadMoreVersions");
-        expect(screen.getByText("35 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
-
-        fireEvent.mouseDown(retryRow);
-
-        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
-        const pagedRequests = mock.history.get.filter((r) => r.url === localVersionsWithDifferencesUrl());
-        expect(pagedRequests.map((r) => r.params.offset)).toEqual([0, 1, 1]);
-    });
-
-    it("should not offer to load more while the first page is still loading", async () => {
-        let releaseFirstPage: () => void;
-        const firstPageLoaded = new Promise<void>((resolve) => {
-            releaseFirstPage = resolve;
-        });
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(async () => {
-            await firstPageLoaded;
-            return [200, { versions: [changedVersion(35)], nextOffset: 1 }];
+    // Nothing was computed for versions past the limit, so hiding them would claim they are identical to the
+    // current one. They are listed plainly instead, as the dialog did before it filtered anything.
+    it("should list versions older than the compared window even though they have no differences", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [changedVersion(35)],
+            oldestComparedVersionId: 35,
         });
 
         renderDialog();
         await openVersionPicker();
 
-        expect(await screen.findByText("Loading...")).toBeInTheDocument();
-        expect(screen.queryByText("dialog.compareVersions.loadMoreVersions")).not.toBeInTheDocument();
-
-        releaseFirstPage();
-
-        expect(await screen.findByText("dialog.compareVersions.loadMoreVersions")).toBeInTheDocument();
+        expect(await screen.findByText("35 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+        expect(screen.getByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+        expect(screen.getByText("dialog.compareVersions.comparedRecentOnly")).toBeInTheDocument();
     });
 
-    it("should offer to keep looking when a page is empty but the history is not exhausted", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], nextOffset: 100 });
+    it("should keep hiding identical versions that were compared", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [changedVersion(35)],
+            oldestComparedVersionId: 34,
+        });
 
         renderDialog();
         await openVersionPicker();
 
-        expect(await screen.findByText("dialog.compareVersions.noVersionsFoundYet")).toBeInTheDocument();
-        expect(screen.queryByText("dialog.compareVersions.noVersionsToCompare")).not.toBeInTheDocument();
-        expect(screen.getByText("dialog.compareVersions.loadMoreVersions")).toBeInTheDocument();
+        expect(await screen.findByText("35 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+        expect(screen.queryByText("34 - created by admin 2024-05-31|00:00")).not.toBeInTheDocument();
+    });
+
+    it("should say nothing about a compared window when the whole history was compared", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+
+        renderDialog();
+        await openVersionPicker();
+
+        await screen.findByText("35 - created by admin 2024-05-31|00:00");
+        expect(screen.queryByText("dialog.compareVersions.comparedRecentOnly")).not.toBeInTheDocument();
+        expect(screen.queryByText("dialog.compareVersions.versionsCompared")).not.toBeInTheDocument();
+    });
+
+    it("should re-compare with the new limit when the user raises how many versions are compared", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [changedVersion(35)],
+            oldestComparedVersionId: 35,
+        });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+
+        renderDialog();
+        await screen.findByText("dialog.compareVersions.versionsCompared");
+
+        fireEvent.keyDown(await screen.findByText("50"), DOWN_ARROW);
+        fireEvent.click(await screen.findByText("250"));
+
+        await waitFor(() => {
+            const requests = mock.history.get.filter((r) => r.url === localVersionsWithDifferencesUrl());
+            expect(requests.map((r) => r.params.limit)).toEqual([50, 250]);
+        });
     });
 
     it("should fall back to the unfiltered local version list when the first request fails", async () => {
@@ -383,7 +376,6 @@ describe("CompareVersionsDialog", () => {
                     differencesUnknown: false,
                 },
             ],
-            nextOffset: null,
         });
 
         renderDialog();
@@ -403,7 +395,6 @@ describe("CompareVersionsDialog", () => {
                     totalChangedElements: 5,
                 },
             ],
-            nextOffset: null,
         });
 
         renderDialog();
@@ -441,7 +432,9 @@ describe("CompareVersionsDialog", () => {
     it("should show a version's comment separately from its created-by line", async () => {
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
 
-        renderDialog({ store: buildStore({ activities: [comment(34, "Updated timeout")] }) });
+        withActivities(comment(34, "Updated timeout"));
+
+        renderDialog();
         await openVersionPicker();
 
         expect(await screen.findByText("Updated timeout")).toBeInTheDocument();
@@ -453,10 +446,9 @@ describe("CompareVersionsDialog", () => {
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
 
         // oldest first, so that the sort is load-bearing
-        const store = buildStore({
-            activities: [comment(34, "older", "2024-06-01T10:00:00Z"), comment(34, "newer", "2024-06-02T10:00:00Z")],
-        });
-        renderDialog({ store });
+        withActivities(comment(34, "older", "2024-06-01T10:00:00Z"), comment(34, "newer", "2024-06-02T10:00:00Z"));
+
+        renderDialog();
         await openVersionPicker();
 
         expect(await screen.findByText("newer")).toBeInTheDocument();
@@ -466,13 +458,12 @@ describe("CompareVersionsDialog", () => {
     it("should take a version's latest comment regardless of which activity carried it", async () => {
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
 
-        const store = buildStore({
-            activities: [
-                comment(34, "Updated timeout", "2024-06-01T10:00:00Z"),
-                comment(34, "restart", "2024-06-02T10:00:00Z", "SCENARIO_DEPLOYED"),
-            ],
-        });
-        renderDialog({ store });
+        withActivities(
+            comment(34, "Updated timeout", "2024-06-01T10:00:00Z"),
+            comment(34, "restart", "2024-06-02T10:00:00Z", "SCENARIO_DEPLOYED"),
+        );
+
+        renderDialog();
         await openVersionPicker();
 
         expect(await screen.findByText("restart")).toBeInTheDocument();
@@ -491,10 +482,9 @@ describe("CompareVersionsDialog", () => {
         await openVersionPicker();
 
         expect(await screen.findByText("Deployed to prod")).toBeInTheDocument();
-        expect(mock.history.get.some((r) => r.url === `/remoteEnvironment/${scenario.name}/activities`)).toBe(false);
     });
 
-    it("should load activities itself when the store has none", async () => {
+    it("should load the scenario's activities itself", async () => {
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
 
         renderDialog();
