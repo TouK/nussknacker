@@ -8,7 +8,7 @@ import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.server.{Directive, Directives, Route}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -47,6 +47,20 @@ class RemoteEnvironmentResources(
     with NuPathMatchers {
 
   private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
+
+  // completed rather than rejected, so this does not depend on a rejection handler above the route
+  private def versionsToCompare: Directive[Tuple1[Int]] =
+    parameter(Symbol("limit").as[Int].withDefault(VersionsWithDifferencesService.DefaultVersionsCompared)).flatMap {
+      case limit if VersionsWithDifferencesService.isValidLimit(limit) => provide(limit)
+      case _ =>
+        Directive[Tuple1[Int]] { _ =>
+          complete(
+            StatusCodes.BadRequest,
+            s"limit must be between ${VersionsWithDifferencesService.MinVersionsCompared} " +
+              s"and ${VersionsWithDifferencesService.MaxVersionsCompared}"
+          )
+        }
+    }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("remoteEnvironment") {
@@ -126,14 +140,15 @@ class RemoteEnvironmentResources(
         } ~
         path(ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
           (processName, currentLocalVersionId) =>
-            (get & processId(processName)) { processIdWithName =>
+            (get & processId(processName) & versionsToCompare) { (processIdWithName, limit) =>
               // the remote is queried with the designer's own service account, so this has to gate it
               canRead(processIdWithName) {
                 complete {
                   versionsWithDifferencesService.computeForRemoteVersions(
                     remoteEnvironment,
                     processIdWithName,
-                    currentLocalVersionId
+                    currentLocalVersionId,
+                    limit
                   )
                 }
               }
