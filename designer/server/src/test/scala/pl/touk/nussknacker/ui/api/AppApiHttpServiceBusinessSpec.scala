@@ -213,8 +213,8 @@ class AppApiHttpServiceBusinessSpec
         .equalsJsonBody(
           s"""{
              |  "haEnabled": false,
-             |  "instanceId": "test-instance"
-             |  "isLeader": true,
+             |  "instanceId": "test-instance",
+             |  "isLeader": true
              |}""".stripMargin
         )
     }
