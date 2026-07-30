@@ -18,10 +18,12 @@ import org.apache.pekko.http.scaladsl.model.{
   Uri
 }
 import org.apache.pekko.http.scaladsl.model.Uri.Query
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.Materializer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
@@ -30,11 +32,13 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator,
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{ScenarioActivities, ScenarioActivity}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{VersionsWithDifferences, VersionWithDifference}
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentSpec.MockRemoteEnvironment
 import pl.touk.nussknacker.ui.security.api.{ImpersonatedUserData, ImpersonationSupported, LoggedUser, RealLoggedUser}
 
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
 class HttpRemoteEnvironmentSpec
@@ -61,7 +65,10 @@ class HttpRemoteEnvironmentSpec
           request: MessageEntity,
           header: Seq[HttpHeader]
       ): Future[HttpResponse] = {
-        if (path == baseUri.withPath(baseUri.path + "/processes/a%20b%20c") && method == HttpMethods.GET) {
+        val expectedUri = baseUri
+          .withPath(baseUri.path + "/processes/a%20b%20c")
+          .withQuery(Query(("skipValidateAndResolve", "true")))
+        if (path == expectedUri && method == HttpMethods.GET) {
           Marshal(
             ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
               wrapGraphWithScenarioDetailsEntity(name, scenarioGraph),
@@ -95,7 +102,10 @@ class HttpRemoteEnvironmentSpec
           request: MessageEntity,
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
-        if (path == baseUri.withPath(baseUri.path + "/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
+        val expectedUri = baseUri
+          .withPath(baseUri.path + "/processes/%C5%82%C3%B3d%C5%BA")
+          .withQuery(Query(("skipValidateAndResolve", "true")))
+        if (path == expectedUri && method == HttpMethods.GET) {
           Marshal(
             ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
               wrapGraphWithScenarioDetailsEntity(name, scenarioGraph),
@@ -117,10 +127,12 @@ class HttpRemoteEnvironmentSpec
     }
   }
 
-  it should "fetch and decode scenario graphs for the requested versions in a single bulk request" in {
+  it should "post the scenario graph to the remote environment and decode the differences it computes" in {
     val scenarioGraph = ProcessTestData.validScenarioGraph
-    val v1            = VersionId(1)
-    val v2            = VersionId(2)
+    val answer = VersionsWithDifferences(
+      versions = List(VersionWithDifference(VersionId(3), List("Node 'filter1' modified"), differencesUnknown = false)),
+    )
+    val sentBody = new AtomicReference[String]()
 
     val remoteEnvironment = new MockRemoteEnvironment {
       override protected def request(
@@ -130,21 +142,48 @@ class HttpRemoteEnvironmentSpec
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         val expectedUri = baseUri
-          .withPath(baseUri.path + "/processes/proc1/versions/graphs")
-          .withQuery(Query(("versionIds", "1,2")))
-        if (path == expectedUri && method == HttpMethods.GET) {
-          Marshal(VersionGraphs(List(VersionGraph(v1, scenarioGraph), VersionGraph(v2, scenarioGraph))))
-            .to[RequestEntity]
-            .map(entity => HttpResponse(StatusCodes.OK, entity = entity))
+          .withPath(baseUri.path + "/processes/proc1/versions-with-differences")
+        if (path == expectedUri && method == HttpMethods.POST) {
+          Unmarshaller.stringUnmarshaller(request).flatMap { body =>
+            sentBody.set(body)
+            Marshal(answer).to[RequestEntity].map(entity => HttpResponse(StatusCodes.OK, entity = entity))
+          }
         } else {
           throw new AssertionError(s"Not expected ${method.value} $path")
         }
       }
     }
 
-    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(v1, v2))) { result =>
-      result shouldBe Map(v1 -> scenarioGraph, v2 -> scenarioGraph)
+    whenReady(remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), scenarioGraph)) { result =>
+      result shouldBe Some(answer)
+      io.circe.parser.decode[ScenarioGraph](sentBody.get()) shouldBe Right(scenarioGraph)
     }
+  }
+
+  // 404 from a healthy remote means it does not hold this scenario, which is not the same as being unable
+  // to answer - reporting it as the latter puts an error in front of the user for an ordinary situation.
+  it should "resolve versionsWithDifferences to an empty answer when the scenario is absent from a healthy remote" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
+
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+    ) { result => result shouldBe Some(VersionsWithDifferences(Nil)) }
+  }
+
+  it should "resolve versionsWithDifferences to None when a 404 comes from an unreachable remote" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound, healthy = false)
+
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+    ) { result => result shouldBe None }
+  }
+
+  it should "resolve versionsWithDifferences to None when the remote returns a server error" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.InternalServerError)
+
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+    ) { result => result shouldBe None }
   }
 
   it should "fetch and decode activities" in {
@@ -178,22 +217,6 @@ class HttpRemoteEnvironmentSpec
     }
   }
 
-  it should "resolve scenarioGraphsForVersions to an empty map when the remote returns 404 (unsupported endpoint)" in {
-    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
-
-    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
-      result shouldBe Map.empty
-    }
-  }
-
-  it should "resolve scenarioGraphsForVersions to an empty map when the remote returns a server error" in {
-    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.InternalServerError)
-
-    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
-      result shouldBe Map.empty
-    }
-  }
-
   it should "resolve activities to an empty list when the remote returns 404 (unsupported endpoint)" in {
     val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
 
@@ -219,9 +242,9 @@ class HttpRemoteEnvironmentSpec
     whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
       result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
     }
-    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
-      result shouldBe Map.empty
-    }
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+    ) { result => result shouldBe None }
     whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
       result shouldBe List.empty
     }
@@ -243,9 +266,9 @@ class HttpRemoteEnvironmentSpec
     whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
       result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
     }
-    whenReady(remoteEnvironment.scenarioGraphsForVersions(ProcessName("proc1"), List(VersionId(1)))) { result =>
-      result shouldBe Map.empty
-    }
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph)
+    ) { result => result shouldBe None }
     whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
       result shouldBe List.empty
     }
@@ -259,6 +282,14 @@ class HttpRemoteEnvironmentSpec
     }
   }
 
+  it should "report the remote environment as unavailable when even its health check does not answer" in {
+    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound, healthy = false)
+
+    whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
+      result shouldBe RemoteScenarioVersions(List.empty, remoteUnavailable = true)
+    }
+  }
+
   it should "report the remote environment as unavailable when it rejects our credentials" in {
     val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.Unauthorized)
 
@@ -267,14 +298,23 @@ class HttpRemoteEnvironmentSpec
     }
   }
 
-  private def mockRemoteEnvironmentReturning(statusCode: StatusCode) = new MockRemoteEnvironment {
-    override protected def request(
-        path: Uri,
-        method: HttpMethod,
-        request: MessageEntity,
-        headers: Seq[HttpHeader]
-    ): Future[HttpResponse] = Future.successful(HttpResponse(statusCode, entity = HttpEntity("error")))
-  }
+  private def mockRemoteEnvironmentReturning(statusCode: StatusCode, healthy: Boolean = true) =
+    new MockRemoteEnvironment {
+      override protected def request(
+          path: Uri,
+          method: HttpMethod,
+          request: MessageEntity,
+          headers: Seq[HttpHeader]
+      ): Future[HttpResponse] =
+        if (path.path.toString.endsWith("/app/healthCheck")) {
+          Future.successful(
+            if (healthy) HttpResponse(StatusCodes.OK, entity = HttpEntity("""{"status":"OK"}"""))
+            else HttpResponse(StatusCodes.ServiceUnavailable, entity = HttpEntity("down"))
+          )
+        } else {
+          Future.successful(HttpResponse(statusCode, entity = HttpEntity("error")))
+        }
+    }
 
   private def mockRemoteEnvironmentFailingWith(exception: Throwable) = new MockRemoteEnvironment {
     override protected def request(

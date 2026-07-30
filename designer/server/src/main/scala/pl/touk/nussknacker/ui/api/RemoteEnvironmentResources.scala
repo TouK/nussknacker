@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivities
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
@@ -127,23 +126,14 @@ class RemoteEnvironmentResources(
         } ~
         path(ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
           (processName, currentLocalVersionId) =>
-            (get & processId(processName) & parameters(
-              Symbol("pageNumber").as[Int],
-              Symbol("pageSize").as[Int]
-            )) { (processIdWithName, pageNumber, pageSize) =>
-              if (!VersionsWithDifferencesService.isValidPaging(pageNumber, pageSize)) {
-                complete(
-                  StatusCodes.BadRequest,
-                  s"pageNumber must be >= 0 and pageSize must be between ${VersionsWithDifferencesService.MinPageSize} and ${VersionsWithDifferencesService.MaxPageSize}"
-                )
-              } else {
+            (get & processId(processName)) { processIdWithName =>
+              // the remote is queried with the designer's own service account, so this has to gate it
+              canRead(processIdWithName) {
                 complete {
                   versionsWithDifferencesService.computeForRemoteVersions(
                     remoteEnvironment,
                     processIdWithName,
-                    currentLocalVersionId,
-                    pageNumber,
-                    pageSize
+                    currentLocalVersionId
                   )
                 }
               }
@@ -160,15 +150,6 @@ class RemoteEnvironmentResources(
                     StatusCodes.BadGateway,
                     s"Could not fetch scenario versions from the ${remoteEnvironment.environmentId} environment"
                   )
-              }
-            }
-          }
-        } ~
-        path(ProcessNameSegment / "activities") { processName =>
-          (get & processId(processName)) { processId =>
-            canRead(processId) {
-              complete {
-                remoteEnvironment.activities(processId.name).map(ScenarioActivities.apply)
               }
             }
           }

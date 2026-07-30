@@ -9,14 +9,11 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 
 import scala.concurrent.{ExecutionContext, Future}
-
-@JsonCodec final case class VersionGraph(versionId: VersionId, scenarioGraph: ScenarioGraph)
-
-@JsonCodec final case class VersionGraphs(versions: List[VersionGraph])
 
 final case class RemoteScenarioVersions(versions: List[ScenarioVersion], remoteUnavailable: Boolean)
 
@@ -32,12 +29,12 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName): Future[RemoteScenarioVersions]
 
-  // Same must-not-fail contract as processVersions: a version missing from the result is treated as
-  // "couldn't be fetched", not as an error.
-  def scenarioGraphsForVersions(
+  // The remote does the comparing, so this sends one graph and receives a summary rather than pulling its
+  // full graphs across the network. None means the answer could not be obtained at all.
+  def versionsWithDifferences(
       processName: ProcessName,
-      versionIds: List[VersionId]
-  ): Future[Map[VersionId, ScenarioGraph]]
+      scenarioGraph: ScenarioGraph
+  ): Future[Option[VersionsWithDifferences]]
 
   // Same must-not-fail contract as processVersions.
   def activities(processName: ProcessName): Future[List[ScenarioActivity]]

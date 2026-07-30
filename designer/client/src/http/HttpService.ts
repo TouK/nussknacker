@@ -160,9 +160,9 @@ export interface ExpressionSuggestionRequest {
 }
 
 export enum ProcessingMode {
-    "streaming" = "Unbounded-Stream",
-    "requestResponse" = "Request-Response",
-    "batch" = "Bounded-Stream",
+    streaming = "Unbounded-Stream",
+    requestResponse = "Request-Response",
+    batch = "Bounded-Stream",
 }
 
 export interface ScenarioParametersCombination {
@@ -185,17 +185,26 @@ type DictOption = {
     label: string;
 };
 
+export type VersionWithDifference = {
+    versionId: number;
+    changedElements: string[];
+    differencesUnknown: boolean;
+    comment?: string;
+    totalChangedElements?: number;
+};
+
+// Answers for a scenario's whole history at once.
 export type VersionsWithDifferencesResponse = {
-    versions: { versionId: number; changedElements: string[]; differencesUnknown: boolean }[];
-    hasMore: boolean;
-    // Remote environment endpoint only: true means the versions list is empty because the remote environment
-    // could not be reached, not because every remote version is identical.
+    versions: VersionWithDifference[];
     remoteUnavailable?: boolean;
 };
 
-// The only place that decides the page size for versions-with-differences requests - the backend takes
-// whatever pageSize it's given, so this doesn't have to be kept in sync with a backend-side constant.
-export const VERSIONS_WITH_DIFFERENCES_PAGE_SIZE = 10;
+export type PagedVersionsWithDifferencesResponse = {
+    versions: VersionWithDifference[];
+    nextOffset: number | null;
+};
+
+export const VERSIONS_WITH_DIFFERENCES_LIMIT = 10;
 
 type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
@@ -267,8 +276,9 @@ class HttpService {
     }
 
     fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
-        const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`).then(
-            ({ data, ...response }): AxiosResponse<ProcessDefinitionData> => ({
+        const promise = api
+            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
+            .then(({ data, ...response }): AxiosResponse<ProcessDefinitionData> => ({
                 ...response,
                 data: {
                     ...data,
@@ -277,8 +287,7 @@ class HttpService {
                         components: components.map(fixBranchParametersTemplate).map(fixAggregateParameters),
                     })),
                 },
-            }),
-        );
+            }));
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );
@@ -982,15 +991,10 @@ class HttpService {
         return promise;
     }
 
-    fetchVersionsWithDifferences(
-        processName: ProcessName,
-        versionId: number,
-        pageNumber: number,
-        pageSize = VERSIONS_WITH_DIFFERENCES_PAGE_SIZE,
-    ) {
-        const promise = api.get<VersionsWithDifferencesResponse>(
+    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, offset: number, limit = VERSIONS_WITH_DIFFERENCES_LIMIT) {
+        const promise = api.get<PagedVersionsWithDifferencesResponse>(
             `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
-            { params: { pageNumber, pageSize } },
+            { params: { offset, limit } },
         );
         promise.catch((error) =>
             this.#addError(
@@ -1001,16 +1005,10 @@ class HttpService {
         return promise;
     }
 
-    fetchRemoteVersionsWithDifferences(
-        processName: ProcessName,
-        versionId: number,
-        pageNumber: number,
-        pageSize = VERSIONS_WITH_DIFFERENCES_PAGE_SIZE,
-    ): Promise<VersionsWithDifferencesResponse | null> {
+    fetchRemoteVersionsWithDifferences(processName: ProcessName, versionId: number): Promise<VersionsWithDifferencesResponse | null> {
         return api
             .get<VersionsWithDifferencesResponse>(
                 `/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
-                { params: { pageNumber, pageSize } },
             )
             .then((response) => response.data)
             .catch((error) =>
@@ -1025,11 +1023,7 @@ class HttpService {
     }
 
     fetchRemoteVersions(processName: ProcessName) {
-        const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error),
-        );
-        return promise;
+        return api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
     }
 
     migrateProcess(processName: ProcessName, versionId: number) {
@@ -1127,20 +1121,6 @@ class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
-    // Comments from the remote environment are a nice-to-have decoration of the version list, so a failure
-    // here degrades the list rather than breaking the dialog. Note that problems with the *remote* side
-    // (unreachable, older Nussknacker version, ...) are already folded into an empty 200 by the designer -
-    // what this catch swallows are failures of the local designer call itself.
-    fetchRemoteActivities(scenarioName: string): Promise<ActivitiesResponse | null> {
-        return api
-            .get<ActivitiesResponse>(`/remoteEnvironment/${encodeURIComponent(scenarioName)}/activities`)
-            .then((response) => response.data)
-            .catch((error) => {
-                console.warn("Failed to fetch activities from the remote environment", error);
-                return null;
-            });
-    }
-
     sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
         const headers = {
             "Content-Type": "application/json",
@@ -1206,8 +1186,8 @@ class HttpService {
             errorResponseData instanceof Blob
                 ? await errorResponseData.text()
                 : typeof errorResponseData === "string"
-                ? errorResponseData
-                : JSON.stringify(errorResponseData);
+                  ? errorResponseData
+                  : JSON.stringify(errorResponseData);
 
         this.#addErrorMessage(message, errorMessage, showErrorText);
         return Promise.resolve(error);

@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRespo
 import org.apache.pekko.http.scaladsl.server._
 import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui._
@@ -21,7 +22,6 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
-import pl.touk.nussknacker.ui.process.migrate.{VersionGraph, VersionGraphs}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -46,6 +46,21 @@ class ProcessesResources(
   import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller._
 
   private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
+
+  // completed rather than rejected, so this does not depend on a rejection handler above the route
+  private def versionsPagingParameters: Directive[(Int, Int)] =
+    parameters(Symbol("offset").as[Int], Symbol("limit").as[Int]).tflatMap {
+      case paging @ (offset, limit) if VersionsWithDifferencesService.isValidPaging(offset, limit) =>
+        tprovide(paging)
+      case _ =>
+        Directive[(Int, Int)] { _ =>
+          complete(
+            StatusCodes.BadRequest,
+            s"offset must be >= 0 and limit must be between " +
+              s"${VersionsWithDifferencesService.MinLimit} and ${VersionsWithDifferencesService.MaxLimit}"
+          )
+        }
+    }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     encodeResponse {
@@ -229,24 +244,14 @@ class ProcessesResources(
         }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
         (processName, currentVersionId) =>
-          (get & processId(processName) & parameters(
-            Symbol("pageNumber").as[Int],
-            Symbol("pageSize").as[Int]
-          )) { (processId, pageNumber, pageSize) =>
-            if (!VersionsWithDifferencesService.isValidPaging(pageNumber, pageSize)) {
-              complete(
-                StatusCodes.BadRequest,
-                s"pageNumber must be >= 0 and pageSize must be between ${VersionsWithDifferencesService.MinPageSize} and ${VersionsWithDifferencesService.MaxPageSize}"
+          (get & processId(processName) & versionsPagingParameters) { (processId, offset, limit) =>
+            complete {
+              versionsWithDifferencesService.computeForLocalVersions(
+                processId,
+                currentVersionId,
+                offset,
+                limit
               )
-            } else {
-              complete {
-                versionsWithDifferencesService.computeForLocalVersions(
-                  processId,
-                  currentVersionId,
-                  pageNumber,
-                  pageSize
-                )
-              }
             }
           }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
@@ -267,22 +272,18 @@ class ProcessesResources(
               } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
           }
-      } ~ path("processes" / ProcessNameSegment / "versions" / "graphs") { processName =>
-        (get & processId(processName) & parameters(Symbol("versionIds").as(CsvSeq[Long]))) {
-          (processId, versionIdValues) =>
-            if (versionIdValues.size > VersionsWithDifferencesService.MaxPageSize) {
-              complete(
-                StatusCodes.BadRequest,
-                s"versionIds must contain at most ${VersionsWithDifferencesService.MaxPageSize} ids"
-              )
-            } else {
-              complete {
-                val versionIds = versionIdValues.map(VersionId(_)).toList
-                processService.getScenarioGraphsForVersionIds(processId, versionIds).map { graphs =>
-                  VersionGraphs(versionIds.flatMap(id => graphs.get(id).map(VersionGraph(id, _))))
+      } ~ path("processes" / ProcessNameSegment / "versions-with-differences") { processName =>
+        (post & processId(processName)) { processId =>
+          // both must precede `entity`, which streams and parses the body
+          canRead(processId) {
+            withSizeLimit(VersionsWithDifferencesService.MaxSuppliedGraphBytes) {
+              entity(as[ScenarioGraph]) { suppliedGraph =>
+                complete {
+                  versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph)
                 }
               }
             }
+          }
         }
       }
     }

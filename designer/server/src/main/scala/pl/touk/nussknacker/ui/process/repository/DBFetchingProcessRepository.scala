@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
 import cats.data.OptionT
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toFunctorOps
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName, UserName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
@@ -234,12 +236,24 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     else
       run(
         processTableFilteredByUser.filter(_.id === processId).result.headOption.flatMap {
-          case None => DBIO.successful(Map.empty[VersionId, CanonicalProcess])
+          case None    => DBIO.successful(Map.empty[VersionId, CanonicalProcess])
           case Some(_) =>
+            // the raw json column rather than the entity projection, which decodes eagerly and unsafely -
+            // one undecodable version must not take a whole page of them down with it
             processVersionsTableWithScenarioJson
               .filter(v => v.processId === processId && v.id.inSet(versionIds.toSet))
+              .map(v => (v.id, v.json))
               .result
-              .map(_.flatMap(v => v.json.map(v.id -> _)).toMap)
+              .map(_.flatMap { case (versionId, json) =>
+                ProcessMarshaller.fromJson(json) match {
+                  case Valid(canonical) => Some(versionId -> canonical)
+                  case Invalid(error) =>
+                    logger.warn(
+                      s"Skipping version $versionId of scenario $processId - its stored scenario json could not be decoded: $error"
+                    )
+                    None
+                }
+              }.toMap)
         }
       )
   }

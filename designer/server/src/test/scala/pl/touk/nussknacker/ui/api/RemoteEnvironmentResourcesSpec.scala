@@ -21,8 +21,13 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{ScenarioActivities, ScenarioActivity}
-import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
+  ScenarioActivity,
+  ScenarioActivityComment,
+  ScenarioActivityCommentContent,
+  ScenarioActivityType
+}
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{VersionsWithDifferences, VersionWithDifference}
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
@@ -33,6 +38,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 
+import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteEnvironmentResourcesSpec
@@ -49,6 +57,19 @@ class RemoteEnvironmentResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processName: ProcessName = ProcessTestData.validProcess.name
+
+  private def remoteEnvironmentRoute(remoteEnvironment: RemoteEnvironment, permissions: Permission.Permission*) =
+    withPermissions(
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        processService,
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
+      ),
+      permissions: _*
+    )
 
   it should "fail when scenario does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
@@ -151,177 +172,125 @@ class RemoteEnvironmentResourcesSpec
 
   }
 
-  it should "return only remote version IDs that have meaningful differences" in {
-    import java.time.Instant
-
-    val versionWithDiff    = VersionId(1)
-    val versionWithoutDiff = VersionId(2)
-
-    val remoteEnvironment = new MockRemoteEnvironment() {
-      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
-        Future.successful(
-          RemoteScenarioVersions(
-            List(
-              ScenarioVersion(versionWithDiff, Instant.now(), "user"),
-              ScenarioVersion(versionWithoutDiff, Instant.now(), "user"),
-            ),
-            remoteUnavailable = false
-          )
-        )
-
-      override def scenarioGraphsForVersions(
-          pName: ProcessName,
-          versionIds: List[VersionId]
-      ): Future[Map[VersionId, ScenarioGraph]] =
-        Future.successful(
-          Map(
-            versionWithDiff    -> ProcessTestData.invalidProcess.toScenarioGraph,
-            versionWithoutDiff -> ProcessTestData.validScenarioGraph,
-          )
-        )
-    }
-
-    val route = withPermissions(
-      new RemoteEnvironmentResources(
-        remoteEnvironment,
-        processService,
-        processAuthorizer,
-        scenarioActivityRepository,
-        dbioRunner,
-        clock,
-      ),
-      Permission.Read
+  it should "send the local scenario graph to the remote environment once and relay its answer" in {
+    val sentGraph = new AtomicReference[ScenarioGraph]()
+    val calls     = new AtomicInteger()
+    val remoteAnswer = VersionsWithDifferences(
+      versions = List(VersionWithDifference(VersionId(7), List("Node 'filter1' modified"), differencesUnknown = false))
     )
 
-    // saveCanonicalProcess creates version 1 (an empty skeleton) via POST, then version 2 with the real
-    // content via PUT - so the local graph to diff against is fetched at version 2, matching
-    // ProcessTestData.validScenarioGraph (used below as the "no differences" remote version).
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def versionsWithDifferences(
+          pName: ProcessName,
+          scenarioGraph: ScenarioGraph
+      ): Future[Option[VersionsWithDifferences]] = {
+        sentGraph.set(scenarioGraph)
+        calls.incrementAndGet()
+        Future.successful(Some(remoteAnswer))
+      }
+    }
+
+    val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
+
     saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10") ~> route ~> check {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[VersionsWithDifferences] shouldBe remoteAnswer
+        sentGraph.get().nodes.map(_.id) shouldBe ProcessTestData.validScenarioGraph.nodes.map(_.id)
+        calls.get() shouldBe 1
+      }
+    }
+  }
+
+  it should "report that versions could not be compared when the remote environment cannot answer" in {
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def versionsWithDifferences(
+          pName: ProcessName,
+          scenarioGraph: ScenarioGraph
+      ): Future[Option[VersionsWithDifferences]] = Future.successful(None)
+    }
+
+    val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[VersionsWithDifferences]
-        result.versions.map(_.versionId.value) should contain(versionWithDiff.value)
-        result.versions.map(_.versionId.value) should not contain versionWithoutDiff.value
-        result.hasMore shouldBe false
+        result.versions shouldBe empty
+        result.remoteUnavailable shouldBe Some(true)
       }
     }
   }
 
-  it should "conservatively treat a remote version as different when its graph can't be fetched" in {
-    import java.time.Instant
-
-    val versionWithUnknownDiff = VersionId(1)
-
-    val remoteEnvironment = new MockRemoteEnvironment() {
-      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
-        Future.successful(
-          RemoteScenarioVersions(
-            List(ScenarioVersion(versionWithUnknownDiff, Instant.now(), "user")),
-            remoteUnavailable = false
+  it should "attach each remote version's latest comment to the differences it reports" in {
+    def activity(versionId: Long, comment: String, date: String, activityType: ScenarioActivityType) =
+      ScenarioActivity(
+        id = UUID.randomUUID(),
+        user = "some user",
+        date = Instant.parse(date),
+        scenarioVersionId = Some(versionId),
+        comment = Some(
+          ScenarioActivityComment(
+            content = ScenarioActivityCommentContent.Available(comment),
+            lastModifiedBy = "some user",
+            lastModifiedAt = Instant.parse(date)
           )
-        )
-
-      // Simulates a remote environment that doesn't support the bulk graphs endpoint yet
-      // (e.g. an older Nussknacker version) - RemoteEnvironment.scenarioGraphsForVersions
-      // resolves to an empty map on any such failure instead of failing the Future.
-      override def scenarioGraphsForVersions(
-          pName: ProcessName,
-          versionIds: List[VersionId]
-      ): Future[Map[VersionId, ScenarioGraph]] = Future.successful(Map.empty)
-    }
-
-    val route = withPermissions(
-      new RemoteEnvironmentResources(
-        remoteEnvironment,
-        processService,
-        processAuthorizer,
-        scenarioActivityRepository,
-        dbioRunner,
-        clock,
-      ),
-      Permission.Read
-    )
-
-    saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10") ~> route ~> check {
-        status shouldEqual StatusCodes.OK
-        val result = responseAs[VersionsWithDifferences]
-        result.versions.map(_.versionId.value) should contain(versionWithUnknownDiff.value)
-      }
-    }
-  }
-
-  it should "return activities from the remote environment" in {
-    val activity = ScenarioActivity.forScenarioCreated(
-      id = java.util.UUID.fromString("80c95497-3b53-4435-b2d9-ae73c5766213"),
-      user = "some user",
-      date = java.time.Instant.parse("2024-01-17T14:21:17Z"),
-      scenarioVersionId = Some(1),
-    )
-
-    val remoteEnvironment = new MockRemoteEnvironment() {
-      override def activities(pName: ProcessName): Future[List[ScenarioActivity]] =
-        Future.successful(List(activity))
-    }
-
-    val route = withPermissions(
-      new RemoteEnvironmentResources(
-        remoteEnvironment,
-        processService,
-        processAuthorizer,
-        scenarioActivityRepository,
-        dbioRunner,
-        clock,
-      ),
-      Permission.Read
-    )
-
-    saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/activities") ~> route ~> check {
-        status shouldEqual StatusCodes.OK
-        responseAs[ScenarioActivities] shouldBe ScenarioActivities(List(activity))
-      }
-    }
-  }
-
-  it should "not expose remote activities and versions to a user without read access to the scenario" in {
-    val activity = ScenarioActivity.forScenarioCreated(
-      id = java.util.UUID.fromString("80c95497-3b53-4435-b2d9-ae73c5766213"),
-      user = "some user",
-      date = java.time.Instant.parse("2024-01-17T14:21:17Z"),
-      scenarioVersionId = Some(1),
-    )
-
-    val remoteEnvironment = new MockRemoteEnvironment() {
-      override def activities(pName: ProcessName): Future[List[ScenarioActivity]] =
-        Future.successful(List(activity))
-
-      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
-        Future.successful(
-          RemoteScenarioVersions(
-            List(ScenarioVersion(VersionId(1), java.time.Instant.now(), "user")),
-            remoteUnavailable = false
-          )
-        )
-    }
-
-    // The remote environment is queried with the designer's own service account, so without an explicit
-    // check any authenticated user could read a scenario they have no access to - comments included.
-    val routeWithoutReadPermission = withPermissions(
-      new RemoteEnvironmentResources(
-        remoteEnvironment,
-        processService,
-        processAuthorizer,
-        scenarioActivityRepository,
-        dbioRunner,
-        clock,
+        ),
+        attachment = None,
+        additionalFields = Nil,
+        `type` = activityType
       )
-    )
+
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def versionsWithDifferences(
+          pName: ProcessName,
+          scenarioGraph: ScenarioGraph
+      ): Future[Option[VersionsWithDifferences]] =
+        Future.successful(
+          Some(
+            VersionsWithDifferences(
+              versions = List(
+                VersionWithDifference(VersionId(7), List("Node 'filter1' modified"), differencesUnknown = false),
+                VersionWithDifference(VersionId(8), List("Node 'filter2' modified"), differencesUnknown = false),
+              )
+            )
+          )
+        )
+
+      override def activities(pName: ProcessName): Future[List[ScenarioActivity]] =
+        Future.successful(
+          List(
+            activity(7, "first save", "2024-01-17T14:21:17Z", ScenarioActivityType.ScenarioCreated),
+            activity(7, "restart", "2024-01-18T10:00:00Z", ScenarioActivityType.ScenarioDeployed),
+          )
+        )
+    }
+
+    val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
 
     saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/activities") ~> routeWithoutReadPermission ~> check {
-        rejection shouldBe server.AuthorizationFailedRejection
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        val result = responseAs[VersionsWithDifferences]
+        result.versions.map(v => v.versionId.value -> v.comment) shouldBe List(7L -> Some("restart"), 8L -> None)
       }
+    }
+  }
+
+  it should "not expose remote versions to a user without read access to the scenario" in {
+    val remoteEnvironment = new MockRemoteEnvironment() {
+      override def processVersions(pName: ProcessName): Future[RemoteScenarioVersions] =
+        Future.successful(
+          RemoteScenarioVersions(
+            List(ScenarioVersion(VersionId(1), Instant.now(), "user")),
+            remoteUnavailable = false
+          )
+        )
+    }
+
+    val routeWithoutReadPermission = remoteEnvironmentRoute(remoteEnvironment)
+
+    saveCanonicalProcess(ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processName/versions") ~> routeWithoutReadPermission ~> check {
         rejection shouldBe server.AuthorizationFailedRejection
       }
@@ -329,22 +298,13 @@ class RemoteEnvironmentResourcesSpec
   }
 
   it should "not expose remote versions with differences to a user without read access to the scenario" in {
-    val routeWithoutReadPermission = withPermissions(
-      new RemoteEnvironmentResources(
-        new MockRemoteEnvironment,
-        processService,
-        processAuthorizer,
-        scenarioActivityRepository,
-        dbioRunner,
-        clock,
-      )
-    )
+    val routeWithoutReadPermission = remoteEnvironmentRoute(new MockRemoteEnvironment)
 
     saveCanonicalProcess(ProcessTestData.validProcess) {
       Get(
-        s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10"
+        s"/remoteEnvironment/$processName/2/versions-with-differences"
       ) ~> routeWithoutReadPermission ~> check {
-        status shouldEqual StatusCodes.NotFound
+        rejection shouldBe server.AuthorizationFailedRejection
       }
     }
   }
@@ -355,25 +315,14 @@ class RemoteEnvironmentResourcesSpec
         Future.successful(RemoteScenarioVersions(List.empty, remoteUnavailable = true))
     }
 
-    val route = withPermissions(
-      new RemoteEnvironmentResources(
-        remoteEnvironment,
-        processService,
-        processAuthorizer,
-        scenarioActivityRepository,
-        dbioRunner,
-        clock,
-      ),
-      Permission.Read
-    )
+    val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
 
     saveCanonicalProcess(ProcessTestData.validProcess) {
-      Get(s"/remoteEnvironment/$processName/2/versions-with-differences?pageNumber=0&pageSize=10") ~> route ~> check {
+      Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[VersionsWithDifferences]
         result.versions shouldBe empty
-        result.hasMore shouldBe false
-        result.remoteUnavailable shouldBe true
+        result.remoteUnavailable shouldBe Some(true)
       }
       Get(s"/remoteEnvironment/$processName/versions") ~> route ~> check {
         status shouldEqual StatusCodes.BadGateway
@@ -447,10 +396,10 @@ class RemoteEnvironmentResourcesSpec
     override def processVersions(processName: ProcessName): Future[RemoteScenarioVersions] =
       Future.successful(RemoteScenarioVersions(List.empty, remoteUnavailable = false))
 
-    override def scenarioGraphsForVersions(
+    override def versionsWithDifferences(
         processName: ProcessName,
-        versionIds: List[VersionId]
-    ): Future[Map[VersionId, ScenarioGraph]] = Future.successful(Map.empty)
+        scenarioGraph: ScenarioGraph
+    ): Future[Option[VersionsWithDifferences]] = Future.successful(None)
 
     override def activities(processName: ProcessName): Future[List[ScenarioActivity]] = Future.successful(List())
 

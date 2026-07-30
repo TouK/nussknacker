@@ -7,41 +7,65 @@ import pl.touk.nussknacker.engine.graph.node._
 
 object ScenarioGraphComparator {
 
-  def compare(currentGraph: ScenarioGraph, otherGraph: ScenarioGraph): Map[String, Difference] = {
-    val nodes = getDifferences(
-      currentGraph.nodes.map(node => node.id -> node).toMap,
-      otherGraph.nodes.map(node => node.id -> node).toMap
-    )(
-      notPresentInOther = current => NodeNotPresentInOther(current.id, current),
-      notPresentInCurrent = other => NodeNotPresentInCurrent(other.id, other),
-      different = (current, other) => NodeDifferent(current.id, current, other)
-    )
+  def compare(currentGraph: ScenarioGraph, otherGraph: ScenarioGraph): Map[String, Difference] =
+    PreparedCurrentGraph(currentGraph).compareWith(otherGraph)
 
-    val edges = getDifferences(
-      currentGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap,
-      otherGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap
-    )(
-      notPresentInOther = current => EdgeNotPresentInOther(current.from, current.to, current),
-      notPresentInCurrent = other => EdgeNotPresentInCurrent(other.from, other.to, other),
-      different = (current, other) => EdgeDifferent(current.from, current.to, current, other)
-    )
+  /** The current graph's lookup maps, built once so it can be compared against many others. */
+  final class PreparedCurrentGraph private (
+      nodes: Map[String, NodeData],
+      edges: Map[(String, String), Edge],
+      stickyNotes: Map[String, StickyNote],
+      properties: ProcessProperties
+  ) {
 
-    val stickyNotes = getDifferences(
-      currentGraph.stickyNotes.map(node => node.id -> node).toMap,
-      otherGraph.stickyNotes.map(node => node.id -> node).toMap
-    )(
-      notPresentInOther = current => StickyNotePresentInOther(current.id, current),
-      notPresentInCurrent = other => StickyNotePresentInCurrent(other.id, other),
-      different = (current, other) => StickyNoteDifferent(current.id, current, other)
-    )
+    def compareWith(otherGraph: ScenarioGraph): Map[String, Difference] = {
+      val nodeDiffs = getDifferences(
+        nodes,
+        otherGraph.nodes.map(node => node.id -> node).toMap
+      )(
+        notPresentInOther = current => NodeNotPresentInOther(current.id, current),
+        notPresentInCurrent = other => NodeNotPresentInCurrent(other.id, other),
+        different = (current, other) => NodeDifferent(current.id, current, other)
+      )
 
-    val properties = if (currentGraph.properties != otherGraph.properties) {
-      PropertiesDifferent(currentGraph.properties, otherGraph.properties) :: Nil
-    } else {
-      Nil
+      val edgeDiffs = getDifferences(
+        edges,
+        otherGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap
+      )(
+        notPresentInOther = current => EdgeNotPresentInOther(current.from, current.to, current),
+        notPresentInCurrent = other => EdgeNotPresentInCurrent(other.from, other.to, other),
+        different = (current, other) => EdgeDifferent(current.from, current.to, current, other)
+      )
+
+      val stickyNoteDiffs = getDifferences(
+        stickyNotes,
+        otherGraph.stickyNotes.map(node => node.id -> node).toMap
+      )(
+        notPresentInOther = current => StickyNotePresentInOther(current.id, current),
+        notPresentInCurrent = other => StickyNotePresentInCurrent(other.id, other),
+        different = (current, other) => StickyNoteDifferent(current.id, current, other)
+      )
+
+      val propertiesDiffs = if (properties != otherGraph.properties) {
+        PropertiesDifferent(properties, otherGraph.properties) :: Nil
+      } else {
+        Nil
+      }
+
+      nodeDiffs ++ edgeDiffs ++ stickyNoteDiffs ++ propertiesDiffs.map(property => property.id -> property).toMap
     }
 
-    nodes ++ edges ++ stickyNotes ++ properties.map(property => property.id -> property).toMap
+  }
+
+  object PreparedCurrentGraph {
+
+    def apply(currentGraph: ScenarioGraph): PreparedCurrentGraph = new PreparedCurrentGraph(
+      nodes = currentGraph.nodes.map(node => node.id -> node).toMap,
+      edges = currentGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap,
+      stickyNotes = currentGraph.stickyNotes.map(node => node.id -> node).toMap,
+      properties = currentGraph.properties
+    )
+
   }
 
   private def getDifferences[K, V](currents: Map[K, V], others: Map[K, V])(
@@ -67,19 +91,22 @@ object ScenarioGraphComparator {
       case _                                           => true
     }
 
+  /** A line per meaningful change, sorted so that the same pair of graphs always yields the same order. */
   def describeMeaningfulDiffs(diff: Map[String, Difference]): List[String] =
-    meaningfulDiffs(diff).values.map {
-      case NodeDifferent(id, _, _)              => s"Node '$id' modified"
-      case NodeNotPresentInOther(id, _)         => s"Node '$id' added"
-      case NodeNotPresentInCurrent(id, _)       => s"Node '$id' removed"
-      case EdgeDifferent(from, to, _, _)        => s"Edge '$from' → '$to' modified"
-      case EdgeNotPresentInOther(from, to, _)   => s"Edge '$from' → '$to' added"
-      case EdgeNotPresentInCurrent(from, to, _) => s"Edge '$from' → '$to' removed"
-      case StickyNoteDifferent(id, _, _)        => s"Note '$id' modified"
-      case StickyNotePresentInOther(id, _)      => s"Note '$id' added"
-      case StickyNotePresentInCurrent(id, _)    => s"Note '$id' removed"
-      case PropertiesDifferent(_, _)            => "Properties modified"
-    }.toList
+    meaningfulDiffs(diff).values.toList.map(describeWithSortKey).sortBy(_._1).map(_._2)
+
+  private def describeWithSortKey(difference: Difference): ((Int, String, String), String) = difference match {
+    case PropertiesDifferent(_, _)            => ((0, "", ""), "Properties modified")
+    case NodeNotPresentInOther(id, _)         => ((1, id, ""), s"Node '$id' added")
+    case NodeNotPresentInCurrent(id, _)       => ((1, id, ""), s"Node '$id' removed")
+    case NodeDifferent(id, _, _)              => ((1, id, ""), s"Node '$id' modified")
+    case EdgeNotPresentInOther(from, to, _)   => ((2, from, to), s"Edge '$from' → '$to' added")
+    case EdgeNotPresentInCurrent(from, to, _) => ((2, from, to), s"Edge '$from' → '$to' removed")
+    case EdgeDifferent(from, to, _, _)        => ((2, from, to), s"Edge '$from' → '$to' modified")
+    case StickyNotePresentInOther(id, _)      => ((3, id, ""), s"Note '$id' added")
+    case StickyNotePresentInCurrent(id, _)    => ((3, id, ""), s"Note '$id' removed")
+    case StickyNoteDifferent(id, _, _)        => ((3, id, ""), s"Note '$id' modified")
+  }
 
   private def isLayoutOnlyNodeDiff(current: NodeData, other: NodeData): Boolean =
     withoutLayoutData(current) == withoutLayoutData(other)
@@ -88,10 +115,14 @@ object ScenarioGraphComparator {
     current.copy(additionalFields = withoutLayoutData(current.additionalFields)) ==
       other.copy(additionalFields = withoutLayoutData(other.additionalFields))
 
+  // stored scenarios spell "no extra fields" in several ways - absent, present but empty, or an empty
+  // description - and none of them is a change the user made
   private def withoutLayoutData(
       additionalFields: Option[UserDefinedAdditionalNodeFields]
   ): Option[UserDefinedAdditionalNodeFields] =
-    additionalFields.map(_.copy(layoutData = None))
+    additionalFields
+      .map(fields => fields.copy(description = fields.description.filter(_.nonEmpty), layoutData = None))
+      .filterNot(_ == UserDefinedAdditionalNodeFields(None, None))
 
   private def withoutLayoutData(node: NodeData): NodeData = node match {
     case n: Source                   => n.copy(additionalFields = withoutLayoutData(n.additionalFields))

@@ -6,6 +6,7 @@ import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
+import org.apache.pekko.http.scaladsl.server
 import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import org.apache.pekko.testkit.TestDuration
@@ -58,8 +59,10 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsC
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
-import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
-import pl.touk.nussknacker.ui.process.migrate.VersionGraphs
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{
+  PagedVersionsWithDifferences,
+  VersionsWithDifferences
+}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
@@ -956,66 +959,82 @@ class ProcessesResourcesSpec
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
 
     Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?pageNumber=0&pageSize=10"
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?offset=0&limit=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val result = responseAs[VersionsWithDifferences]
-      result.versions.map(_.versionId.value) should contain(1L)
-      result.versions.map(_.versionId.value) should contain(3L)
-      result.versions.map(_.versionId.value) should not contain 2L
+      val result = responseAs[PagedVersionsWithDifferences]
+      result.versions.map(_.versionId.value) shouldBe List(3L, 1L)
+      result.versions.head.changedElements should not be empty
+      result.nextOffset shouldBe None
     }
   }
 
-  test("return empty list of versions with differences when no other versions exist") {
+  test("return an empty list of versions with differences when no other versions exist") {
     createEmptyScenario(processName, category = Category1)
 
     Get(
-      s"/api/processes/$processName/1/versions-with-differences?pageNumber=0&pageSize=10"
+      s"/api/processes/$processName/1/versions-with-differences?offset=0&limit=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val result = responseAs[VersionsWithDifferences]
+      val result = responseAs[PagedVersionsWithDifferences]
       result.versions shouldBe empty
-      result.hasMore shouldBe false
+      result.nextOffset shouldBe None
     }
   }
 
-  test("return hasMore true when there are more versions beyond the page, false on the last page") {
+  test("page through versions with differences, newest first, until the history is exhausted") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
 
-    Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?pageNumber=0&pageSize=1"
+    val firstPageNextOffset = Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/1/versions-with-differences?offset=0&limit=1"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[VersionsWithDifferences].hasMore shouldBe true
+      val result = responseAs[PagedVersionsWithDifferences]
+      result.versions.map(_.versionId.value) shouldBe List(4L)
+      result.nextOffset shouldBe defined
+      result.nextOffset.get
     }
 
     Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?pageNumber=2&pageSize=1"
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/1/versions-with-differences?offset=$firstPageNextOffset&limit=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[VersionsWithDifferences].hasMore shouldBe false
+      val result = responseAs[PagedVersionsWithDifferences]
+      result.versions.map(_.versionId.value) shouldBe List(3L, 2L)
+      result.nextOffset shouldBe None
     }
   }
 
-  test("reject an invalid pageSize for versions-with-differences") {
+  test("reject invalid paging parameters for versions-with-differences") {
     createEmptyScenario(processName, category = Category1)
 
-    Get(
-      s"/api/processes/$processName/1/versions-with-differences?pageNumber=0&pageSize=0"
-    ) ~> withAllPermUser() ~> applicationRoute ~> check {
-      status shouldEqual StatusCodes.BadRequest
+    List(
+      "offset=0&limit=0",
+      s"offset=0&limit=${VersionsWithDifferencesService.MaxLimit + 1}",
+      "offset=-1&limit=10",
+    ).foreach { query =>
+      withClue(query) {
+        Get(
+          s"/api/processes/$processName/1/versions-with-differences?$query"
+        ) ~> withAllPermUser() ~> applicationRoute ~> check {
+          status shouldEqual StatusCodes.BadRequest
+        }
+      }
     }
   }
 
-  test("do not return scenario graphs for versions in a category the user cannot read") {
+  // The check has to come before the request body is read, so this must be a rejection rather than a
+  // response produced after a whole scenario graph was streamed in and parsed.
+  test("do not compare a supplied graph against a scenario in a category the user cannot read") {
     createEmptyScenario(processName, category = Category2)
 
-    Get(
-      s"/api/processes/$processName/versions/graphs?versionIds=1"
+    Post(
+      s"/api/processes/$processName/versions-with-differences",
+      ProcessTestData.validScenarioGraph
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
-      status shouldEqual StatusCodes.NotFound
+      rejection shouldBe server.AuthorizationFailedRejection
     }
   }
 
@@ -1023,37 +1042,22 @@ class ProcessesResourcesSpec
     createEmptyScenario(processName, category = Category2)
 
     Get(
-      s"/api/processes/$processName/1/versions-with-differences?pageNumber=0&pageSize=10"
+      s"/api/processes/$processName/1/versions-with-differences?offset=0&limit=10"
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.NotFound
     }
   }
 
-  test("return scenario graphs for the requested versions, skipping versions that have no stored graph") {
+  test("compare a graph supplied by another environment against our own versions") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
 
-    // 999 doesn't exist - the endpoint returns what it has instead of failing, since its caller
-    // (HttpRemoteEnvironment.scenarioGraphsForVersions) treats a missing version as "unknown differences".
-    Get(
-      s"/api/processes/${ProcessTestData.sampleScenario.name}/versions/graphs?versionIds=1,2,999"
+    Post(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/versions-with-differences",
+      ProcessTestData.validScenarioGraph
     ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val result = responseAs[VersionGraphs]
-      result.versions.map(_.versionId.value) shouldBe List(1L, 2L)
-      val version2Graph = result.versions.find(_.versionId == VersionId(2)).get.scenarioGraph
-      version2Graph.nodes.map(_.id) shouldBe ProcessTestData.validScenarioGraph.nodes.map(_.id)
-    }
-  }
-
-  test("reject a request for scenario graphs of more versions than a single page holds") {
-    createEmptyScenario(processName, category = Category1)
-
-    val tooManyVersionIds = (1 to VersionsWithDifferencesService.MaxPageSize + 1).mkString(",")
-    Get(
-      s"/api/processes/$processName/versions/graphs?versionIds=$tooManyVersionIds"
-    ) ~> withAllPermUser() ~> applicationRoute ~> check {
-      status shouldEqual StatusCodes.BadRequest
+      responseAs[VersionsWithDifferences].versions.map(_.versionId.value) shouldBe List(3L, 1L)
     }
   }
 

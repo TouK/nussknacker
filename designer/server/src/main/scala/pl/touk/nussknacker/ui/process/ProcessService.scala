@@ -332,11 +332,9 @@ class DBProcessService(
       processId: ProcessIdWithName,
       versionIds: Seq[VersionId]
   )(implicit user: LoggedUser): Future[Map[VersionId, ScenarioGraph]] = {
-    getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly).flatMap { _ =>
-      fetchingProcessRepository
-        .fetchScenarioJsonsForVersionIds(processId.id, versionIds)
-        .map(_.view.mapValues(_.toScenarioGraph).toMap)
-    }
+    fetchingProcessRepository
+      .fetchScenarioJsonsForVersionIds(processId.id, versionIds)
+      .map(_.view.mapValues(_.toScenarioGraph).toMap)
   }
 
   private def validateAndReverseResolve(

@@ -32,6 +32,7 @@ export interface Option {
     label: string;
     isDisabled?: boolean;
     description?: string;
+    comment?: string;
 }
 
 interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {
@@ -44,6 +45,10 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     placeholder?: string;
     fieldErrors?: FieldError[];
     selectComponents?: React.ComponentProps<typeof CreatableSelect<Option>>["components"];
+    isLoading?: boolean;
+    noOptionsMessage?: React.ComponentProps<typeof CreatableSelect<Option>>["noOptionsMessage"];
+    isValidNewOption?: React.ComponentProps<typeof CreatableSelect<Option>>["isValidNewOption"];
+    onMenuScrollToBottom?: React.ComponentProps<typeof CreatableSelect<Option>>["onMenuScrollToBottom"];
 }
 
 export function TypeSelect({
@@ -56,6 +61,10 @@ export function TypeSelect({
     placeholder,
     fieldErrors = [],
     selectComponents,
+    isLoading,
+    noOptionsMessage,
+    isValidNewOption,
+    onMenuScrollToBottom,
     ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
@@ -75,6 +84,10 @@ export function TypeSelect({
                 onMenuOpen={() => setCaptureEsc(true)}
                 onMenuClose={() => setCaptureEsc(false)}
                 components={selectComponents}
+                isLoading={isLoading}
+                noOptionsMessage={noOptionsMessage}
+                isValidNewOption={isValidNewOption}
+                onMenuScrollToBottom={onMenuScrollToBottom}
                 options={options}
                 value={value || null}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
