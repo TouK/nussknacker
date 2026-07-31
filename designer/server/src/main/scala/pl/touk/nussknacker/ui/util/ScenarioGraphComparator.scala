@@ -91,21 +91,41 @@ object ScenarioGraphComparator {
       case _                                           => true
     }
 
-  /** A line per meaningful change, sorted so that the same pair of graphs always yields the same order. */
-  def describeMeaningfulDiffs(diff: Map[String, Difference]): List[String] =
-    meaningfulDiffs(diff).values.toList.map(describeWithSortKey).sortBy(_._1).map(_._2)
+  /**
+   * Up to `limit` lines describing the meaningful changes, plus how many there are in total. Sorted so
+   * that the same pair of graphs always yields the same order. Only the lines that are returned are built
+   * - a version that rewrote a large scenario has as many changes as it has nodes, and describing all of
+   * them to then discard all but `limit` is the expensive part.
+   */
+  def describeMeaningfulDiffs(diff: Map[String, Difference], limit: Int): (List[String], Int) = {
+    val meaningful = meaningfulDiffs(diff).values.toList
+    (meaningful.sortBy(sortKey).take(limit).map(describe), meaningful.size)
+  }
 
-  private def describeWithSortKey(difference: Difference): ((Int, String, String), String) = difference match {
-    case PropertiesDifferent(_, _)            => ((0, "", ""), "Properties modified")
-    case NodeNotPresentInOther(id, _)         => ((1, id, ""), s"Node '$id' added")
-    case NodeNotPresentInCurrent(id, _)       => ((1, id, ""), s"Node '$id' removed")
-    case NodeDifferent(id, _, _)              => ((1, id, ""), s"Node '$id' modified")
-    case EdgeNotPresentInOther(from, to, _)   => ((2, from, to), s"Edge '$from' → '$to' added")
-    case EdgeNotPresentInCurrent(from, to, _) => ((2, from, to), s"Edge '$from' → '$to' removed")
-    case EdgeDifferent(from, to, _, _)        => ((2, from, to), s"Edge '$from' → '$to' modified")
-    case StickyNotePresentInOther(id, _)      => ((3, id, ""), s"Note '$id' added")
-    case StickyNotePresentInCurrent(id, _)    => ((3, id, ""), s"Note '$id' removed")
-    case StickyNoteDifferent(id, _, _)        => ((3, id, ""), s"Note '$id' modified")
+  private def sortKey(difference: Difference): (Int, String, String) = difference match {
+    case PropertiesDifferent(_, _)            => (0, "", "")
+    case NodeNotPresentInOther(id, _)         => (1, id, "")
+    case NodeNotPresentInCurrent(id, _)       => (1, id, "")
+    case NodeDifferent(id, _, _)              => (1, id, "")
+    case EdgeNotPresentInOther(from, to, _)   => (2, from, to)
+    case EdgeNotPresentInCurrent(from, to, _) => (2, from, to)
+    case EdgeDifferent(from, to, _, _)        => (2, from, to)
+    case StickyNotePresentInOther(id, _)      => (3, id, "")
+    case StickyNotePresentInCurrent(id, _)    => (3, id, "")
+    case StickyNoteDifferent(id, _, _)        => (3, id, "")
+  }
+
+  private def describe(difference: Difference): String = difference match {
+    case PropertiesDifferent(_, _)            => "Properties modified"
+    case NodeNotPresentInOther(id, _)         => s"Node '$id' added"
+    case NodeNotPresentInCurrent(id, _)       => s"Node '$id' removed"
+    case NodeDifferent(id, _, _)              => s"Node '$id' modified"
+    case EdgeNotPresentInOther(from, to, _)   => s"Edge '$from' → '$to' added"
+    case EdgeNotPresentInCurrent(from, to, _) => s"Edge '$from' → '$to' removed"
+    case EdgeDifferent(from, to, _, _)        => s"Edge '$from' → '$to' modified"
+    case StickyNotePresentInOther(id, _)      => s"Note '$id' added"
+    case StickyNotePresentInCurrent(id, _)    => s"Note '$id' removed"
+    case StickyNoteDifferent(id, _, _)        => s"Note '$id' modified"
   }
 
   private def isLayoutOnlyNodeDiff(current: NodeData, other: NodeData): Boolean =

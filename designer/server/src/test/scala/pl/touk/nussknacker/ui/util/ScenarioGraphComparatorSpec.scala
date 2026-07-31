@@ -117,7 +117,7 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers with TableDr
 
   test("describeMeaningfulDiffs returns empty for identical graphs") {
     val current = toDisplayable(_.emptySink("end", "testSink"))
-    ScenarioGraphComparator.describeMeaningfulDiffs(ScenarioGraphComparator.compare(current, current)) shouldBe empty
+    describeDiffsOf(current, current) shouldBe empty
   }
 
   test("describeMeaningfulDiffs describes a node content change") {
@@ -240,6 +240,39 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers with TableDr
     )
   }
 
+  // "added" and "removed" are from the current graph's point of view, and swapping them is the kind of
+  // mistake that reads fine in isolation.
+  test("describeMeaningfulDiffs describes removals from the other direction") {
+    val current = toDisplayable(_.emptySink("end", "testSink"))
+    val other   = toDisplayable(_.filter("filter1", "#input == 4".spel).emptySink("end", "testSink"))
+    describeDiffsOf(current, other) should contain("Node 'filter1' removed")
+  }
+
+  test("describeMeaningfulDiffs describes an added and a removed sticky note") {
+    val note    = StickyNote("note1", "content", "#fff", Dimensions(200, 100), layoutAt(1, 1))
+    val without = ScenarioGraph(processProperties(), nodes = Nil, edges = Nil)
+
+    describeDiffsOf(graphWithStickyNote(note), without) shouldBe List("Note 'note1' added")
+    describeDiffsOf(without, graphWithStickyNote(note)) shouldBe List("Note 'note1' removed")
+  }
+
+  // The count is what the client reports as "…and N more", so it has to be the real total rather than the
+  // length of the truncated list.
+  test("describeMeaningfulDiffs counts every change but describes only up to the limit") {
+    val current = toDisplayable(_.filter("filter1", "#input == 4".spel).emptySink("end", "testSink"))
+    val other   = toDisplayable(_.emptySink("end", "testSink"), description = Some("other"))
+
+    val total = changeCountOf(current, other)
+    val (described, reported) = ScenarioGraphComparator.describeMeaningfulDiffs(
+      ScenarioGraphComparator.compare(current, other),
+      2
+    )
+
+    total should be > 2
+    reported shouldBe total
+    described shouldBe describeDiffsOf(current, other).take(2)
+  }
+
   test("describeMeaningfulDiffs describes an edge change") {
     val current = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("current")))
     val other   = toDisplayable(_.switch("switch1", "#input".spel, "var", caseWithExpression("other")))
@@ -296,7 +329,10 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers with TableDr
   }
 
   private def describeDiffsOf(current: ScenarioGraph, other: ScenarioGraph): List[String] =
-    ScenarioGraphComparator.describeMeaningfulDiffs(ScenarioGraphComparator.compare(current, other))
+    ScenarioGraphComparator.describeMeaningfulDiffs(ScenarioGraphComparator.compare(current, other), Int.MaxValue)._1
+
+  private def changeCountOf(current: ScenarioGraph, other: ScenarioGraph): Int =
+    ScenarioGraphComparator.describeMeaningfulDiffs(ScenarioGraphComparator.compare(current, other), Int.MaxValue)._2
 
   private def layoutAt(x: Long, y: Long): Option[UserDefinedAdditionalNodeFields] =
     Some(UserDefinedAdditionalNodeFields(description = None, layoutData = Some(LayoutData(x, y))))

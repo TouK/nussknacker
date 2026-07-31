@@ -272,8 +272,17 @@ class ProcessesResources(
           canRead(processId) {
             withSizeLimit(VersionsWithDifferencesService.MaxSuppliedGraphBytes) {
               entity(as[ScenarioGraph]) { suppliedGraph =>
-                complete {
-                  versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)
+                // The byte limit still admits a graph with far more elements than any real scenario, and
+                // each element costs a diff entry per version compared.
+                if (suppliedGraph.nodes.size + suppliedGraph.edges.size > VersionsWithDifferencesService.MaxSuppliedGraphElements) {
+                  complete(
+                    StatusCodes.BadRequest,
+                    s"scenario graph has more than ${VersionsWithDifferencesService.MaxSuppliedGraphElements} nodes and edges"
+                  )
+                } else {
+                  complete {
+                    versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)
+                  }
                 }
               }
             }

@@ -145,9 +145,11 @@ class HttpRemoteEnvironment(
     case _ => Future.successful(None)
   }
 
+  // HEAD rather than GET: this only asks whether the scenario is there, and a GET would transfer the whole
+  // graph just to discard it.
   private def scenarioExistsOnRemote(processName: ProcessName): Future[Boolean] =
     invokeForSuccess(
-      HttpMethods.GET,
+      HttpMethods.HEAD,
       List("processes", processName.value),
       Query(("skipValidateAndResolve", "true")),
       HttpEntity.Empty,

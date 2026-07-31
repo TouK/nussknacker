@@ -28,7 +28,12 @@ object VersionsWithDifferencesService {
 
   val MaxChangedElementsPerVersion = 50
 
-  val MaxSuppliedGraphBytes: Long = 32 * 1024 * 1024
+  // Generous next to any real scenario graph, but small enough that parsing one is not itself an attack.
+  val MaxSuppliedGraphBytes: Long = 8 * 1024 * 1024
+
+  // Nodes plus edges. What bounds the comparison work per version - the byte limit above still admits a
+  // graph with far more elements than any real scenario, and each one costs a diff entry per version.
+  val MaxSuppliedGraphElements = 20000
 
   def isValidLimit(limit: Int): Boolean = limit >= MinVersionsCompared && limit <= MaxVersionsCompared
 
@@ -58,7 +63,16 @@ object VersionsWithDifferencesService {
     implicit val encoder: Encoder[VersionsWithDifferences] =
       deriveEncoder[VersionsWithDifferences].mapJson(_.deepDropNullValues)
 
-    implicit val decoder: Decoder[VersionsWithDifferences] = deriveDecoder[VersionsWithDifferences]
+    // Spelled out rather than derived: a derived decoder does not apply case-class defaults, so an
+    // answer that omits `versionComments` would fail to decode instead of meaning "none".
+    implicit val decoder: Decoder[VersionsWithDifferences] = Decoder.instance { cursor =>
+      for {
+        versions          <- cursor.get[List[VersionWithDifference]]("versions")
+        oldestCompared    <- cursor.get[Option[VersionId]]("oldestComparedVersionId")
+        comments          <- cursor.getOrElse[Map[Long, String]]("versionComments")(Map.empty)
+        remoteUnavailable <- cursor.get[Option[Boolean]]("remoteUnavailable")
+      } yield VersionsWithDifferences(versions, oldestCompared, comments, remoteUnavailable)
+    }
 
   }
 
@@ -74,8 +88,10 @@ object VersionsWithDifferencesService {
   )(implicit ec: ExecutionContext): Future[VersionsWithDifferences] = {
     val preparedCurrentGraph = ScenarioGraphComparator.PreparedCurrentGraph(currentGraph)
     val compared             = allVersionIds.take(limit)
-    // by id rather than by position, so the caller does not have to assume we ordered the list the way it did
-    val oldestCompared = Option.when(compared.sizeCompare(allVersionIds) < 0)(compared.minBy(_.value))
+    // `allVersionIds` has to be newest-first: `take` is what makes this the most recent versions, and the
+    // boundary reported below is only meaningful because of it.
+    val oldestCompared =
+      Option.when(compared.nonEmpty && compared.sizeCompare(allVersionIds) < 0)(compared.minBy(_.value))
 
     def scan(remaining: List[VersionId], collected: List[VersionWithDifference]): Future[List[VersionWithDifference]] =
       if (remaining.isEmpty) {
@@ -98,13 +114,16 @@ object VersionsWithDifferencesService {
   ): Option[VersionWithDifference] =
     graphs.get(versionId) match {
       case Some(otherGraph) =>
-        val changed = ScenarioGraphComparator.describeMeaningfulDiffs(preparedCurrentGraph.compareWith(otherGraph))
-        Option.when(changed.nonEmpty)(
+        val (changed, totalChanged) = ScenarioGraphComparator.describeMeaningfulDiffs(
+          preparedCurrentGraph.compareWith(otherGraph),
+          MaxChangedElementsPerVersion
+        )
+        Option.when(totalChanged > 0)(
           VersionWithDifference(
             versionId,
-            changed.take(MaxChangedElementsPerVersion),
+            changed,
             differencesUnknown = false,
-            totalChangedElements = Option.when(changed.sizeIs > MaxChangedElementsPerVersion)(changed.size)
+            totalChangedElements = Option.when(totalChanged > MaxChangedElementsPerVersion)(totalChanged)
           )
         )
       // a version we hold but cannot decode - reported rather than dropped, so it stays selectable and says

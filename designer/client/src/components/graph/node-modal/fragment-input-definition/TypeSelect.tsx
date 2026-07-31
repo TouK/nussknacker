@@ -48,6 +48,7 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     isLoading?: boolean;
     noOptionsMessage?: React.ComponentProps<typeof CreatableSelect<Option>>["noOptionsMessage"];
     isValidNewOption?: React.ComponentProps<typeof CreatableSelect<Option>>["isValidNewOption"];
+    filterOption?: React.ComponentProps<typeof CreatableSelect<Option>>["filterOption"];
 }
 
 export function TypeSelect({
@@ -63,6 +64,7 @@ export function TypeSelect({
     isLoading,
     noOptionsMessage,
     isValidNewOption,
+    filterOption,
     ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
@@ -75,7 +77,8 @@ export function TypeSelect({
         <NodeValue marked={isMarked} onKeyDown={preventEsc} sx={{ width: "100%" }}>
             <CreatableSelect<Option>
                 id={props.id}
-                aria-label={"type-select"}
+                autoFocus={props.autoFocus}
+                aria-label={props["aria-label"] ?? "type-select"}
                 className={cx(`${nodeValue}`, props.className)}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
@@ -85,6 +88,7 @@ export function TypeSelect({
                 isLoading={isLoading}
                 noOptionsMessage={noOptionsMessage}
                 isValidNewOption={isValidNewOption}
+                filterOption={filterOption}
                 options={options}
                 value={value || null}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}

@@ -56,7 +56,7 @@ class VersionsWithDifferencesServiceSpec
       .futureValue
 
   private def allChangesBetween(current: ScenarioGraph, other: ScenarioGraph): List[String] =
-    ScenarioGraphComparator.describeMeaningfulDiffs(ScenarioGraphComparator.compare(current, other))
+    ScenarioGraphComparator.describeMeaningfulDiffs(ScenarioGraphComparator.compare(current, other), Int.MaxValue)._1
 
   test("filters out versions identical to the current graph") {
     val identical = VersionId(1)

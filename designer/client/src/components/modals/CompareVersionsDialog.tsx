@@ -70,7 +70,7 @@ const describeVersionDiff = (diffInfo: VersionDiffInfo | undefined, t: TFunction
 };
 
 type DiffsState = {
-    diffs: Map<number, VersionDiffInfo> | null; // null = not yet loaded
+    diffs: Map<number, VersionDiffInfo> | null; // null = not loaded, or the request failed
     // versions older than this were not compared; undefined means the whole history was
     oldestCompared?: number;
     // covers every version, not only the compared ones
@@ -91,7 +91,7 @@ const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | n
         const generation = ++generationRef.current;
         setState(initialDiffsState);
         if (!fetch) return;
-        fetch().then((result) => {
+        const applyResult = (result: VersionDiffsResponse | null) => {
             if (generation !== generationRef.current) return;
             setState(
                 result === null
@@ -104,7 +104,10 @@ const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | n
                           unavailable: Boolean(result.remoteUnavailable),
                       },
             );
-        });
+        };
+        // callers are expected to resolve to null on failure, but a rejection here would otherwise leave
+        // the picker loading for as long as the dialog is open
+        fetch().then(applyResult, () => applyResult(null));
     }, [fetch]);
 
     return state;
@@ -138,9 +141,12 @@ const versionCommentStyle = css({
 });
 
 const VersionOption = ({ children, innerProps, ...props }: React.ComponentProps<typeof SelectComponents.Option>) => {
-    const { description, comment } = props.data as Option;
+    const { label, description, comment } = props.data as Option;
+    // `title` alone is mouse-only, and the change list is the point of the option - so it goes into the
+    // accessible name too, for anyone arrowing through the menu.
+    const accessibleName = [label, description, comment].filter(Boolean).join(". ");
     return (
-        <SelectComponents.Option {...props} innerProps={{ ...innerProps, title: description }}>
+        <SelectComponents.Option {...props} innerProps={{ ...innerProps, title: description, "aria-label": accessibleName }}>
             {children}
             {comment ? <div className={versionCommentStyle}>{comment}</div> : null}
         </SelectComponents.Option>
@@ -150,6 +156,13 @@ const VersionOption = ({ children, innerProps, ...props }: React.ComponentProps<
 const VERSION_MENU_COMPONENTS = { Option: VersionOption };
 
 const noNewVersionOptions = () => false;
+
+// The comment is rendered under the label, so a user searching for a word they can see there should find it.
+const matchVersionOption = (option: { label: string; value: string; data: Option }, input: string) => {
+    if (!input) return true;
+    const haystack = [option.label, (option.data as Option)?.comment].filter(Boolean).join(" ").toLowerCase();
+    return haystack.includes(input.toLowerCase());
+};
 
 const initState: State = {
     environment: "local",
@@ -195,7 +208,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         return () => {
             current = false;
         };
-    }, [processName]);
+        // `version` so that saving while the dialog is open picks up the new version's comment
+    }, [processName, version]);
 
     const versionComments = useMemo(() => toVersionCommentsMap(activities), [activities]);
 
@@ -244,9 +258,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         oldestCompared,
         comments: remoteVersionComments,
         error: activeDiffsError,
+        unavailable: activeUnavailable,
     } = state.environment === "remote" ? remoteDiffsState : localDiffsState;
     const isLoadingVersions = activeDiffs === null && !activeDiffsError;
-    const showUnfilteredVersions = activeDiffs === null && activeDiffsError;
+    // Also when the environment answered but could not compare: it returns no differing versions, which
+    // must not be read as "every version is identical" and hide the whole list.
+    const showUnfilteredVersions = (activeDiffs === null && activeDiffsError) || activeUnavailable;
 
     const isLayoutChangeOnly = useCallback(
         (diffId: string): boolean => {
@@ -462,9 +479,14 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         [],
     );
 
-    // Offered once there is something it could change - either history the current setting does not reach,
-    // or a setting the user has already moved off the default and may want to move back.
-    const showVersionsComparedControl = oldestCompared !== undefined || versionsCompared !== DEFAULT_VERSIONS_COMPARED;
+    // Latched: once the history has proved longer than what was compared, the control stays, so raising the
+    // limit far enough to cover everything does not remove the means of lowering it again - and a failed
+    // request does not take it away either.
+    const [historyExceededLimit, setHistoryExceededLimit] = useState(false);
+    useEffect(() => {
+        if (oldestCompared !== undefined) setHistoryExceededLimit(true);
+    }, [oldestCompared]);
+    const showVersionsComparedControl = historyExceededLimit || versionsCompared !== DEFAULT_VERSIONS_COMPARED;
 
     const differenceOptions: Option[] = useMemo(() => {
         return [
@@ -517,10 +539,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     <TypeSelect
                         readOnly={Boolean(predefinedOtherVersion)}
                         id="environment"
+                        aria-label={t("dialog.compareVersions.environment", "Environment")}
                         onChange={handleEnvironmentChange}
                         value={environmentOptions.find((o) => o.value === state.environment)}
                         options={environmentOptions}
                         fieldErrors={[]}
+                        isValidNewOption={noNewVersionOptions}
                     />
                 </FormControl>
             )}
@@ -530,7 +554,9 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     readOnly={Boolean(predefinedOtherVersion)}
                     autoFocus={true}
                     id="otherVersion"
+                    aria-label={t("dialog.compareVersions.versionToCompare", "Version to compare")}
                     onChange={loadVersion}
+                    filterOption={matchVersionOption}
                     value={versionOptions.find((option) => option.value === state.otherVersion)}
                     options={versionOptions}
                     fieldErrors={[]}
@@ -561,6 +587,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     <FormLabel>{t("dialog.compareVersions.versionsCompared", "Versions to compare in detail")}</FormLabel>
                     <TypeSelect
                         id="versionsCompared"
+                        aria-label={t("dialog.compareVersions.versionsCompared", "Versions to compare in detail")}
                         onChange={(value) => setVersionsCompared(Number(value))}
                         value={versionsComparedOptions.find((o) => o.value === String(versionsCompared))}
                         options={versionsComparedOptions}
@@ -575,10 +602,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                         <FormLabel>Difference to pick</FormLabel>
                         <TypeSelect
                             id="differentVersion"
+                            aria-label={t("dialog.compareVersions.differenceToPick", "Difference to pick")}
                             onChange={(value) => setState((prev) => ({ ...prev, currentDiffId: value }))}
                             value={differenceOptions.find((option) => option.value === state.currentDiffId)}
                             options={differenceOptions}
                             fieldErrors={[]}
+                            isValidNewOption={noNewVersionOptions}
                         />
                     </FormControl>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}

@@ -183,8 +183,6 @@ describe("CompareVersionsDialog", () => {
         await openVersionPicker();
 
         expect(await screen.findByText("1 on remote environment - created by test 2024-05-31|00:00")).toBeInTheDocument();
-        expect(screen.queryByText("dialog.compareVersions.loadMoreVersions")).not.toBeInTheDocument();
-
         const remoteRequests = mock.history.get.filter((r) => r.url === remoteVersionsWithDifferencesUrl());
         expect(remoteRequests).toHaveLength(1);
         // the remote bounds its own work with this, so it has to be asked for
@@ -344,6 +342,102 @@ describe("CompareVersionsDialog", () => {
         });
     });
 
+    // Changing the limit twice in a row must not let the slower earlier answer overwrite the newer one.
+    it("should ignore a response that arrives after the limit has changed again", async () => {
+        let releaseSecond: () => void;
+        const secondSettled = new Promise<void>((resolve) => {
+            releaseSecond = resolve;
+        });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [changedVersion(35)],
+            oldestComparedVersionId: 35,
+        });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(async () => {
+            await secondSettled;
+            return [200, { versions: [changedVersion(34)] }];
+        });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [] });
+
+        renderDialog();
+        await screen.findByText("dialog.compareVersions.versionsCompared");
+
+        fireEvent.keyDown(await screen.findByText("50"), DOWN_ARROW);
+        fireEvent.click(await screen.findByText("250"));
+        fireEvent.keyDown(await screen.findByText("250"), DOWN_ARROW);
+        fireEvent.click(await screen.findByText("500"));
+
+        await openVersionPicker();
+        expect(await screen.findByText("dialog.compareVersions.noVersionsToCompare")).toBeInTheDocument();
+
+        releaseSecond();
+
+        // the stale answer would have put version 34 into the list
+        await waitFor(() => {
+            expect(screen.queryByText("34 - created by admin 2024-05-31|00:00")).not.toBeInTheDocument();
+        });
+    });
+
+    // Raising the limit far enough to cover the whole history must not remove the means of lowering it.
+    it("should keep offering the compared-versions control once the history has exceeded it", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [changedVersion(35)],
+            oldestComparedVersionId: 35,
+        });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+
+        renderDialog();
+        await screen.findByText("dialog.compareVersions.versionsCompared");
+
+        fireEvent.keyDown(await screen.findByText("50"), DOWN_ARROW);
+        fireEvent.click(await screen.findByText("500"));
+
+        await waitFor(() => {
+            expect(screen.queryByText("dialog.compareVersions.comparedRecentOnly")).not.toBeInTheDocument();
+        });
+        expect(screen.getByText("dialog.compareVersions.versionsCompared")).toBeInTheDocument();
+    });
+
+    it("should recompare the selected version against the new current one after a save", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/34`).reply(200, {});
+
+        renderDialog({ predefinedVersionId: "34" });
+
+        await waitFor(() => {
+            expect(
+                mock.history.get.filter((r) => r.url === `/processes/${scenario.name}/${scenario.processVersionId}/compare/34`),
+            ).toHaveLength(1);
+        });
+    });
+
+    it("should ignore a comment that is not available or empty", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        withActivities(
+            comment(34, "hidden by moderation", "2024-06-02T10:00:00Z", "SCENARIO_MODIFIED", "NOT_AVAILABLE"),
+            comment(35, "", "2024-06-02T10:00:00Z"),
+        );
+
+        renderDialog();
+        await openVersionPicker();
+
+        await screen.findByText("34 - created by admin 2024-05-31|00:00");
+        expect(screen.queryByText("hidden by moderation")).not.toBeInTheDocument();
+    });
+
+    it("should describe at most a fixed number of changes and count the rest", async () => {
+        const manyChanges = Array.from({ length: 30 }, (_, i) => `Node 'n${i}' modified`);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [{ versionId: 35, changedElements: manyChanges, differencesUnknown: false }],
+        });
+
+        renderDialog();
+        await openVersionPicker();
+
+        const described = await screen.findByTitle(/Node 'n0' modified/, { normalizer: (value) => value });
+        // 20 described, then the "and N more" line - not all 30
+        expect(described.getAttribute("title").split("\n")).toHaveLength(21);
+    });
+
     it("should fall back to the unfiltered local version list when the first request fails", async () => {
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(500);
 
@@ -418,8 +512,10 @@ describe("CompareVersionsDialog", () => {
         expect(await screen.findByTitle("dialog.compareVersions.unknownDifferences")).toBeInTheDocument();
     });
 
+    // The version list itself succeeds here, so only the remoteUnavailable flag can produce the message -
+    // otherwise a failed version list would satisfy it and the flag would go untested.
     it("should say that the remote environment could not be reached instead of showing nothing to compare", async () => {
-        mock.onGet(remoteVersionsUrl()).replyOnce(500);
+        mock.onGet(remoteVersionsUrl()).replyOnce(200, [remoteVersion(1), remoteVersion(2)]);
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
         mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], remoteUnavailable: true });
 
@@ -427,6 +523,22 @@ describe("CompareVersionsDialog", () => {
         await switchToRemoteEnvironment();
 
         expect(await screen.findByText("dialog.compareVersions.remoteUnavailable")).toBeInTheDocument();
+    });
+
+    // An environment that answered but could not compare says nothing about its versions - hiding them all
+    // would claim they are identical, and leaves the user with no way to compare at all.
+    it("should still list every remote version when the remote environment could not compare", async () => {
+        mock.onGet(remoteVersionsUrl()).replyOnce(200, [remoteVersion(1), remoteVersion(2)]);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], remoteUnavailable: true });
+
+        renderDialog();
+        await switchToRemoteEnvironment();
+        await openVersionPicker();
+
+        expect(await screen.findByText("1 on remote environment - created by test 2024-05-31|00:00")).toBeInTheDocument();
+        expect(screen.getByText("2 on remote environment - created by test 2024-05-31|00:00")).toBeInTheDocument();
+        expect(screen.queryByText("dialog.compareVersions.noVersionsToCompare")).not.toBeInTheDocument();
     });
 
     it("should show a version's comment separately from its created-by line", async () => {
