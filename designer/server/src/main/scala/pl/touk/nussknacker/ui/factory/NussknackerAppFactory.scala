@@ -56,7 +56,10 @@ class NussknackerAppFactory(
       IO.fromFuture(
         IO(
           domainServices.reconciler
-            .recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart)
+            .recoverNotRunningDeploymentsThatShouldBeRunning(
+              shouldRecover = _.recoverJobsOnStart,
+              isLeader = () => domainServices.leadership.isLeader()
+            )
             .recover { case exception => logger.error("Error while deployments recovery", exception) }(
               infrastructureServices.executionContextWithIORuntime
             )

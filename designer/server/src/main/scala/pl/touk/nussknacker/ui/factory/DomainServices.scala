@@ -137,7 +137,7 @@ object DomainServices extends LazyLogging {
         scenarioLabelsRepository
       )
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
-      distributedLock            = DistributedLock(alreadyLoadedConfig.haMode, dbRef)
+      distributedLock            = DistributedLock(alreadyLoadedConfig.haMode, dbRef, clock)
       periodicLock <- PeriodicDeploymentLock.create(alreadyLoadedConfig.haMode, distributedLock)
       deploymentData <- DeploymentManagersLoader.load(
         alreadyLoadedConfig.processingTypeConfigs(),

@@ -19,8 +19,6 @@ class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgr
   private val lockName = "test-lock"
   private val duration = 30.seconds
 
-  private val clockSkewTolerance = 1.second
-
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     Using(testDbRef.db.createSession()) { session =>
@@ -28,18 +26,17 @@ class SlickDistributedLockSpec extends AnyFunSuite with Matchers with WithPostgr
     }.get
   }
 
-  private def lock(instanceId: String) = SlickDistributedLock(testDbRef, instanceId, lockQueryTimeout = 5.seconds)
-  private lazy val inst1               = lock("instance-1")
-  private lazy val inst2               = lock("instance-2")
+  private def lock(instanceId: String) =
+    SlickDistributedLock(testDbRef, instanceId, lockQueryTimeout = 5.seconds, clock)
+  private lazy val inst1 = lock("instance-1")
+  private lazy val inst2 = lock("instance-2")
 
-  // Runs acquireOrRenew and asserts that validUntil ≈ now + duration.
-  // Timing is captured internally so tests don't need to manage it.
   private def assertAcquired(call: => Future[Option[Instant]]): Unit = {
     val before     = clock.instant()
     val validUntil = call.futureValue.getOrElse(fail("expected lock to be acquired, but got None"))
     val after      = clock.instant()
-    validUntil should be >= before.plusMillis(duration.toMillis - clockSkewTolerance.toMillis)
-    validUntil should be <= after.plusMillis(duration.toMillis + clockSkewTolerance.toMillis)
+    validUntil should be >= before.plusMillis(duration.toMillis)
+    validUntil should be <= after.plusMillis(duration.toMillis)
   }
 
   // --- acquireOrRenew ---

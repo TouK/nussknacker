@@ -214,6 +214,27 @@ class DistributedLeadershipSpec extends AnyFunSuite with Matchers with BeforeAnd
     }
   }
 
+  test("onLeadershipLost does not fire when the lease expires without a heartbeat transition") {
+    @volatile var fired              = false
+    @volatile var expiresAt: Instant = null
+    withService(
+      // Heartbeat keeps "succeeding" but with a stale validUntil that is never advanced (models a lost
+      // lease that is never renewed further, e.g. a hung/stale renewal). isLeader() self-expires on the
+      // local clock, but there is no Acquired→NotAcquired transition to drive the lost callback.
+      // expiresAt is anchored to the first heartbeat so the lease window does not depend on setup time.
+      acquireOrRenewFn = () => {
+        if (expiresAt == null) expiresAt = clock.instant().plusMillis(heartbeatInterval.toMillis * 4)
+        lockAcquired(expiresAt)
+      },
+      beforeHeartbeat = _.onLeadershipLost(IO { fired = true }),
+    ) { service =>
+      eventually { service.isLeader() shouldBe true }
+      eventually { service.isLeader() shouldBe false }
+      Thread.sleep(heartbeatInterval.toMillis * 3)
+      fired shouldBe false
+    }
+  }
+
   test("onLeadershipLost fires exactly once when leadership is stable then lost") {
     @volatile var acquired = true
     @volatile var count    = 0

@@ -22,6 +22,7 @@ object FinishedDeploymentsStatusesSynchronizationScheduler extends LazyLogging {
 
     Resource.make(IO {
       actorSystem.scheduler.scheduleAtFixedRate(0 seconds, config.delayBetweenSynchronizations) { () =>
+        // Best-effort fence: the sync is fast and safe to run even if leadership is lost right after the check.
         if (leadership.isLeader()) {
           Try(
             Await.result(reconciler.synchronizeEngineFinishedDeploymentsLocalStatuses(), config.synchronizationTimeout)

@@ -54,10 +54,13 @@ object HaMode {
     }
 
   private def defaultInstanceId: String =
-    Try(InetAddress.getLocalHost.getHostName).getOrElse(
-      throw new IllegalArgumentException(
-        "Cannot determine instanceId automatically (getLocalHost failed). Set ha.instanceId explicitly in the config."
-      )
+    Try(InetAddress.getLocalHost.getHostName).fold(
+      ex =>
+        throw new IllegalArgumentException(
+          "Cannot determine instanceId automatically. Set ha.instanceId explicitly in the config.",
+          ex
+        ),
+      identity
     )
 
   private final case class EnabledConfig(

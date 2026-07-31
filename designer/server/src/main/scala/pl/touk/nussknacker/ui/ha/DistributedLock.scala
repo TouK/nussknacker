@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.ha
 import pl.touk.nussknacker.engine.api.db.{DbRef, NuPostgresProfile}
 import slick.jdbc.JdbcBackend
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,11 +25,11 @@ object NoOpDistributedLock extends DistributedLock {
 
 object DistributedLock {
 
-  def apply(haMode: HaMode, dbRef: DbRef)(implicit ec: ExecutionContext): DistributedLock =
+  def apply(haMode: HaMode, dbRef: DbRef, clock: Clock)(implicit ec: ExecutionContext): DistributedLock =
     haMode match {
       case HaMode.Disabled(_) => NoOpDistributedLock
       case HaMode.Enabled(instanceId, _, _, lockQueryTimeout) =>
-        SlickDistributedLock(dbRef, instanceId, lockQueryTimeout)
+        SlickDistributedLock(dbRef, instanceId, lockQueryTimeout, clock)
     }
 
 }
@@ -39,6 +39,7 @@ class SlickDistributedLock(
     profile: NuPostgresProfile,
     instanceId: String,
     lockQueryTimeout: FiniteDuration,
+    clock: Clock,
 )(implicit executionContext: ExecutionContext)
     extends DistributedLock {
 
@@ -54,27 +55,33 @@ class SlickDistributedLock(
   private val lockQueryTimeoutSeconds = Math.max(1, lockQueryTimeout.toSeconds.toInt)
 
   private def acquireOrRenewLock(name: String, durationMillis: Long): DBIO[Option[Instant]] = {
-    sql"""INSERT INTO #${profile.schemaName}.distributed_locks AS dl (name, lock_until, locked_at, locked_by)
-           VALUES (
-             $name,
-             CURRENT_TIMESTAMP + INTERVAL '#${durationMillis} milliseconds',
-             CURRENT_TIMESTAMP,
-             $instanceId
-           )
-           ON CONFLICT (name) DO UPDATE SET
-             lock_until = EXCLUDED.lock_until,
-             locked_at  = EXCLUDED.locked_at,
-             locked_by  = EXCLUDED.locked_by
-           WHERE dl.lock_until <= CURRENT_TIMESTAMP
-              OR dl.locked_by = EXCLUDED.locked_by
-           RETURNING lock_until"""
-      .as[java.sql.Timestamp]
-      .withStatementParameters(statementInit = _.setQueryTimeout(lockQueryTimeoutSeconds))
-  }.map(_.headOption.map(_.toInstant))
+    // Leadership checks compare validUntil against the local clock, so we derive it from the local
+    // clock rather than returning the DB-side lock_until (computed from the DB clock) — mixing clocks
+    // could, under skew, let a node stay leader past the DB lock's real expiry. Capturing it just
+    // before the INSERT (deferred to run time via flatMap) keeps validUntil no later than lock_until.
+    DBIO.successful(()).flatMap { _ =>
+      val validUntil = clock.instant().plusMillis(durationMillis)
+      sqlu"""INSERT INTO "#${profile.schemaName}"."distributed_locks" AS dl (name, lock_until, locked_at, locked_by)
+             VALUES (
+               $name,
+               CURRENT_TIMESTAMP + INTERVAL '#${durationMillis} milliseconds',
+               CURRENT_TIMESTAMP,
+               $instanceId
+             )
+             ON CONFLICT (name) DO UPDATE SET
+               lock_until = EXCLUDED.lock_until,
+               locked_at  = EXCLUDED.locked_at,
+               locked_by  = EXCLUDED.locked_by
+             WHERE dl.lock_until <= CURRENT_TIMESTAMP
+                OR dl.locked_by = EXCLUDED.locked_by"""
+        .withStatementParameters(statementInit = _.setQueryTimeout(lockQueryTimeoutSeconds))
+        .map(rowsAffected => if (rowsAffected > 0) Some(validUntil) else None)
+    }
+  }
 
   private def releaseLock(name: String): DBIO[Boolean] = {
     // lock_until > CURRENT_TIMESTAMP ensures idempotency: a second release call finds lock_until already in the past → returns false
-    sqlu"""UPDATE #${profile.schemaName}.distributed_locks
+    sqlu"""UPDATE "#${profile.schemaName}"."distributed_locks"
              SET lock_until = CURRENT_TIMESTAMP
              WHERE name = $name AND locked_by = $instanceId AND lock_until > CURRENT_TIMESTAMP"""
       .withStatementParameters(statementInit = _.setQueryTimeout(lockQueryTimeoutSeconds))
@@ -91,9 +98,10 @@ object SlickDistributedLock {
       dbRef: DbRef,
       instanceId: String,
       lockQueryTimeout: FiniteDuration,
+      clock: Clock,
   )(implicit ec: ExecutionContext): DistributedLock =
     dbRef.profile match {
-      case pg: NuPostgresProfile => new SlickDistributedLock(dbRef.db, pg, instanceId, lockQueryTimeout)
+      case pg: NuPostgresProfile => new SlickDistributedLock(dbRef.db, pg, instanceId, lockQueryTimeout, clock)
       case other =>
         throw new IllegalStateException(
           s"HA mode requires PostgreSQL. Unsupported database profile: ${other.getClass.getSimpleName}."

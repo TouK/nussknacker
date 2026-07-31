@@ -25,6 +25,10 @@ trait Leadership extends LazyLogging {
     * If the node is already a leader when [[startHeartbeat]] is called, the callback fires then.
     * If the previous invocation is still in-progress when leadership is re-acquired, the callback is skipped.
     * Callbacks must be registered before [[startHeartbeat]] is called.
+    *
+    * Long-running callbacks must re-check [[isLeader]] before each unit of work: leadership can be
+    * lost without [[onLeadershipLost]] firing (see its note), and [[isLeader]] is the only reliable,
+    * self-expiring fence.
     */
   final def onLeadershipAcquired(callback: IO[Unit]): IO[Unit] =
     registerCallback(leadershipAcquiredCallbacks, eventName = "acquired", callback)
@@ -32,6 +36,10 @@ trait Leadership extends LazyLogging {
   /** Registers a callback invoked once each time this node loses leadership (true→false transition).
     * If the previous invocation is still in-progress when leadership is lost again, the callback is skipped.
     * Callbacks must be registered before [[startHeartbeat]] is called.
+    *
+    * Best-effort, not a hard fence: this is NOT guaranteed to fire when leadership is lost due to a
+    * renewal timeout or a hung heartbeat loop. In that case the lease simply expires and [[isLeader]]
+    * starts returning false, but no lost callback is invoked.
     */
   final def onLeadershipLost(callback: IO[Unit]): IO[Unit] =
     registerCallback(leadershipLostCallbacks, eventName = "lost", callback)
@@ -51,7 +59,7 @@ trait Leadership extends LazyLogging {
     IO(logger.info("Leadership lost")) >> leadershipLostCallbacks.asScala.toList.traverse_(_.fire(supervisor))
 
   final protected def notifyLeadershipLostAndWait(): IO[Unit] =
-    IO(logger.info("Leadership lost on shutdown")) >> leadershipLostCallbacks.asScala.toList.traverse_(_.fireAndWait())
+    leadershipLostCallbacks.asScala.toList.traverse_(_.fireAndWait())
 
   protected def doStartHeartbeat(supervisor: Supervisor[IO]): Resource[IO, Unit]
 
@@ -139,12 +147,7 @@ final class DistributedLeadership private (
 
   override val haEnabled: Boolean = true
 
-  override def isLeader(): Boolean = {
-    state.get() match {
-      case LeaderLockResult.Acquired(validUntil) => validUntil.isAfter(clock.instant())
-      case LeaderLockResult.NotAcquired          => false
-    }
-  }
+  override def isLeader(): Boolean = isActiveLeader(state.get())
 
   override protected def doStartHeartbeat(supervisor: Supervisor[IO]): Resource[IO, Unit] = {
     Resource
@@ -157,6 +160,11 @@ final class DistributedLeadership private (
           >> heartbeatLoop(supervisor).start
       )(fiber => fiber.cancel >> stop())
       .void
+  }
+
+  private def isActiveLeader(result: LeaderLockResult): Boolean = result match {
+    case LeaderLockResult.Acquired(validUntil) => validUntil.isAfter(clock.instant())
+    case LeaderLockResult.NotAcquired          => false
   }
 
   private def heartbeatLoop(supervisor: Supervisor[IO]): IO[Unit] = {
@@ -199,9 +207,11 @@ final class DistributedLeadership private (
 
   private def stop(): IO[Unit] = {
     for {
-      wasLeader <- IO(state.getAndSet(LeaderLockResult.NotAcquired).isAcquired)
-      released  <- if (wasLeader && leaderConfig.releaseOnStop) releaseLock() else IO.pure(false)
-      _         <- if (released) notifyLeadershipLostAndWait() else IO.unit
+      previous <- IO(state.getAndSet(LeaderLockResult.NotAcquired))
+      wasLeader = isActiveLeader(previous)
+      _        <- if (wasLeader) IO(logger.info("Leadership lost on shutdown")) else IO.unit
+      released <- if (wasLeader && leaderConfig.releaseOnStop) releaseLock() else IO.pure(false)
+      _        <- if (released) notifyLeadershipLostAndWait() else IO.unit
     } yield ()
   }
 

@@ -73,40 +73,59 @@ class ScenarioDeploymentReconciler(
     }
   }
 
-  def recoverNotRunningDeploymentsThatShouldBeRunning(shouldRecover: JobsRecoverySettings => Boolean): Future[Unit] = {
+  def recoverNotRunningDeploymentsThatShouldBeRunning(
+      shouldRecover: JobsRecoverySettings => Boolean,
+      isLeader: () => Boolean,
+  ): Future[Unit] = {
     implicit val user: LoggedUser = NussknackerInternalUser.instance
-    val processingTypeForWhichJobsShouldBeRecovered = processingTypeServicesProvider.all.toList.collect {
-      case (processingType, processingTypeServices) if shouldRecover(processingTypeServices.jobsRecoverySettings) =>
-        processingType
+    if (!isLeader()) {
+      logger.info("Not a leader — skipping deployments recovery.")
+      Future.unit
+    } else {
+      val processingTypeForWhichJobsShouldBeRecovered = processingTypeServicesProvider.all.toList.collect {
+        case (processingType, processingTypeServices) if shouldRecover(processingTypeServices.jobsRecoverySettings) =>
+          processingType
+      }
+      for {
+        notFinishedDeploymentsThatAreNotRunning <- collectNotFinishedDeploymentsThatAreNotRunning(
+          processingTypeForWhichJobsShouldBeRecovered
+        )
+        _ = logRecoveryBegin(notFinishedDeploymentsThatAreNotRunning)
+        runDeploymentCommandsByProcessingType <-
+          Future
+            .sequence(notFinishedDeploymentsThatAreNotRunning.map { case (scenario, deploymentId) =>
+              prepareRunDeploymentCommandForValidScenario(scenario, deploymentId)
+            })
+            .map(_.flatten)
+        recoveryResult <- runDeploymentsCommandOneByOne(runDeploymentCommandsByProcessingType, isLeader)
+        _ = logRecoveryEnd(recoveryResult)
+      } yield ()
     }
-    for {
-      notFinishedDeploymentsThatAreNotRunning <- collectNotFinishedDeploymentsThatAreNotRunning(
-        processingTypeForWhichJobsShouldBeRecovered
-      )
-      _ = logRecoveryBegin(notFinishedDeploymentsThatAreNotRunning)
-      runDeploymentCommandsByProcessingType <-
-        Future
-          .sequence(notFinishedDeploymentsThatAreNotRunning.map { case (scenario, deploymentId) =>
-            prepareRunDeploymentCommandForValidScenario(scenario, deploymentId)
-          })
-          .map(_.flatten)
-      recoveryResult <- runDeploymentsCommandOneByOne(runDeploymentCommandsByProcessingType)
-      _ = logRecoveryEnd(recoveryResult)
-    } yield ()
   }
 
   // We are not using just Futures.sequence because we don't want to generate too much load and steal resources for other operational purposes
   private def runDeploymentsCommandOneByOne(
-      runDeploymentCommandsByProcessingType: List[(ProcessingType, DMRunDeploymentCommand)]
-  ) = {
-    implicit val user: LoggedUser = NussknackerInternalUser.instance
-    runDeploymentCommandsByProcessingType.foldLeft(Future.successful(List.empty[Try[Unit]])) {
-      case (resultsFuture, (processingType, deployCommand)) =>
-        for {
-          results              <- resultsFuture
-          resultForOneScenario <- recoverScenarioJob(processingType, deployCommand)
-        } yield results :+ resultForOneScenario
-    }
+      runDeploymentCommandsByProcessingType: List[(ProcessingType, DMRunDeploymentCommand)],
+      isLeader: () => Boolean,
+  )(implicit user: LoggedUser): Future[List[Try[Unit]]] = {
+    def loop(
+        remaining: List[(ProcessingType, DMRunDeploymentCommand)],
+        results: List[Try[Unit]],
+    ): Future[List[Try[Unit]]] =
+      remaining match {
+        case Nil              => Future.successful(results)
+        case _ if !isLeader() =>
+          // Best-effort fence: isLeader() may flip to false mid-recovery. Stop starting new
+          // deployments — the next leader re-runs recovery and picks up the rest.
+          logger.warn(
+            s"Lost leadership during recovery — aborting remaining ${remaining.size} deployment(s); " +
+              "the next leader will recover them."
+          )
+          Future.successful(results)
+        case (processingType, deployCommand) :: tail =>
+          recoverScenarioJob(processingType, deployCommand).flatMap(result => loop(tail, results :+ result))
+      }
+    loop(runDeploymentCommandsByProcessingType, List.empty)
   }
 
   private def logRecoveryBegin(
