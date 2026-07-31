@@ -110,8 +110,8 @@ class ScenarioDeploymentReconciler(
   )(implicit user: LoggedUser): Future[List[Try[Unit]]] = {
     def loop(
         remaining: List[(ProcessingType, DMRunDeploymentCommand)],
-        results: List[Try[Unit]],
-    ): Future[List[Try[Unit]]] =
+        results: Vector[Try[Unit]],
+    ): Future[Vector[Try[Unit]]] =
       remaining match {
         case Nil              => Future.successful(results)
         case _ if !isLeader() =>
@@ -125,7 +125,7 @@ class ScenarioDeploymentReconciler(
         case (processingType, deployCommand) :: tail =>
           recoverScenarioJob(processingType, deployCommand).flatMap(result => loop(tail, results :+ result))
       }
-    loop(runDeploymentCommandsByProcessingType, List.empty)
+    loop(runDeploymentCommandsByProcessingType, Vector.empty).map(_.toList)
   }
 
   private def logRecoveryBegin(

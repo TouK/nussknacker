@@ -63,8 +63,6 @@ class DeploymentActor(
 
   private def inState(f: Msg => Unit): Receive = { case msg: Msg => f(msg) }
 
-  private def becomeIdle(): Unit = context.become(inState(handleIdle))
-
   private def handleIdle(msg: Msg): Unit = msg match {
     case CheckToBeDeployed =>
       context.become(inState(handleChecking))
@@ -76,7 +74,7 @@ class DeploymentActor(
   private def handleChecking(msg: Msg): Unit = msg match {
     case CheckToBeDeployed => ()
     case ReadyToDeploy(None) =>
-      becomeIdle()
+      context.become(inState(handleIdle))
     case ReadyToDeploy(Some(runDetails)) =>
       logger.info(s"Deploying ${runDetails.display}")
       context.become(inState(handleOngoingDeployment(runDetails)))
@@ -99,7 +97,7 @@ class DeploymentActor(
         case _                  => ()
       }
     case ReadyToDeploy(_)    => ()
-    case DeploymentCompleted => becomeIdle()
+    case DeploymentCompleted => context.become(inState(handleIdle))
   }
 
   private def prepareDeployment(): Future[Option[PeriodicProcessDeployment]] = {
