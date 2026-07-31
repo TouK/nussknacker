@@ -4,6 +4,7 @@ import cats.effect.{IO, Resource}
 import cats.implicits._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -165,8 +166,10 @@ class DistributedLeadershipSpec extends AnyFunSuite with Matchers with BeforeAnd
     ) { service =>
       eventually { service.isLeader() shouldBe true }
       val countAtAcquisition = heartbeatCount
-      Thread.sleep(heartbeatInterval.toMillis * 5)
-      heartbeatCount should be > countAtAcquisition + 2
+      // timeout shorter than the callback's 10-interval block, so a blocked heartbeat still fails the test
+      eventually(Timeout(Span(heartbeatInterval.toMillis * 8, Millis))) {
+        heartbeatCount should be > countAtAcquisition + 2
+      }
     }
   }
 

@@ -63,10 +63,10 @@ class SlickDistributedLock(
            )
            ON CONFLICT (name) DO UPDATE SET
              lock_until = EXCLUDED.lock_until,
-             locked_at  = CURRENT_TIMESTAMP,
+             locked_at  = EXCLUDED.locked_at,
              locked_by  = EXCLUDED.locked_by
            WHERE dl.lock_until <= CURRENT_TIMESTAMP
-              OR dl.locked_by = $instanceId
+              OR dl.locked_by = EXCLUDED.locked_by
            RETURNING lock_until"""
       .as[java.sql.Timestamp]
       .withStatementParameters(statementInit = _.setQueryTimeout(lockQueryTimeoutSeconds))

@@ -49,29 +49,21 @@ class SchemaInSqlDetectorSpec extends AnyFunSuite {
       false
     ),
     (
-      """INSERT INTO #arg.distributed_locks AS dl (name, lock_until, locked_at, locked_by)
-             VALUES (
-               arg,
-               LOCALTIMESTAMP + INTERVAL 'arg milliseconds',
-               LOCALTIMESTAMP,
-               arg
-             )
-             ON CONFLICT (name) DO UPDATE SET
-               lock_until = EXCLUDED.lock_until,
-               locked_at  = LOCALTIMESTAMP,
-               locked_by  = EXCLUDED.locked_by
-             WHERE dl.lock_until < LOCALTIMESTAMP
-                OR dl.locked_by = arg""",
+      """INSERT INTO #arg.my_table AS t (name, value)
+             VALUES (arg, arg)
+             ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value""",
       false
     ),
-    (
-      """UPDATE #arg.distributed_locks
-             SET lock_until = LOCALTIMESTAMP
-             WHERE name = arg AND locked_by = arg""",
-      false
-    ),
+    ("""UPDATE #arg.my_table SET value = arg WHERE name = arg""", false),
 
     // statements with NO required schema specified
+    (
+      """INSERT INTO my_table AS t (name, value)
+             VALUES (arg, arg)
+             ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value""",
+      true
+    ),
+    ("""UPDATE my_table SET value = arg WHERE name = arg""", true),
     ("""DELETE FROM users WHERE id = 1""", true),
     ("""INSERT INTO orders (id, name) VALUES (1, 'test')""", true),
     ("""ALTER TABLE orders ADD COLUMN status TEXT""", true),
