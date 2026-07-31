@@ -40,15 +40,11 @@ const graphReducer = {
                     processVersionId: 35,
                     createDate: "2024-05-31",
                     user: "admin",
-                    modelVersion: 4,
-                    actions: [],
                 },
                 {
                     processVersionId: 34,
                     createDate: "2024-05-31",
                     user: "admin",
-                    modelVersion: 4,
-                    actions: [],
                 },
             ],
         },
@@ -85,8 +81,6 @@ const remoteVersion = (processVersionId: number): ProcessVersionType => ({
     processVersionId,
     createDate: "2024-05-31",
     user: "test",
-    modelVersion: 4,
-    actions: [],
 });
 
 const comment = (
