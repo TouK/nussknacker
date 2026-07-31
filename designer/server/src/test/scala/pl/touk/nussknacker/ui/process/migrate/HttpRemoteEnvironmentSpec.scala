@@ -182,7 +182,8 @@ class HttpRemoteEnvironmentSpec
           request: MessageEntity,
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] =
-        if (method == HttpMethods.GET && path.path.toString.endsWith("/processes/proc1")) {
+        if ((method == HttpMethods.HEAD || method == HttpMethods.GET) &&
+          path.path.toString.endsWith("/processes/proc1")) {
           Marshal(
             ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
               wrapGraphWithScenarioDetailsEntity(ProcessName("proc1"), ProcessTestData.validScenarioGraph),
