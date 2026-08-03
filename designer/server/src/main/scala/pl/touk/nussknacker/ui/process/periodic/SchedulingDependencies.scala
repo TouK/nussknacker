@@ -16,7 +16,8 @@ final class SchedulingDependencies(
     val actionService: ProcessingTypeActionService,
     val fetchingProcessRepository: FetchingProcessRepository[Future],
     val schedulingScenarioActivitiesRepository: SchedulingScenarioActivitiesRepository,
-    val configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    val configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    val periodicLock: PeriodicDeploymentLock,
 )
 
 trait SchedulingScenarioActivitiesRepository {

@@ -7,6 +7,12 @@ description: Follow detailed steps to migrate automation scenarios and configura
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+> **Note (ESP preview build):** this build cherry-picked the HA change ([#9416](https://github.com/TouK/nussknacker/pull/9416))
+> which adds `V1_072__DistributedLocksTable`, while its base version was missing the intermediate `staging` migration
+> `V1_071__RegenerateComponentsUsagesWithNodeNames`. To avoid a gap in the Flyway history, `V1_071` has been re-added here — it
+> is a Slick migration that only recomputes the derived `componentsUsages` cache (no schema change). When bumping the version,
+> remember to reapply an equivalent migration.
+
 ## In version 1.19.0 (Not released yet)
 
 ### Flink state incompatibility

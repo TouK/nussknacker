@@ -38,6 +38,10 @@ object SchemaInSqlDetector {
     val tokens = tokenizeSql(sqlQuery)
 
     tokens.foldLeft(Option.empty[String]) {
+      case (Some("update"), token) if token.toLowerCase == "set" => None
+      case (Some("create"), token) if token.toLowerCase == "or"  => Some("or")
+      // AS introduces a table/column alias (bare identifier, no schema required), not a DB object
+      case (Some("as"), token) if !schemaRequiredKeywords.contains(token.toLowerCase) && isLikelyDbObject(token) => None
       case (Some(_), token) if !schemaRequiredKeywords.contains(token.toLowerCase) && isLikelyDbObject(token) =>
         if (!hasExplicitSchema(token)) return true
         None
@@ -115,8 +119,8 @@ object SchemaInSqlDetector {
     "truncate",
     "on",
     "references",
-    "or",
-    "replace"
+    "replace",
+    "conflict",
   )
 
 }

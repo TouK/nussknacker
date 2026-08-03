@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.{
 }
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbConfig
+import pl.touk.nussknacker.ui.ha.HaMode
 import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig
 import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig.MaxActiveScenariosCount
 import pl.touk.nussknacker.ui.notifications.NotificationConfig
@@ -69,7 +70,8 @@ final class DesignerConfig private (
     val http: HttpConfig,
     val attachments: AttachmentsConfig,
     val assistantSettings: AssistantSettings,
-    val globalLimitsConfig: GlobalLimitsConfig
+    val globalLimitsConfig: GlobalLimitsConfig,
+    val haMode: HaMode,
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -175,6 +177,8 @@ object DesignerConfig {
       GlobalLimitsConfig.default
     }
 
+    val haMode: HaMode = HaMode.fromConfig(resolvedConfig)
+
     new DesignerConfig(
       rawConfigWithUnresolvedVersion = rawConfig,
       managersDir = managersDir,
@@ -211,7 +215,8 @@ object DesignerConfig {
       http = http,
       attachments = attachments,
       assistantSettings = assistantSettings,
-      globalLimitsConfig = limitsConfig
+      globalLimitsConfig = limitsConfig,
+      haMode = haMode
     )
   }
 

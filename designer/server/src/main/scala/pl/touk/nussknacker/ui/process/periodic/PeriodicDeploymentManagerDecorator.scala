@@ -83,6 +83,17 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     val rawSchedulingConfig = deploymentConfig.getConfig("scheduling")
     val schedulingConfig    = rawSchedulingConfig.as[SchedulingConfig]
 
+    schedulingDeps.periodicLock.lockDuration.foreach { lockDuration =>
+      if (lockDuration < schedulingConfig.deployInterval)
+        throw new IllegalArgumentException(
+          s"ha.periodicLockDuration ($lockDuration) must be >= scheduling.deployInterval=${schedulingConfig.deployInterval}"
+        )
+      if (lockDuration < schedulingConfig.rescheduleCheckInterval)
+        throw new IllegalArgumentException(
+          s"ha.periodicLockDuration ($lockDuration) must be >= scheduling.rescheduleCheckInterval=${schedulingConfig.rescheduleCheckInterval}"
+        )
+    }
+
     val schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory =
       schedulingSupported.customSchedulePropertyExtractorFactory
         .getOrElse(_ => CronSchedulePropertyExtractor())

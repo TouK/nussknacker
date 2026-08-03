@@ -15,12 +15,13 @@ import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentService, DefaultComponentService}
+import pl.touk.nussknacker.ui.ha.{DistributedLock, Leadership}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeListenerLoader}
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.notifications.Notification
-import pl.touk.nussknacker.ui.process.{DBProcessService, ProcessService}
+import pl.touk.nussknacker.ui.process.{newdeployment, DBProcessService, ProcessService}
 import pl.touk.nussknacker.ui.process.deployment.{ActionService, DeploymentManagerDispatcher}
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
@@ -30,7 +31,6 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.livedata.{DbLiveDataRepository, LiveDataRepository}
-import pl.touk.nussknacker.ui.process.newdeployment
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
@@ -39,6 +39,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
 import pl.touk.nussknacker.ui.process.periodic.{
   DefaultProcessingTypeActionService,
   DefaultSchedulingScenarioActivitiesRepository,
+  PeriodicDeploymentLock,
   SchedulingDependencies
 }
 import pl.touk.nussknacker.ui.process.processingtype._
@@ -64,8 +65,7 @@ import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.Future
 
 final class DomainServices(
     val futureProcessRepository: FetchingProcessRepository[Future],
@@ -92,6 +92,8 @@ final class DomainServices(
     val limitsService: LimitsService,
     val processCounter: ProcessCounter,
     val liveDataRepository: LiveDataRepository,
+    val reconciler: ScenarioDeploymentReconciler,
+    val leadership: Leadership,
 )
 
 object DomainServices extends LazyLogging {
@@ -135,6 +137,8 @@ object DomainServices extends LazyLogging {
         scenarioLabelsRepository
       )
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
+      distributedLock            = DistributedLock(alreadyLoadedConfig.haMode, dbRef, clock)
+      periodicLock <- PeriodicDeploymentLock.create(alreadyLoadedConfig.haMode, distributedLock)
       deploymentData <- DeploymentManagersLoader.load(
         alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader,
@@ -149,6 +153,7 @@ object DomainServices extends LazyLogging {
             scenarioActivityRepository,
             dbioRunner,
             additionalUIConfigProvider,
+            periodicLock,
             _
           )
         )
@@ -201,10 +206,12 @@ object DomainServices extends LazyLogging {
         ),
         dbioRunner
       )
+      leadership <- Leadership.create(alreadyLoadedConfig.haMode, distributedLock, clock)
       _ <- DeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         deploymentsStatusesSynchronizer,
-        alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
+        alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig,
+        leadership
       )
 
       scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
@@ -311,14 +318,11 @@ object DomainServices extends LazyLogging {
         futureProcessRepository,
         dbioRunner
       )
-      _ = {
-        // We don't wait for recovery because it may take a while, and we don't want health check to detect that we have problem with application starting
-        recoverNotRunningDeploymentsThatShouldBeRunning(reconciler)
-      }
       _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         reconciler,
-        alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
+        alreadyLoadedConfig.finishedDeploymentStatusesSynchronization,
+        leadership
       )
       limitsService = createLimitsService(
         alreadyLoadedConfig,
@@ -362,6 +366,8 @@ object DomainServices extends LazyLogging {
       limitsService = limitsService,
       processCounter = counter,
       liveDataRepository = liveDataRepository,
+      reconciler = reconciler,
+      leadership = leadership
     )
   }
 
@@ -428,6 +434,7 @@ object DomainServices extends LazyLogging {
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
+      periodicLock: PeriodicDeploymentLock,
       processingType: ProcessingType
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
@@ -441,6 +448,7 @@ object DomainServices extends LazyLogging {
       fetchingProcessRepository,
       schedulingScenarioActivitiesRepository,
       additionalConfigsFromProvider,
+      periodicLock
     )
   }
 
@@ -458,18 +466,6 @@ object DomainServices extends LazyLogging {
       componentDefinitionExtractionMode,
       Some(infrastructureServices.dbRef)
     )
-  }
-
-  private def recoverNotRunningDeploymentsThatShouldBeRunning(
-      reconciler: ScenarioDeploymentReconciler
-  )(implicit ec: ExecutionContext): Unit = {
-    reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart).onComplete {
-      case Success(_) =>
-      case Failure(
-            exception
-          ) => // It is done jus in case, it rather shouldn't happen because we have exception handling for each recovered deployment
-        logger.error("Error while deployments recovery", exception)
-    }
   }
 
   private def createLimitsService(
