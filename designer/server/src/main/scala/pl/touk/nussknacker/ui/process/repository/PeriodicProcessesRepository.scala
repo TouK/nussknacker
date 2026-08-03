@@ -17,9 +17,7 @@ import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository.createPeriodicProcess
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
-import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.JdbcBackend
-import slick.jdbc.PostgresProfile.api._
 
 import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
@@ -184,6 +182,7 @@ class SlickPeriodicProcessesRepository(
     with LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
+  import profile.apiWithEnforcedSchema._
 
   type Action[T] = DBIOActionInstances.DB[T]
 
@@ -398,6 +397,7 @@ class SlickPeriodicProcessesRepository(
       deploymentsPerScheduleMaxCount: Int
   ): Action[Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]] = {
     // To effectively limit deployments to given count for each schedule in one query, we use window functions in slick
+    // - HSQLDB supports an empty 'OVER ()' window only, so this can be done only for PostgreSQL
     import ExPostgresProfile.api._
     import com.github.tminglei.slickpg.window.PgWindowFuncSupport.WindowFunctions._
 

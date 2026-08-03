@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9461](https://github.com/TouK/nussknacker/pull/9461) Fix: restored the PostgreSQL window-function optimization in the periodic processes repository, so limiting deployments per schedule is again done in a single query instead of being trimmed in memory. The repository now uses the Slick profile configured for the designer database instead of a hardcoded PostgreSQL one, which also makes the HSQLDB code path behave correctly.
 * [#9450](https://github.com/TouK/nussknacker/pull/9450) Named outputs for custom components, rendered as named edges in the designer; the `deduplication` component gained a `rejected` output carrying the events it filters out. See the [Migration Guide](MigrationGuide.md) for details.
 * [#9399](https://github.com/TouK/nussknacker/pull/9399) Reworked the "Compare versions" dialog's version picker.
     * The picker now only lists versions with a meaningful (non-layout-only) difference from the current version, and shows a tooltip with the list of changed nodes/edges/properties.
