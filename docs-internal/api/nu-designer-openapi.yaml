@@ -321,6 +321,26 @@ paths:
                   summary: Application is healthy
                   value:
                     status: OK
+  /api/app/leader:
+    get:
+      tags:
+      - App
+      summary: Returns whether this instance is the current HA leader
+      operationId: getApiAppLeader
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderResponseDto'
+              examples:
+                Example:
+                  summary: This instance is the leader
+                  value:
+                    haEnabled: true
+                    instanceId: instance-1
+                    isLeader: true
   /api/app/buildInfo:
     get:
       tags:
@@ -7100,6 +7120,20 @@ components:
         y:
           type: integer
           format: int64
+    LeaderResponseDto:
+      title: LeaderResponseDto
+      type: object
+      required:
+      - haEnabled
+      - instanceId
+      - isLeader
+      properties:
+        haEnabled:
+          type: boolean
+        instanceId:
+          type: string
+        isLeader:
+          type: boolean
     List_Field:
       title: List_Field
       oneOf:

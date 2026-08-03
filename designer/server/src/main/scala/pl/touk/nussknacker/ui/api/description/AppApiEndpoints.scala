@@ -75,6 +75,24 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
       )
       .withSecurity(auth)
 
+  lazy val appLeaderEndpoint: PublicEndpoint[Unit, Unit, LeaderResponseDto, Any] =
+    baseNuApiEndpoint
+      .summary("Returns whether this instance is the current HA leader")
+      .tag("App")
+      .get
+      .in("app" / "leader")
+      .out(
+        statusCode(Ok).and(
+          jsonBody[LeaderResponseDto]
+            .example(
+              Example.of(
+                summary = Some("This instance is the leader"),
+                value = LeaderResponseDto(haEnabled = true, isLeader = true, instanceId = "instance-1")
+              )
+            )
+        )
+      )
+
   lazy val processValidationHealthCheckEndpoint
       : SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto, Any] =
     baseNuApiEndpoint
@@ -268,6 +286,13 @@ object AppApiEndpoints {
 
       def apply() = new HealthCheckProcessSuccessResponseDto(status = Status.Ok, message = None, processes = None)
     }
+
+    @derive(encoder, decoder, schema)
+    final case class LeaderResponseDto private (
+        haEnabled: Boolean,
+        instanceId: String,
+        isLeader: Boolean,
+    )
 
     @derive(encoder, decoder, schema)
     final case class HealthCheckProcessErrorResponseDto private (

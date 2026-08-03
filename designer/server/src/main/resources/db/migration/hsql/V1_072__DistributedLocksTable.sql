@@ -1,0 +1,2 @@
+-- No-op: HA mode requires PostgreSQL and fails fast on startup when configured with HSQL.
+-- The distributed_locks table is never used in HSQL deployments.

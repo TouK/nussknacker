@@ -4,29 +4,35 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import pl.touk.nussknacker.ui.ha.Leadership
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Try
 
-// TODO: Properly handle HA setup: synchronizeAll() should be invoked only on one instance of designer in a time
 object DeploymentsStatusesSynchronizationScheduler extends LazyLogging {
 
   def resource(
       actorSystem: ActorSystem,
       synchronizer: DeploymentsStatusesSynchronizer,
-      config: DeploymentsStatusesSynchronizationConfig
+      config: DeploymentsStatusesSynchronizationConfig,
+      leadership: Leadership
   ): Resource[IO, Cancellable] = {
 
     import actorSystem.dispatcher
 
     Resource.make(IO {
       actorSystem.scheduler.scheduleAtFixedRate(0 seconds, config.delayBetweenSynchronizations) { () =>
-        Try(Await.result(synchronizer.synchronizeAll(), config.synchronizationTimeout)).failed.foreach { ex =>
-          logger.error(
-            s"Error during deployments statuses synchronization. Synchronization will be retried in ${config.delayBetweenSynchronizations}",
-            ex
-          )
+        // Best-effort fence: the sync is fast and safe to run even if leadership is lost right after the check.
+        if (leadership.isLeader()) {
+          Try(Await.result(synchronizer.synchronizeAll(), config.synchronizationTimeout)).failed.foreach { ex =>
+            logger.error(
+              s"Error during deployments statuses synchronization. Synchronization will be retried in ${config.delayBetweenSynchronizations}",
+              ex
+            )
+          }
+        } else {
+          logger.debug("Skipping deployments statuses synchronization — not a leader")
         }
       }
     }) { scheduledJob =>

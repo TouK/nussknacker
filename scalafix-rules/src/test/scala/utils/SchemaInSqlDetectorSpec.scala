@@ -48,8 +48,22 @@ class SchemaInSqlDetectorSpec extends AnyFunSuite {
       """CREATE OR REPLACE FUNCTION "${profile.schemaName}".generate_random_uuid() RETURNS UUID AS 'BEGIN RETURN uuid_in(overlay(overlay(md5(random()::text || '':'' || random()::text) placing ''4'' from 13) placing to_hex(floor(random() * (11 - 8 + 1) + 8)::int)::text from 17)::cstring);END' LANGUAGE plpgsql;""",
       false
     ),
+    (
+      """INSERT INTO #arg.my_table AS t (name, value)
+             VALUES (arg, arg)
+             ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value""",
+      false
+    ),
+    ("""UPDATE #arg.my_table SET value = arg WHERE name = arg""", false),
 
     // statements with NO required schema specified
+    (
+      """INSERT INTO my_table AS t (name, value)
+             VALUES (arg, arg)
+             ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value""",
+      true
+    ),
+    ("""UPDATE my_table SET value = arg WHERE name = arg""", true),
     ("""DELETE FROM users WHERE id = 1""", true),
     ("""INSERT INTO orders (id, name) VALUES (1, 'test')""", true),
     ("""ALTER TABLE orders ADD COLUMN status TEXT""", true),
