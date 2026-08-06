@@ -225,52 +225,22 @@ class RemoteEnvironmentResourcesSpec
     }
   }
 
-  it should "report the latest comment for every remote version, compared or not" in {
-    def activity(versionId: Long, comment: String, date: String, activityType: ScenarioActivityType) =
-      ScenarioActivity(
-        id = UUID.randomUUID(),
-        user = "some user",
-        date = Instant.parse(date),
-        scenarioVersionId = Some(versionId),
-        comment = Some(
-          ScenarioActivityComment(
-            content = ScenarioActivityCommentContent.Available(comment),
-            lastModifiedBy = "some user",
-            lastModifiedAt = Instant.parse(date)
-          )
-        ),
-        attachment = None,
-        additionalFields = Nil,
-        `type` = activityType
-      )
+  it should "relay the version comments the remote environment reports, compared or not" in {
+    val remoteAnswer = VersionsWithDifferences(
+      versions = List(
+        VersionWithDifference(VersionId(7), List("Node 'filter1' modified"), differencesUnknown = false),
+        VersionWithDifference(VersionId(8), List("Node 'filter2' modified"), differencesUnknown = false),
+      ),
+      // version 99 is one the differences answer says nothing about - not compared, or not differing
+      versionComments = Some(Map(7L -> "restart", 99L -> "an older version's comment"))
+    )
 
     val remoteEnvironment = new MockRemoteEnvironment() {
       override def versionsWithDifferences(
           pName: ProcessName,
           scenarioGraph: ScenarioGraph,
           limit: Int
-      ): Future[Option[VersionsWithDifferences]] =
-        Future.successful(
-          Some(
-            VersionsWithDifferences(
-              versions = List(
-                VersionWithDifference(VersionId(7), List("Node 'filter1' modified"), differencesUnknown = false),
-                VersionWithDifference(VersionId(8), List("Node 'filter2' modified"), differencesUnknown = false),
-              )
-            )
-          )
-        )
-
-      override def activities(pName: ProcessName): Future[List[ScenarioActivity]] =
-        Future.successful(
-          List(
-            // newest first, so that dropping the sort would answer "first save" here
-            activity(7, "restart", "2024-01-18T10:00:00Z", ScenarioActivityType.ScenarioDeployed),
-            activity(7, "first save", "2024-01-17T14:21:17Z", ScenarioActivityType.ScenarioCreated),
-            // a version the differences answer says nothing about - it was not compared, or does not differ
-            activity(99, "an older version's comment", "2024-01-16T10:00:00Z", ScenarioActivityType.ScenarioCreated),
-          )
-        )
+      ): Future[Option[VersionsWithDifferences]] = Future.successful(Some(remoteAnswer))
     }
 
     val route = remoteEnvironmentRoute(remoteEnvironment, Permission.Read)
@@ -279,8 +249,7 @@ class RemoteEnvironmentResourcesSpec
       Get(s"/remoteEnvironment/$processName/2/versions-with-differences") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val result = responseAs[VersionsWithDifferences]
-        // keyed by version rather than attached to the differences, so a version that was not compared -
-        // and is still listed by the client - keeps its comment
+        // the remote's own comments, not this environment's - they are passed through untouched
         result.versionComments shouldBe Some(Map(7L -> "restart", 99L -> "an older version's comment"))
       }
     }
@@ -471,8 +440,6 @@ class RemoteEnvironmentResourcesSpec
         scenarioGraph: ScenarioGraph,
         limit: Int
     ): Future[Option[VersionsWithDifferences]] = Future.successful(None)
-
-    override def activities(processName: ProcessName): Future[List[ScenarioActivity]] = Future.successful(List())
 
     override def testMigration(
         processToInclude: ScenarioWithDetailsForMigrations => Boolean,

@@ -18,10 +18,13 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
+  SkipScenarioGraph,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -33,7 +36,9 @@ class ProcessesResources(
     scenarioStatusPresenter: ScenarioStatusPresenter,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
-    processChangeListener: ProcessChangeListener
+    processChangeListener: ProcessChangeListener,
+    scenarioActivityRepository: ScenarioActivityRepository,
+    dbioActionRunner: DBIOActionRunner
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives
     with FailFastCirceSupport
@@ -46,7 +51,8 @@ class ProcessesResources(
 
   import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller._
 
-  private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
+  private val versionsWithDifferencesService =
+    new VersionsWithDifferencesService(processService, scenarioActivityRepository, dbioActionRunner)
 
   def securedRoute(implicit user: LoggedUser): Route = {
     encodeResponse {
@@ -146,16 +152,17 @@ class ProcessesResources(
                   .map(_.validationResult)
               }
             }
-          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter & skipScenarioGraphParameter) {
             // FIXME: The `skipValidateAndResolve` flag has a non-trivial side effect.
             //        Besides skipping validation (that is the intended and obvious result) it causes the `dictKeyWithLabel` expressions to miss the label field.
             //        It happens, because in the current implementation we need the full compilation and type resolving in order to obtain the dict expression label.
-            (skipValidateAndResolve, skipNodeResults) =>
+            (skipValidateAndResolve, skipNodeResults, skipScenarioGraph) =>
               complete {
                 processService.getLatestProcessWithDetails(
                   processId,
                   GetScenarioWithDetailsOptions(
-                    FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
+                    if (skipScenarioGraph) SkipScenarioGraph
+                    else FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
                     fetchState = true
                   )
                 )
@@ -306,6 +313,10 @@ class ProcessesResources(
 
   private def skipNodeResultsParameter = {
     parameters(Symbol("skipNodeResults").as[Boolean].withDefault(false))
+  }
+
+  private def skipScenarioGraphParameter = {
+    parameters(Symbol("skipScenarioGraph").as[Boolean].withDefault(false))
   }
 
   private def validationFlagsToMode(skipValidateAndResolve: Boolean, skipNodeResults: Boolean) = {

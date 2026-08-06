@@ -258,7 +258,9 @@ trait NuResourcesTest
     scenarioStatusPresenter = scenarioStatusPresenter,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
-    processChangeListener = processChangeListener
+    processChangeListener = processChangeListener,
+    scenarioActivityRepository = scenarioActivityRepository,
+    dbioActionRunner = dbioRunner
   )
 
   protected val processActivityRoute =

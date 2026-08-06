@@ -27,7 +27,6 @@ import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { StickyNoteType } from "../graph/utils/stickyNotesUtils";
 import type { ProcessVersionType } from "../Process/types";
 import { PropertiesForm } from "../properties";
-import type { ActivitiesResponse } from "../toolbars/activities/types";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 type Environment = "local" | "remote";
@@ -100,24 +99,6 @@ const useVersionDiffs = (fetch: (() => Promise<VersionsWithDifferencesResponse |
     return state;
 };
 
-type CommentableActivity = Pick<ActivitiesResponse["activities"][number], "scenarioVersionId" | "comment" | "date">;
-
-const toVersionCommentsMap = (activities: readonly CommentableActivity[]): Map<number, string> => {
-    const newestFirst = [...activities].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const map = new Map<number, string>();
-    for (const a of newestFirst) {
-        if (
-            a.scenarioVersionId != null &&
-            a.comment?.content.status === "AVAILABLE" &&
-            a.comment.content.value &&
-            !map.has(a.scenarioVersionId)
-        ) {
-            map.set(a.scenarioVersionId, a.comment.content.value);
-        }
-    }
-    return map;
-};
-
 const versionCommentStyle = css({
     display: "-webkit-box",
     WebkitLineClamp: 2,
@@ -181,23 +162,6 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const { content: localEnvironmentName } = useSelector(getEnvironmentAlert);
     const versions = useSelector(getVersions);
 
-    // not from the store: it does not record which scenario its activities belong to, and refreshing it
-    // would reset the Activities panel's search and expand state
-    const [activities, setActivities] = useState<CommentableActivity[]>([]);
-    useEffect(() => {
-        if (!processName) return;
-        let current = true;
-        HttpService.fetchActivities(processName)
-            .then((response) => current && setActivities(response.data.activities))
-            .catch(() => current && setActivities([]));
-        return () => {
-            current = false;
-        };
-        // `version` so that saving while the dialog is open picks up the new version's comment
-    }, [processName, version]);
-
-    const versionComments = useMemo(() => toVersionCommentsMap(activities), [activities]);
-
     // latched, so switching environments back and forth does not ask the remote all over again
     const [remoteRequested, setRemoteRequested] = useState(false);
     useEffect(() => {
@@ -240,7 +204,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const {
         diffs: activeDiffs,
         oldestCompared,
-        comments: remoteVersionComments,
+        comments: versionComments,
         error: activeDiffsError,
         unavailable: activeUnavailable,
     } = state.environment === "remote" ? remoteDiffsState : localDiffsState;
@@ -324,11 +288,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         [versionDisplayString],
     );
 
-    const versionComment = useCallback(
-        (version: ProcessVersionType, versionPrefix = "") =>
-            versionPrefix ? remoteVersionComments[version.processVersionId] : versionComments.get(version.processVersionId),
-        [versionComments, remoteVersionComments],
-    );
+    const versionComment = useCallback((version: ProcessVersionType) => versionComments[version.processVersionId], [versionComments]);
 
     const enrichStickyNoteNode = (node: NodeType): StickyNoteNodeType => {
         return {
@@ -428,7 +388,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             label: createVersionElement(v, prefix),
             value: createVersionId(v, prefix),
             description: describeVersionDiff(activeDiffs?.get(v.processVersionId), t),
-            comment: versionComment(v, prefix),
+            comment: versionComment(v),
         });
 
         if (isLoadingVersions) return [...clearOption, ...candidates.filter(isSelected).map(toOption)];

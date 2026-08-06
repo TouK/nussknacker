@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
@@ -29,17 +28,15 @@ trait RemoteEnvironment {
   def processVersions(processName: ProcessName): Future[RemoteScenarioVersions]
 
   /**
-   * The remote does the comparing, so this sends one graph and receives a summary rather than pulling its
-   * full graphs across the network. `None` means the answer could not be obtained at all.
+   * The remote does the comparing, so this sends one graph and receives a summary - including its own
+   * versions' comments - rather than pulling its full graphs across the network. `None` means the answer
+   * could not be obtained at all.
    */
   def versionsWithDifferences(
       processName: ProcessName,
       scenarioGraph: ScenarioGraph,
       limit: Int
   ): Future[Option[VersionsWithDifferences]]
-
-  /** Must not fail the returned `Future`; an unreachable remote yields an empty list. */
-  def activities(processName: ProcessName): Future[List[ScenarioActivity]]
 
   def migrate(
       processingMode: ProcessingMode,

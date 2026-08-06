@@ -168,8 +168,6 @@ object StandardRemoteEnvironmentSpec {
         limit: Int
     ): Future[Option[VersionsWithDifferences]] = ???
 
-    override def activities(processName: ProcessName): Future[List[ScenarioActivity]] = ???
-
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(
         "streaming" -> new ProcessModelMigrator(new TestMigrations(1, 2))

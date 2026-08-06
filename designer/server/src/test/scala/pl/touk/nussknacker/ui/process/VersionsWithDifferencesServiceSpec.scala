@@ -3,6 +3,17 @@ package pl.touk.nussknacker.ui.process
 import org.scalatest.{LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentResult,
+  ScenarioActivity,
+  ScenarioActivityId,
+  ScenarioComment,
+  ScenarioId,
+  ScenarioUser,
+  ScenarioVersionId,
+  UserName
+}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.graph.node.Filter
@@ -11,6 +22,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionWithDifference
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -208,6 +220,73 @@ class VersionsWithDifferencesServiceSpec
 
     VersionsWithDifferencesService.suppliedGraphTooLargeError(tooManyNodes) shouldBe defined
     VersionsWithDifferencesService.suppliedGraphTooLargeError(currentGraph) shouldBe None
+  }
+
+  test("takes the newest comment as the one describing a version") {
+    val comments = VersionsWithDifferencesService.versionComments(
+      List(
+        commentAdded(versionId = 7, "first save", "2024-01-17T14:21:17Z"),
+        commentAdded(versionId = 7, "restart", "2024-01-18T10:00:00Z"),
+        commentAdded(versionId = 99, "an older version's comment", "2024-01-16T10:00:00Z"),
+      )
+    )
+
+    comments shouldBe Map(7L -> "restart", 99L -> "an older version's comment")
+  }
+
+  test("ignores a comment with no readable content and one attached to no version") {
+    val at = Instant.parse("2024-01-17T14:21:17Z")
+    val comments = VersionsWithDifferencesService.versionComments(
+      List(
+        commentAdded(versionId = 7, "hidden", "2024-01-17T14:21:17Z")
+          .copy(comment = ScenarioComment.WithoutContent(UserName("u"), at)),
+        commentAdded(versionId = 8, "orphan", "2024-01-17T14:21:17Z").copy(scenarioVersionId = None),
+      )
+    )
+
+    comments shouldBe empty
+  }
+
+  // A comment given while running a scenario describes that run, not the version - and a deployment that
+  // failed is not something the activities endpoint shows either, so neither labels a version here.
+  test("ignores scheduling-related and failed-deployment activities") {
+    val date = Instant.parse("2024-01-17T14:21:17Z")
+    val comments = VersionsWithDifferencesService.versionComments(
+      List(
+        ScenarioActivity.PerformedSingleExecution(
+          scenarioId = ScenarioId(1),
+          scenarioActivityId = ScenarioActivityId.random,
+          user = ScenarioUser.internalNuUser,
+          date = date,
+          scenarioVersionId = Some(ScenarioVersionId(7)),
+          comment = ScenarioComment.WithContent(Comment.unsafeFrom("ad-hoc run"), UserName("u"), date),
+          result = DeploymentResult.Success(date)
+        ),
+        ScenarioActivity.ScenarioDeployed(
+          scenarioId = ScenarioId(1),
+          scenarioActivityId = ScenarioActivityId.random,
+          user = ScenarioUser.internalNuUser,
+          date = date,
+          scenarioVersionId = Some(ScenarioVersionId(8)),
+          comment = ScenarioComment.WithContent(Comment.unsafeFrom("failed deploy"), UserName("u"), date),
+          result = DeploymentResult.Failure(date, None)
+        ),
+      )
+    )
+
+    comments shouldBe empty
+  }
+
+  private def commentAdded(versionId: Long, content: String, date: String) = {
+    val at = Instant.parse(date)
+    ScenarioActivity.CommentAdded(
+      scenarioId = ScenarioId(1),
+      scenarioActivityId = ScenarioActivityId.random,
+      user = ScenarioUser.internalNuUser,
+      date = at,
+      scenarioVersionId = Some(ScenarioVersionId(versionId)),
+      comment = ScenarioComment.WithContent(Comment.unsafeFrom(content), UserName("u"), at)
+    )
   }
 
 }

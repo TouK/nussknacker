@@ -47,7 +47,8 @@ class RemoteEnvironmentResources(
     with NuPathMatchers
     with VersionsToCompareDirective {
 
-  private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
+  private val versionsWithDifferencesService =
+    new VersionsWithDifferencesService(processService, scenarioActivityRepository, dbioActionRunner)
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("remoteEnvironment") {

@@ -18,7 +18,6 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{ScenarioActivities, ScenarioActivity}
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.security.api.{
@@ -68,7 +67,10 @@ class HttpRemoteEnvironment(
   override def processVersions(processName: ProcessName): Future[RemoteScenarioVersions] =
     invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
-      List("processes", processName.value)
+      List("processes", processName.value),
+      // only the history is read here; a remote too old to know this parameter ignores it and sends the
+      // graph anyway, which still decodes
+      Query(("skipScenarioGraph", "true"))
     ).flatMap {
       _.fold(
         error => {
@@ -103,23 +105,6 @@ class HttpRemoteEnvironment(
     ).recover { case NonFatal(ex) =>
       logger.warn(s"Failed to fetch version differences from remote environment for scenario ${processName.value}", ex)
       None
-    }
-
-  override def activities(processName: ProcessName): Future[List[ScenarioActivity]] =
-    invokeJson[ScenarioActivities](
-      HttpMethods.GET,
-      List("processes", processName.value, "activity", "activities")
-    ).map(
-      _.fold(
-        error => {
-          logFetchError("activities", processName, error)
-          List.empty[ScenarioActivity]
-        },
-        _.activities
-      )
-    ).recover { case NonFatal(ex) =>
-      logger.warn(s"Failed to fetch activities from remote environment for scenario ${processName.value}", ex)
-      List.empty
     }
 
   /**

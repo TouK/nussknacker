@@ -208,53 +208,6 @@ class HttpRemoteEnvironmentSpec
     ) { result => result shouldBe None }
   }
 
-  it should "fetch and decode activities" in {
-    val activity = ScenarioActivity.forScenarioCreated(
-      id = UUID.fromString("80c95497-3b53-4435-b2d9-ae73c5766213"),
-      user = "some user",
-      date = Instant.parse("2024-01-17T14:21:17Z"),
-      scenarioVersionId = Some(1),
-    )
-
-    val remoteEnvironment = new MockRemoteEnvironment {
-      override protected def request(
-          path: Uri,
-          method: HttpMethod,
-          request: MessageEntity,
-          headers: Seq[HttpHeader]
-      ): Future[HttpResponse] = {
-        val expectedUri = baseUri.withPath(baseUri.path + "/processes/proc1/activity/activities")
-        if (path == expectedUri && method == HttpMethods.GET) {
-          Marshal(ScenarioActivities(List(activity)))
-            .to[RequestEntity]
-            .map(entity => HttpResponse(StatusCodes.OK, entity = entity))
-        } else {
-          throw new AssertionError(s"Not expected ${method.value} $path")
-        }
-      }
-    }
-
-    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
-      result shouldBe List(activity)
-    }
-  }
-
-  it should "resolve activities to an empty list when the remote returns 404 (unsupported endpoint)" in {
-    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.NotFound)
-
-    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
-      result shouldBe List.empty
-    }
-  }
-
-  it should "resolve activities to an empty list when the remote returns a server error" in {
-    val remoteEnvironment = mockRemoteEnvironmentReturning(StatusCodes.InternalServerError)
-
-    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
-      result shouldBe List.empty
-    }
-  }
-
   // The must-not-fail contract of RemoteEnvironment covers more than error status codes: a connection
   // failure and a 200 whose body we can't decode both have to resolve to "no data", or the whole
   // versions-with-differences call would blow up with a 500.
@@ -267,9 +220,6 @@ class HttpRemoteEnvironmentSpec
     whenReady(
       remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
-    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
-      result shouldBe List.empty
-    }
   }
 
   it should "resolve to no data when the remote environment returns an undecodable 200 body" in {
@@ -291,9 +241,6 @@ class HttpRemoteEnvironmentSpec
     whenReady(
       remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
-    whenReady(remoteEnvironment.activities(ProcessName("proc1"))) { result =>
-      result shouldBe List.empty
-    }
   }
 
   it should "report the remote environment as available when the scenario is simply absent there (404)" in {

@@ -83,25 +83,6 @@ const remoteVersion = (processVersionId: number): ProcessVersionType => ({
     user: "test",
 });
 
-const comment = (
-    scenarioVersionId: number,
-    value: string,
-    date = "2024-05-31T10:00:00Z",
-    type = "SCENARIO_MODIFIED",
-    status = "AVAILABLE",
-) => ({
-    id: `activity-${scenarioVersionId}-${value}`,
-    type,
-    user: "admin",
-    date,
-    scenarioVersionId,
-    comment: { content: { status, value }, lastModifiedBy: "admin", lastModifiedAt: date },
-    additionalFields: [],
-});
-
-const withActivities = (...activities: unknown[]) =>
-    mock.onGet(`/processes/${scenario.name}/activity/activities`).reply(200, { activities });
-
 const renderDialog = (options: { store?: ReturnType<typeof mockStore>; predefinedVersionId?: string } = {}) =>
     render(
         <NuThemeProvider>
@@ -404,20 +385,6 @@ describe("CompareVersionsDialog", () => {
         });
     });
 
-    it("should ignore a comment that is not available or empty", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
-        withActivities(
-            comment(34, "hidden by moderation", "2024-06-02T10:00:00Z", "SCENARIO_MODIFIED", "NOT_AVAILABLE"),
-            comment(35, "", "2024-06-02T10:00:00Z"),
-        );
-
-        renderDialog();
-        await openVersionPicker();
-
-        await screen.findByText("34 - created by admin 2024-05-31|00:00");
-        expect(screen.queryByText("hidden by moderation")).not.toBeInTheDocument();
-    });
-
     it("should describe every change the server sent, truncation being the server's job", async () => {
         const manyChanges = Array.from({ length: 30 }, (_, i) => `Node 'n${i}' modified`);
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
@@ -551,9 +518,10 @@ describe("CompareVersionsDialog", () => {
     });
 
     it("should show a version's comment separately from its created-by line", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
-
-        withActivities(comment(34, "Updated timeout"));
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            ...localVersionsWithDifferences,
+            versionComments: { 34: "Updated timeout" },
+        });
 
         renderDialog();
         await openVersionPicker();
@@ -561,34 +529,6 @@ describe("CompareVersionsDialog", () => {
         expect(await screen.findByText("Updated timeout")).toBeInTheDocument();
         expect(screen.getByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
         expect(screen.getByText("35 - created by admin 2024-05-31|00:00").textContent).not.toContain("Updated timeout");
-    });
-
-    it("should show the newest comment when a version has more than one", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
-
-        // oldest first, so that the sort is load-bearing
-        withActivities(comment(34, "older", "2024-06-01T10:00:00Z"), comment(34, "newer", "2024-06-02T10:00:00Z"));
-
-        renderDialog();
-        await openVersionPicker();
-
-        expect(await screen.findByText("newer")).toBeInTheDocument();
-        expect(screen.queryByText("older")).not.toBeInTheDocument();
-    });
-
-    it("should take a version's latest comment regardless of which activity carried it", async () => {
-        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
-
-        withActivities(
-            comment(34, "Updated timeout", "2024-06-01T10:00:00Z"),
-            comment(34, "restart", "2024-06-02T10:00:00Z", "SCENARIO_DEPLOYED"),
-        );
-
-        renderDialog();
-        await openVersionPicker();
-
-        expect(await screen.findByText("restart")).toBeInTheDocument();
-        expect(screen.queryByText("Updated timeout")).not.toBeInTheDocument();
     });
 
     it("should show a remote version's comment from the differences response", async () => {
@@ -625,14 +565,14 @@ describe("CompareVersionsDialog", () => {
         expect(screen.getByText("Recent")).toBeInTheDocument();
     });
 
-    it("should load the scenario's activities itself", async () => {
+    it("should not fetch the activity list, since comments come with the differences", async () => {
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
 
         renderDialog();
+        await openVersionPicker();
+        await screen.findByText("34 - created by admin 2024-05-31|00:00");
 
-        await waitFor(() => {
-            expect(mock.history.get.some((r) => r.url === `/processes/${scenario.name}/activity/activities`)).toBe(true);
-        });
+        expect(mock.history.get.some((r) => r.url === `/processes/${scenario.name}/activity/activities`)).toBe(false);
     });
 
     it("should clear the selected version when the environment is switched", async () => {

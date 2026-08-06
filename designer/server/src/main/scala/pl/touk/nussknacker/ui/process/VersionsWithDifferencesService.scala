@@ -3,12 +3,20 @@ package pl.touk.nussknacker.ui.process
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentRelatedActivity,
+  DeploymentResult,
+  ScenarioActivity,
+  ScenarioComment,
+  SchedulingRelatedActivity
+}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{VersionsWithDifferences, VersionWithDifference}
 import pl.touk.nussknacker.ui.process.migrate.RemoteEnvironment
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 
@@ -33,6 +41,46 @@ object VersionsWithDifferencesService {
   val MaxSuppliedGraphElements = 20000
 
   def isValidLimit(limit: Int): Boolean = limit >= MinVersionsCompared && limit <= MaxVersionsCompared
+
+  /**
+   * The latest comment describing each version. Scheduling-related activities are left out entirely - a
+   * comment given when running a scenario describes that run, not the version - and so are activities for
+   * deployments that failed, matching what the activities endpoint shows.
+   */
+  def versionComments(activities: List[ScenarioActivity]): Map[Long, String] =
+    activities
+      .sortBy(_.date)
+      .flatMap { activity =>
+        for {
+          _         <- Option.when(describesVersion(activity))(())
+          versionId <- activity.scenarioVersionId
+          content   <- commentContent(activity)
+        } yield versionId.value -> content
+      }
+      .toMap
+
+  private def describesVersion(activity: ScenarioActivity): Boolean = activity match {
+    case _: SchedulingRelatedActivity => false
+    case deployment: DeploymentRelatedActivity =>
+      deployment.result match {
+        case _: DeploymentResult.Success => true
+        case _: DeploymentResult.Failure => false
+      }
+    case _ => true
+  }
+
+  private def commentContent(activity: ScenarioActivity): Option[String] = {
+    val comment = activity match {
+      case a: ScenarioActivity.ScenarioDeployed   => Some(a.comment)
+      case a: ScenarioActivity.ScenarioRedeployed => Some(a.comment)
+      case a: ScenarioActivity.ScenarioPaused     => Some(a.comment)
+      case a: ScenarioActivity.ScenarioCanceled   => Some(a.comment)
+      case a: ScenarioActivity.ScenarioModified   => Some(a.comment)
+      case a: ScenarioActivity.CommentAdded       => Some(a.comment)
+      case _                                      => None
+    }
+    comment.collect { case ScenarioComment.WithContent(content, _, _) => content.content }.filter(_.nonEmpty)
+  }
 
   def suppliedGraphTooLargeError(graph: ScenarioGraph): Option[String] =
     Option.when(graph.nodes.size + graph.edges.size > MaxSuppliedGraphElements)(
@@ -123,7 +171,11 @@ object VersionsWithDifferencesService {
 
 }
 
-class VersionsWithDifferencesService(processService: ProcessService) {
+class VersionsWithDifferencesService(
+    processService: ProcessService,
+    scenarioActivityRepository: ScenarioActivityRepository,
+    dbioActionRunner: DBIOActionRunner
+) {
 
   def computeForLocalVersions(
       processIdWithName: ProcessIdWithName,
@@ -140,14 +192,26 @@ class VersionsWithDifferencesService(processService: ProcessService) {
         .getOrElse(Nil)
         .map(_.processVersionId)
         .filterNot(_ == currentVersionId)
+      commentsFuture = versionComments(processIdWithName)
       result <- VersionsWithDifferencesService.compute(
         currentDetails.scenarioGraphUnsafe,
         allOtherVersionIds,
         limit,
         fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
       )
-    } yield result
+      comments <- commentsFuture
+    } yield result.copy(versionComments = comments)
   }
+
+  // covers every version, including ones too old to have been compared - they come from the activity
+  // list, which costs no scenario graph
+  private def versionComments(
+      processIdWithName: ProcessIdWithName
+  )(implicit ec: ExecutionContext): Future[Option[Map[Long, String]]] =
+    dbioActionRunner
+      .run(scenarioActivityRepository.findActivities(processIdWithName.id))
+      .map(activities => VersionsWithDifferencesService.versionComments(activities.toList))
+      .map(comments => Option.when(comments.nonEmpty)(comments))
 
   /**
    * Which of our versions of this scenario differ from a graph supplied by another environment - the peer
@@ -166,14 +230,16 @@ class VersionsWithDifferencesService(processService: ProcessService) {
             processIdWithName,
             GetScenarioWithDetailsOptions.detailsOnly
           )
-          allVersionIds = details.history.getOrElse(Nil).map(_.processVersionId)
+          allVersionIds  = details.history.getOrElse(Nil).map(_.processVersionId)
+          commentsFuture = versionComments(processIdWithName)
           result <- VersionsWithDifferencesService.compute(
             suppliedGraph,
             allVersionIds,
             limit,
             fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
           )
-        } yield Right(result)
+          comments <- commentsFuture
+        } yield Right(result.copy(versionComments = comments))
     }
   }
 
@@ -189,33 +255,13 @@ class VersionsWithDifferencesService(processService: ProcessService) {
         currentLocalVersionId,
         GetScenarioWithDetailsOptions.withScenarioGraph
       )
-      remoteResultFuture = remoteEnvironment.versionsWithDifferences(
+      // the remote answers with its own versions' comments, so nothing is merged in here
+      remoteResult <- remoteEnvironment.versionsWithDifferences(
         processIdWithName.name,
         localDetails.scenarioGraphUnsafe,
         limit
       )
-      commentsFuture = remoteEnvironment.activities(processIdWithName.name).map(versionComments)
-      remoteResult <- remoteResultFuture
-      comments     <- commentsFuture
-    } yield remoteResult
-      .map(_.copy(versionComments = Option.when(comments.nonEmpty)(comments)))
-      .getOrElse(VersionsWithDifferences(Nil, remoteUnavailable = Some(true)))
+    } yield remoteResult.getOrElse(VersionsWithDifferences(Nil, remoteUnavailable = Some(true)))
   }
-
-  // a comment belongs to the version whose id its activity carries; the newest one describes it
-  private def versionComments(activities: List[Dtos.ScenarioActivity]): Map[Long, String] =
-    activities
-      .sortBy(_.date)
-      .flatMap { activity =>
-        for {
-          versionId <- activity.scenarioVersionId
-          comment   <- activity.comment
-          value <- comment.content match {
-            case Dtos.ScenarioActivityCommentContent.Available(value) if value.nonEmpty => Some(value)
-            case _                                                                      => None
-          }
-        } yield versionId -> value
-      }
-      .toMap
 
 }
