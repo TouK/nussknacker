@@ -36,12 +36,6 @@ object VersionsWithDifferencesService {
 
   val MaxChangedElementsPerVersion = 50
 
-  val MaxSuppliedGraphBytes: Long = 8 * 1024 * 1024
-
-  // nodes plus edges - the byte limit above still admits far more elements than any real scenario, and
-  // each one costs a diff entry per version compared
-  val MaxSuppliedGraphElements = 20000
-
   def isValidLimit(limit: Int): Boolean = limit >= MinVersionsCompared && limit <= MaxVersionsCompared
 
   /**
@@ -83,11 +77,6 @@ object VersionsWithDifferencesService {
     }
     comment.collect { case ScenarioComment.WithContent(content, _, _) => content.content }.filter(_.nonEmpty)
   }
-
-  def suppliedGraphTooLargeError(graph: ScenarioGraph): Option[String] =
-    Option.when(graph.nodes.size + graph.edges.size > MaxSuppliedGraphElements)(
-      s"scenario graph has more than $MaxSuppliedGraphElements nodes and edges"
-    )
 
   @JsonCodec final case class VersionWithDifference(
       versionId: VersionId,
@@ -222,32 +211,28 @@ class VersionsWithDifferencesService(
 
   /**
    * Which of our versions of this scenario differ from a graph supplied by another environment - the peer
-   * half of `computeForRemoteVersions`. Left is a graph too large to compare, to be reported as a 400.
+   * half of `computeForRemoteVersions`.
    */
   def computeAgainstSuppliedGraph(
       processIdWithName: ProcessIdWithName,
       suppliedGraph: ScenarioGraph,
       limit: Int
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[String, VersionsWithDifferences]] = {
-    VersionsWithDifferencesService.suppliedGraphTooLargeError(suppliedGraph) match {
-      case Some(error) => Future.successful(Left(error))
-      case None =>
-        for {
-          details <- processService.getLatestProcessWithDetails(
-            processIdWithName,
-            GetScenarioWithDetailsOptions.detailsOnly
-          )
-          allVersionIds  = details.history.getOrElse(Nil).map(_.processVersionId)
-          commentsFuture = versionComments(processIdWithName)
-          result <- VersionsWithDifferencesService.compute(
-            suppliedGraph,
-            allVersionIds,
-            limit,
-            fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
-          )
-          comments <- commentsFuture
-        } yield Right(result.copy(versionComments = comments))
-    }
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[VersionsWithDifferences] = {
+    for {
+      details <- processService.getLatestProcessWithDetails(
+        processIdWithName,
+        GetScenarioWithDetailsOptions.detailsOnly
+      )
+      allVersionIds  = details.history.getOrElse(Nil).map(_.processVersionId)
+      commentsFuture = versionComments(processIdWithName)
+      result <- VersionsWithDifferencesService.compute(
+        suppliedGraph,
+        allVersionIds,
+        limit,
+        fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
+      )
+      comments <- commentsFuture
+    } yield result.copy(versionComments = comments)
   }
 
   def computeForRemoteVersions(

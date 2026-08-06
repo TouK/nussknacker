@@ -210,18 +210,6 @@ class VersionsWithDifferencesServiceSpec
     result.versions shouldBe List(VersionWithDifference(VersionId(1), Nil, differencesUnknown = true))
   }
 
-  test("rejects a supplied graph with more elements than can be compared") {
-    val tooManyNodes = currentGraph.copy(
-      nodes = (0 to VersionsWithDifferencesService.MaxSuppliedGraphElements)
-        .map(i => Filter(s"filter$i", "true".spel))
-        .toList,
-      edges = Nil
-    )
-
-    VersionsWithDifferencesService.suppliedGraphTooLargeError(tooManyNodes) shouldBe defined
-    VersionsWithDifferencesService.suppliedGraphTooLargeError(currentGraph) shouldBe None
-  }
-
   test("takes the newest comment as the one describing a version") {
     val comments = VersionsWithDifferencesService.versionComments(
       List(

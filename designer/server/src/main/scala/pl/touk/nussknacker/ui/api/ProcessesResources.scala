@@ -264,13 +264,9 @@ class ProcessesResources(
         (post & processId(processName) & versionsToCompare) { (processId, limit) =>
           // both must precede `entity`, which streams and parses the body
           canRead(processId) {
-            // a streaming directive, so unlike the element-count check it cannot live in the service
-            withSizeLimit(VersionsWithDifferencesService.MaxSuppliedGraphBytes) {
-              entity(as[ScenarioGraph]) { suppliedGraph =>
-                onSuccess(versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)) {
-                  case Left(error)   => complete(StatusCodes.BadRequest, error)
-                  case Right(result) => complete(result)
-                }
+            entity(as[ScenarioGraph]) { suppliedGraph =>
+              complete {
+                versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)
               }
             }
           }
