@@ -22,6 +22,40 @@ description: Stay informed with detailed changelogs covering new features, impro
     * Comparing against a remote (secondary) environment now diffs the raw stored scenario graph on both sides. Previously the remote side was fetched validated and dictionary-resolved while the local side was not, which produced spurious differences for scenarios using dictionaries.
     * `GET /remoteEnvironment/{scenarioName}/versions` now requires the `Read` permission on the scenario. Previously it had no permission check at all, so any authenticated user could read the remote environment's version history for any scenario. Callers that relied on receiving an empty list for an inaccessible scenario now get `403 Forbidden`.
     * See the [Migration Guide](MigrationGuide.md) for the `RemoteEnvironment` API change.
+* [#9416](https://github.com/TouK/nussknacker/pull/9416) Feature: High Availability (HA) mode for the Designer.
+    * Multiple Designer instances can now run concurrently. All instances serve requests; coordinated operations (such as recovering failed deployments) are performed by the elected leader only. If the leader fails, another instance takes over automatically.
+    * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>", "haEnabled": true/false }` — suitable for load-balancer routing.
+    * **Requires PostgreSQL** as the designer database.
+    * HA mode is **opt-in** and disabled by default; existing single-instance deployments require no changes. Example configuration:
+```hocon
+ha {
+  enabled: true
+
+  # Unique identifier for this instance; defaults to the hostname when absent.
+  # instanceId: "designer-1"
+
+  leader {
+    # How often the leader renews its lock.
+    heartbeatInterval: 10s   # default
+
+    # How long a leader lock is valid without renewal (must be > heartbeatInterval;
+    # recommended: leaseDuration >= 3 * heartbeatInterval).
+    leaseDuration: 30s   # default
+
+    # When true (default), the leader lock is released on graceful shutdown so another
+    # instance can take over immediately. Set to false to let the same instance
+    # re-acquire its lock on restart without waiting for lease expiry.
+    releaseOnStop: true   # default
+  }
+
+  # Maximum time a periodic scenario lock is held (covers the full deploy round-trip).
+  periodicLockDuration: 5m   # default
+
+  # Timeout for individual lock DB queries (must be < leader.heartbeatInterval).
+  lockQueryTimeout: 5s   # default
+}
+```
+* [#9421](https://github.com/TouK/nussknacker/pull/9421) New built-in `java.time.Duration` parameter validators: the `@PositiveDuration` and `@NonNegativeDuration` annotations (with `ValidatorMode`: `AUTO`, `COMPILE_TIME`, `COMPILE_TIME_AND_RUNTIME`) and the corresponding `ParameterValidator`s (`PositiveDurationValidator`, `CompileTimePositiveDurationValidator`, `NonNegativeDurationValidator`, `CompileTimeNonNegativeDurationValidator`), reported as the new `InvalidDurationParameter` error. Duration parameters of the base components are now guarded by them, so a scenario using a constant non-positive (or negative) duration in one of these parameters no longer compiles - see the [Migration Guide](MigrationGuide.md) for the full list.
 * [#9419](https://github.com/TouK/nussknacker/pull/9419) Compile-time parameter validators now inspect the resolved value of parameters whose value the typer cannot determine statically (e.g. a computed expression like `T(java.time.Duration).parse('PT3S').getSeconds()`), not only literal values. Such a parameter is evaluated at compile time - only when it has validators - so its value-based validators (e.g. min/max, validation expression) run against the computed value; previously these were skipped for non-literal expressions. This also covers lazy parameters, as long as their expression does not read context variables (e.g. `#input`) - the value of such a context-free expression is resolved at compile time solely for validation; lazy parameters whose expressions read context variables are still validated only at runtime. This can turn a scenario that previously compiled into an invalid one.
 * [#9415](https://github.com/TouK/nussknacker/pull/9415) `deduplication` component: added processing-time support and two filter counters.
     * New advanced parameter `timeMode` (fixed values `EventTime` / `ProcessingTime`) selects the time domain used to measure the deduplication TTL. In processing time an idle key is reset on the wall clock, even with no traffic and no watermark; in event time the TTL is measured against the watermark and replays reproducibly.

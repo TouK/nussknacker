@@ -844,12 +844,42 @@ class DeploymentServiceSpec
     val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
     deploymentManager1.withStubbedDeployResult(scenario.name) {
-      reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_ => true).futureValue
+      reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_ => true, () => true).futureValue
     }
 
     eventually {
       deploymentManager1.successfulDeploys should contain(scenario.name)
     }
+  }
+
+  "should skip jobs recovery when not a leader" in {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
+
+    // Stub a successful deploy so that, if recovery were NOT skipped, the job would appear in
+    // successfulDeploys — making the assertion below a real check of the fence.
+    deploymentManager1.withStubbedDeployResult(scenario.name) {
+      reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_ => true, () => false).futureValue
+    }
+
+    deploymentManager1.successfulDeploys should not contain scenario.name
+  }
+
+  "should abort recovery of the remaining jobs when leadership is lost mid-recovery" in {
+    val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+    val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
+
+    // Leader until the first job is recovered, then no longer — models losing leadership mid-recovery.
+    // Recovery is global, so the fence trips after the first deploy regardless of how many jobs qualify.
+    val deploysBefore = deploymentManager1.successfulDeploys.size()
+    val isLeader      = () => deploymentManager1.successfulDeploys.size() == deploysBefore
+
+    deploymentManager1.withStubbedDeployResult(scenario1.name) {
+      deploymentManager1.withStubbedDeployResult(scenario2.name) {
+        reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_ => true, isLeader).futureValue
+      }
+    }
+
+    deploymentManager1.successfulDeploys.size() shouldBe deploysBefore + 1
   }
 
   "should allow to deploy scenario using fragment with unspecified nodesDeploymentData" in {

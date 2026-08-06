@@ -77,7 +77,7 @@ class FragmentParametersDefinitionExtractor(
   )(
       implicit nodeId: NodeId
   ): Writer[List[PartSubGraphCompilationError], Parameter] = {
-    val parameterData = ParameterData(typ, Nil)
+    val parameterData = ParameterData(typ, annotations = Nil, isLazyParameter = true)
 
     val (extractedEditors, validationErrors) = fragmentParameter.valueEditor
       .map(editor =>
@@ -101,7 +101,7 @@ class FragmentParametersDefinitionExtractor(
     val validators = validationExpressionValidator ++ ValidatorsExtractor
       .extract(
         ValidatorExtractorParameters(
-          ParameterData(typ, Nil),
+          ParameterData(typ, annotations = Nil, isLazyParameter = true),
           !fragmentParameter.required,
           ParameterConfig.empty,
           extractedEditors

@@ -7,6 +7,12 @@ description: Follow detailed steps to migrate automation scenarios and configura
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+> **Note (ESP preview build):** this build cherry-picked the HA change ([#9416](https://github.com/TouK/nussknacker/pull/9416))
+> which adds `V1_072__DistributedLocksTable`, while its base version was missing the intermediate `staging` migration
+> `V1_071__RegenerateComponentsUsagesWithNodeNames`. To avoid a gap in the Flyway history, `V1_071` has been re-added here — it
+> is a Slick migration that only recomputes the derived `componentsUsages` cache (no schema change). When bumping the version,
+> remember to reapply an equivalent migration.
+
 ## In version 1.19.0 (Not released yet)
 
 ### Flink state incompatibility
@@ -222,6 +228,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#9419](https://github.com/TouK/nussknacker/pull/9419) **Behavior change:** compile-time parameter validators now run value-based validators (e.g. `@Min` / `@Max`, validation expressions) against the *computed* value of parameters whose value the typer cannot determine statically (e.g. `T(java.time.Duration).parse('PT3S').getSeconds()`), not only literal values.
     * A parameter is evaluated at compile time only when it has validators. This also covers lazy parameters, as long as their expression does not read context variables (e.g. `#input`); lazy parameters whose expressions read context variables are still validated only at runtime.
     * As a result, a scenario that previously compiled can now become invalid at compile time when such a computed value violates a validator. Review scenarios that use non-literal expressions in validated parameters.
+* [#9421](https://github.com/TouK/nussknacker/pull/9421) **Behavior change:** duration parameters of several base components are now validated at scenario compile time.
+  A scenario that previously compiled becomes invalid when a constant (compile-time evaluable) duration violates the new constraint - fix the reported parameter value:
+    * must be positive (> 0): `deduplication` `ttl`, `union-memo` `stateTimeout`, `single-side-join` `windowLength`, `full-outer-join` `windowLength`, `aggregate-sliding` / `aggregate-tumbling` `windowLength`, `aggregate-session` `sessionTimeout`, SQL enrichers (`query` / `lookup`) `Cache TTL` (only when set), `kafka` / `table` `Idleness` (only when set)
+    * must not be negative (>= 0): `delay` `delay` (constant expressions only; a non-positive value computed per event still releases the event immediately), `event-generator` `schedule` (zero still means the maximum generation rate), `kafka` / `table` / `event-generator` `Max out-of-orderness`
 * [#9394](https://github.com/TouK/nussknacker/pull/9394)  The `delay` component was reworked:
     * The `key` parameter was renamed to `keyBy`. Existing scenarios using the `delay` component must update this parameter (rename `key` to `keyBy`), either manually or via a scenario/DB migration.
     * A new advanced parameter `timeMode` (`EventTime` / `ProcessingTime`) was added. Its default can be configured via the optional `components.base.delay.timeMode` setting; when not configured it defaults to `ProcessingTime` (`keyBy` and `delay` have fixed defaults `""` and `100ms`).

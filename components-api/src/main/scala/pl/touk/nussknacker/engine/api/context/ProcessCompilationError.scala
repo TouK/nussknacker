@@ -224,6 +224,13 @@ object ProcessCompilationError {
   final case class MismatchParameter(message: String, description: String, paramName: ParameterName, nodeId: String)
       extends ParameterValidationError
 
+  final case class InvalidDurationParameter(
+      message: String,
+      description: String,
+      paramName: ParameterName,
+      nodeId: String
+  ) extends ParameterValidationError
+
   final case class LowerThanRequiredParameter(
       message: String,
       description: String,

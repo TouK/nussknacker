@@ -61,7 +61,7 @@ class DelayTransformer(config: DelayConfig)
         )
     )
 
-  private val delayParamName = ParameterName("delay")
+  private[transformer] val delayParamName = ParameterName("delay")
 
   private val delayParamDeclaration = ParameterDeclaration
     .lazyMandatory[Duration](delayParamName)
@@ -71,7 +71,8 @@ class DelayTransformer(config: DelayConfig)
           labelOpt = Some("Delay"),
           hintText = Some(
             "Delay applied to each event before it is released. Evaluated per event, so the expression may reference " +
-              "input fields. A negative duration is treated as no delay (the event is released immediately)."
+              "input fields. Must not be negative; a non-positive value computed per event releases the event " +
+              "immediately."
           ),
           defaultValue = Some(s"T(java.time.Duration).parse('${Duration.ofMillis(100)}')".spel),
           editors = List(
@@ -80,7 +81,8 @@ class DelayTransformer(config: DelayConfig)
             ),
             SpelParameterEditor
           ),
-          validators = param.validators
+          // Compile-time only: a constant negative delay is rejected, a per-event value is left to the runtime.
+          validators = param.validators :+ CompileTimeNonNegativeDurationValidator
         )
     )
 

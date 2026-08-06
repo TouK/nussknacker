@@ -111,19 +111,22 @@ class DeduplicationTransformer(config: DeduplicationConfig)
   private val ttlParamDeclaration = ParameterDeclaration
     .mandatory[Duration](ttlParamName)
     .withCreator(modify =
-      _.copy(
-        labelOpt = Some("TTL"),
-        hintText = Some(
-          "Time after which the deduplication entry expires. " +
-            "The timer resets with each incoming event for a given key. " +
-            "After this period of inactivity, the next event is treated as new."
-        ),
-        editors = List(
-          DurationParameterEditor(
-            List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
-          )
+      param =>
+        param.copy(
+          labelOpt = Some("TTL"),
+          hintText = Some(
+            "Time after which the deduplication entry expires. " +
+              "The timer resets with each incoming event for a given key. " +
+              "After this period of inactivity, the next event is treated as new. " +
+              "It must be a positive duration (a non-positive TTL would disable deduplication)."
+          ),
+          editors = List(
+            DurationParameterEditor(
+              List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
+            )
+          ),
+          validators = param.validators :+ CompileTimePositiveDurationValidator
         )
-      )
     )
 
   private val timeModeParamName = ParameterName("timeMode")

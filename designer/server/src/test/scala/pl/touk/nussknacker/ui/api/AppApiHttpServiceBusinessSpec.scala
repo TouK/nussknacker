@@ -202,6 +202,24 @@ class AppApiHttpServiceBusinessSpec
     }
   }
 
+  "The app leader endpoint should" - {
+    "return leader status with instanceId and haEnabled=false when HA is disabled" in {
+      given()
+        .when()
+        .noAuth()
+        .get(s"$nuDesignerHttpAddress/api/app/leader")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |  "haEnabled": false,
+             |  "instanceId": "test-instance",
+             |  "isLeader": true
+             |}""".stripMargin
+        )
+    }
+  }
+
   "The app build info endpoint should" - {
     "return build info" in {
       given()
@@ -376,6 +394,8 @@ class AppApiHttpServiceBusinessSpec
 
   private def originDesignerConfig = {
     super.designerRawConfig
+      .withValue("ha.enabled", fromAnyRef(false))
+      .withValue("ha.instanceId", fromAnyRef("test-instance"))
       .withValue("enableConfigEndpoint", fromAnyRef(true))
       .withValue(
         "globalBuildInfo",

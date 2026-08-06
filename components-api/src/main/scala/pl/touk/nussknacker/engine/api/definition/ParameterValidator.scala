@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCo
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
+import java.time.Duration
 import java.util.ServiceLoader
 import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
@@ -76,16 +77,20 @@ object ParameterValidator {
 
   implicit val decoder: Decoder[ParameterValidator] = Decoder.instance { cursor =>
     cursor.downField("type").as[String].flatMap {
-      case "MandatoryParameterValidator"        => Right(MandatoryParameterValidator)
-      case "NotNullParameterValidator"          => Right(NotNullParameterValidator)
-      case "CompileTimeEvaluableValueValidator" => Right(CompileTimeEvaluableValueValidator)
-      case "NotBlankParameterValidator"         => Right(NotBlankParameterValidator)
-      case "LiteralIntegerValidator"            => Right(LiteralIntegerValidator)
-      case "JsonValidator"                      => Right(JsonValidator)
-      case "FixedValuesValidator"               => fixedValuesCodec(cursor)
-      case "RegExpParameterValidator"           => regExpCodec(cursor)
-      case "MinimalNumberValidator"             => minimalNumberCodec(cursor)
-      case "MaximalNumberValidator"             => maximalNumberCodec(cursor)
+      case "MandatoryParameterValidator"             => Right(MandatoryParameterValidator)
+      case "NotNullParameterValidator"               => Right(NotNullParameterValidator)
+      case "CompileTimeEvaluableValueValidator"      => Right(CompileTimeEvaluableValueValidator)
+      case "NotBlankParameterValidator"              => Right(NotBlankParameterValidator)
+      case "LiteralIntegerValidator"                 => Right(LiteralIntegerValidator)
+      case "JsonValidator"                           => Right(JsonValidator)
+      case "FixedValuesValidator"                    => fixedValuesCodec(cursor)
+      case "RegExpParameterValidator"                => regExpCodec(cursor)
+      case "MinimalNumberValidator"                  => minimalNumberCodec(cursor)
+      case "MaximalNumberValidator"                  => maximalNumberCodec(cursor)
+      case "NonNegativeDurationValidator"            => Right(NonNegativeDurationValidator)
+      case "CompileTimeNonNegativeDurationValidator" => Right(CompileTimeNonNegativeDurationValidator)
+      case "PositiveDurationValidator"               => Right(PositiveDurationValidator)
+      case "CompileTimePositiveDurationValidator"    => Right(CompileTimePositiveDurationValidator)
       case "ValidationExpressionParameterValidatorToCompile" =>
         validationExpressionCodec(cursor)
       case "CustomParameterValidatorDelegate" =>
@@ -114,6 +119,10 @@ object ParameterValidator {
       minimalNumberCodec(v).deepMerge(Json.obj("type" -> "MinimalNumberValidator".asJson))
     case v: MaximalNumberValidator =>
       maximalNumberCodec(v).deepMerge(Json.obj("type" -> "MaximalNumberValidator".asJson))
+    case NonNegativeDurationValidator            => Json.obj("type" -> "NonNegativeDurationValidator".asJson)
+    case CompileTimeNonNegativeDurationValidator => Json.obj("type" -> "CompileTimeNonNegativeDurationValidator".asJson)
+    case PositiveDurationValidator               => Json.obj("type" -> "PositiveDurationValidator".asJson)
+    case CompileTimePositiveDurationValidator    => Json.obj("type" -> "CompileTimePositiveDurationValidator".asJson)
     case v: ValidationExpressionParameterValidatorToCompile =>
       validationExpressionCodec(v).deepMerge(
         Json.obj("type" -> "ValidationExpressionParameterValidatorToCompile".asJson)
@@ -131,6 +140,33 @@ object ParameterValidator {
 trait CompileTimeParameterValidator extends ParameterValidator with CompileTimeValidator
 
 trait RuntimeParameterValidator extends ParameterValidator with RuntimeValidator
+
+trait CompileTimeAndRuntimeValidator extends CompileTimeParameterValidator with RuntimeParameterValidator {
+
+  protected def message: String
+  protected def description: String
+
+  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] =
+    value match {
+      case Some(v) => validate(v, compileTimeError(paramName, nodeId))
+      case None    => valid(())
+    }
+
+  override def isValid(paramName: ParameterName, expression: Expression, value: Any)(
+      implicit nodeId: NodeId
+  ): Validated[ParameterRuntimeValidationError, Unit] =
+    validate(value, runtimeError(expression))
+
+  protected def validate[E](value: Any, error: => E): Validated[E, Unit]
+
+  protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): PartSubGraphCompilationError
+
+  protected def runtimeError(expression: Expression): ParameterRuntimeValidationError =
+    ParameterRuntimeValidationError(input = expression.expression, message = message)
+
+}
 
 //TODO: These validators should be moved to separated module
 
@@ -325,6 +361,100 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends CompileTime
       paramName,
       nodeId
     )
+
+}
+
+object NonNegativeDurationValidation {
+
+  val Message: String     = "This field value has to be a non-negative duration"
+  val Description: String = "Please provide a duration that is not negative"
+
+  private[definition] def compileTimeError(paramName: ParameterName, nodeId: NodeId): InvalidDurationParameter =
+    InvalidDurationParameter(Message, Description, paramName, nodeId.id)
+
+  private[definition] def validate[E](value: Any, error: => E): Validated[E, Unit] =
+    value match {
+      case d: Duration if d.compareTo(Duration.ZERO) < 0 => invalid(error)
+      case _                                             => valid(())
+    }
+
+}
+
+case object NonNegativeDurationValidator extends CompileTimeAndRuntimeValidator {
+
+  override protected def message: String = NonNegativeDurationValidation.Message
+
+  override protected def description: String = NonNegativeDurationValidation.Description
+
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
+    NonNegativeDurationValidation.validate(value, error)
+
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): PartSubGraphCompilationError =
+    NonNegativeDurationValidation.compileTimeError(paramName, nodeId)
+
+}
+
+case object CompileTimeNonNegativeDurationValidator extends CompileTimeParameterValidator {
+
+  import NonNegativeDurationValidation._
+
+  override def isValid(
+      paramName: ParameterName,
+      expression: Expression,
+      value: Option[Any],
+      label: Option[String]
+  )(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    value match {
+      case Some(v: Duration) => validate(v, compileTimeError(paramName, nodeId))
+      case _                 => valid(())
+    }
+
+}
+
+object PositiveDurationValidation {
+
+  val Message: String     = "This field value has to be a positive duration"
+  val Description: String = "Please provide a duration greater than zero"
+
+  private[definition] def compileTimeError(paramName: ParameterName, nodeId: NodeId): InvalidDurationParameter =
+    InvalidDurationParameter(Message, Description, paramName, nodeId.id)
+
+  private[definition] def validate[E](value: Any, error: => E): Validated[E, Unit] =
+    value match {
+      case d: Duration if d.compareTo(Duration.ZERO) <= 0 => invalid(error)
+      case _                                              => valid(())
+    }
+
+}
+
+case object PositiveDurationValidator extends CompileTimeAndRuntimeValidator {
+
+  override protected def message: String = PositiveDurationValidation.Message
+
+  override protected def description: String = PositiveDurationValidation.Description
+
+  override protected def validate[E](value: Any, error: => E): Validated[E, Unit] =
+    PositiveDurationValidation.validate(value, error)
+
+  override protected def compileTimeError(paramName: ParameterName, nodeId: NodeId): PartSubGraphCompilationError =
+    PositiveDurationValidation.compileTimeError(paramName, nodeId)
+
+}
+
+case object CompileTimePositiveDurationValidator extends CompileTimeParameterValidator {
+
+  import PositiveDurationValidation._
+
+  override def isValid(
+      paramName: ParameterName,
+      expression: Expression,
+      value: Option[Any],
+      label: Option[String]
+  )(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    value match {
+      case Some(v: Duration) => validate(v, compileTimeError(paramName, nodeId))
+      case _                 => valid(())
+    }
 
 }
 
