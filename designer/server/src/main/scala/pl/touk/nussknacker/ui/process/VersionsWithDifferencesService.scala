@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -21,6 +22,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 object VersionsWithDifferencesService {
 
@@ -98,8 +100,8 @@ object VersionsWithDifferencesService {
       versions: List[VersionWithDifference],
       // versions older than this one were not compared; absent when the whole history was
       oldestComparedVersionId: Option[VersionId] = None,
-      // every version's comment, not only the compared ones; set only by the endpoint proxying to a
-      // remote environment, since for local versions the client already holds the activities
+      // every version's comment, not only the compared ones - always the comments of the environment
+      // that computed this answer, so a proxied one carries the remote's
       versionComments: Option[Map[Long, String]] = None,
       remoteUnavailable: Option[Boolean] = None
   )
@@ -175,7 +177,7 @@ class VersionsWithDifferencesService(
     processService: ProcessService,
     scenarioActivityRepository: ScenarioActivityRepository,
     dbioActionRunner: DBIOActionRunner
-) {
+) extends LazyLogging {
 
   def computeForLocalVersions(
       processIdWithName: ProcessIdWithName,
@@ -212,6 +214,11 @@ class VersionsWithDifferencesService(
       .run(scenarioActivityRepository.findActivities(processIdWithName.id))
       .map(activities => VersionsWithDifferencesService.versionComments(activities.toList))
       .map(comments => Option.when(comments.nonEmpty)(comments))
+      // the comments only label the versions - failing to read them must not take the comparison down
+      .recover { case NonFatal(ex) =>
+        logger.warn(s"Failed to read version comments for scenario ${processIdWithName.name.value}", ex)
+        None
+      }
 
   /**
    * Which of our versions of this scenario differ from a graph supplied by another environment - the peer

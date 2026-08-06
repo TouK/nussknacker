@@ -196,7 +196,7 @@ export type VersionsWithDifferencesResponse = {
     versions: VersionWithDifference[];
     // versions older than this one were not compared; absent when the whole history was
     oldestComparedVersionId?: number;
-    // keyed by version id, covering every version; sent only by the remote-environment endpoint
+    // keyed by version id, covering every version - including ones that were not compared
     versionComments?: Record<string, string>;
     remoteUnavailable?: boolean;
 };

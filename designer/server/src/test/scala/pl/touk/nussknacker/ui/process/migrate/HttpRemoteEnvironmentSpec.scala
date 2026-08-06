@@ -24,20 +24,18 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{ScenarioActivities, ScenarioActivity}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.{VersionsWithDifferences, VersionWithDifference}
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentSpec.MockRemoteEnvironment
 import pl.touk.nussknacker.ui.security.api.{ImpersonatedUserData, ImpersonationSupported, LoggedUser, RealLoggedUser}
 
 import java.time.Instant
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -241,6 +239,37 @@ class HttpRemoteEnvironmentSpec
     whenReady(
       remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
+  }
+
+  // Only the history is read here, so the graph is not worth transferring - and a response without one
+  // still has to decode, since an older remote ignores the parameter and sends it anyway.
+  it should "ask for scenario versions without the scenario graph" in {
+    val sentQuery = new AtomicReference[Uri.Query]()
+
+    val remoteEnvironment = new MockRemoteEnvironment {
+      override protected def request(
+          path: Uri,
+          method: HttpMethod,
+          request: MessageEntity,
+          headers: Seq[HttpHeader]
+      ): Future[HttpResponse] = {
+        sentQuery.set(path.query())
+        val history = List(ScenarioVersion(VersionId(2), Instant.parse("2024-01-18T10:00:00Z"), "some user"))
+        val details = ScenarioWithDetailsConversions
+          .fromEntityWithScenarioGraph(
+            wrapGraphWithScenarioDetailsEntity(ProcessName("proc1"), ProcessTestData.validScenarioGraph),
+            ProcessTestData.sampleScenarioParameters
+          )
+          .copy(scenarioGraph = None, history = Some(history))
+        Marshal(details).to[RequestEntity].map(entity => HttpResponse(StatusCodes.OK, entity = entity))
+      }
+    }
+
+    whenReady(remoteEnvironment.processVersions(ProcessName("proc1"))) { result =>
+      sentQuery.get().get("skipScenarioGraph") shouldBe Some("true")
+      result.versions.map(_.processVersionId) shouldBe List(VersionId(2))
+      result.remoteUnavailable shouldBe false
+    }
   }
 
   it should "report the remote environment as available when the scenario is simply absent there (404)" in {
