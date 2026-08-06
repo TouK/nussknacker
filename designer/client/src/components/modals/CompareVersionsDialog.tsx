@@ -12,9 +12,8 @@ import { components as SelectComponents } from "react-select";
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
-import HttpService from "../../http/HttpService";
-import { DEFAULT_VERSIONS_COMPARED, VERSIONS_COMPARED_OPTIONS } from "../../http/HttpService";
-import type { VersionWithDifference } from "../../http/HttpService";
+import HttpService, { DEFAULT_VERSIONS_COMPARED, VERSIONS_COMPARED_OPTIONS } from "../../http/HttpService";
+import type { VersionsWithDifferencesResponse, VersionWithDifference } from "../../http/HttpService";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getEnvironmentAlert, getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import type { NodeType, StickyNoteNodeType } from "../../types";
@@ -39,15 +38,6 @@ type VersionDiffInfo = {
     totalChangedElements?: number;
 };
 
-const MAX_DESCRIBED_CHANGES = 20;
-
-type VersionDiffsResponse = {
-    versions: VersionWithDifference[];
-    oldestComparedVersionId?: number;
-    versionComments?: Record<string, string>;
-    remoteUnavailable?: boolean;
-};
-
 const toVersionDiffsMap = (versions: VersionWithDifference[]): Map<number, VersionDiffInfo> =>
     new Map(
         versions.map(({ versionId, changedElements, differencesUnknown, totalChangedElements }) => [
@@ -59,9 +49,9 @@ const toVersionDiffsMap = (versions: VersionWithDifference[]): Map<number, Versi
 const describeVersionDiff = (diffInfo: VersionDiffInfo | undefined, t: TFunction): string => {
     if (!diffInfo) return "";
     if (diffInfo.differencesUnknown) {
-        return t("dialog.compareVersions.unknownDifferences", "Unable to determine differences with the remote environment");
+        return t("dialog.compareVersions.unknownDifferences", "Could not determine the differences for this version");
     }
-    const described = diffInfo.changedElements.slice(0, MAX_DESCRIBED_CHANGES);
+    const described = [...diffInfo.changedElements];
     const remaining = (diffInfo.totalChangedElements ?? diffInfo.changedElements.length) - described.length;
     if (remaining > 0) {
         described.push(t("dialog.compareVersions.moreChanges", "…and {{count}} more", { count: remaining }));
@@ -71,9 +61,7 @@ const describeVersionDiff = (diffInfo: VersionDiffInfo | undefined, t: TFunction
 
 type DiffsState = {
     diffs: Map<number, VersionDiffInfo> | null; // null = not loaded, or the request failed
-    // versions older than this were not compared; undefined means the whole history was
     oldestCompared?: number;
-    // covers every version, not only the compared ones
     comments: Record<string, string>;
     error: boolean;
     unavailable: boolean;
@@ -81,7 +69,7 @@ type DiffsState = {
 
 const initialDiffsState: DiffsState = { diffs: null, comments: {}, error: false, unavailable: false };
 
-const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | null): DiffsState => {
+const useVersionDiffs = (fetch: (() => Promise<VersionsWithDifferencesResponse | null>) | null): DiffsState => {
     const [state, setState] = useState<DiffsState>(initialDiffsState);
     // a save while the dialog is open changes `fetch`, and the response in flight for the old version must
     // not be merged into the state that reset for the new one
@@ -91,7 +79,7 @@ const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | n
         const generation = ++generationRef.current;
         setState(initialDiffsState);
         if (!fetch) return;
-        const applyResult = (result: VersionDiffsResponse | null) => {
+        const applyResult = (result: VersionsWithDifferencesResponse | null) => {
             if (generation !== generationRef.current) return;
             setState(
                 result === null
@@ -105,8 +93,7 @@ const useVersionDiffs = (fetch: (() => Promise<VersionDiffsResponse | null>) | n
                       },
             );
         };
-        // callers are expected to resolve to null on failure, but a rejection here would otherwise leave
-        // the picker loading for as long as the dialog is open
+        // a rejection would otherwise leave the picker loading for as long as the dialog is open
         fetch().then(applyResult, () => applyResult(null));
     }, [fetch]);
 
@@ -142,8 +129,7 @@ const versionCommentStyle = css({
 
 const VersionOption = ({ children, innerProps, ...props }: React.ComponentProps<typeof SelectComponents.Option>) => {
     const { label, description, comment } = props.data as Option;
-    // `title` alone is mouse-only, and the change list is the point of the option - so it goes into the
-    // accessible name too, for anyone arrowing through the menu.
+    // `title` is mouse-only, so the change list goes into the accessible name too
     const accessibleName = [label, description, comment].filter(Boolean).join(". ");
     return (
         <SelectComponents.Option {...props} innerProps={{ ...innerProps, title: description, "aria-label": accessibleName }}>
@@ -157,7 +143,6 @@ const VERSION_MENU_COMPONENTS = { Option: VersionOption };
 
 const noNewVersionOptions = () => false;
 
-// The comment is rendered under the label, so a user searching for a word they can see there should find it.
 const matchVersionOption = (option: { label: string; value: string; data: Option }, input: string) => {
     if (!input) return true;
     const haystack = [option.label, (option.data as Option)?.comment].filter(Boolean).join(" ").toLowerCase();
@@ -196,8 +181,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const { content: localEnvironmentName } = useSelector(getEnvironmentAlert);
     const versions = useSelector(getVersions);
 
-    // Fetched here rather than read from the store: the store does not record which scenario its activities
-    // belong to, and dispatching a refresh would reset the Activities panel's search and expand state.
+    // not from the store: it does not record which scenario its activities belong to, and refreshing it
+    // would reset the Activities panel's search and expand state
     const [activities, setActivities] = useState<CommentableActivity[]>([]);
     useEffect(() => {
         if (!processName) return;
@@ -213,8 +198,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const versionComments = useMemo(() => toVersionCommentsMap(activities), [activities]);
 
-    // Latched rather than tracking the current selection, so that switching back and forth between
-    // environments does not discard what was already fetched and ask the remote all over again.
+    // latched, so switching environments back and forth does not ask the remote all over again
     const [remoteRequested, setRemoteRequested] = useState(false);
     useEffect(() => {
         if (state.environment === "remote") setRemoteRequested(true);
@@ -232,7 +216,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     const [versionsCompared, setVersionsCompared] = useState(DEFAULT_VERSIONS_COMPARED);
 
-    const fetchLocalDiffs = useMemo<(() => Promise<VersionDiffsResponse | null>) | null>(
+    const fetchLocalDiffs = useMemo<(() => Promise<VersionsWithDifferencesResponse | null>) | null>(
         () =>
             processName && version
                 ? () =>
@@ -244,7 +228,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     );
     const localDiffsState = useVersionDiffs(fetchLocalDiffs);
 
-    const fetchRemoteDiffs = useMemo<(() => Promise<VersionDiffsResponse | null>) | null>(
+    const fetchRemoteDiffs = useMemo<(() => Promise<VersionsWithDifferencesResponse | null>) | null>(
         () =>
             processName && version && otherEnvironment && remoteRequested
                 ? () => HttpService.fetchRemoteVersionsWithDifferences(processName, version, versionsCompared)
@@ -261,8 +245,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         unavailable: activeUnavailable,
     } = state.environment === "remote" ? remoteDiffsState : localDiffsState;
     const isLoadingVersions = activeDiffs === null && !activeDiffsError;
-    // Also when the environment answered but could not compare: it returns no differing versions, which
-    // must not be read as "every version is identical" and hide the whole list.
+    // also when the environment answered but could not compare: no differing versions must not be read
+    // as "every version is identical" and hide the whole list
     const showUnfilteredVersions = (activeDiffs === null && activeDiffsError) || activeUnavailable;
 
     const isLayoutChangeOnly = useCallback(
@@ -302,8 +286,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         }
     }, [loadVersion, predefinedOtherVersion]);
 
-    // Saving while the dialog is open makes a new version current, and the difference on screen is then
-    // against a version that no longer is - recompare rather than leave it captioned "Current version".
+    // saving while the dialog is open makes a new version current, so the difference on screen is against
+    // one that no longer is - recompare rather than leave it captioned "Current version"
     const comparedAgainst = useRef(version);
     useEffect(() => {
         if (comparedAgainst.current === version) return;
@@ -449,8 +433,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
         if (isLoadingVersions) return [...clearOption, ...candidates.filter(isSelected).map(toOption)];
 
-        // A version older than the compared window was never looked at, so filtering it out would claim it
-        // is identical to the current one. Those are listed as they were before this dialog filtered at all.
+        // a version older than the compared window was never looked at, so filtering it out would claim
+        // it is identical to the current one
         const wasCompared = (v: ProcessVersionType) => oldestCompared === undefined || v.processVersionId >= oldestCompared;
 
         return [
@@ -479,9 +463,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         [],
     );
 
-    // Latched: once the history has proved longer than what was compared, the control stays, so raising the
-    // limit far enough to cover everything does not remove the means of lowering it again - and a failed
-    // request does not take it away either.
+    // latched, so raising the limit to cover the whole history does not remove the means of lowering it again
     const [historyExceededLimit, setHistoryExceededLimit] = useState(false);
     useEffect(() => {
         if (oldestCompared !== undefined) setHistoryExceededLimit(true);

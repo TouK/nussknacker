@@ -418,7 +418,7 @@ describe("CompareVersionsDialog", () => {
         expect(screen.queryByText("hidden by moderation")).not.toBeInTheDocument();
     });
 
-    it("should describe at most a fixed number of changes and count the rest", async () => {
+    it("should describe every change the server sent, truncation being the server's job", async () => {
         const manyChanges = Array.from({ length: 30 }, (_, i) => `Node 'n${i}' modified`);
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
             versions: [{ versionId: 35, changedElements: manyChanges, differencesUnknown: false }],
@@ -428,8 +428,23 @@ describe("CompareVersionsDialog", () => {
         await openVersionPicker();
 
         const described = await screen.findByTitle(/Node 'n0' modified/, { normalizer: (value) => value });
-        // 20 described, then the "and N more" line - not all 30
-        expect(described.getAttribute("title").split("\n")).toHaveLength(21);
+        expect(described.getAttribute("title").split("\n")).toHaveLength(30);
+    });
+
+    it("should count the changes the server truncated away", async () => {
+        const describedChanges = Array.from({ length: 30 }, (_, i) => `Node 'n${i}' modified`);
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [{ versionId: 35, changedElements: describedChanges, differencesUnknown: false, totalChangedElements: 42 }],
+        });
+
+        renderDialog();
+        await openVersionPicker();
+
+        const described = await screen.findByTitle(/Node 'n0' modified/, { normalizer: (value) => value });
+        const lines = described.getAttribute("title").split("\n");
+        // the 30 sent, then one line accounting for the 12 the server dropped
+        expect(lines).toHaveLength(31);
+        expect(lines[30]).toBe("dialog.compareVersions.moreChanges");
     });
 
     it("should fall back to the unfiltered local version list when the first request fails", async () => {

@@ -194,16 +194,13 @@ export type VersionWithDifference = {
 
 export type VersionsWithDifferencesResponse = {
     versions: VersionWithDifference[];
-    // Versions older than this one were not compared, so nothing is claimed about them. Absent when the
-    // whole history was compared.
+    // versions older than this one were not compared; absent when the whole history was
     oldestComparedVersionId?: number;
-    // Keyed by version id, and covering every version - including ones that were not compared. Sent only by
-    // the remote-environment endpoint; local comments come from the scenario's own activities.
+    // keyed by version id, covering every version; sent only by the remote-environment endpoint
     versionComments?: Record<string, string>;
     remoteUnavailable?: boolean;
 };
 
-// How many of the most recent versions are compared by default, and what the user may raise it to.
 export const DEFAULT_VERSIONS_COMPARED = 50;
 export const VERSIONS_COMPARED_OPTIONS = [25, 50, 100, 250, 500];
 

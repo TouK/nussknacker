@@ -16,8 +16,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object VersionsWithDifferencesService {
 
-  // How many of the most recent versions are compared when the caller does not say. Comparing a version
-  // means loading and diffing its stored graph, so the whole history is not something to walk by default.
   val DefaultVersionsCompared = 50
 
   val MinVersionsCompared = 1
@@ -28,14 +26,18 @@ object VersionsWithDifferencesService {
 
   val MaxChangedElementsPerVersion = 50
 
-  // Generous next to any real scenario graph, but small enough that parsing one is not itself an attack.
   val MaxSuppliedGraphBytes: Long = 8 * 1024 * 1024
 
-  // Nodes plus edges. What bounds the comparison work per version - the byte limit above still admits a
-  // graph with far more elements than any real scenario, and each one costs a diff entry per version.
+  // nodes plus edges - the byte limit above still admits far more elements than any real scenario, and
+  // each one costs a diff entry per version compared
   val MaxSuppliedGraphElements = 20000
 
   def isValidLimit(limit: Int): Boolean = limit >= MinVersionsCompared && limit <= MaxVersionsCompared
+
+  def suppliedGraphTooLargeError(graph: ScenarioGraph): Option[String] =
+    Option.when(graph.nodes.size + graph.edges.size > MaxSuppliedGraphElements)(
+      s"scenario graph has more than $MaxSuppliedGraphElements nodes and edges"
+    )
 
   @JsonCodec final case class VersionWithDifference(
       versionId: VersionId,
@@ -46,33 +48,21 @@ object VersionsWithDifferencesService {
 
   final case class VersionsWithDifferences(
       versions: List[VersionWithDifference],
-      // The oldest version this answer covers. Versions older than it were not compared, so nothing is
-      // claimed about them either way. Absent when the whole history was compared.
+      // versions older than this one were not compared; absent when the whole history was
       oldestComparedVersionId: Option[VersionId] = None,
-      // Every version's comment, including versions that were not compared or do not differ - they come
-      // from the activity list, which costs no graph. Set only by the endpoint proxying to a remote
-      // environment; for local versions the client already holds the activities.
-      versionComments: Map[Long, String] = Map.empty,
-      // set only by the endpoint proxying to a remote environment, which is the only one with a remote to
-      // say anything about
+      // every version's comment, not only the compared ones; set only by the endpoint proxying to a
+      // remote environment, since for local versions the client already holds the activities
+      versionComments: Option[Map[Long, String]] = None,
       remoteUnavailable: Option[Boolean] = None
   )
 
   object VersionsWithDifferences {
 
+    // the encoder is not derived alone, because absent has to be distinguishable from empty on the wire
     implicit val encoder: Encoder[VersionsWithDifferences] =
       deriveEncoder[VersionsWithDifferences].mapJson(_.deepDropNullValues)
 
-    // Spelled out rather than derived: a derived decoder does not apply case-class defaults, so an
-    // answer that omits `versionComments` would fail to decode instead of meaning "none".
-    implicit val decoder: Decoder[VersionsWithDifferences] = Decoder.instance { cursor =>
-      for {
-        versions          <- cursor.get[List[VersionWithDifference]]("versions")
-        oldestCompared    <- cursor.get[Option[VersionId]]("oldestComparedVersionId")
-        comments          <- cursor.getOrElse[Map[Long, String]]("versionComments")(Map.empty)
-        remoteUnavailable <- cursor.get[Option[Boolean]]("remoteUnavailable")
-      } yield VersionsWithDifferences(versions, oldestCompared, comments, remoteUnavailable)
-    }
+    implicit val decoder: Decoder[VersionsWithDifferences] = deriveDecoder[VersionsWithDifferences]
 
   }
 
@@ -126,8 +116,7 @@ object VersionsWithDifferencesService {
             totalChangedElements = Option.when(totalChanged > MaxChangedElementsPerVersion)(totalChanged)
           )
         )
-      // a version we hold but cannot decode - reported rather than dropped, so it stays selectable and says
-      // why it cannot describe itself
+      // a version we hold but cannot decode - reported rather than dropped, so it stays selectable
       case None =>
         Some(VersionWithDifference(versionId, Nil, differencesUnknown = true))
     }
@@ -162,26 +151,30 @@ class VersionsWithDifferencesService(processService: ProcessService) {
 
   /**
    * Which of our versions of this scenario differ from a graph supplied by another environment - the peer
-   * half of `computeForRemoteVersions`.
+   * half of `computeForRemoteVersions`. Left is a graph too large to compare, to be reported as a 400.
    */
   def computeAgainstSuppliedGraph(
       processIdWithName: ProcessIdWithName,
       suppliedGraph: ScenarioGraph,
       limit: Int
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[VersionsWithDifferences] = {
-    for {
-      details <- processService.getLatestProcessWithDetails(
-        processIdWithName,
-        GetScenarioWithDetailsOptions.detailsOnly
-      )
-      allVersionIds = details.history.getOrElse(Nil).map(_.processVersionId)
-      result <- VersionsWithDifferencesService.compute(
-        suppliedGraph,
-        allVersionIds,
-        limit,
-        fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
-      )
-    } yield result
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[String, VersionsWithDifferences]] = {
+    VersionsWithDifferencesService.suppliedGraphTooLargeError(suppliedGraph) match {
+      case Some(error) => Future.successful(Left(error))
+      case None =>
+        for {
+          details <- processService.getLatestProcessWithDetails(
+            processIdWithName,
+            GetScenarioWithDetailsOptions.detailsOnly
+          )
+          allVersionIds = details.history.getOrElse(Nil).map(_.processVersionId)
+          result <- VersionsWithDifferencesService.compute(
+            suppliedGraph,
+            allVersionIds,
+            limit,
+            fetchGraphs = chunk => processService.getScenarioGraphsForVersionIds(processIdWithName, chunk)
+          )
+        } yield Right(result)
+    }
   }
 
   def computeForRemoteVersions(
@@ -205,7 +198,7 @@ class VersionsWithDifferencesService(processService: ProcessService) {
       remoteResult <- remoteResultFuture
       comments     <- commentsFuture
     } yield remoteResult
-      .map(_.copy(versionComments = comments))
+      .map(_.copy(versionComments = Option.when(comments.nonEmpty)(comments)))
       .getOrElse(VersionsWithDifferences(Nil, remoteUnavailable = Some(true)))
   }
 

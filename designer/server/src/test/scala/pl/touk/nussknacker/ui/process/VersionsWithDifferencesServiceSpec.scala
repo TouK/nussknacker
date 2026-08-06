@@ -141,8 +141,6 @@ class VersionsWithDifferencesServiceSpec
     largestChunk.get() shouldBe VersionsWithDifferencesService.MaxGraphsPerFetch
   }
 
-  // A version that rewrote a whole scenario describes one change per node and edge; across a long history
-  // that is a response far larger than the request that asked for it.
   test("truncates a very long list of changes and reports how many there really were") {
     val version = compute(List(VersionId(1)), graphFor = _ => Some(rewrittenGraph)).versions.loneElement
 
@@ -157,8 +155,6 @@ class VersionsWithDifferencesServiceSpec
       .take(VersionsWithDifferencesService.MaxChangedElementsPerVersion)
   }
 
-  // Comparing a version means loading and diffing its graph, so a long history is not something to walk
-  // in full just because someone opened a dialog.
   test("compares only the most recent versions up to the limit") {
     val fetched = new AtomicInteger()
 
@@ -200,6 +196,18 @@ class VersionsWithDifferencesServiceSpec
     val result = compute(List(VersionId(1)), graphFor = _ => None)
 
     result.versions shouldBe List(VersionWithDifference(VersionId(1), Nil, differencesUnknown = true))
+  }
+
+  test("rejects a supplied graph with more elements than can be compared") {
+    val tooManyNodes = currentGraph.copy(
+      nodes = (0 to VersionsWithDifferencesService.MaxSuppliedGraphElements)
+        .map(i => Filter(s"filter$i", "true".spel))
+        .toList,
+      edges = Nil
+    )
+
+    VersionsWithDifferencesService.suppliedGraphTooLargeError(tooManyNodes) shouldBe defined
+    VersionsWithDifferencesService.suppliedGraphTooLargeError(currentGraph) shouldBe None
   }
 
 }

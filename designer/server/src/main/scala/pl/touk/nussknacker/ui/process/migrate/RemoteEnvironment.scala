@@ -28,15 +28,17 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName): Future[RemoteScenarioVersions]
 
-  // The remote does the comparing, so this sends one graph and receives a summary rather than pulling its
-  // full graphs across the network. None means the answer could not be obtained at all.
+  /**
+   * The remote does the comparing, so this sends one graph and receives a summary rather than pulling its
+   * full graphs across the network. `None` means the answer could not be obtained at all.
+   */
   def versionsWithDifferences(
       processName: ProcessName,
       scenarioGraph: ScenarioGraph,
       limit: Int
   ): Future[Option[VersionsWithDifferences]]
 
-  // Same must-not-fail contract as processVersions.
+  /** Must not fail the returned `Future`; an unreachable remote yields an empty list. */
   def activities(processName: ProcessName): Future[List[ScenarioActivity]]
 
   def migrate(

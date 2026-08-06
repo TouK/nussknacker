@@ -281,7 +281,7 @@ class RemoteEnvironmentResourcesSpec
         val result = responseAs[VersionsWithDifferences]
         // keyed by version rather than attached to the differences, so a version that was not compared -
         // and is still listed by the client - keeps its comment
-        result.versionComments shouldBe Map(7L -> "restart", 99L -> "an older version's comment")
+        result.versionComments shouldBe Some(Map(7L -> "restart", 99L -> "an older version's comment"))
       }
     }
   }

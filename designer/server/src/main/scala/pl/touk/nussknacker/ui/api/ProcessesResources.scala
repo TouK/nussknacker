@@ -41,25 +41,12 @@ class ProcessesResources(
     with RouteWithUser
     with LazyLogging
     with AuthorizeProcessDirectives
-    with ProcessDirectives {
+    with ProcessDirectives
+    with VersionsToCompareDirective {
 
   import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller._
 
   private val versionsWithDifferencesService = new VersionsWithDifferencesService(processService)
-
-  // completed rather than rejected, so this does not depend on a rejection handler above the route
-  private def versionsToCompare: Directive[Tuple1[Int]] =
-    parameter(Symbol("limit").as[Int].withDefault(VersionsWithDifferencesService.DefaultVersionsCompared)).flatMap {
-      case limit if VersionsWithDifferencesService.isValidLimit(limit) => provide(limit)
-      case _ =>
-        Directive[Tuple1[Int]] { _ =>
-          complete(
-            StatusCodes.BadRequest,
-            s"limit must be between ${VersionsWithDifferencesService.MinVersionsCompared} " +
-              s"and ${VersionsWithDifferencesService.MaxVersionsCompared}"
-          )
-        }
-    }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     encodeResponse {
@@ -270,19 +257,12 @@ class ProcessesResources(
         (post & processId(processName) & versionsToCompare) { (processId, limit) =>
           // both must precede `entity`, which streams and parses the body
           canRead(processId) {
+            // a streaming directive, so unlike the element-count check it cannot live in the service
             withSizeLimit(VersionsWithDifferencesService.MaxSuppliedGraphBytes) {
               entity(as[ScenarioGraph]) { suppliedGraph =>
-                // The byte limit still admits a graph with far more elements than any real scenario, and
-                // each element costs a diff entry per version compared.
-                if (suppliedGraph.nodes.size + suppliedGraph.edges.size > VersionsWithDifferencesService.MaxSuppliedGraphElements) {
-                  complete(
-                    StatusCodes.BadRequest,
-                    s"scenario graph has more than ${VersionsWithDifferencesService.MaxSuppliedGraphElements} nodes and edges"
-                  )
-                } else {
-                  complete {
-                    versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)
-                  }
+                onSuccess(versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)) {
+                  case Left(error)   => complete(StatusCodes.BadRequest, error)
+                  case Right(result) => complete(result)
                 }
               }
             }
