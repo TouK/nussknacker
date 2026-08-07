@@ -31,6 +31,8 @@ export interface Option {
     value: string;
     label: string;
     isDisabled?: boolean;
+    description?: string;
+    comment?: string;
 }
 
 interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {
@@ -42,6 +44,11 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     value: Option;
     placeholder?: string;
     fieldErrors?: FieldError[];
+    selectComponents?: React.ComponentProps<typeof CreatableSelect<Option>>["components"];
+    isLoading?: boolean;
+    noOptionsMessage?: React.ComponentProps<typeof CreatableSelect<Option>>["noOptionsMessage"];
+    isValidNewOption?: React.ComponentProps<typeof CreatableSelect<Option>>["isValidNewOption"];
+    filterOption?: React.ComponentProps<typeof CreatableSelect<Option>>["filterOption"];
 }
 
 export function TypeSelect({
@@ -53,6 +60,11 @@ export function TypeSelect({
     onBlur,
     placeholder,
     fieldErrors = [],
+    selectComponents,
+    isLoading,
+    noOptionsMessage,
+    isValidNewOption,
+    filterOption,
     ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
@@ -63,16 +75,22 @@ export function TypeSelect({
 
     return (
         <NodeValue marked={isMarked} onKeyDown={preventEsc} sx={{ width: "100%" }}>
-            <CreatableSelect
+            <CreatableSelect<Option>
                 id={props.id}
-                aria-label={"type-select"}
+                autoFocus={props.autoFocus}
+                aria-label={props["aria-label"] ?? "type-select"}
                 className={cx(`${nodeValue}`, props.className)}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
                 onMenuClose={() => setCaptureEsc(false)}
+                components={selectComponents}
+                isLoading={isLoading}
+                noOptionsMessage={noOptionsMessage}
+                isValidNewOption={isValidNewOption}
+                filterOption={filterOption}
                 options={options}
-                value={value || ""}
+                value={value || null}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
                 onBlur={(e) => onBlur?.(e.target.value)}
                 menuPortalTarget={document.body}

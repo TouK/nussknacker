@@ -160,9 +160,9 @@ export interface ExpressionSuggestionRequest {
 }
 
 export enum ProcessingMode {
-    "streaming" = "Unbounded-Stream",
-    "requestResponse" = "Request-Response",
-    "batch" = "Bounded-Stream",
+    streaming = "Unbounded-Stream",
+    requestResponse = "Request-Response",
+    batch = "Bounded-Stream",
 }
 
 export interface ScenarioParametersCombination {
@@ -184,6 +184,25 @@ type DictOption = {
     id: string;
     label: string;
 };
+
+export type VersionWithDifference = {
+    versionId: number;
+    changedElements: string[];
+    differencesUnknown: boolean;
+    totalChangedElements?: number;
+};
+
+export type VersionsWithDifferencesResponse = {
+    versions: VersionWithDifference[];
+    // versions older than this one were not compared; absent when the whole history was
+    oldestComparedVersionId?: number;
+    // keyed by version id, covering every version - including ones that were not compared
+    versionComments?: Record<string, string>;
+    remoteUnavailable?: boolean;
+};
+
+export const DEFAULT_VERSIONS_COMPARED = 50;
+export const VERSIONS_COMPARED_OPTIONS = [25, 50, 100, 250, 500];
 
 type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
@@ -970,12 +989,44 @@ class HttpService {
         return promise;
     }
 
-    fetchRemoteVersions(processName: ProcessName) {
-        const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
+    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, limit: number) {
+        const promise = api.get<VersionsWithDifferencesResponse>(
+            `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
+            { params: { limit } },
+        );
         promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error),
+            this.#addError(
+                i18next.t("notification.error.failedToGetVersionsWithDifferences", "Failed to get versions with differences"),
+                error,
+            ),
         );
         return promise;
+    }
+
+    fetchRemoteVersionsWithDifferences(
+        processName: ProcessName,
+        versionId: number,
+        limit: number,
+    ): Promise<VersionsWithDifferencesResponse | null> {
+        return api
+            .get<VersionsWithDifferencesResponse>(
+                `/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
+                { params: { limit } },
+            )
+            .then((response) => response.data)
+            .catch((error) =>
+                this.#addError(
+                    i18next.t(
+                        "notification.error.failedToGetRemoteVersionsWithDifferences",
+                        "Failed to get versions with differences from the remote environment",
+                    ),
+                    error,
+                ).then(() => null),
+            );
+    }
+
+    fetchRemoteVersions(processName: ProcessName) {
+        return api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
     }
 
     migrateProcess(processName: ProcessName, versionId: number) {
