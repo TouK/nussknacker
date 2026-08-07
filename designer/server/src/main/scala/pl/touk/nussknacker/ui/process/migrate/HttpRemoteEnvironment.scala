@@ -119,27 +119,47 @@ class HttpRemoteEnvironment(
   ): Future[Option[VersionsWithDifferences]] = error match {
     case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
       scenarioExistsOnRemote(processName).map {
-        case true =>
+        case Some(false) => Some(VersionsWithDifferences(Nil))
+        case Some(true) =>
           logger.warn(
             s"Remote environment holds scenario ${processName.value} but returned 404 for the version " +
               s"comparison endpoint - it likely runs a Nussknacker version without it"
           )
           None
-        case false => Some(VersionsWithDifferences(Nil))
+        case None =>
+          logger.warn(
+            s"Could not establish whether the remote environment holds scenario ${processName.value}, so " +
+              s"its 404 for the version comparison endpoint cannot be read as the scenario being absent"
+          )
+          None
       }
     case _ => Future.successful(None)
   }
 
-  // HEAD rather than GET: a GET would transfer the whole graph just to discard it
-  private def scenarioExistsOnRemote(processName: ProcessName): Future[Boolean] =
+  // `None` where the question stays unanswered: only a plain 404 establishes absence, while rejected
+  // credentials or a connection that never opened leave us knowing nothing.
+  // `skipScenarioGraph` keeps the answer small, `skipValidateAndResolve` keeps it cheap on a remote too old
+  // to know the former. GET rather than HEAD, since `transparent-head-requests` has the remote build the
+  // whole response for a HEAD anyway.
+  private def scenarioExistsOnRemote(processName: ProcessName): Future[Option[Boolean]] =
     invokeForSuccess(
-      HttpMethods.HEAD,
+      HttpMethods.GET,
       List("processes", processName.value),
-      Query(("skipValidateAndResolve", "true")),
+      Query(("skipScenarioGraph", "true"), ("skipValidateAndResolve", "true")),
       HttpEntity.Empty,
       headers = Nil
-    ).map(_.isRight)
-      .recover { case NonFatal(_) => false }
+    ).map {
+      case Right(_)                                                           => Some(true)
+      case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => Some(false)
+      case Left(error) =>
+        logger.warn(
+          s"Could not check whether scenario ${processName.value} is present on the remote environment: $error"
+        )
+        None
+    }.recover { case NonFatal(ex) =>
+      logger.warn(s"Could not check whether scenario ${processName.value} is present on the remote environment", ex)
+      None
+    }
 
   private def isRemoteUnavailable(error: NuDesignerError): Future[Boolean] = error match {
     case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) => isRemoteReachable.map(!_)

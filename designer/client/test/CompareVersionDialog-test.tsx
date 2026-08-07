@@ -174,7 +174,7 @@ describe("CompareVersionsDialog", () => {
         const historyItemText = "34 - created by admin 2024-05-31|00:00";
         fireEvent.click(await screen.findByText(historyItemText));
 
-        expect(await screen.findByText("Difference to pick")).toBeInTheDocument();
+        expect(await screen.findByText("dialog.compareVersions.differenceToPick")).toBeInTheDocument();
     });
 
     it("should hide a version that has no meaningful difference from the current one", async () => {
@@ -501,6 +501,26 @@ describe("CompareVersionsDialog", () => {
         expect(await screen.findByText("dialog.compareVersions.remoteUnavailable")).toBeInTheDocument();
     });
 
+    // A failed request is not an environment reporting it could not compare, and the toast it raises is gone
+    // a few seconds later - without the helper text the user is left with a full picker and no explanation.
+    it("should say the differences could not be computed when the comparison request itself fails", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(500);
+
+        renderDialog();
+
+        expect(await screen.findByText("dialog.compareVersions.comparisonFailed")).toBeInTheDocument();
+    });
+
+    it("should still list every local version when the comparison request fails", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(500);
+
+        renderDialog();
+        await openVersionPicker();
+
+        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+        expect(screen.getByText("35 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
+    });
+
     // An environment that answered but could not compare says nothing about its versions - hiding them all
     // would claim they are identical, and leaves the user with no way to compare at all.
     it("should still list every remote version when the remote environment could not compare", async () => {
@@ -584,12 +604,12 @@ describe("CompareVersionsDialog", () => {
         renderDialog();
         await openVersionPicker();
         fireEvent.click(await screen.findByText("34 - created by admin 2024-05-31|00:00"));
-        expect(await screen.findByText("Difference to pick")).toBeInTheDocument();
+        expect(await screen.findByText("dialog.compareVersions.differenceToPick")).toBeInTheDocument();
 
         await switchToRemoteEnvironment();
 
         await waitFor(() => {
-            expect(screen.queryByText("Difference to pick")).not.toBeInTheDocument();
+            expect(screen.queryByText("dialog.compareVersions.differenceToPick")).not.toBeInTheDocument();
         });
     });
 

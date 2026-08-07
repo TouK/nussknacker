@@ -232,6 +232,27 @@ class ProcessesResourcesSpec
     }
   }
 
+  // A caller that only needs the history pays for the graph otherwise, and the remote environment relies on
+  // this to keep its presence check and version listing cheap.
+  test("omit the scenario graph when asked to, and send it when not") {
+    createEmptyScenario(processName, category = Category1)
+
+    Get(
+      s"/api/processes/$processName?skipScenarioGraph=true"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val details = responseAs[ScenarioWithDetails]
+      details.scenarioGraph shouldBe empty
+      details.history should not be empty
+    }
+
+    // the parameter is additive: a client that does not send it is unaffected
+    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[ScenarioWithDetails].scenarioGraph should not be empty
+    }
+  }
+
   // FIXME: Implement fragment validation
   ignore("not allow to archive still used fragment") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
@@ -976,7 +997,6 @@ class ProcessesResourcesSpec
     }
   }
 
-  // One request answers for the whole history rather than the caller having to ask again.
   test("return every differing version, newest first, in one request") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
     updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)

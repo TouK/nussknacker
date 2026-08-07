@@ -462,6 +462,20 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         [t],
     );
 
+    // the same flags that unfilter the list have to say why it is unfiltered, or the user is left with a
+    // full picker, every description blank and nothing explaining it once the toast fades
+    const comparisonFailedMessage = useMemo(() => {
+        if (state.environment === "remote" && (activeUnavailable || state.remoteVersionsFailed)) {
+            return t("dialog.compareVersions.remoteUnavailable", "Could not compare versions with the {{name}} environment", {
+                name: otherEnvironment,
+            });
+        }
+        if (showUnfilteredVersions) {
+            return t("dialog.compareVersions.comparisonFailed", "Could not compute the differences, so all versions are listed");
+        }
+        return null;
+    }, [state.environment, state.remoteVersionsFailed, activeUnavailable, showUnfilteredVersions, otherEnvironment, t]);
+
     const environmentOptions: Option[] = useMemo(() => {
         if (!otherEnvironment) return [];
         const localLabel = localEnvironmentName
@@ -491,7 +505,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                 </FormControl>
             )}
             <FormControl>
-                <FormLabel>Version to compare</FormLabel>
+                <FormLabel>{t("dialog.compareVersions.versionToCompare", "Version to compare")}</FormLabel>
                 <TypeSelect
                     readOnly={Boolean(predefinedOtherVersion)}
                     autoFocus={true}
@@ -507,13 +521,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     isValidNewOption={noNewVersionOptions}
                     noOptionsMessage={noVersionsMessage}
                 />
-                {state.environment === "remote" && (remoteDiffsState.unavailable || state.remoteVersionsFailed) && (
-                    <FormHelperText error>
-                        {t("dialog.compareVersions.remoteUnavailable", "Could not compare versions with the {{name}} environment", {
-                            name: otherEnvironment,
-                        })}
-                    </FormHelperText>
-                )}
+                {comparisonFailedMessage && <FormHelperText error>{comparisonFailedMessage}</FormHelperText>}
                 {oldestCompared !== undefined && (
                     <FormHelperText>
                         {t(
@@ -541,7 +549,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             {state.otherVersion ? (
                 <div>
                     <FormControl>
-                        <FormLabel>Difference to pick</FormLabel>
+                        <FormLabel>{t("dialog.compareVersions.differenceToPick", "Difference to pick")}</FormLabel>
                         <TypeSelect
                             id="differentVersion"
                             aria-label={t("dialog.compareVersions.differenceToPick", "Difference to pick")}

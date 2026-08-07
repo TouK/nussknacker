@@ -117,8 +117,6 @@ object VersionsWithDifferencesService {
   )(implicit ec: ExecutionContext): Future[VersionsWithDifferences] = {
     val preparedCurrentGraph = ScenarioGraphComparator.PreparedCurrentGraph(currentGraph)
     val compared             = allVersionIds.take(limit)
-    // `allVersionIds` has to be newest-first: `take` is what makes this the most recent versions, and the
-    // boundary reported below is only meaningful because of it.
     val oldestCompared =
       Option.when(compared.nonEmpty && compared.sizeCompare(allVersionIds) < 0)(compared.minBy(_.value))
 

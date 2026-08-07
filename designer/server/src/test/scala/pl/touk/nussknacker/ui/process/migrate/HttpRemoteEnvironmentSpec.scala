@@ -180,8 +180,7 @@ class HttpRemoteEnvironmentSpec
           request: MessageEntity,
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] =
-        if ((method == HttpMethods.HEAD || method == HttpMethods.GET) &&
-          path.path.toString.endsWith("/processes/proc1")) {
+        if (method == HttpMethods.GET && path.path.toString.endsWith("/processes/proc1")) {
           Marshal(
             ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
               wrapGraphWithScenarioDetailsEntity(ProcessName("proc1"), ProcessTestData.validScenarioGraph),
@@ -196,6 +195,47 @@ class HttpRemoteEnvironmentSpec
     whenReady(
       remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
     ) { result => result shouldBe None }
+  }
+
+  // A probe that could not answer says nothing about the scenario being absent, and reading it as absent
+  // would report "no version differs" about an environment we never reached.
+  it should "resolve versionsWithDifferences to None when the presence check is rejected" in {
+    val remoteEnvironment = presenceCheckAnswering(HttpResponse(StatusCodes.Unauthorized, entity = HttpEntity("nope")))
+
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
+    ) { result => result shouldBe None }
+  }
+
+  it should "resolve versionsWithDifferences to None when the presence check does not complete" in {
+    val remoteEnvironment = presenceCheckFailingWith(new java.net.ConnectException("Connection refused"))
+
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
+    ) { result => result shouldBe None }
+  }
+
+  it should "check the scenario's presence without asking for its graph" in {
+    val sentQuery = new AtomicReference[Uri.Query]()
+
+    val remoteEnvironment = new MockRemoteEnvironment {
+      override protected def request(
+          path: Uri,
+          method: HttpMethod,
+          request: MessageEntity,
+          headers: Seq[HttpHeader]
+      ): Future[HttpResponse] = {
+        if (path.path.toString.endsWith("/processes/proc1")) sentQuery.set(path.query())
+        Future.successful(HttpResponse(StatusCodes.NotFound, entity = HttpEntity("not found")))
+      }
+    }
+
+    whenReady(
+      remoteEnvironment.versionsWithDifferences(ProcessName("proc1"), ProcessTestData.validScenarioGraph, limit = 10)
+    ) { _ =>
+      sentQuery.get().get("skipScenarioGraph") shouldBe Some("true")
+      sentQuery.get().get("skipValidateAndResolve") shouldBe Some("true")
+    }
   }
 
   it should "resolve versionsWithDifferences to None when the remote returns a server error" in {
@@ -241,8 +281,8 @@ class HttpRemoteEnvironmentSpec
     ) { result => result shouldBe None }
   }
 
-  // Only the history is read here, so the graph is not worth transferring - and a response without one
-  // still has to decode, since an older remote ignores the parameter and sends it anyway.
+  // A response without a graph still has to decode, since an older remote ignores the parameter and sends
+  // one anyway.
   it should "ask for scenario versions without the scenario graph" in {
     val sentQuery = new AtomicReference[Uri.Query]()
 
@@ -321,6 +361,28 @@ class HttpRemoteEnvironmentSpec
         request: MessageEntity,
         headers: Seq[HttpHeader]
     ): Future[HttpResponse] = Future.failed(exception)
+  }
+
+  private def presenceCheckAnswering(response: => HttpResponse) = new MockRemoteEnvironment {
+    override protected def request(
+        path: Uri,
+        method: HttpMethod,
+        request: MessageEntity,
+        headers: Seq[HttpHeader]
+    ): Future[HttpResponse] =
+      if (path.path.toString.endsWith("/processes/proc1")) Future.successful(response)
+      else Future.successful(HttpResponse(StatusCodes.NotFound, entity = HttpEntity("not found")))
+  }
+
+  private def presenceCheckFailingWith(exception: Throwable) = new MockRemoteEnvironment {
+    override protected def request(
+        path: Uri,
+        method: HttpMethod,
+        request: MessageEntity,
+        headers: Seq[HttpHeader]
+    ): Future[HttpResponse] =
+      if (path.path.toString.endsWith("/processes/proc1")) Future.failed(exception)
+      else Future.successful(HttpResponse(StatusCodes.NotFound, entity = HttpEntity("not found")))
   }
 
   it should "handle request without labels in decoder fallback to migrate the scenario from/to older versions of NU" in {

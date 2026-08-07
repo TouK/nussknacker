@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
+  ScenarioGraphOptions,
   SkipScenarioGraph,
   UpdateScenarioCommand
 }
@@ -161,8 +162,7 @@ class ProcessesResources(
                 processService.getLatestProcessWithDetails(
                   processId,
                   GetScenarioWithDetailsOptions(
-                    if (skipScenarioGraph) SkipScenarioGraph
-                    else FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
+                    scenarioGraphOptions(skipScenarioGraph, skipValidateAndResolve, skipNodeResults),
                     fetchState = true
                   )
                 )
@@ -318,6 +318,15 @@ class ProcessesResources(
   private def validationFlagsToMode(skipValidateAndResolve: Boolean, skipNodeResults: Boolean) = {
     if (skipValidateAndResolve) FetchScenarioGraph.DontValidate
     else FetchScenarioGraph.ValidateAndResolve(!skipNodeResults)
+  }
+
+  private def scenarioGraphOptions(
+      skipScenarioGraph: Boolean,
+      skipValidateAndResolve: Boolean,
+      skipNodeResults: Boolean
+  ): ScenarioGraphOptions = {
+    if (skipScenarioGraph) SkipScenarioGraph
+    else FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults))
   }
 
   private def currentlyPresentedVersionIdParameter = {
