@@ -306,9 +306,10 @@ function getNode(nameOrAlias: string, end?: boolean) {
 }
 
 function openNodeWindow(nameOrAlias: string, end?: boolean) {
-    cy.getNode(nameOrAlias, end).dblclick();
     cy.intercept("POST", "/api/nodes/*/additionalInfo").as("additionalInfo");
     cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
+
+    cy.getNode(nameOrAlias, end).dblclick();
 
     cy.wait(["@additionalInfo", "@nodeValidation"], { timeout: 10000 }).each((res) => {
         cy.wrap(res).its("response.statusCode").should("eq", 200);
