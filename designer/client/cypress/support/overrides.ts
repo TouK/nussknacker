@@ -1,6 +1,7 @@
 import { recurse } from "cypress-recurse";
 import { defaultsDeep } from "lodash";
 import UAParser from "ua-parser-js";
+
 import JQueryWithSelector = Cypress.JQueryWithSelector;
 
 declare global {
@@ -172,7 +173,9 @@ Cypress.Commands.overwrite<"trigger", "element">("trigger", (originalFn, subject
 
 Cypress.Commands.overwrite<"select", "element">("select", (originalFn, subject, value, options) => {
     const handleReactSelectSelection =
-        subject[0].className.includes("singleValue") || subject[0].className.includes("control") || subject[0].ariaLabel === "type-select";
+        subject[0].className.includes("singleValue") ||
+        subject[0].className.includes("control") ||
+        subject[0].getAttribute("role") === "combobox";
 
     if (handleReactSelectSelection) {
         cy.wrap(subject).click({ force: true });
