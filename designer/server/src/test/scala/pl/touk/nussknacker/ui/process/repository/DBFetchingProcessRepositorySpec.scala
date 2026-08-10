@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import db.util.DBIOActionInstances.DB
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
@@ -49,16 +50,26 @@ class DBFetchingProcessRepositorySpec
 
   private val scenarioLabelsRepository = new ScenarioLabelsRepository(testDbRef)
 
-  private val writingRepo =
-    new DBProcessRepository(
-      testDbRef,
-      clock,
-      activityRepository,
-      scenarioLabelsRepository,
-      mapProcessingTypeDataProvider("Streaming" -> 0)
-    ) {
-      override protected def now: Instant = currentTime
+  // through the repository's own profile, so a raw write targets the same schema-qualified table the
+  // production code reads from
+  private class TestProcessRepository
+      extends DBProcessRepository(
+        testDbRef,
+        clock,
+        activityRepository,
+        scenarioLabelsRepository,
+        mapProcessingTypeDataProvider("Streaming" -> 0)
+      ) {
+    override protected def now: Instant = currentTime
+
+    def replaceStoredJson(processId: ProcessId, versionId: VersionId, json: String): DB[Int] = {
+      import profile.apiWithEnforcedSchema._
+      processVersionsTable.filter(v => v.processId === processId && v.id === versionId).map(_.json).update(json)
     }
+
+  }
+
+  private val writingRepo = new TestProcessRepository
 
   private var currentTime: Instant = Instant.now()
 
@@ -381,6 +392,64 @@ class DBFetchingProcessRepositorySpec
       retriesLeft = None,
     )
   }
+
+  test("fetch scenario jsons for the requested versions only") {
+    val scenario  = ProcessTestData.validProcessWithName(ProcessName("jsons-for-versions"))
+    val processId = saveProcess(scenario).get.processId
+    updateProcess(
+      processId,
+      ProcessTestData.validProcessWithName(ProcessName("jsons-for-versions")),
+      increaseVersionWhenJsonNotChanged = true
+    )
+
+    val jsons = fetching.fetchScenarioJsonsForVersionIds(processId, List(VersionId(1))).futureValue
+
+    jsons.keySet shouldBe Set(VersionId(1))
+    jsons(VersionId(1)).name shouldBe ProcessName("jsons-for-versions")
+  }
+
+  test("fetch no scenario jsons when no versions are asked for") {
+    val processId = saveProcess(ProcessTestData.validProcessWithName(ProcessName("jsons-none-asked"))).get.processId
+
+    fetching.fetchScenarioJsonsForVersionIds(processId, Nil).futureValue shouldBe empty
+  }
+
+  // The caller asks for a whole run of historical versions at once, and a version written by a model that
+  // no longer decodes must not take the rest of them down with it.
+  test("skip a version whose stored json cannot be decoded instead of failing the whole fetch") {
+    val name      = ProcessName("jsons-with-corrupt-row")
+    val processId = saveProcess(ProcessTestData.validProcessWithName(name)).get.processId
+    updateProcess(processId, ProcessTestData.validProcessWithName(name), increaseVersionWhenJsonNotChanged = true)
+
+    corruptStoredJsonOf(processId, VersionId(1))
+
+    val jsons = fetching.fetchScenarioJsonsForVersionIds(processId, List(VersionId(1), VersionId(2))).futureValue
+
+    jsons.keySet shouldBe Set(VersionId(2))
+  }
+
+  // The repository is the only thing standing between a version's stored json and a caller, so it has to do
+  // the category check itself rather than trust that whoever asked already did.
+  test("fetch no scenario jsons for a user without read access to the scenario's category") {
+    val processId =
+      saveProcess(
+        ProcessTestData.validProcessWithName(ProcessName("jsons-other-category")),
+        category = "Category2"
+      ).get.processId
+
+    val category1Reader = RealLoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map("Category1" -> Set(Permission.Read))
+    )
+
+    fetching
+      .fetchScenarioJsonsForVersionIds(processId, List(VersionId(1)))(category1Reader, implicitly[ExecutionContext])
+      .futureValue shouldBe empty
+  }
+
+  private def corruptStoredJsonOf(processId: ProcessId, versionId: VersionId): Unit =
+    dbioRunner.runInTransaction(writingRepo.replaceStoredJson(processId, versionId, "{}")).futureValue shouldBe 1
 
   private def processExists(processName: ProcessName): Boolean =
     fetching.fetchProcessId(processName).futureValue.nonEmpty

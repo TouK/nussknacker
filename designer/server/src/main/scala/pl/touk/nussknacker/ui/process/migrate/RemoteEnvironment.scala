@@ -7,10 +7,13 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 
 import scala.concurrent.{ExecutionContext, Future}
+
+final case class RemoteScenarioVersions(versions: List[ScenarioVersion], remoteUnavailable: Boolean)
 
 trait RemoteEnvironment {
 
@@ -22,7 +25,18 @@ trait RemoteEnvironment {
       remoteProcessVersion: Option[VersionId]
   ): Future[Either[NuDesignerError, Map[String, Difference]]]
 
-  def processVersions(processName: ProcessName): Future[List[ScenarioVersion]]
+  def processVersions(processName: ProcessName): Future[RemoteScenarioVersions]
+
+  /**
+   * The remote does the comparing, so this sends one graph and receives a summary - including its own
+   * versions' comments - rather than pulling its full graphs across the network. `None` means the answer
+   * could not be obtained at all.
+   */
+  def versionsWithDifferences(
+      processName: ProcessName,
+      scenarioGraph: ScenarioGraph,
+      limit: Int
+  ): Future[Option[VersionsWithDifferences]]
 
   def migrate(
       processingMode: ProcessingMode,
