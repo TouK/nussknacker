@@ -89,12 +89,12 @@ describe("Scenario labels", () => {
 
             cy.visit("/");
             cy.url().should("match", /scenarios/);
-            cy.get("[placeholder='Search scenarios...']", { timeout: 60000 }).should("be.visible");
+            cy.get("[placeholder='Search...']", { timeout: 60000 }).should("be.visible");
             cy.contains(/^loading.../i, { timeout: 60000 }).should("not.exist");
+            // the filter bar re-lays itself out when the rows arrive, which can swallow a click
+            // issued before that render
+            cy.contains(/every of the 4 rows match the filters/i).should("be.visible");
 
-            // the scenario list re-renders once its data arrives, so the trigger has to be re-queried
-            // right before the click - clicking the element found before that render is a no-op and
-            // the menu never opens
             cy.contains("button", /label/i).should("be.enabled").click();
 
             cy.get("ul[role='menu']").within(() => {
