@@ -7,13 +7,16 @@ import org.apache.pekko.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.process.migrate.StandardRemoteEnvironmentSpec._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -157,7 +160,13 @@ object StandardRemoteEnvironmentSpec {
       batchSize = 100
     )
 
-    override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] = ???
+    override def processVersions(processName: ProcessName): Future[RemoteScenarioVersions] = ???
+
+    override def versionsWithDifferences(
+        processName: ProcessName,
+        scenarioGraph: ScenarioGraph,
+        limit: Int
+    ): Future[Option[VersionsWithDifferences]] = ???
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(

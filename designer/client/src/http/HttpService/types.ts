@@ -130,9 +130,9 @@ export interface ExpressionSuggestionRequest {
 }
 
 export enum ProcessingMode {
-    "streaming" = "Unbounded-Stream",
-    "requestResponse" = "Request-Response",
-    "batch" = "Bounded-Stream",
+    streaming = "Unbounded-Stream",
+    requestResponse = "Request-Response",
+    batch = "Bounded-Stream",
 }
 
 export interface ScenarioParametersCombination {
@@ -155,6 +155,25 @@ export type DictOption = {
     id: string;
     label: string;
 };
+
+export type VersionWithDifference = {
+    versionId: number;
+    changedElements: string[];
+    differencesUnknown: boolean;
+    totalChangedElements?: number;
+};
+
+export type VersionsWithDifferencesResponse = {
+    versions: VersionWithDifference[];
+    // versions older than this one were not compared; absent when the whole history was
+    oldestComparedVersionId?: number;
+    // keyed by version id, covering every version - including ones that were not compared
+    versionComments?: Record<string, string>;
+    remoteUnavailable?: boolean;
+};
+
+export const DEFAULT_VERSIONS_COMPARED = 50;
+export const VERSIONS_COMPARED_OPTIONS = [25, 50, 100, 250, 500];
 
 export type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 

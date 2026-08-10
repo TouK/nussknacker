@@ -6,6 +6,7 @@ import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
+import org.apache.pekko.http.scaladsl.server
 import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import org.apache.pekko.testkit.TestDuration
@@ -60,6 +61,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
@@ -230,6 +233,27 @@ class ProcessesResourcesSpec
       val validated = responseAs[ScenarioWithDetails]
       validated.name shouldBe processName
       validated.validationResult shouldBe empty
+    }
+  }
+
+  // A caller that only needs the history pays for the graph otherwise, and the remote environment relies on
+  // this to keep its presence check and version listing cheap.
+  test("omit the scenario graph when asked to, and send it when not") {
+    createEmptyScenario(processName, category = Category1)
+
+    Get(
+      s"/api/processes/$processName?skipScenarioGraph=true"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val details = responseAs[ScenarioWithDetails]
+      details.scenarioGraph shouldBe empty
+      details.history should not be empty
+    }
+
+    // the parameter is additive: a client that does not send it is unaffected
+    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[ScenarioWithDetails].scenarioGraph should not be empty
     }
   }
 
@@ -951,6 +975,124 @@ class ProcessesResourcesSpec
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
+    }
+  }
+
+  test("return versions with meaningful differences excluding identical versions") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
+
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val result = responseAs[VersionsWithDifferences]
+      result.versions.map(_.versionId.value) shouldBe List(3L, 1L)
+      result.versions.head.changedElements should not be empty
+    }
+  }
+
+  test("return an empty list of versions with differences when no other versions exist") {
+    createEmptyScenario(processName, category = Category1)
+
+    Get(
+      s"/api/processes/$processName/1/versions-with-differences"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[VersionsWithDifferences].versions shouldBe empty
+    }
+  }
+
+  test("return every differing version, newest first, in one request") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
+
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/1/versions-with-differences"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[VersionsWithDifferences].versions.map(_.versionId.value) shouldBe List(4L, 3L, 2L)
+    }
+  }
+
+  // Comparing a version means loading and diffing its graph, so how much of the history is walked has to be
+  // bounded - and the answer has to say where it stopped rather than let "not listed" read as "identical".
+  test("compare only the most recent versions and say which is the oldest one compared") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
+
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/4/versions-with-differences?limit=2"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val result = responseAs[VersionsWithDifferences]
+      result.versions.map(_.versionId.value) shouldBe List(3L)
+      result.oldestComparedVersionId.map(_.value) shouldBe Some(2L)
+    }
+  }
+
+  test("say nothing about an oldest compared version when the whole history was compared") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+
+    Get(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/2/versions-with-differences?limit=500"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[VersionsWithDifferences].oldestComparedVersionId shouldBe None
+    }
+  }
+
+  test("reject a comparison limit outside its bounds") {
+    createEmptyScenario(processName, category = Category1)
+
+    List("limit=0", s"limit=${VersionsWithDifferencesService.MaxVersionsCompared + 1}").foreach { query =>
+      withClue(query) {
+        Get(
+          s"/api/processes/$processName/1/versions-with-differences?$query"
+        ) ~> withAllPermUser() ~> applicationRoute ~> check {
+          status shouldEqual StatusCodes.BadRequest
+        }
+      }
+    }
+  }
+
+  // The check has to come before the request body is read, so this must be a rejection rather than a
+  // response produced after a whole scenario graph was streamed in and parsed.
+  test("do not compare a supplied graph against a scenario in a category the user cannot read") {
+    createEmptyScenario(processName, category = Category2)
+
+    Post(
+      s"/api/processes/$processName/versions-with-differences",
+      ProcessTestData.validScenarioGraph
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      rejection shouldBe server.AuthorizationFailedRejection
+    }
+  }
+
+  test("do not return versions with differences for a scenario in a category the user cannot read") {
+    createEmptyScenario(processName, category = Category2)
+
+    Get(
+      s"/api/processes/$processName/1/versions-with-differences"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+  }
+
+  test("compare a graph supplied by another environment against our own versions") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
+    updateCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+
+    Post(
+      s"/api/processes/${ProcessTestData.sampleScenario.name}/versions-with-differences",
+      ProcessTestData.validScenarioGraph
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[VersionsWithDifferences].versions.map(_.versionId.value) shouldBe List(3L, 1L)
     }
   }
 

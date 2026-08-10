@@ -19,7 +19,7 @@ describe("Compare", () => {
             .should("be.visible")
             .should("be.enabled")
             .click();
-        cy.contains("Version to compare").get("#otherVersion input").select(1);
+        cy.contains("Version to compare").get("#otherVersion input").select(0);
         cy.contains("Difference to pick").get("#differentVersion input").select(1);
         cy.contains(/^cancel$/i).should("be.visible");
         cy.get("[data-testid=window]").matchImage();

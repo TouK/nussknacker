@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRespo
 import org.apache.pekko.http.scaladsl.server._
 import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.process.{CreateScenarioResponse, UpdateScenarioResponse}
@@ -18,10 +19,14 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
+  ScenarioGraphOptions,
+  SkipScenarioGraph,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -33,7 +38,9 @@ class ProcessesResources(
     scenarioStatusPresenter: ScenarioStatusPresenter,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
-    processChangeListener: ProcessChangeListener
+    processChangeListener: ProcessChangeListener,
+    scenarioActivityRepository: ScenarioActivityRepository,
+    dbioActionRunner: DBIOActionRunner
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives
     with FailFastCirceSupport
@@ -41,9 +48,13 @@ class ProcessesResources(
     with RouteWithUser
     with LazyLogging
     with AuthorizeProcessDirectives
-    with ProcessDirectives {
+    with ProcessDirectives
+    with VersionsToCompareDirective {
 
   import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller._
+
+  private val versionsWithDifferencesService =
+    new VersionsWithDifferencesService(processService, scenarioActivityRepository, dbioActionRunner)
 
   def securedRoute(implicit user: LoggedUser): Route = {
     encodeResponse {
@@ -151,16 +162,16 @@ class ProcessesResources(
                   }
               }
             }
-          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter & skipScenarioGraphParameter) {
             // FIXME: The `skipValidateAndResolve` flag has a non-trivial side effect.
             //        Besides skipping validation (that is the intended and obvious result) it causes the `dictKeyWithLabel` expressions to miss the label field.
             //        It happens, because in the current implementation we need the full compilation and type resolving in order to obtain the dict expression label.
-            (skipValidateAndResolve, skipNodeResults) =>
+            (skipValidateAndResolve, skipNodeResults, skipScenarioGraph) =>
               complete {
                 processService.getLatestProcessWithDetails(
                   processId,
                   GetScenarioWithDetailsOptions(
-                    FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
+                    scenarioGraphOptions(skipScenarioGraph, skipValidateAndResolve, skipNodeResults),
                     fetchState = true
                   )
                 )
@@ -240,6 +251,13 @@ class ProcessesResources(
               .map(processToolbarService.getScenarioToolbarSettings(_).asJson)
           }
         }
+      } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
+        (processName, currentVersionId) =>
+          (get & processId(processName) & versionsToCompare) { (processId, limit) =>
+            complete {
+              versionsWithDifferencesService.computeForLocalVersions(processId, currentVersionId, limit)
+            }
+          }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
         (processName, thisVersion, otherVersion) =>
           (get & processId(processName)) { processId =>
@@ -258,6 +276,17 @@ class ProcessesResources(
               } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
           }
+      } ~ path("processes" / ProcessNameSegment / "versions-with-differences") { processName =>
+        (post & processId(processName) & versionsToCompare) { (processId, limit) =>
+          // both must precede `entity`, which streams and parses the body
+          canRead(processId) {
+            entity(as[ScenarioGraph]) { suppliedGraph =>
+              complete {
+                versionsWithDifferencesService.computeAgainstSuppliedGraph(processId, suppliedGraph, limit)
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -298,9 +327,22 @@ class ProcessesResources(
     parameters(Symbol("skipNodeResults").as[Boolean].withDefault(false))
   }
 
+  private def skipScenarioGraphParameter = {
+    parameters(Symbol("skipScenarioGraph").as[Boolean].withDefault(false))
+  }
+
   private def validationFlagsToMode(skipValidateAndResolve: Boolean, skipNodeResults: Boolean) = {
     if (skipValidateAndResolve) FetchScenarioGraph.DontValidate
     else FetchScenarioGraph.ValidateAndResolve(!skipNodeResults)
+  }
+
+  private def scenarioGraphOptions(
+      skipScenarioGraph: Boolean,
+      skipValidateAndResolve: Boolean,
+      skipNodeResults: Boolean
+  ): ScenarioGraphOptions = {
+    if (skipScenarioGraph) SkipScenarioGraph
+    else FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults))
   }
 
   private def currentlyPresentedVersionIdParameter = {
@@ -311,5 +353,4 @@ class ProcessesResources(
 
 object ProcessesResources {
   final case class ProcessUnmarshallingError(message: String) extends OtherError(message)
-
 }

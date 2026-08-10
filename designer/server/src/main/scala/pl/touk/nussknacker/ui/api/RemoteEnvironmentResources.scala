@@ -16,7 +16,12 @@ import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService
+import pl.touk.nussknacker.ui.process.migrate.{
+  RemoteEnvironment,
+  RemoteEnvironmentCommunicationError,
+  RemoteScenarioVersions
+}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -39,7 +44,11 @@ class RemoteEnvironmentResources(
     with RouteWithUser
     with AuthorizeProcessDirectives
     with ProcessDirectives
-    with NuPathMatchers {
+    with NuPathMatchers
+    with VersionsToCompareDirective {
+
+  private val versionsWithDifferencesService =
+    new VersionsWithDifferencesService(processService, scenarioActivityRepository, dbioActionRunner)
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("remoteEnvironment") {
@@ -117,10 +126,34 @@ class RemoteEnvironmentResources(
             }
           }
         } ~
+        path(ProcessNameSegment / VersionIdSegment / "versions-with-differences") {
+          (processName, currentLocalVersionId) =>
+            (get & processId(processName) & versionsToCompare) { (processIdWithName, limit) =>
+              // the remote is queried with the designer's own service account, so this has to gate it
+              canRead(processIdWithName) {
+                complete {
+                  versionsWithDifferencesService.computeForRemoteVersions(
+                    remoteEnvironment,
+                    processIdWithName,
+                    currentLocalVersionId,
+                    limit
+                  )
+                }
+              }
+            }
+        } ~
         path(ProcessNameSegment / "versions") { processName =>
           (get & processId(processName)) { processId =>
-            complete {
-              remoteEnvironment.processVersions(processId.name)
+            canRead(processId) {
+              onSuccess(remoteEnvironment.processVersions(processId.name)) {
+                case RemoteScenarioVersions(versions, false) =>
+                  complete(versions)
+                case RemoteScenarioVersions(_, true) =>
+                  complete(
+                    StatusCodes.BadGateway,
+                    s"Could not fetch scenario versions from the ${remoteEnvironment.environmentId} environment"
+                  )
+              }
             }
           }
         }

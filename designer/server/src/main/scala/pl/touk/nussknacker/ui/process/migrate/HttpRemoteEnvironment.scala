@@ -12,12 +12,14 @@ import org.apache.pekko.http.scaladsl.model.Uri.{Path, Query}
 import org.apache.pekko.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
 import org.apache.pekko.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import org.apache.pekko.stream.Materializer
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData
+import pl.touk.nussknacker.ui.process.VersionsWithDifferencesService.VersionsWithDifferences
 import pl.touk.nussknacker.ui.security.api.{
   AuthManager,
   ImpersonatedUser,
@@ -29,6 +31,7 @@ import pl.touk.nussknacker.ui.security.api.{
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
+import scala.util.control.NonFatal
 
 final case class HttpRemoteEnvironmentConfig(
     uri: String,
@@ -61,13 +64,138 @@ class HttpRemoteEnvironment(
 
   def closeAsync(): Future[Unit] = http.shutdownAllConnectionPools()
 
-  override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] =
+  override def processVersions(processName: ProcessName): Future[RemoteScenarioVersions] =
     invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
-      List("processes", processName.value)
-    ).map { result =>
-      result.fold(_ => List(), _.historyUnsafe)
+      List("processes", processName.value),
+      // only the history is read here; a remote too old to know this parameter ignores it and sends the
+      // graph anyway, which still decodes
+      Query(("skipScenarioGraph", "true"))
+    ).flatMap {
+      _.fold(
+        error => {
+          logFetchError("scenario versions", processName, error)
+          isRemoteUnavailable(error).map(RemoteScenarioVersions(Nil, _))
+        },
+        details => Future.successful(RemoteScenarioVersions(details.historyUnsafe, remoteUnavailable = false))
+      )
+    }.recover { case NonFatal(ex) =>
+      logger.warn(s"Failed to fetch scenario versions from remote environment for scenario ${processName.value}", ex)
+      RemoteScenarioVersions(Nil, remoteUnavailable = true)
     }
+
+  override def versionsWithDifferences(
+      processName: ProcessName,
+      scenarioGraph: ScenarioGraph,
+      limit: Int
+  ): Future[Option[VersionsWithDifferences]] =
+    invokeJson[VersionsWithDifferences](
+      HttpMethods.POST,
+      List("processes", processName.value, "versions-with-differences"),
+      Query(("limit", limit.toString)),
+      HttpEntity(ContentTypes.`application/json`, scenarioGraph.asJson.noSpaces)
+    ).flatMap(
+      _.fold(
+        error => {
+          logFetchError("version differences", processName, error)
+          emptyIfScenarioAbsent(processName, error)
+        },
+        result => Future.successful(Some(result))
+      )
+    ).recover { case NonFatal(ex) =>
+      logger.warn(s"Failed to fetch version differences from remote environment for scenario ${processName.value}", ex)
+      None
+    }
+
+  /**
+   * A 404 here has two very different meanings: the remote does not hold this scenario, which is an
+   * ordinary empty answer, or the remote is old enough not to have this endpoint at all, which means we
+   * could not compare and must say so. Asking whether the scenario itself is there separates them - a
+   * remote that answers for the scenario but 404s the comparison is one that cannot do the comparison.
+   */
+  private def emptyIfScenarioAbsent(
+      processName: ProcessName,
+      error: NuDesignerError
+  ): Future[Option[VersionsWithDifferences]] = error match {
+    case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
+      scenarioExistsOnRemote(processName).map {
+        case Some(false) => Some(VersionsWithDifferences(Nil))
+        case Some(true) =>
+          logger.warn(
+            s"Remote environment holds scenario ${processName.value} but returned 404 for the version " +
+              s"comparison endpoint - it likely runs a Nussknacker version without it"
+          )
+          None
+        case None =>
+          logger.warn(
+            s"Could not establish whether the remote environment holds scenario ${processName.value}, so " +
+              s"its 404 for the version comparison endpoint cannot be read as the scenario being absent"
+          )
+          None
+      }
+    case _ => Future.successful(None)
+  }
+
+  // `None` where the question stays unanswered: only a plain 404 establishes absence, while rejected
+  // credentials or a connection that never opened leave us knowing nothing.
+  // `skipScenarioGraph` keeps the answer small, `skipValidateAndResolve` keeps it cheap on a remote too old
+  // to know the former. GET rather than HEAD, since `transparent-head-requests` has the remote build the
+  // whole response for a HEAD anyway.
+  private def scenarioExistsOnRemote(processName: ProcessName): Future[Option[Boolean]] =
+    invokeForSuccess(
+      HttpMethods.GET,
+      List("processes", processName.value),
+      Query(("skipScenarioGraph", "true"), ("skipValidateAndResolve", "true")),
+      HttpEntity.Empty,
+      headers = Nil
+    ).map {
+      case Right(_)                                                           => Some(true)
+      case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => Some(false)
+      case Left(error) =>
+        logger.warn(
+          s"Could not check whether scenario ${processName.value} is present on the remote environment: $error"
+        )
+        None
+    }.recover { case NonFatal(ex) =>
+      logger.warn(s"Could not check whether scenario ${processName.value} is present on the remote environment", ex)
+      None
+    }
+
+  private def isRemoteUnavailable(error: NuDesignerError): Future[Boolean] = error match {
+    case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) => isRemoteReachable.map(!_)
+    case _                                                            => Future.successful(true)
+  }
+
+  private def isRemoteReachable: Future[Boolean] =
+    invokeForSuccess(
+      HttpMethods.GET,
+      List("app", "healthCheck"),
+      Query.Empty,
+      HttpEntity.Empty,
+      headers = Nil
+    ).map(_.isRight)
+      .recover { case NonFatal(_) => false }
+
+  private def logFetchError(what: String, processName: ProcessName, error: NuDesignerError): Unit = error match {
+    case RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _) =>
+      logger.warn(
+        s"Remote environment returned 404 while fetching $what for scenario ${processName.value} " +
+          s"(the scenario may not be migrated there, our credentials may lack read access to it, " +
+          s"or the environment may run an older Nussknacker version without this endpoint)"
+      )
+    case RemoteEnvironmentCommunicationError(statusCode, message)
+        if statusCode == StatusCodes.Unauthorized || statusCode == StatusCodes.Forbidden =>
+      logger.error(
+        s"Remote environment rejected our credentials while fetching $what for scenario " +
+          s"${processName.value}: $statusCode $message. Check the remote environment configuration."
+      )
+    case RemoteEnvironmentCommunicationError(statusCode, message) =>
+      logger.warn(
+        s"Failed to fetch $what from remote environment for scenario ${processName.value}: $statusCode $message"
+      )
+    case other =>
+      logger.warn(s"Failed to fetch $what from remote environment for scenario ${processName.value}: $other")
+  }
 
   override protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = {
     EitherT {
@@ -115,7 +243,9 @@ class HttpRemoteEnvironment(
     invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
       List("processes", name.value) ++ remoteProcessVersion.map(_.value.toString).toList,
-      Query()
+      // without this the remote side comes back dictionary-resolved while the local side does not, which
+      // reports a difference on every node referencing a dictionary
+      Query(("skipValidateAndResolve", "true"))
     )
   }
 
@@ -170,10 +300,12 @@ class HttpRemoteEnvironment(
       requestEntity: RequestEntity = HttpEntity.Empty,
       headers: Seq[HttpHeader]
   )(f: HttpResponse => Future[T])(implicit ec: ExecutionContext): Future[T] = {
-    val pathEncoded = pathParts.foldLeft[Path](baseUri.path)(_ / _)
-    val uri         = baseUri.withPath(pathEncoded).withQuery(query)
-
-    request(uri, method, requestEntity, headers) flatMap f
+    // inside the Future because a malformed configured address makes `baseUri` throw, which callers'
+    // `recover` would not see
+    Future {
+      val pathEncoded = pathParts.foldLeft[Path](baseUri.path)(_ / _)
+      baseUri.withPath(pathEncoded).withQuery(query)
+    }.flatMap(uri => request(uri, method, requestEntity, headers)).flatMap(f)
   }
 
   private def invokeForSuccess(

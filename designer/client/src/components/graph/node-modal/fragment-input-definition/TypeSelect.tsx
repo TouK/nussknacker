@@ -31,6 +31,8 @@ export interface Option {
     isDisabled?: boolean;
     isUsed?: boolean;
     icon?: ReactNode;
+    description?: string;
+    comment?: string;
 }
 
 export interface OptionHeader {
@@ -51,6 +53,11 @@ interface TypeSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "
     placeholder?: string;
     fieldErrors?: FieldError[];
     menuIsOpen?: boolean;
+    selectComponents?: React.ComponentProps<typeof CreatableSelect<Option>>["components"];
+    isLoading?: boolean;
+    noOptionsMessage?: React.ComponentProps<typeof CreatableSelect<Option>>["noOptionsMessage"];
+    isValidNewOption?: React.ComponentProps<typeof CreatableSelect<Option>>["isValidNewOption"];
+    filterOption?: React.ComponentProps<typeof CreatableSelect<Option>>["filterOption"];
 }
 
 function Select({
@@ -63,6 +70,11 @@ function Select({
     placeholder,
     fieldErrors = [],
     menuIsOpen = false,
+    selectComponents,
+    isLoading,
+    noOptionsMessage,
+    isValidNewOption,
+    filterOption,
     ...props
 }: TypeSelectProps): React.JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
@@ -73,16 +85,22 @@ function Select({
 
     return (
         <NodeValue marked={isMarked} onKeyDown={preventEsc} className={props.className}>
-            <CreatableSelect
+            <CreatableSelect<Option>
                 menuIsOpen={menuIsOpen || undefined} // We need to pass undefined in case of false, to not handle menu state in a controlled manner
                 id={props.id}
-                aria-label={"type-select"}
+                autoFocus={props.autoFocus}
+                aria-label={props["aria-label"] ?? "type-select"}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
                 onMenuClose={() => setCaptureEsc(false)}
+                components={selectComponents}
+                isLoading={isLoading}
+                noOptionsMessage={noOptionsMessage}
+                isValidNewOption={isValidNewOption}
+                filterOption={filterOption}
                 options={options}
-                value={value || ""}
+                value={value || null}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
                 onBlur={(e) => onBlur?.(e.target.value)}
                 menuPortalTarget={document.body}

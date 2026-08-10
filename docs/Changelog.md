@@ -15,6 +15,13 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9399](https://github.com/TouK/nussknacker/pull/9399) Reworked the "Compare versions" dialog's version picker.
+    * The picker now only lists versions with a meaningful (non-layout-only) difference from the current version, and shows a tooltip with the list of changed nodes/edges/properties.
+    * Differences are computed for the 50 most recent versions by default; older ones are still listed, without their differences. The number compared can be changed in the dialog.
+    * Each version now shows its save/migration comment alongside the author and date.
+    * Comparing against a remote (secondary) environment now diffs the raw stored scenario graph on both sides. Previously the remote side was fetched validated and dictionary-resolved while the local side was not, which produced spurious differences for scenarios using dictionaries.
+    * `GET /remoteEnvironment/{scenarioName}/versions` now requires the `Read` permission on the scenario. Previously it had no permission check at all, so any authenticated user could read the remote environment's version history for any scenario. Callers that relied on receiving an empty list for an inaccessible scenario now get `403 Forbidden`.
+    * See the [Migration Guide](MigrationGuide.md) for the `RemoteEnvironment` API change.
 * [#9416](https://github.com/TouK/nussknacker/pull/9416) Feature: High Availability (HA) mode for the Designer.
     * Multiple Designer instances can now run concurrently. All instances serve requests; coordinated operations (such as recovering failed deployments) are performed by the elected leader only. If the leader fails, another instance takes over automatically.
     * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>", "haEnabled": true/false }` — suitable for load-balancer routing.

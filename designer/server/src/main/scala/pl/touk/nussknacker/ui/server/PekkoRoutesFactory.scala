@@ -58,7 +58,9 @@ object PekkoRoutesFactory {
         scenarioStatusPresenter = scenarioStatusPresenter,
         processToolbarService = configProcessToolbarService,
         processAuthorizer = processAuthorizer,
-        processChangeListener = processChangeListener
+        processChangeListener = processChangeListener,
+        scenarioActivityRepository = scenarioActivityRepository,
+        dbioActionRunner = dbioRunner
       )
     }
     val processExportResources = new ProcessesExportResources(

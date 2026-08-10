@@ -67,6 +67,7 @@ import type {
     StatusesType,
     TestCaseNodeAdditionalVariablesRequest,
     TestCaseNodeAdditionalVariablesResponse,
+    VersionsWithDifferencesResponse,
 } from "./types";
 import { HealthState } from "./types";
 
@@ -1117,12 +1118,44 @@ export class HttpService {
         return promise;
     }
 
-    fetchRemoteVersions(processName: ProcessName) {
-        const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
+    fetchVersionsWithDifferences(processName: ProcessName, versionId: number, limit: number) {
+        const promise = api.get<VersionsWithDifferencesResponse>(
+            `/processes/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
+            { params: { limit } },
+        );
         promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error),
+            this.#addError(
+                i18next.t("notification.error.failedToGetVersionsWithDifferences", "Failed to get versions with differences"),
+                error,
+            ),
         );
         return promise;
+    }
+
+    fetchRemoteVersionsWithDifferences(
+        processName: ProcessName,
+        versionId: number,
+        limit: number,
+    ): Promise<VersionsWithDifferencesResponse | null> {
+        return api
+            .get<VersionsWithDifferencesResponse>(
+                `/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/versions-with-differences`,
+                { params: { limit } },
+            )
+            .then((response) => response.data)
+            .catch((error) =>
+                this.#addError(
+                    i18next.t(
+                        "notification.error.failedToGetRemoteVersionsWithDifferences",
+                        "Failed to get versions with differences from the remote environment",
+                    ),
+                    error,
+                ).then(() => null),
+            );
+    }
+
+    fetchRemoteVersions(processName: ProcessName) {
+        return api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
     }
 
     migrateProcess(processName: ProcessName, versionId: number) {

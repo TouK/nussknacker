@@ -88,8 +88,14 @@ describe("Scenario labels", () => {
             cy.visitNewProcess(seed);
 
             cy.visit("/");
+            cy.url().should("match", /scenarios/);
+            cy.get("[placeholder='Search...']", { timeout: 60000 }).should("be.visible");
+            cy.contains(/^loading.../i, { timeout: 60000 }).should("not.exist");
+            // the filter bar re-lays itself out when the rows arrive, which can swallow a click
+            // issued before that render
+            cy.contains(/every of the 4 rows match the filters/i).should("be.visible");
 
-            cy.contains("button", /label/i).click();
+            cy.contains("button", /label/i).should("be.enabled").click();
 
             cy.get("ul[role='menu']").within(() => {
                 cy.contains(/tag2/i).click();
