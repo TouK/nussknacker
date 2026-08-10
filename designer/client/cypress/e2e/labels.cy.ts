@@ -88,8 +88,14 @@ describe("Scenario labels", () => {
             cy.visitNewProcess(seed);
 
             cy.visit("/");
+            cy.url().should("match", /scenarios/);
+            cy.get("[placeholder='Search scenarios...']", { timeout: 60000 }).should("be.visible");
+            cy.contains(/^loading.../i, { timeout: 60000 }).should("not.exist");
 
-            cy.contains("button", /label/i).click();
+            // the scenario list re-renders once its data arrives, so the trigger has to be re-queried
+            // right before the click - clicking the element found before that render is a no-op and
+            // the menu never opens
+            cy.contains("button", /label/i).should("be.enabled").click();
 
             cy.get("ul[role='menu']").within(() => {
                 cy.contains(/tag2/i).click();
