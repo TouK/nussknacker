@@ -15,7 +15,7 @@ object ForEachTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(
-      @ParamName("Elements") elements: LazyParameter[java.util.Collection[Any]],
+      @ParamName("Elements") @DefaultValue("{\"item1\", \"item2\"}") elements: LazyParameter[java.util.Collection[Any]],
       @OutputVariableName outputVariable: String
   ): LiteCustomComponent = {
     new ForEachTransformerComponent(elements, outputVariable)
