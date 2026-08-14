@@ -2405,7 +2405,7 @@ def createClasspathBasedMapping(
     targetFilename: String
 ): Option[(File, String)] = {
   classpath.toSet
-
+    .find(attr =>
       attr
         .get(sbt.Keys.moduleID.key)
         .exists(moduleID =>
