@@ -140,6 +140,7 @@ const initState: State = {
     difference: null,
     remoteVersions: [],
     remoteVersionsFailed: false,
+    remoteVersionsLoading: false,
 };
 
 interface State {
@@ -148,6 +149,7 @@ interface State {
     otherVersion: string;
     remoteVersions: ProcessVersionType[];
     remoteVersionsFailed: boolean;
+    remoteVersionsLoading: boolean;
     difference: unknown;
 }
 
@@ -173,11 +175,24 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     useEffect(() => {
         if (processName && otherEnvironment && remoteRequested) {
+            setState((prevState) => ({ ...prevState, remoteVersionsLoading: true }));
             HttpService.fetchRemoteVersions(processName)
                 .then((response) =>
-                    setState((prevState) => ({ ...prevState, remoteVersions: response.data || [], remoteVersionsFailed: false })),
+                    setState((prevState) => ({
+                        ...prevState,
+                        remoteVersions: response.data || [],
+                        remoteVersionsFailed: false,
+                        remoteVersionsLoading: false,
+                    })),
                 )
-                .catch(() => setState((prevState) => ({ ...prevState, remoteVersions: [], remoteVersionsFailed: true })));
+                .catch(() =>
+                    setState((prevState) => ({
+                        ...prevState,
+                        remoteVersions: [],
+                        remoteVersionsFailed: true,
+                        remoteVersionsLoading: false,
+                    })),
+                );
         }
     }, [processName, otherEnvironment, remoteRequested]);
 
@@ -211,7 +226,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         error: activeDiffsError,
         unavailable: activeUnavailable,
     } = state.environment === "remote" ? remoteDiffsState : localDiffsState;
-    const isLoadingVersions = activeDiffs === null && !activeDiffsError;
+    const isLoadingVersions =
+        (activeDiffs === null && !activeDiffsError) || (state.environment === "remote" && state.remoteVersionsLoading);
     // also when the environment answered but could not compare: no differing versions must not be read
     // as "every version is identical" and hide the whole list
     const showUnfilteredVersions = (activeDiffs === null && activeDiffsError) || activeUnavailable;
@@ -467,16 +483,33 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     // the same flags that unfilter the list have to say why it is unfiltered, or the user is left with a
     // full picker, every description blank and nothing explaining it once the toast fades
-    const comparisonFailedMessage = useMemo(() => {
-        if (state.environment === "remote" && (activeUnavailable || state.remoteVersionsFailed)) {
-            return t("dialog.compareVersions.remoteUnavailable", "Could not compare versions with the {{name}} environment", {
-                name: otherEnvironment,
-            });
+    const [comparisonFailedMessage, comparisonFailedIsError] = useMemo<[string | null, boolean]>(() => {
+        if (state.environment === "remote") {
+            if (state.remoteVersionsFailed) {
+                return [
+                    t("dialog.compareVersions.remoteUnavailable", "Could not compare versions with the {{name}} environment", {
+                        name: otherEnvironment,
+                    }),
+                    true,
+                ];
+            }
+            // an environment whose versions we can list still compares fine once one is picked, so this is
+            // a note about the list rather than a failure
+            if (activeUnavailable) {
+                return [
+                    t(
+                        "dialog.compareVersions.remoteDifferencesUnavailable",
+                        "The {{name}} environment did not provide the differences, so all its versions are listed.",
+                        { name: otherEnvironment },
+                    ),
+                    false,
+                ];
+            }
         }
         if (showUnfilteredVersions) {
-            return t("dialog.compareVersions.comparisonFailed", "Could not compute the differences, so all versions are listed");
+            return [t("dialog.compareVersions.comparisonFailed", "Could not compute the differences, so all versions are listed"), true];
         }
-        return null;
+        return [null, false];
     }, [state.environment, state.remoteVersionsFailed, activeUnavailable, showUnfilteredVersions, otherEnvironment, t]);
 
     const environmentOptions: Option[] = useMemo(() => {
@@ -525,7 +558,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                         noOptionsMessage={noVersionsMessage}
                         sx={{ width: "100%" }}
                     />
-                    {comparisonFailedMessage && <FormHelperText error>{comparisonFailedMessage}</FormHelperText>}
+                    {comparisonFailedMessage && <FormHelperText error={comparisonFailedIsError}>{comparisonFailedMessage}</FormHelperText>}
                     {oldestCompared !== undefined && (
                         <FormHelperText>
                             {t(

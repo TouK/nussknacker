@@ -251,6 +251,33 @@ describe("CompareVersionsDialog", () => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
 
+    // The remote list and its differences are separate requests, and this pins the case where the
+    // differences land first - the picker then has an answer about versions it has not been given yet.
+    it("should say it is loading while the remote version list is still on its way", async () => {
+        let releaseRemoteVersions: () => void;
+        const remoteVersionsLoaded = new Promise<void>((resolve) => {
+            releaseRemoteVersions = resolve;
+        });
+        mock.onGet(remoteVersionsUrl()).replyOnce(async () => {
+            await remoteVersionsLoaded;
+            return [200, [remoteVersion(1)]];
+        });
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
+        mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [changedVersion(1)] });
+
+        renderDialog();
+        await switchToRemoteEnvironment();
+        await openVersionPicker();
+
+        expect(await screen.findByText("Loading...")).toBeInTheDocument();
+        expect(screen.queryByText("dialog.compareVersions.noVersionsToCompare")).not.toBeInTheDocument();
+
+        releaseRemoteVersions();
+
+        expect(await screen.findByText("1 on remote environment - created by test 2024-05-31|00:00")).toBeInTheDocument();
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    });
+
     it("should say there is nothing to compare against when no version differs", async () => {
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, { versions: [] });
 
@@ -274,6 +301,22 @@ describe("CompareVersionsDialog", () => {
         expect(await screen.findByText("35 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
         expect(screen.getByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
         expect(screen.getByText("dialog.compareVersions.comparedRecentOnly")).toBeInTheDocument();
+    });
+
+    it("should place the messages under the version picker rather than beside it", async () => {
+        mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, {
+            versions: [changedVersion(35)],
+            oldestComparedVersionId: 35,
+        });
+
+        renderDialog();
+
+        const message = await screen.findByText("dialog.compareVersions.comparedRecentOnly");
+        const row = message.closest(".MuiFormControl-root");
+        expect(row).not.toBeNull();
+        expect(message.parentElement).not.toBe(row);
+        // the label, and the single column holding the picker together with its messages
+        expect(row.children).toHaveLength(2);
     });
 
     it("should keep hiding identical versions that were compared", async () => {
@@ -492,7 +535,7 @@ describe("CompareVersionsDialog", () => {
 
     // The version list itself succeeds here, so only the remoteUnavailable flag can produce the message -
     // otherwise a failed version list would satisfy it and the flag would go untested.
-    it("should say that the remote environment could not be reached instead of showing nothing to compare", async () => {
+    it("should note that the remote environment did not provide the differences instead of showing nothing to compare", async () => {
         mock.onGet(remoteVersionsUrl()).replyOnce(200, [remoteVersion(1), remoteVersion(2)]);
         mock.onGet(localVersionsWithDifferencesUrl()).replyOnce(200, localVersionsWithDifferences);
         mock.onGet(remoteVersionsWithDifferencesUrl()).replyOnce(200, { versions: [], remoteUnavailable: true });
@@ -500,7 +543,10 @@ describe("CompareVersionsDialog", () => {
         renderDialog();
         await switchToRemoteEnvironment();
 
-        expect(await screen.findByText("dialog.compareVersions.remoteUnavailable")).toBeInTheDocument();
+        const message = await screen.findByText("dialog.compareVersions.remoteDifferencesUnavailable");
+        expect(message).toBeInTheDocument();
+        expect(message).not.toHaveClass("Mui-error");
+        expect(screen.queryByText("dialog.compareVersions.remoteUnavailable")).not.toBeInTheDocument();
     });
 
     // A failed request is not an environment reporting it could not compare, and the toast it raises is gone
