@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { FormControl, FormHelperText, FormLabel } from "@mui/material";
+import { Box, FormControl, FormHelperText, FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
 import i18next, { type TFunction } from "i18next";
 import { keys } from "lodash";
@@ -137,6 +137,7 @@ const initState: State = {
     difference: null,
     remoteVersions: [],
     remoteVersionsFailed: false,
+    remoteVersionsLoading: false,
 };
 
 interface State {
@@ -145,6 +146,7 @@ interface State {
     otherVersion: string;
     remoteVersions: ProcessVersionType[];
     remoteVersionsFailed: boolean;
+    remoteVersionsLoading: boolean;
     difference: unknown;
 }
 
@@ -170,11 +172,24 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     useEffect(() => {
         if (processName && otherEnvironment && remoteRequested) {
+            setState((prevState) => ({ ...prevState, remoteVersionsLoading: true }));
             HttpService.fetchRemoteVersions(processName)
                 .then((response) =>
-                    setState((prevState) => ({ ...prevState, remoteVersions: response.data || [], remoteVersionsFailed: false })),
+                    setState((prevState) => ({
+                        ...prevState,
+                        remoteVersions: response.data || [],
+                        remoteVersionsFailed: false,
+                        remoteVersionsLoading: false,
+                    })),
                 )
-                .catch(() => setState((prevState) => ({ ...prevState, remoteVersions: [], remoteVersionsFailed: true })));
+                .catch(() =>
+                    setState((prevState) => ({
+                        ...prevState,
+                        remoteVersions: [],
+                        remoteVersionsFailed: true,
+                        remoteVersionsLoading: false,
+                    })),
+                );
         }
     }, [processName, otherEnvironment, remoteRequested]);
 
@@ -208,7 +223,8 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         error: activeDiffsError,
         unavailable: activeUnavailable,
     } = state.environment === "remote" ? remoteDiffsState : localDiffsState;
-    const isLoadingVersions = activeDiffs === null && !activeDiffsError;
+    const isLoadingVersions =
+        (activeDiffs === null && !activeDiffsError) || (state.environment === "remote" && state.remoteVersionsLoading);
     // also when the environment answered but could not compare: no differing versions must not be read
     // as "every version is identical" and hide the whole list
     const showUnfilteredVersions = (activeDiffs === null && activeDiffsError) || activeUnavailable;
@@ -464,16 +480,33 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     // the same flags that unfilter the list have to say why it is unfiltered, or the user is left with a
     // full picker, every description blank and nothing explaining it once the toast fades
-    const comparisonFailedMessage = useMemo(() => {
-        if (state.environment === "remote" && (activeUnavailable || state.remoteVersionsFailed)) {
-            return t("dialog.compareVersions.remoteUnavailable", "Could not compare versions with the {{name}} environment", {
-                name: otherEnvironment,
-            });
+    const [comparisonFailedMessage, comparisonFailedIsError] = useMemo<[string | null, boolean]>(() => {
+        if (state.environment === "remote") {
+            if (state.remoteVersionsFailed) {
+                return [
+                    t("dialog.compareVersions.remoteUnavailable", "Could not compare versions with the {{name}} environment", {
+                        name: otherEnvironment,
+                    }),
+                    true,
+                ];
+            }
+            // an environment whose versions we can list still compares fine once one is picked, so this is
+            // a note about the list rather than a failure
+            if (activeUnavailable) {
+                return [
+                    t(
+                        "dialog.compareVersions.remoteDifferencesUnavailable",
+                        "The {{name}} environment did not provide the differences, so all its versions are listed.",
+                        { name: otherEnvironment },
+                    ),
+                    false,
+                ];
+            }
         }
         if (showUnfilteredVersions) {
-            return t("dialog.compareVersions.comparisonFailed", "Could not compute the differences, so all versions are listed");
+            return [t("dialog.compareVersions.comparisonFailed", "Could not compute the differences, so all versions are listed"), true];
         }
-        return null;
+        return [null, false];
     }, [state.environment, state.remoteVersionsFailed, activeUnavailable, showUnfilteredVersions, otherEnvironment, t]);
 
     const environmentOptions: Option[] = useMemo(() => {
@@ -506,31 +539,35 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
             )}
             <FormControl>
                 <FormLabel>{t("dialog.compareVersions.versionToCompare", "Version to compare")}</FormLabel>
-                <TypeSelect
-                    readOnly={Boolean(predefinedOtherVersion)}
-                    autoFocus={true}
-                    id="otherVersion"
-                    aria-label={t("dialog.compareVersions.versionToCompare", "Version to compare")}
-                    onChange={loadVersion}
-                    filterOption={matchVersionOption}
-                    value={versionOptions.find((option) => option.value === state.otherVersion)}
-                    options={versionOptions}
-                    fieldErrors={[]}
-                    selectComponents={VERSION_MENU_COMPONENTS}
-                    isLoading={isLoadingVersions}
-                    isValidNewOption={noNewVersionOptions}
-                    noOptionsMessage={noVersionsMessage}
-                />
-                {comparisonFailedMessage && <FormHelperText error>{comparisonFailedMessage}</FormHelperText>}
-                {oldestCompared !== undefined && (
-                    <FormHelperText>
-                        {t(
-                            "dialog.compareVersions.comparedRecentOnly",
-                            "Compared the {{count}} most recent versions - older ones are listed without their differences.",
-                            { count: versionsCompared },
-                        )}
-                    </FormHelperText>
-                )}
+                {/* the form control lays its children out in a row, so without this column the messages
+                    become items of that row and take the width away from the picker they describe */}
+                <Box sx={{ width: "100%", minWidth: 0, display: "flex", flexDirection: "column" }}>
+                    <TypeSelect
+                        readOnly={Boolean(predefinedOtherVersion)}
+                        autoFocus={true}
+                        id="otherVersion"
+                        aria-label={t("dialog.compareVersions.versionToCompare", "Version to compare")}
+                        onChange={loadVersion}
+                        filterOption={matchVersionOption}
+                        value={versionOptions.find((option) => option.value === state.otherVersion)}
+                        options={versionOptions}
+                        fieldErrors={[]}
+                        selectComponents={VERSION_MENU_COMPONENTS}
+                        isLoading={isLoadingVersions}
+                        isValidNewOption={noNewVersionOptions}
+                        noOptionsMessage={noVersionsMessage}
+                    />
+                    {comparisonFailedMessage && <FormHelperText error={comparisonFailedIsError}>{comparisonFailedMessage}</FormHelperText>}
+                    {oldestCompared !== undefined && (
+                        <FormHelperText>
+                            {t(
+                                "dialog.compareVersions.comparedRecentOnly",
+                                "Compared the {{count}} most recent versions - older ones are listed without their differences.",
+                                { count: versionsCompared },
+                            )}
+                        </FormHelperText>
+                    )}
+                </Box>
             </FormControl>
             {showVersionsComparedControl && (
                 <FormControl>

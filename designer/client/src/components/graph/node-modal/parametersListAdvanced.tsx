@@ -27,7 +27,7 @@ export const ParametersListAdvanced = ({
 
     const getParamCategory = useCallback(
         (name: string) => {
-            const paramDef = parameterDefinitions.find((paramDef) => paramDef.name === name);
+            const paramDef = parameterDefinitions?.find((paramDef) => paramDef.name === name);
             return paramDef?.category || ParameterCategory.Standard;
         },
         [parameterDefinitions],

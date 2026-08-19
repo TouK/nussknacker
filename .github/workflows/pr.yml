@@ -76,7 +76,7 @@ jobs:
     needs: [ setup ]
     env:
       # We can't just use conditional jobs mechanism ('if' directive) because 'cypressTests' job depends on this one
-      shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+      shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.head_ref, 'preview') }}
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
