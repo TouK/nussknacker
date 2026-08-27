@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.ha.DistributedLock
-import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentLock
+import pl.touk.nussknacker.ui.process.periodic.DedicatedPeriodicDeploymentLock
 import pl.touk.nussknacker.ui.process.periodic.RescheduleFinishedActor
 
 import java.time.Instant
@@ -26,14 +26,15 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
     TestKit.shutdownActorSystem(system)
   }
 
-  private def lockReturning(value: Boolean) = new PeriodicDeploymentLock(
+  private def mockedLock(acquire: => Future[Option[Instant]]) = new DedicatedPeriodicDeploymentLock(
     new DistributedLock {
-      override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-        Future.successful(if (value) Some(Instant.MAX) else None)
+      override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] = acquire
       override def release(name: String): Future[Boolean] = Future.successful(true)
     },
-    None
+    1.minute
   )
+
+  private def lockReturning(value: Boolean) = mockedLock { Future.successful(if (value) Some(Instant.MAX) else None) }
 
   test("should invoke handle finished repeatedly") {
     shouldInvokeHandleFinishedRepeatedly(Future.successful(()))
@@ -79,16 +80,10 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
     val finishPromise = Promise[Unit]()
     val probe         = TestProbe()
 
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] = {
-          acquireCount.incrementAndGet()
-          Future.successful(Some(Instant.MAX))
-        }
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+    val lock = mockedLock {
+      acquireCount.incrementAndGet()
+      Future.successful(Some(Instant.MAX))
+    }
 
     def handleFinished: Future[Unit] = { probe.ref ! "started"; finishPromise.future }
 
@@ -107,14 +102,9 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
     val finishPromise = Promise[Unit]()
     val probe         = TestProbe()
 
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-          Future.successful(if (acquireCount.getAndIncrement() == 0) Some(Instant.MAX) else None)
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+    val lock = mockedLock {
+      Future.successful(if (acquireCount.getAndIncrement() == 0) Some(Instant.MAX) else None)
+    }
 
     def handleFinished: Future[Unit] = { probe.ref ! "started"; finishPromise.future }
 
@@ -156,15 +146,10 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
     val acquireCount = new AtomicInteger(0)
     val probe        = TestProbe()
 
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-          if (acquireCount.getAndIncrement() < 2) Future.failed(new RuntimeException("db error"))
-          else Future.successful(Some(Instant.MAX))
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+    val lock = mockedLock {
+      if (acquireCount.getAndIncrement() < 2) Future.failed(new RuntimeException("db error"))
+      else Future.successful(Some(Instant.MAX))
+    }
 
     def handleFinished: Future[Unit] = { probe.ref ! "invoked"; Future.successful(()) }
 

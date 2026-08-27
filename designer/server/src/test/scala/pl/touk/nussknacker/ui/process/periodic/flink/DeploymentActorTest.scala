@@ -5,9 +5,10 @@ import org.apache.pekko.testkit.{TestKit, TestKitBase, TestProbe}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.ui.ha.DistributedLock
+import pl.touk.nussknacker.ui.ha.{DistributedLock, TogglableLeadership}
+import pl.touk.nussknacker.ui.process.periodic.DedicatedPeriodicDeploymentLock
 import pl.touk.nussknacker.ui.process.periodic.DeploymentActor
-import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentLock
+import pl.touk.nussknacker.ui.process.periodic.LeaderPeriodicDeploymentLock
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeployment
 
 import java.time.Instant
@@ -27,14 +28,15 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
     TestKit.shutdownActorSystem(system)
   }
 
-  private def lockReturning(value: Boolean) = new PeriodicDeploymentLock(
+  private def mockedLock(acquire: => Future[Option[Instant]]) = new DedicatedPeriodicDeploymentLock(
     new DistributedLock {
-      override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-        Future.successful(if (value) Some(Instant.MAX) else None)
+      override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] = acquire
       override def release(name: String): Future[Boolean] = Future.successful(true)
     },
-    None
+    1.minute
   )
+
+  private def lockReturning(value: Boolean) = mockedLock { Future.successful(if (value) Some(Instant.MAX) else None) }
 
   test("should find to be deployed scenarios repeatedly") {
     shouldFindToBeDeployedScenarios(Future.successful(Seq.empty))
@@ -125,15 +127,10 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
     val deployProbe       = TestProbe()
     val waitingDeployment = PeriodicProcessDeploymentGen()
     var failLock          = true
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-          if (failLock) Future.failed(new RuntimeException("db error"))
-          else Future.successful(Some(Instant.MAX))
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+    val lock = mockedLock {
+      if (failLock) Future.failed(new RuntimeException("db error"))
+      else Future.successful(Some(Instant.MAX))
+    }
     val actor = system.actorOf(
       DeploymentActor.props(
         findToBeDeployed = Future.successful(Seq(waitingDeployment)),
@@ -185,19 +182,12 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
     val waitingDeployment                            = PeriodicProcessDeploymentGen()
     var toBeDeployed: Seq[PeriodicProcessDeployment] = Seq(waitingDeployment)
     val lockPromise                                  = Promise[Option[Instant]]()
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-          lockPromise.future
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+
     val actor = system.actorOf(
       DeploymentActor.props(
         findToBeDeployed = Future.successful(toBeDeployed),
         deploy = d => { deployProbe.ref ! d; toBeDeployed = Seq.empty; Future.unit },
-        lock = lock,
+        lock = mockedLock { lockPromise.future },
         interval
       )
     )
@@ -245,16 +235,10 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
     val deployPromise     = Promise[Unit]()
     val waitingDeployment = PeriodicProcessDeploymentGen()
 
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] = {
-          acquireCount.incrementAndGet()
-          Future.successful(Some(Instant.MAX))
-        }
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+    val lock = mockedLock {
+      acquireCount.incrementAndGet()
+      Future.successful(Some(Instant.MAX))
+    }
 
     val actor = system.actorOf(
       DeploymentActor.props(
@@ -279,15 +263,10 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
     val deployPromise     = Promise[Unit]()
     val waitingDeployment = PeriodicProcessDeploymentGen()
 
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-          // first two calls succeed (pre-finding + pre-deployment acquire), then lock is lost
-          Future.successful(if (acquireCount.getAndIncrement() < 2) Some(Instant.MAX) else None)
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+    val lock = mockedLock {
+      // first two calls succeed (pre-finding + pre-deployment acquire), then lock is lost
+      Future.successful(if (acquireCount.getAndIncrement() < 2) Some(Instant.MAX) else None)
+    }
 
     val actor = system.actorOf(
       DeploymentActor.props(
@@ -306,20 +285,38 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
     system.stop(actor)
   }
 
+  test("should deploy only while being a leader when lock is backed by leadership") {
+    val deployProbe       = TestProbe()
+    val waitingDeployment = PeriodicProcessDeploymentGen()
+    val leadership        = new TogglableLeadership(initiallyLeader = false)
+    var toBeDeployed      = Seq(waitingDeployment)
+
+    val actor = system.actorOf(
+      DeploymentActor.props(
+        findToBeDeployed = Future.successful(toBeDeployed),
+        deploy = d => { deployProbe.ref ! d; toBeDeployed = Seq.empty; Future.unit },
+        new LeaderPeriodicDeploymentLock(leadership),
+        interval
+      )
+    )
+
+    deployProbe.expectNoMessage(interval * 3) // not a leader — nothing is deployed
+    leadership.becomeLeader()
+
+    within(maxWaitTime) { deployProbe.expectMsg(waitingDeployment) }
+
+    system.stop(actor)
+  }
+
   test("should skip deploy if lock is lost between finding and deploying, retry on next tick") {
     val deployProbe       = TestProbe()
     val waitingDeployment = PeriodicProcessDeploymentGen()
     val acquireCount      = new AtomicInteger(0)
 
-    val lock = new PeriodicDeploymentLock(
-      new DistributedLock {
-        override def acquireOrRenew(name: String, duration: FiniteDuration): Future[Option[Instant]] =
-          // call 0 (pre-find, tick 1): succeed; call 1 (pre-deploy, tick 1): fail; call 2+ (tick 2): succeed
-          Future.successful(if (acquireCount.getAndIncrement() == 1) None else Some(Instant.MAX))
-        override def release(name: String): Future[Boolean] = Future.successful(true)
-      },
-      None
-    )
+    val lock = mockedLock {
+      // call 0 (pre-find, tick 1): succeed; call 1 (pre-deploy, tick 1): fail; call 2+ (tick 2): succeed
+      Future.successful(if (acquireCount.getAndIncrement() == 1) None else Some(Instant.MAX))
+    }
 
     val actor = system.actorOf(
       DeploymentActor.props(
