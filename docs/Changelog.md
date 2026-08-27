@@ -22,7 +22,7 @@ description: Stay informed with detailed changelogs covering new features, impro
     * Comparing against a remote (secondary) environment now diffs the raw stored scenario graph on both sides. Previously the remote side was fetched validated and dictionary-resolved while the local side was not, which produced spurious differences for scenarios using dictionaries.
     * `GET /remoteEnvironment/{scenarioName}/versions` now requires the `Read` permission on the scenario. Previously it had no permission check at all, so any authenticated user could read the remote environment's version history for any scenario. Callers that relied on receiving an empty list for an inaccessible scenario now get `403 Forbidden`.
     * See the [Migration Guide](MigrationGuide.md) for the `RemoteEnvironment` API change.
-* [#9416](https://github.com/TouK/nussknacker/pull/9416) Feature: High Availability (HA) mode for the Designer.
+* [#9416](https://github.com/TouK/nussknacker/pull/9416)[#9447](https://github.com/TouK/nussknacker/pull/9447) Feature: High Availability (HA) mode for the Designer.
     * Multiple Designer instances can now run concurrently. All instances serve requests; coordinated operations (such as recovering failed deployments) are performed by the elected leader only. If the leader fails, another instance takes over automatically.
     * New endpoint `GET /api/app/leader` (no authentication required) returns `{ "isLeader": true/false, "instanceId": "<id>", "haEnabled": true/false }` — suitable for load-balancer routing.
     * **Requires PostgreSQL** as the designer database.
@@ -48,7 +48,13 @@ ha {
     releaseOnStop: true   # default
   }
 
+  # How scheduling (periodic scenarios) is fenced across instances:
+  #  - dedicated: acquires and renews its own lock
+  #  - leader:    reuses the leader lock so all deployments happen on the leader instance only
+  periodicLockMode: dedicated   # default
+
   # Maximum time a periodic scenario lock is held (covers the full deploy round-trip).
+  # Only used when periodicLockMode is "dedicated".
   periodicLockDuration: 5m   # default
 
   # Timeout for individual lock DB queries (must be < leader.heartbeatInterval).

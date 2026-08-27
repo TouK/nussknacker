@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.ha
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
 import java.net.InetAddress
@@ -20,9 +21,17 @@ object HaMode {
       releaseOnStop: Boolean = true,
   )
 
+  object PeriodicLockMode extends Enumeration {
+    type PeriodicLockMode = Value
+
+    val Dedicated: Value = Value("dedicated")
+    val Leader: Value    = Value("leader")
+  }
+
   final case class Enabled(
       instanceId: String,
       leader: LeaderConfig,
+      periodicLockMode: PeriodicLockMode.Value = PeriodicLockMode.Dedicated,
       periodicLockDuration: FiniteDuration,
       lockQueryTimeout: FiniteDuration,
   ) extends HaMode
@@ -33,6 +42,7 @@ object HaMode {
       val enabled = Enabled(
         instanceId = cfg.instanceId.getOrElse(defaultInstanceId),
         leader = cfg.leader,
+        periodicLockMode = cfg.periodicLockMode,
         periodicLockDuration = cfg.periodicLockDuration,
         lockQueryTimeout = cfg.lockQueryTimeout,
       )
@@ -66,6 +76,7 @@ object HaMode {
   private final case class EnabledConfig(
       instanceId: Option[String] = None,
       leader: LeaderConfig = LeaderConfig(),
+      periodicLockMode: PeriodicLockMode.Value = PeriodicLockMode.Dedicated,
       periodicLockDuration: FiniteDuration = 5.minutes,
       lockQueryTimeout: FiniteDuration = 5.seconds,
   )
