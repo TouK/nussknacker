@@ -27,9 +27,8 @@ object DistributedLock {
 
   def apply(haMode: HaMode, dbRef: DbRef, clock: Clock)(implicit ec: ExecutionContext): DistributedLock =
     haMode match {
-      case HaMode.Disabled(_) => NoOpDistributedLock
-      case HaMode.Enabled(instanceId, _, _, lockQueryTimeout) =>
-        SlickDistributedLock(dbRef, instanceId, lockQueryTimeout, clock)
+      case HaMode.Disabled(_)      => NoOpDistributedLock
+      case enabled: HaMode.Enabled => SlickDistributedLock(dbRef, enabled.instanceId, enabled.lockQueryTimeout, clock)
     }
 
 }
