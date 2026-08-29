@@ -44,20 +44,21 @@ object EditorExtractor {
             .map(value => FixedExpressionValue(value.expression(), value.label()))
             .toList
         )
-      case EditorType.DATE_EDITOR               => DateParameterEditor
-      case EditorType.TIME_EDITOR               => TimeParameterEditor
-      case EditorType.DATE_TIME_EDITOR          => DateTimeParameterEditor
-      case EditorType.DURATION_EDITOR           => DurationParameterEditor(editor.timeRangeComponents().toList)
-      case EditorType.PERIOD_EDITOR             => PeriodParameterEditor(editor.timeRangeComponents().toList)
-      case EditorType.CRON_EDITOR               => CronParameterEditor
-      case EditorType.TEXTAREA_EDITOR           => TextareaParameterEditor
-      case EditorType.JSON_EDITOR               => JsonParameterEditor
-      case EditorType.SQL_EDITOR                => SqlParameterEditor
-      case EditorType.SPEL_TEMPLATE_EDITOR      => SpelTemplateParameterEditor
-      case EditorType.DICT_EDITOR               => DictParameterEditor(editor.dictId())
-      case EditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
-      case EditorType.SPEL_EDITOR               => SpelParameterEditor
-      case EditorType.JSON_TEMPLATE_EDITOR      => JsonTemplateParameterEditor
+      case EditorType.DATE_EDITOR                  => DateParameterEditor
+      case EditorType.TIME_EDITOR                  => TimeParameterEditor
+      case EditorType.DATE_TIME_EDITOR             => DateTimeParameterEditor
+      case EditorType.DURATION_EDITOR              => DurationParameterEditor(editor.timeRangeComponents().toList)
+      case EditorType.PERIOD_EDITOR                => PeriodParameterEditor(editor.timeRangeComponents().toList)
+      case EditorType.CRON_EDITOR                  => CronParameterEditor
+      case EditorType.TEXTAREA_EDITOR              => TextareaParameterEditor
+      case EditorType.JSON_EDITOR                  => JsonParameterEditor
+      case EditorType.SQL_EDITOR                   => SqlParameterEditor
+      case EditorType.SPEL_TEMPLATE_EDITOR         => SpelTemplateParameterEditor
+      case EditorType.DICT_EDITOR                  => DictParameterEditor(editor.dictId())
+      case EditorType.TYPED_TABULAR_DATA_EDITOR    => TabularTypedDataEditor
+      case EditorType.SPEL_EDITOR                  => SpelParameterEditor
+      case EditorType.SPEL_EXPRESSIONS_LIST_EDITOR => SpelExpressionsListEditor
+      case EditorType.JSON_TEMPLATE_EDITOR         => JsonTemplateParameterEditor
       case EditorType.MULTI_SELECT_EDITOR =>
         MultiSelectEditor(
           editor
