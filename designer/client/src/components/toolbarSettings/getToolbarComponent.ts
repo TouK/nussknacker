@@ -7,6 +7,7 @@ import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ButtonsToolbar } from "../toolbarComponents/ButtonsToolbar";
 import { ActivitiesPanel } from "../toolbars/activities/ActivitiesPanel";
 import { CreatorPanel } from "../toolbars/creator/CreatorPanel";
+import { NodeDetailsPanel } from "../toolbars/nodeDetails/NodeDetailsPanel";
 import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
 import ScenarioStatusPanel from "../toolbars/scenarioDetails/ScenarioStatusPanel";
@@ -35,6 +36,8 @@ export function getToolbarComponent(config?: ToolbarConfig): ComponentType<Toolb
             return lazy(() => import("../toolbars/testCases/testCasesPanel"));
         case "activities-panel":
             return ActivitiesPanel;
+        case "node-details-panel":
+            return NodeDetailsPanel;
         default:
             return ButtonsToolbar;
     }
