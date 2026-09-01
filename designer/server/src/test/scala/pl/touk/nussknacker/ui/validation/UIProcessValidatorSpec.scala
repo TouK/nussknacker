@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.{Validated, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.Resource
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
@@ -197,6 +198,338 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
   }
 
+  test("check for not unique CustomNodeOutput edges") {
+    // Has to be caught on the raw ScenarioGraph: the canonical conversion collapses same-named output edges into one,
+    // so this check is all that stands between a hand-crafted duplicate and silent data loss.
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, multiOutputTransformer, List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("out2"), NodeName("out2"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), Some(EdgeType.CustomNodeOutput("rejected"))),
+        Edge(NodeId("custom"), NodeId("out2"), Some(EdgeType.CustomNodeOutput("rejected")))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    result.errors.invalidNodes shouldBe Map(
+      NodeId("custom") -> List(
+        NodeValidationError(
+          typ = "NonUniqueEdgeType",
+          message = "Edges are not unique",
+          description =
+            "Node custom has duplicate outgoing edges of type: CustomNodeOutput(rejected), it cannot be saved properly",
+          fieldName = None,
+          errorType = SaveNotAllowed,
+          details = None
+        )
+      )
+    )
+  }
+
+  test("check for not unique main output edges on a node with a single main output") {
+    // Not drawable in the designer, but reachable through the API or an import - the conversion would splice both
+    // subgraphs into one chain.
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, ProcessTestData.existingStreamTransformer, List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("out2"), NodeName("out2"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), None),
+        Edge(NodeId("custom"), NodeId("out2"), None)
+      )
+    )
+
+    val result = validateWithConfiguredProperties(process)
+
+    result.errors.invalidNodes.getOrElse(NodeId("custom"), Nil) should contain(
+      NodeValidationError(
+        typ = "NonUniqueEdgeType",
+        message = "Edges are not unique",
+        description = "Node custom has duplicate outgoing edges of type: main output, it cannot be saved properly",
+        fieldName = None,
+        errorType = SaveNotAllowed,
+        details = None
+      )
+    )
+  }
+
+  test("a node with only unnamed edges (e.g. Split) is not affected by the main output uniqueness check") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Split(NodeId("split"), NodeName("split")),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("out2"), NodeName("out2"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("split"), None),
+        Edge(NodeId("split"), NodeId("out"), None),
+        Edge(NodeId("split"), NodeId("out2"), None)
+      )
+    )
+
+    val result = validateWithConfiguredProperties(process)
+
+    result.errors.invalidNodes.getOrElse(NodeId("split"), Nil).map(_.typ) should not contain "NonUniqueEdgeType"
+  }
+
+  test("reject a CustomNodeOutput edge leaving a non-custom node, leaving its own typed edges alone") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Filter(NodeId("filter"), NodeName("filter"), Expression.spel("true")),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("out2"), NodeName("out2"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("strayOut"), NodeName("strayOut"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("filter"), None),
+        Edge(NodeId("filter"), NodeId("out"), Some(EdgeType.FilterTrue)),
+        Edge(NodeId("filter"), NodeId("out2"), Some(EdgeType.FilterFalse)),
+        Edge(NodeId("filter"), NodeId("strayOut"), Some(EdgeType.CustomNodeOutput("rejected")))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val filterErrors = result.errors.invalidNodes.get(NodeId("filter")).value
+    filterErrors.map(e => (e.typ, e.errorType)) should contain(("UnknownCustomNodeOutput", SaveNotAllowed))
+    // the filter's own branches are not named outputs, so they must not be reported as unsupported next to one
+    filterErrors.map(_.typ) should not contain "UnsupportedEdgeNextToCustomNodeOutputs"
+  }
+
+  test("accept a CustomNodeOutput edge for an output the source component declares") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, multiOutputTransformer, List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("rejectedOut"), NodeName("rejectedOut"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), Some(EdgeType.CustomNodeOutput("main"))),
+        Edge(NodeId("custom"), NodeId("rejectedOut"), Some(EdgeType.CustomNodeOutput("rejected")))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val errorTypes = result.errors.invalidNodes.values.flatten.map(_.typ)
+    errorTypes should contain noneOf ("UnknownCustomNodeOutput", "MissingCustomNodeOutputName")
+  }
+
+  test("resolve a legacy name-based edge source before checking CustomNodeOutput names") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom-uuid"), NodeName("customName"), None, multiOutputTransformer, List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom-uuid"), None),
+        // legacy payload: the edge references its source node by name, which the guard normalizes like
+        // `fromScenarioGraph` does
+        Edge(NodeId("customName"), NodeId("out"), Some(EdgeType.CustomNodeOutput("rejected")))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    result.errors.invalidNodes.values.flatten.map(_.typ) should not contain "UnknownCustomNodeOutput"
+  }
+
+  test("report only MissingCustomNodeExecutor for a node whose component does not resolve, whatever its named edges") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, "nonExistentComponent", List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("otherOut"), NodeName("otherOut"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), Some(EdgeType.CustomNodeOutput("main"))),
+        Edge(NodeId("custom"), NodeId("otherOut"), Some(EdgeType.CustomNodeOutput("rejected")))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val customNodeErrorTypes = result.errors.invalidNodes.getOrElse(NodeId("custom"), Nil).map(_.typ)
+    // the unresolvable component is reported once, by the compiler stage - not spuriously duplicated by the ui guard
+    customNodeErrorTypes should contain("MissingCustomNodeExecutor")
+    customNodeErrorTypes should contain noneOf (
+      "UnknownCustomNodeOutput",
+      "MissingCustomNodeOutputName",
+      "UnsupportedEdgeNextToCustomNodeOutputs"
+    )
+  }
+
+  test("reject an unnamed edge next to a CustomNodeOutput edge even when the component does not resolve") {
+    // The conversion drops the unnamed subtree next to named outputs regardless of whether the component resolves.
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, "nonExistentComponent", List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("otherOut"), NodeName("otherOut"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), Some(EdgeType.CustomNodeOutput("rejected"))),
+        Edge(NodeId("custom"), NodeId("otherOut"), None)
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val errorTypesAndSeverities =
+      result.errors.invalidNodes.get(NodeId("custom")).value.map(e => (e.typ, e.errorType))
+    errorTypesAndSeverities should contain(("MissingCustomNodeOutputName", SaveNotAllowed))
+  }
+
+  test("reject a typed edge next to a CustomNodeOutput edge even when the component does not resolve") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, "nonExistentComponent", List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("otherOut"), NodeName("otherOut"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), Some(EdgeType.CustomNodeOutput("rejected"))),
+        Edge(NodeId("custom"), NodeId("otherOut"), Some(EdgeType.FilterTrue))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val errorTypesAndSeverities =
+      result.errors.invalidNodes.get(NodeId("custom")).value.map(e => (e.typ, e.errorType))
+    errorTypesAndSeverities should contain(("UnsupportedEdgeNextToCustomNodeOutputs", SaveNotAllowed))
+  }
+
+  test("reject a typed edge next to CustomNodeOutput edges") {
+    // The conversion has no room for a typed edge next to named outputs and would drop its subgraph.
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, multiOutputTransformer, List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("otherOut"), NodeName("otherOut"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), Some(EdgeType.CustomNodeOutput("rejected"))),
+        Edge(NodeId("custom"), NodeId("otherOut"), Some(EdgeType.FilterTrue))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val errorTypesAndSeverities =
+      result.errors.invalidNodes.get(NodeId("custom")).value.map(e => (e.typ, e.errorType))
+    errorTypesAndSeverities should contain(("UnsupportedEdgeNextToCustomNodeOutputs", SaveNotAllowed))
+  }
+
+  test("reject an unnamed edge leaving a multi-output custom node") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, multiOutputTransformer, List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), None)
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val errorTypesAndSeverities =
+      result.errors.invalidNodes.get(NodeId("custom")).value.map(e => (e.typ, e.errorType))
+    errorTypesAndSeverities should contain(("MissingCustomNodeOutputName", SaveNotAllowed))
+  }
+
+  test("report the unnamed-edge problem once per node, not once per offending edge") {
+    // The errors carry no per-edge information, and SaveNotAllowed errors skip `deduplicateErrors` -
+    // without a distinct the same message would render twice on the node.
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, multiOutputTransformer, List()),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("otherOut"), NodeName("otherOut"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("custom"), None),
+        Edge(NodeId("custom"), NodeId("out"), None),
+        Edge(NodeId("custom"), NodeId("otherOut"), None)
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    val missingNameErrors =
+      result.errors.invalidNodes.get(NodeId("custom")).value.filter(_.typ == "MissingCustomNodeOutputName")
+    missingNameErrors should have size 1
+  }
+
+  test("reject a CustomNodeOutput edge leaving a single-output custom node, even one naming its main output") {
+    forAll(Table("outputName", "main", "someOutput")) { outputName =>
+      val process = createGraph(
+        List(
+          Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+          CustomNode(NodeId("custom"), NodeName("custom"), None, singleOutputTransformer, List()),
+          Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+        ),
+        List(
+          Edge(NodeId("in"), NodeId("custom"), None),
+          Edge(NodeId("custom"), NodeId("out"), Some(EdgeType.CustomNodeOutput(outputName)))
+        )
+      )
+
+      val result = validateWithOutputAwareValidator(process)
+
+      val errorTypesAndSeverities =
+        result.errors.invalidNodes.get(NodeId("custom")).value.map(e => (e.typ, e.errorType))
+      errorTypesAndSeverities should contain(("UnknownCustomNodeOutput", SaveNotAllowed))
+    }
+  }
+
+  test("skip the CustomNodeOutput guard for an edge whose source node does not exist") {
+    // Reporting a dangling edge would key the error by a node id the frontend cannot display; its disconnected
+    // target is caught by the loose-nodes validation instead.
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("out"), None),
+        Edge(NodeId("phantom"), NodeId("out"), Some(EdgeType.CustomNodeOutput("rejected")))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    result.errors.invalidNodes.values.flatten.map(_.typ) should not contain "UnknownCustomNodeOutput"
+    result.errors.invalidNodes.keys should not contain NodeId("phantom")
+  }
+
   test("check for loose nodes") {
     val process = createGraph(
       List(
@@ -219,6 +552,37 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           details = None
         ),
         List(NodeId("loose"))
+      )
+    )
+  }
+
+  test("report a node reachable only through an edge from a nonexistent source as loose") {
+    // A dangling edge does not connect its target: the conversion walks from the roots and would
+    // silently drop `orphan` together with the edge.
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
+        Sink(NodeId("orphan"), NodeName("orphan"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("out"), None),
+        Edge(NodeId("phantom"), NodeId("orphan"), None)
+      )
+    )
+    val result = validateWithConfiguredProperties(process)
+
+    result.errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "LooseNode",
+          message = "Loose node",
+          description = "Node orphan is not connected to source, it cannot be saved properly",
+          fieldName = None,
+          errorType = SaveNotAllowed,
+          details = None
+        ),
+        List(NodeId("orphan"))
       )
     )
   }
@@ -1728,6 +2092,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val validator = new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
+      declaredOutputs = modelData.modelDefinition.declaredOutputs,
       testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
@@ -1788,6 +2153,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val validator = new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
+      declaredOutputs = modelData.modelDefinition.declaredOutputs,
       testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
@@ -2525,6 +2891,37 @@ private object UIProcessValidatorSpec {
       c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
     )
 
+  private val multiOutputTransformer  = "multiOutputTransformer"
+  private val singleOutputTransformer = "singleOutputTransformer"
+
+  private val outputAwareValidator: UIProcessValidator = {
+    val modelDefinition = ModelDefinitionBuilder.empty
+      .withUnboundedStreamSource(ProcessTestData.existingSourceFactory)
+      .withSink(ProcessTestData.existingSinkFactory)
+      .withCustom(
+        multiOutputTransformer,
+        returnType = None,
+        CustomComponentSpecificData(
+          canHaveManyInputs = false,
+          canBeEnding = true,
+          outputs = NonEmptyList.of(ComponentOutput.MainOutput, ComponentOutput.RejectedOutput)
+        )
+      )
+      .withCustom(
+        singleOutputTransformer,
+        returnType = None,
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = true)
+      )
+      .build
+    ProcessTestData.testProcessValidator(
+      validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
+      declaredOutputs = modelDefinition.declaredOutputs
+    )
+  }
+
+  private def validateWithOutputAwareValidator(scenario: ScenarioGraph): ValidationResult =
+    outputAwareValidator.validate(scenario, ProcessTestData.sampleProcessName, isFragment = false, List.empty)
+
   private val configuredValidator: UIProcessValidator = ProcessTestData.testProcessValidator(
     scenarioProperties = Map(
       "requiredStringProperty" -> ScenarioPropertyConfig(
@@ -2819,6 +3216,7 @@ private object UIProcessValidatorSpec {
     new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
+      declaredOutputs = modelData.modelDefinition.declaredOutputs,
       testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
@@ -2857,6 +3255,7 @@ private object UIProcessValidatorSpec {
     new UIProcessValidator(
       processingType = "Streaming",
       validator = ProcessValidator.default(modelData),
+      declaredOutputs = modelData.modelDefinition.declaredOutputs,
       testCaseValidator = TestCaseValidator(modelData, TestCasesSettings()),
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =

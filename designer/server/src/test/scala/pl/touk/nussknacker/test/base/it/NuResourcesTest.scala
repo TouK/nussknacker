@@ -299,7 +299,10 @@ trait NuResourcesTest
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
       new UIProcessResolver(
-        ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData)),
+        ProcessTestData.testProcessValidator(
+          validator = ProcessValidator.default(modelData),
+          declaredOutputs = modelData.modelDefinition.declaredOutputs
+        ),
         ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
       ),
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository()),

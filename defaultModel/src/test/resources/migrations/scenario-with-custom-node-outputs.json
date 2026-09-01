@@ -1,0 +1,52 @@
+{
+  "metaData": {
+    "id": "test-custom-node-outputs",
+    "additionalFields": {
+      "properties": {},
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes": [
+    {
+      "type": "Source",
+      "id": "source1",
+      "ref": { "typ": "kafka", "parameters": [] }
+    },
+    {
+      "type": "CustomNode",
+      "id": "custom1",
+      "outputVar": "out",
+      "nodeType": "splitter",
+      "parameters": [],
+      "outputs": [
+        {
+          "name": "main",
+          "nodes": [
+            {
+              "type": "Sink",
+              "id": "sink1",
+              "ref": { "typ": "kafka", "parameters": [] }
+            }
+          ]
+        },
+        {
+          "name": "rejected",
+          "nodes": [
+            {
+              "type": "Filter",
+              "id": "rejectedFilter",
+              "expression": { "language": "spel", "expression": "#input.amount > 0" },
+              "nextFalse": []
+            },
+            {
+              "type": "Sink",
+              "id": "rejectedSink",
+              "ref": { "typ": "kafka", "parameters": [] }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "additionalBranches": []
+}

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.canonize
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.syntax.traverse._
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.canonicalgraph._
 import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData}
@@ -107,6 +106,18 @@ object ProcessCanonizer {
             Some(node.SplitNode(bare, uncanonized.flatten))
           }
 
+      case (a @ canonicalnode.CustomNodeWithOutputs(data, outputs)) :: Nil =>
+        // An entry with an empty node list means the output is not connected (raw JSON with an empty array decodes
+        // to it) - the main one included, so an unwired output must not be reported as dangling.
+        val outputsUncanonized: MaybeArtificial[List[node.Output]] =
+          outputs.toList
+            .filter(_.nodes.nonEmpty)
+            .traverse(output => uncanonize(a, output.nodes).map(output.name -> _))
+            .map(_.collect { case (outputName, Some(outputNode)) => node.Output(outputName, outputNode) })
+        outputsUncanonized.map { outputsV =>
+          Some(node.CustomNodeWithOutputs.orEnding(data, outputsV)): Option[node.SubsequentNode]
+        }
+
       case invalidHead :: _ =>
         MaybeArtificial.missingSinkError(InvalidTailOfBranch(invalidHead.id))
 
@@ -124,6 +135,11 @@ object NodeCanonizer {
         canonicalnode.FlatNode(oneOut.data) :: oneOut.next.map(canonize).getOrElse(Nil)
       case node.FilterNode(data, nextTrue, nextFalse) =>
         canonicalnode.FilterNode(data, nextFalse.toList.flatMap(canonize)) :: nextTrue.toList.flatMap(canonize)
+      case node.CustomNodeWithOutputs(data, outputs) =>
+        canonicalnode.CustomNodeWithOutputs(
+          data,
+          outputs.map(output => canonicalnode.Output(output.name, canonize(output.next)))
+        ) :: Nil
       case node.SwitchNode(data, nexts, defaultNext) =>
         canonicalnode.SwitchNode(
           data = data,

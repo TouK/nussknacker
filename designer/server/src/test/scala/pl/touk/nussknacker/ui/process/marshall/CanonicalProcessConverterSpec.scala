@@ -7,9 +7,10 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaDat
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess, CanonicalProcessConverter}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
+import pl.touk.nussknacker.engine.graph.EdgeType.{CustomNodeOutput, FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -253,6 +254,178 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
 
     canonical.collectAllNodes.collect { case b: BranchEndData => b.definition } should contain only
       BranchEndDefinition("source1", unionUuid)
+  }
+
+  test("convert a custom node with a named output to a canonical wrapper and back, the rejected one into a join") {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List.empty)
+    val sinkA          = Sink(NodeId("sinkA"), NodeName("sinkA"), SinkRef("dead-end", List.empty))
+    val sinkB          = Sink(NodeId("sinkB"), NodeName("sinkB"), SinkRef("dead-end", List.empty))
+    val join =
+      Join(
+        NodeId("join"),
+        NodeName("join"),
+        Some("joined"),
+        "joinRef",
+        List.empty,
+        List(BranchParameters("dedup", List()))
+      )
+
+    val scenarioGraph = ScenarioGraph(
+      ProcessProperties(metaData),
+      List(
+        Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty)),
+        customNodeData,
+        sinkA,
+        join,
+        sinkB
+      ),
+      List(
+        Edge(NodeId("source"), NodeId("dedup"), None),
+        Edge(NodeId("dedup"), NodeId("sinkA"), Some(CustomNodeOutput("main"))),
+        Edge(NodeId("dedup"), NodeId("join"), Some(CustomNodeOutput("rejected"))),
+        Edge(NodeId("join"), NodeId("sinkB"), None)
+      )
+    )
+
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("dedup-test"))
+
+    canonical.nodes shouldBe List(
+      FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty))),
+      canonicalnode.CustomNodeWithOutputs(
+        customNodeData,
+        List(
+          canonicalnode.Output("main", List(FlatNode(sinkA))),
+          canonicalnode.Output("rejected", List(FlatNode(BranchEndData(BranchEndDefinition("dedup", "join")))))
+        )
+      )
+    )
+    canonical.additionalBranches shouldBe List(List(FlatNode(join), FlatNode(sinkB)))
+
+    val roundTripped = canonical.toScenarioGraph
+    roundTripped.nodes.toSet shouldBe scenarioGraph.nodes.toSet
+    roundTripped.edges.toSet shouldBe scenarioGraph.edges.toSet
+  }
+
+  // `CustomNodeWithOutputs` has room for the named outputs and nothing else, so any other edge on such a node loses
+  // its subtree. An unnamed edge has no slot next to named outputs - the main continuation travels under its name.
+  // Only reachable through import/API, and `UIProcessValidator` rejects it on save - this pins what the conversion
+  // does should one slip through.
+  test("drop (not silently) another edge on a custom node that also has a named output") {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List.empty)
+    val rejectedSink   = Sink(NodeId("sinkB"), NodeName("sinkB"), SinkRef("dead-end", List.empty))
+    val droppedSink    = Sink(NodeId("sinkDropped"), NodeName("sinkDropped"), SinkRef("dead-end", List.empty))
+
+    val scenarioGraph = ScenarioGraph(
+      ProcessProperties(metaData),
+      List(
+        Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty)),
+        customNodeData,
+        rejectedSink,
+        droppedSink
+      ),
+      List(
+        Edge(NodeId("source"), NodeId("dedup"), None),
+        Edge(NodeId("dedup"), NodeId("sinkB"), Some(CustomNodeOutput("rejected"))),
+        Edge(NodeId("dedup"), NodeId("sinkDropped"), None)
+      )
+    )
+
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("dedup-dropped-edge"))
+
+    canonical.nodes shouldBe List(
+      FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty))),
+      canonicalnode.CustomNodeWithOutputs(
+        customNodeData,
+        List(canonicalnode.Output("rejected", List(FlatNode(rejectedSink))))
+      )
+    )
+  }
+
+  test("keep the first output edge and drop (not silently) a duplicate edge with the same output name") {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List.empty)
+    val firstSink      = Sink(NodeId("firstSink"), NodeName("firstSink"), SinkRef("dead-end", List.empty))
+    val duplicateSink  = Sink(NodeId("duplicateSink"), NodeName("duplicateSink"), SinkRef("dead-end", List.empty))
+
+    val scenarioGraph = ScenarioGraph(
+      ProcessProperties(metaData),
+      List(
+        Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty)),
+        customNodeData,
+        firstSink,
+        duplicateSink
+      ),
+      List(
+        Edge(NodeId("source"), NodeId("dedup"), None),
+        Edge(NodeId("dedup"), NodeId("firstSink"), Some(CustomNodeOutput("rejected"))),
+        Edge(NodeId("dedup"), NodeId("duplicateSink"), Some(CustomNodeOutput("rejected")))
+      )
+    )
+
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("dedup-duplicate-output"))
+
+    canonical.nodes shouldBe List(
+      FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty))),
+      canonicalnode.CustomNodeWithOutputs(
+        customNodeData,
+        List(canonicalnode.Output("rejected", List(FlatNode(firstSink))))
+      )
+    )
+  }
+
+  // A non-UI caller can hand in a branch edge on a Join; it must be dropped, not flattened inline as a continuation.
+  test("drop (not silently) a named output edge on a join and convert the rest of the graph normally") {
+    val scenarioGraph = ScenarioGraph(
+      ProcessProperties(metaData),
+      List(
+        Processor(NodeId("e"), NodeName("e"), ServiceRef("ref", List.empty)),
+        Join(NodeId("j1"), NodeName("j1"), Some("out1"), "joinRef", List.empty, List(BranchParameters("s1", List()))),
+        Source(NodeId("s1"), NodeName("s1"), SourceRef("sourceRef", List.empty)),
+        Sink(NodeId("rejectedSink"), NodeName("rejectedSink"), SinkRef("dead-end", List.empty))
+      ),
+      List(
+        Edge(NodeId("s1"), NodeId("j1"), None),
+        Edge(NodeId("j1"), NodeId("e"), None),
+        Edge(NodeId("j1"), NodeId("rejectedSink"), Some(CustomNodeOutput("rejected")))
+      )
+    )
+
+    val name      = ProcessName("join-with-named-output-edge")
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, name)
+
+    canonical shouldBe ScenarioBuilder
+      .streaming(name.value)
+      .parallelism(metaData.parallelism.get)
+      .stateOnDisk(metaData.spillStateToDisk.get)
+      .sources(
+        GraphBuilder.join("j1", "joinRef", Some("out1"), List("s1" -> List())).processorEnd("e", "ref"),
+        GraphBuilder.source("s1", "sourceRef").branchEnd("s1", "j1")
+      )
+  }
+
+  test("regression: a plain custom node with only an unnamed edge stays a flat node, not a wrapper") {
+    val customNodeData = CustomNode(NodeId("plain"), NodeName("plain"), Some("outVar"), "plainRef", List.empty)
+    val sink           = Sink(NodeId("sink"), NodeName("sink"), SinkRef("dead-end", List.empty))
+
+    val scenarioGraph = ScenarioGraph(
+      ProcessProperties(metaData),
+      List(
+        Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty)),
+        customNodeData,
+        sink
+      ),
+      List(
+        Edge(NodeId("source"), NodeId("plain"), None),
+        Edge(NodeId("plain"), NodeId("sink"), None)
+      )
+    )
+
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("plain-custom-node"))
+
+    canonical.nodes shouldBe List(
+      FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("sourceRef", List.empty))),
+      FlatNode(customNodeData),
+      FlatNode(sink)
+    )
   }
 
   test("handle large union scenario fixture with legacy name-based edge references") {

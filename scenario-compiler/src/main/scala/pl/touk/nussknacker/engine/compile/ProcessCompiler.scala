@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.component.{ComponentOutput, NodesDeploymentData, SupportsMultipleOutputs}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   LazyParameterCreationStrategy,
   MultipleInputBranchesNodeInputValidationContext,
   NodeCompiler,
+  NodeInputValidationContext,
   SingleInputNodeInputValidationContext
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
@@ -28,7 +29,7 @@ import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
-import pl.touk.nussknacker.engine.splittedgraph.end.NormalEnd
+import pl.touk.nussknacker.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -147,7 +148,7 @@ protected trait ProcessCompilerBase {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[CompiledProcessParts] =
     CompilationResult.map2(
-      CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
+      CompilationResult(findDuplicates(splittedProcess.sources)),
       compileSources(splittedProcess.sources)
     ) { (_, sources) =>
       CompiledProcessParts(sources)
@@ -175,15 +176,52 @@ protected trait ProcessCompilerBase {
     result.map(NonEmptyList.fromListUnsafe)
   }
 
-  private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
-    val allNodes = NodesCollector.collectNodesInAllParts(parts)
-    val duplicatedNodes = allNodes
-      .groupBy(_.id)
-      .collect { case (id, groupedNodes) if groupedNodes.size > 1 => id -> groupedNodes.map(_.data.name).toSet }
-    if (duplicatedNodes.isEmpty)
-      valid(())
-    else
-      invalid(DuplicatedNodeIds(duplicatedNodes))
+  private def findDuplicates(parts: NonEmptyList[SourcePart]): ValidatedNel[ProcessCompilationError, Unit] = {
+    val allNodes   = NodesCollector.collectNodesInAllParts(parts)
+    val duplicates = allNodes.groupBy(_.id).filter { case (_, nodes) => nodes.size > 1 }
+
+    // Duplicated branch ends mean a join is reached twice under one branch key (the source node's name) - typically
+    // one node through several of its outputs. Reported separately, because DuplicatedNodeIds would name the
+    // artificial `$edge-...` node the user never sees.
+    val (duplicatedBranchEnds, duplicatedIds) = duplicates.partitionMap { case (id, nodes) =>
+      nodes.head.data match {
+        case BranchEndData(definition) => Left(definition)
+        case _                         => Right(id -> nodes.map(_.data.name).toSet)
+      }
+    }
+
+    val sameJoinErrors = duplicatedBranchEnds.toList.map { definition =>
+      MultipleOutputsToSameJoin(branchSourceNodeIds(definition, allNodes))
+    }
+
+    val duplicatedIdErrors = Option.when(duplicatedIds.nonEmpty)(DuplicatedNodeIds(duplicatedIds.toMap)).toList
+
+    NonEmptyList.fromList(sameJoinErrors ++ duplicatedIdErrors).map(Invalid(_)).getOrElse(valid(()))
+  }
+
+  /**
+    * The canonical branchId (`BranchEndDefinition.id`) is the source node's *name* (see the Join case in
+    * CanonicalProcessConverter), while the designer attaches errors by node *id*, so the name has to be resolved back.
+    * The fallback covers graphs built directly through the scenario API, where the branchId is arbitrary.
+    */
+  private def branchSourceNodeIds(
+      definition: BranchEndDefinition,
+      allNodes: List[splittednode.SplittedNode[_ <: NodeData]]
+  ): Set[NodeId] = {
+    val matchingIds = allNodes
+      .map(_.data)
+      .flatMap {
+        case _: BranchEndData                         => Nil
+        case data if data.name.value == definition.id => List(data.id)
+        case _                                        => Nil
+      }
+      .toSet
+
+    if (matchingIds.nonEmpty) {
+      matchingIds
+    } else {
+      Set(NodeId(definition.id))
+    }
   }
 
   private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)(
@@ -221,10 +259,10 @@ protected trait ProcessCompilerBase {
     part match {
       case SinkPart(node) =>
         compileSinkPart(node, partInputContext)
-      case CustomNodePart(node @ splittednode.EndingNode(_), _, _) =>
+      case SingleOutputCustomNodePart(node @ splittednode.EndingNode(_), _, _) =>
         compileEndingCustomNodePart(node, partInputContext)
-      case CustomNodePart(node @ splittednode.OneOutputSubsequentNode(_, _), _, _) =>
-        compileCustomNodePart(part, node, Left(partInputContext))
+      case customNodePart: CustomNodePart =>
+        compileCustomNodePart(customNodePart, customNodePart.node, Left(partInputContext))
     }
   }
 
@@ -295,11 +333,16 @@ protected trait ProcessCompilerBase {
       ) { (nodeInvoker, nextCtx) =>
         compiledgraph.part.CustomNodePart(
           nodeInvoker,
-          node,
           ctx,
           nextCtx,
-          List.empty,
-          List(TypedEnd(NormalEnd(node.id), ctx))
+          NonEmptyList.one(
+            compiledgraph.part.CompiledOutput(
+              declaredOutputs(node.data.nodeType, node.id).head,
+              node,
+              List.empty,
+              List(TypedEnd(NormalEnd(node.id), ctx))
+            )
+          )
         )
       }
       .distinctErrors
@@ -307,34 +350,183 @@ protected trait ProcessCompilerBase {
 
   private def compileCustomNodePart(
       part: ProcessPart,
-      node: splittednode.OneOutputNode[CustomNodeData],
+      node: splittednode.SplittedNode[CustomNodeData],
+      ctx: Either[ValidationContext, BranchEndContexts]
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): CompilationResult[compiledgraph.part.CustomNodePart] =
+    part match {
+      // Joins never carry additional outputs (guarded at definition load), so they always take the embedded shape.
+      case multiOutputPart: MultiOutputCustomNodePart => compileMultiOutputCustomNodePart(multiOutputPart, ctx)
+      case _                                          => compileEmbeddedOutputCustomNodePart(part, node, ctx)
+    }
+
+  /**
+    * The named-outputs shape: every wired continuation, the main one included, compiles and validates through its own
+    * output entry, so no chain hangs off the spine. Validating the spine would only add a second typing entry for the
+    * custom node, keyed to the after-node context, and the typing merge would warn about conflicting contexts on
+    * every compilation.
+    */
+  private def compileMultiOutputCustomNodePart(
+      part: MultiOutputCustomNodePart,
       ctx: Either[ValidationContext, BranchEndContexts]
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     import scenarioCompilationDependencies._
 
-    val nodeInputValidationContext = ctx match {
-      case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
-      case Right(branchEndContexts) =>
-        MultipleInputBranchesNodeInputValidationContext(
-          branchEndContexts.contextsForJoin(node.id.value),
-          contextWithOnlyGlobalVariables
-        )
+    val node     = part.node
+    val nodeData = node.data
+
+    // With additional outputs connected the node does not end the scenario, even if its main output is unwired.
+    val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
+      nodeCompiler.compileCustomNodeObject(nodeData, customNodeInputValidationContext(node, ctx), Some(false))
+
+    val nextPartInputValidationContext = customNodeNextPartInputValidationContext(validatedNextCtx, ctx)
+
+    // Each output re-uses the node's data with its own continuation and validates against the same after-node context.
+    val outputData = part.outputs.toList.map { output =>
+      val outputNode          = splittednode.OneOutputSubsequentNode(nodeData, output.next)
+      val outputValidation    = sub.validate(outputNode, nextPartInputValidationContext)
+      val outputTypesForParts = outputValidation.typing.mapValuesNow(_.inputValidationContext)
+      (output, outputNode, outputValidation, outputTypesForParts)
     }
+
+    val declaredOutputsForNode = nodeCompiler.declaredOutputs(nodeData.nodeType)
+    val outputNames            = outputData.map { case (output, _, _, _) => output.name }
+    val outputNamesSet         = outputNames.toSet
+
+    val outputNameValidation: CompilationResult[Unit] = {
+      val unknownOutputNames  = declaredOutputsForNode.fold(Set.empty[String])(_.undeclaredAmong(outputNamesSet))
+      val unknownOutputErrors = unknownOutputNames.toList.sorted.map(UnknownCustomNodeOutput(_, Set(node.id)))
+      CompilationResult(NonEmptyList.fromList(unknownOutputErrors).map(Invalid(_)).getOrElse(valid(())))
+    }
+
+    val duplicateOutputNamesValidation: CompilationResult[Unit] = {
+      val duplicatedNames = outputNames.groupBy(identity).filter(_._2.sizeIs > 1).keys.toList.sorted
+      if (duplicatedNames.isEmpty) CompilationResult(Valid(()))
+      else
+        CompilationResult(Invalid(NonEmptyList.one(DuplicateCustomNodeOutputNames(duplicatedNames, Set(node.id)))))
+    }
+
+    def declared: NonEmptyList[ComponentOutput] =
+      declaredOutputsForNode
+        .map(_.outputs)
+        .getOrElse(missingComponent(nodeData.nodeType, node.id))
+
+    // Looked up among the declared instances rather than built from the edge; `outputNameValidation` guards the miss.
+    def declaredOutput(outputName: String): ComponentOutput =
+      declared
+        .find(_.name == outputName)
+        .getOrElse(
+          throw new IllegalStateException(s"Output '$outputName' not declared by '${nodeData.nodeType}'")
+        )
+
+    val outputsCompilation: CompilationResult[List[compiledgraph.part.CompiledOutput]] =
+      outputData.map { case (output, outputNode, outputValidation, outputTypesForParts) =>
+        CompilationResult.map4(
+          CompilationResult(compiledNode),
+          outputNameValidation,
+          outputValidation,
+          compileParts(output.nextParts, outputTypesForParts)
+        ) { (_, _, _, outputNextPartsCompiled) =>
+          compiledgraph.part.CompiledOutput(
+            declaredOutput(output.name),
+            outputNode,
+            outputNextPartsCompiled,
+            output.ends.map(e => TypedEnd(e, outputTypesForParts.getOrElse(e.nodeId.value, ValidationContext.empty)))
+          )
+        }
+      }.sequence
+
+    val nodeTypingInfo = Map(
+      node.id.value -> NodeTypingInfo(
+        ctx.left.getOrElse(contextWithOnlyGlobalVariables),
+        typingInfo,
+        parameters,
+        validatedNextCtx.toOption
+      )
+    )
+
+    // Wired additional outputs only work when the returned implementation can route them - reported here rather
+    // than at job registration, where it would surface only on deployment. A main-only wiring runs on any
+    // implementation.
+    val additionalOutputsSupportValidation: CompilationResult[Unit] = compiledNode match {
+      case _ if declaredOutputsForNode.forall(_.wiredAdditionalAmong(outputNamesSet).isEmpty) =>
+        CompilationResult(Valid(()))
+      case Valid(_: SupportsMultipleOutputs) => CompilationResult(Valid(()))
+      case Valid(_) =>
+        CompilationResult(
+          Invalid(
+            NonEmptyList.one(
+              CustomNodeError(
+                node.id,
+                "Additional outputs of this component are not supported on this engine - disconnect them.",
+                None
+              )
+            )
+          )
+        )
+      // A node that failed to compile for another reason gets no second error here.
+      case Invalid(_) => CompilationResult(Valid(()))
+    }
+
+    val outputsValidation: CompilationResult[Unit] =
+      CompilationResult.map3(outputNameValidation, duplicateOutputNamesValidation, additionalOutputsSupportValidation)(
+        (_, _, _) => ()
+      )
+
+    // An unwired main gets a DeadEnd stand-in entry - the node does not end the scenario.
+    def mainOutputWithoutOwnEntry: compiledgraph.part.CompiledOutput =
+      compiledgraph.part.CompiledOutput(
+        declared.head,
+        splittednode.OneOutputSubsequentNode(nodeData, None),
+        List.empty,
+        List(TypedEnd(DeadEnd(node.id), nextPartInputValidationContext.validationContext))
+      )
+
+    CompilationResult
+      .map4(
+        CompilationResult(nodeTypingInfo, compiledNode),
+        CompilationResult(validatedNextCtx),
+        outputsCompilation,
+        outputsValidation
+      ) { (nodeInvoker, nextCtx, compiledOutputs, _) =>
+        val mainOutput = compiledOutputs.find(_.output == declared.head).getOrElse(mainOutputWithoutOwnEntry)
+        compiledgraph.part.CustomNodePart(
+          nodeInvoker,
+          ctx.left.getOrElse(ValidationContext.empty),
+          nextCtx,
+          NonEmptyList(
+            mainOutput,
+            // Ordered by the declaration, not by the compiled outputs: those follow the scenario's edge order.
+            declared.tail.flatMap(output => compiledOutputs.find(_.output == output))
+          )
+        )
+      }
+      .distinctErrors
+  }
+
+  /**
+    * The embedded shape: the main chain hangs directly off the node, as the single-output path has always compiled.
+    * Also the join shape - a join never carries additional outputs.
+    */
+  private def compileEmbeddedOutputCustomNodePart(
+      part: ProcessPart,
+      node: splittednode.SplittedNode[CustomNodeData],
+      ctx: Either[ValidationContext, BranchEndContexts]
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): CompilationResult[compiledgraph.part.CustomNodePart] = {
+    import scenarioCompilationDependencies._
 
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
-      nodeCompiler.compileCustomNodeObject(node, nodeInputValidationContext)
+      nodeCompiler.compileCustomNodeObject(node.data, customNodeInputValidationContext(node, ctx), Some(node.isEnding))
 
-    val nextPartInputValidationContext = validatedNextCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse {
-      ctx match {
-        case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
-        case Right(_)            => SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables)
-      }
-    }
+    val nextPartsValidation =
+      sub.validate(node, customNodeNextPartInputValidationContext(validatedNextCtx, ctx))
+    val typesForParts = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
 
-    val nextPartsValidation = sub.validate(node, nextPartInputValidationContext)
-    val typesForParts       = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(
       node.id.value -> NodeTypingInfo(
         ctx.left.getOrElse(contextWithOnlyGlobalVariables),
@@ -350,19 +542,66 @@ protected trait ProcessCompilerBase {
         nextPartsValidation,
         compileParts(part.nextParts, typesForParts),
         CompilationResult(validatedNextCtx)
-      ) { (nodeInvoker, _, nextPartsCompiled, nextCtx) =>
-        // TODO: what should be passed for joins here?
+      ) { (nodeInvoker, _, mainNextPartsCompiled, nextCtx) =>
         compiledgraph.part.CustomNodePart(
           nodeInvoker,
-          node,
+          // TODO: what should be passed for joins here?
           ctx.left.getOrElse(ValidationContext.empty),
           nextCtx,
-          nextPartsCompiled,
-          part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId.value, ValidationContext.empty)))
+          NonEmptyList.one(
+            compiledgraph.part.CompiledOutput(
+              declaredOutputs(node.data.nodeType, node.id).head,
+              node,
+              mainNextPartsCompiled,
+              part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId.value, ValidationContext.empty)))
+            )
+          )
         )
       }
       .distinctErrors
   }
+
+  private def customNodeInputValidationContext(
+      node: splittednode.SplittedNode[CustomNodeData],
+      ctx: Either[ValidationContext, BranchEndContexts]
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeInputValidationContext = {
+    import scenarioCompilationDependencies._
+    ctx match {
+      case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
+      case Right(branchEndContexts) =>
+        MultipleInputBranchesNodeInputValidationContext(
+          branchEndContexts.contextsForJoin(node.id.value),
+          contextWithOnlyGlobalVariables
+        )
+    }
+  }
+
+  private def customNodeNextPartInputValidationContext(
+      validatedNextCtx: ValidatedNel[ProcessCompilationError, ValidationContext],
+      ctx: Either[ValidationContext, BranchEndContexts]
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): SingleInputNodeInputValidationContext = {
+    import scenarioCompilationDependencies._
+    validatedNextCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse {
+      ctx match {
+        case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
+        case Right(_)            => SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables)
+      }
+    }
+  }
+
+  /**
+    * Call only from inside a `CompilationResult` mapping lambda: those run once every input is `Valid`, which implies
+    * the component exists. A miss here is an invariant break in the compiler, not a fixable scenario error.
+    */
+  private def declaredOutputs(nodeType: String, nodeId: NodeId): NonEmptyList[ComponentOutput] =
+    nodeCompiler.declaredOutputs(nodeType).map(_.outputs).getOrElse(missingComponent(nodeType, nodeId))
+
+  private def missingComponent(nodeType: String, nodeId: NodeId): Nothing =
+    throw new IllegalStateException(s"No custom component '$nodeType' for compiled node $nodeId")
 
   private class BranchEndContexts(joinIdBranchIdContexts: List[(String, (String, ValidationContext))]) {
 

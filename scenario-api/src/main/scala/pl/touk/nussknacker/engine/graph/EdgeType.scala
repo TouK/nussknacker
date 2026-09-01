@@ -25,4 +25,6 @@ object EdgeType {
   case object SwitchDefault extends SwitchEdge
 
   case class FragmentOutput(name: String) extends EdgeType
+
+  case class CustomNodeOutput(name: String) extends EdgeType
 }

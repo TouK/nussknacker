@@ -757,8 +757,9 @@ class ScenarioTestServiceSpec
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
       new UIProcessResolver(
-        ProcessTestData.testProcessValidator(validator =
-          ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition))
+        ProcessTestData.testProcessValidator(
+          validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition)),
+          declaredOutputs = modelData.modelDefinition.declaredOutputs
         ),
         ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
       ),

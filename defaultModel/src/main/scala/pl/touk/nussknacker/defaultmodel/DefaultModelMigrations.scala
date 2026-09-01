@@ -18,6 +18,7 @@ class DefaultModelMigrations extends ProcessMigrations {
     100 -> SampleGeneratorToEventGeneratorAndPeriodToScheduleParameter,
     200 -> PreviousValueParameterNamesMigration,
     300 -> NodeIdToUuidMigration,
+    502 -> CustomNodeOutputsMigration(nodeType = "deduplication", mainOutputName = "passed"),
   )
 
 }

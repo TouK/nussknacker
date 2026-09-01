@@ -81,6 +81,11 @@ object NodeIdToUuidMigration extends ProcessMigration {
           data.copy(id = id(data)),
           outputs.map { case (k, v) => k -> rewriteNodes(v, mapId, migratedNodeId) }
         )
+      case canonicalnode.CustomNodeWithOutputs(data, outputs) =>
+        canonicalnode.CustomNodeWithOutputs(
+          data.copy(id = id(data)),
+          outputs.map(o => o.copy(nodes = rewriteNodes(o.nodes, mapId, migratedNodeId)))
+        )
     }
   }
 

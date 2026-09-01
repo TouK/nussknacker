@@ -52,7 +52,7 @@ private[component] object ComponentNodeTemplatePreparer {
           Enricher(NodeId.generate(), NodeName(""), serviceRef(id, staticDefinition), "output")
         case (id, ServiceSpecificData) =>
           Processor(NodeId.generate(), NodeName(""), serviceRef(id, staticDefinition))
-        case (id, CustomComponentSpecificData(true, _)) =>
+        case (id, CustomComponentSpecificData(true, _, _)) =>
           Join(
             NodeId.generate(),
             NodeName(""),
@@ -61,7 +61,7 @@ private[component] object ComponentNodeTemplatePreparer {
             parameterTemplates(staticDefinition),
             List.empty
           )
-        case (id, CustomComponentSpecificData(false, _)) =>
+        case (id, CustomComponentSpecificData(false, _, _)) =>
           CustomNode(
             NodeId.generate(),
             NodeName(""),

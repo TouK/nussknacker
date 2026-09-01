@@ -4,6 +4,8 @@ import type { dia } from "jointjs";
 import { flatMap, groupBy, isEqual } from "lodash";
 import { partition } from "lodash";
 
+import { isEdgeConnected } from "./EdgeUtils";
+import { updateChangedCells } from "./updateChangedCells";
 import type { UserSettings } from "../../../reducers/userSettings";
 import type { ScenarioGraph, ProcessDefinitionData } from "../../../types/scenarioGraph";
 import { makeElement } from "../EspNode/element";
@@ -13,8 +15,6 @@ import type { ModelWithTool } from "../EspNode/stickyNote/stickyNoteElements";
 import { makeStickyNoteElement } from "../EspNode/stickyNote/stickyNoteElements";
 import NodeUtils from "../NodeUtils";
 import { StickyNoteType } from "../utils/stickyNotesUtils";
-import { isEdgeConnected } from "./EdgeUtils";
-import { updateChangedCells } from "./updateChangedCells";
 
 export function applyCellChanges(
     paper: dia.Paper,
@@ -38,7 +38,7 @@ export function applyCellChanges(
     const stickyNotesModels = stickyNotesModelsWithTools.map((a) => a.model);
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
-    const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));
+    const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: i + 1 })));
     const edgeElements = indexed.filter(isEdgeConnected).map((value) => makeLink(value, paper, theme));
 
     const cells = [...nodeElements, ...edgeElements, ...stickyNotesModels];

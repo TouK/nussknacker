@@ -29,6 +29,8 @@ trait FlinkMiniClusterTestRunner { _: FlinkSpec =>
 
   protected def sourcesWithMockedData: Map[String, List[Int]]
 
+  protected def additionalComponents: List[ComponentDefinition] = Nil
+
   protected def withCollectingTestResults(
       canonicalProcess: CanonicalProcess,
       assertions: TestResults[Any] => Unit,
@@ -78,6 +80,7 @@ trait FlinkMiniClusterTestRunner { _: FlinkSpec =>
         List(
           ComponentDefinition("loggerService", LogService)
         ),
+        additionalComponents,
       ).flatten,
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )

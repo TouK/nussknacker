@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.component.{ComponentOutput, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -81,11 +81,9 @@ class FlinkProcessRegistrar(
 
     streamExecutionEnvPreparer.preRegistration(env, compilerData, deploymentData)
 
-    val compilerDataForProcessPart =
-      FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
     register(
       env,
-      compilerDataForProcessPart,
+      compilerDataForUsedNodesAndClassloader,
       compilerData,
       process,
       resultCollector,
@@ -104,13 +102,16 @@ class FlinkProcessRegistrar(
 
   private def register(
       env: StreamExecutionEnvironment,
-      compilerDataForProcessPart: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
+      compilerDataForUsedNodesAndClassloader: (UsedNodes, ClassLoader) => FlinkProcessCompilerData,
       compilerData: FlinkProcessCompilerData,
       process: CanonicalProcess,
       resultCollector: ResultCollector,
       deploymentData: DeploymentData
   ): Unit = {
     val globalParameters = NkGlobalParameters.fromMap(env.getConfig.getGlobalJobParameters.toMap)
+
+    val compilerDataForProcessPart: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData =
+      FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader)
 
     def nodeContext(
         nodeComponentId: NodeComponentInfo,
@@ -225,8 +226,16 @@ class FlinkProcessRegistrar(
     def registerNextParts(
         start: SingleOutputStreamOperator[Unit],
         part: PotentiallyStartPart
+    ): Map[BranchEndDefinition, BranchEndData] =
+      registerNextPartsExplicit(start, part.nextParts, part.ends)
+
+    /** A multi-output custom node wires each output off its own stream, so it cannot use `part.nextParts`. */
+    def registerNextPartsExplicit(
+        start: SingleOutputStreamOperator[Unit],
+        nextParts: List[SubsequentPart],
+        ends: List[TypedEnd]
     ): Map[BranchEndDefinition, BranchEndData] = {
-      val branchesForParts = part.nextParts
+      val branchesForParts = nextParts
         .map { part =>
           val typeInformationForTi =
             InterpretationResultTypeInformation.create(part.contextBefore)
@@ -241,7 +250,7 @@ class FlinkProcessRegistrar(
         .foldLeft(Map[BranchEndDefinition, BranchEndData]()) {
           _ ++ _
         }
-      val branchForEnds = part.ends.collect { case TypedEnd(be: BranchEnd, validationContext) =>
+      val branchForEnds = ends.collect { case TypedEnd(be: BranchEnd, validationContext) =>
         val ti = InterpretationResultTypeInformation.create(validationContext)
         be.definition -> BranchEndData(
           validationContext,
@@ -323,27 +332,121 @@ class FlinkProcessRegistrar(
         start: DataStream[Context],
         part: CustomNodePart
     ): Map[BranchEndDefinition, BranchEndData] = {
-      val transformer = part.transformer match {
-        case t: FlinkCustomStreamTransformation => t
+      val nodeComponentInfo = nodeComponentInfoFrom(part)
+      val customNodeContext = nodeContext(nodeComponentInfo, Left(part.contextBefore))
+      // A single-output transformation cannot name the output it returns, so the key comes from the declaration.
+      val returnedStreams = part.transformer match {
+        case transformer: FlinkMultiOutputStreamTransformation =>
+          transformer.transform(start, customNodeContext).toList
+        case transformer: FlinkCustomStreamTransformation =>
+          List(part.outputs.head.output -> transformer.transform(start, customNodeContext))
         case other =>
           throw new IllegalArgumentException(s"Unknown custom node transformer: $other")
       }
-      val nodeComponentInfo = nodeComponentInfoFrom(part)
-      val customNodeContext = nodeContext(nodeComponentInfo, Left(part.contextBefore))
+
+      registerOutputs(returnedStreams, part, nodeComponentInfo)
+    }
+
+    def registerOutputs(
+        returnedStreams: List[(ComponentOutput, DataStream[ValueWithContext[AnyRef]])],
+        part: CustomNodePart,
+        nodeComponentInfo: NodeComponentInfo
+    ): Map[BranchEndDefinition, BranchEndData] = {
+      val streamsByOutput = returnedStreams.groupMap { case (output, _) => output } { case (_, stream) => stream }
+
+      // Checked over everything the transformation returned, not only the wired outputs looked up below - a duplicate
+      // under an unwired key is the same component bug and has to fail in every scenario.
+      streamsByOutput.foreach { case (output, streams) =>
+        if (streams.sizeIs > 1)
+          throw new IllegalArgumentException(
+            s"Custom node '${part.id}' transformation returned ${streams.size} streams for output " +
+              s"'$output' - each output needs exactly one. This is a bug in the component's " +
+              s"implementation, not in the scenario."
+          )
+      }
+
+      // Only the main output and the additional ones the scenario connects are looked up. The streams of unconnected
+      // outputs are never read, so a component may return them or not.
+      def streamFor(compiled: CompiledOutput, isMainOutput: Boolean): DataStream[ValueWithContext[AnyRef]] =
+        streamsByOutput.getOrElse(compiled.output, Nil) match {
+          // The duplicate check above guarantees at most one stream per output.
+          case stream :: _ => stream
+          case Nil =>
+            val returnedOutputNames = returnedStreams.map { case (output, _) => output.name }.mkString("[", ", ", "]")
+            val outputKind          = if (isMainOutput) "main output" else "connected additional output"
+
+            throw new IllegalArgumentException(
+              s"Custom node '${part.id}' transformation returned no stream for $outputKind '${compiled.output}'. " +
+                s"It returned $returnedOutputNames. The main output always needs a stream, whether or not the " +
+                s"scenario wires it; an additional output needs one when the scenario connects it. This is a bug in " +
+                s"the component's implementation, not in the scenario."
+            )
+        }
+
       val newContextFun: ValueWithContext[_] => Context = part.node.data.outputVar match {
         case Some(name) => vwc => vwc.context.withVariable(name, vwc.value)
         case None       => _.context
       }
-      val transformed = transformer
-        .transform(start, customNodeContext)
-        .map(
-          (value: ValueWithContext[_]) => newContextFun(value),
-          TypeInformationDetection.instance.forContext(part.validationContext)
-        )
-      // TODO: for ending custom nodes there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
-      val afterInterpretation =
-        registerInterpretationPart(transformed, part, CustomNodeInterpretationName, nodeComponentInfo)
-      registerNextParts(afterInterpretation, part)
+
+      part.outputs.zipWithIndex
+        .map { case (output, index) =>
+          val isMainOutput = index == 0
+          registerOutput(part, output, streamFor(output, isMainOutput), newContextFun, nodeComponentInfo, isMainOutput)
+        }
+        .reduceLeft(_ ++ _)
+    }
+
+    def registerOutput(
+        part: CustomNodePart,
+        compiledOutput: CompiledOutput,
+        outputStream: DataStream[ValueWithContext[AnyRef]],
+        newContextFun: ValueWithContext[_] => Context,
+        nodeComponentInfo: NodeComponentInfo,
+        isMainOutput: Boolean
+    ): Map[BranchEndDefinition, BranchEndData] = {
+      // The `$output-` marker has to lead: Flink truncates operator names at 80 characters in metrics, so placed after
+      // the 36-character node id it would fall outside the cut and merge this operator's metrics with the main one's.
+      val interpretationId = if (isMainOutput) {
+        part.id.value
+      } else {
+        s"$$output-${compiledOutput.output.name}-${part.id.value}"
+      }
+
+      val outputContexts =
+        compiledOutput.ends.map(pe => pe.end.nodeId.value -> pe.validationContext).toMap ++
+          compiledOutput.nextParts.map(np => np.id.value -> np.validationContext).toMap
+
+      // An additional output's operator re-wraps the custom node's data, but only the main interpretation counts the
+      // node itself - registering it again would add a second, never-incremented counter under the same metric tags.
+      val nodesData = SplittedNodesCollector.collectNodes(compiledOutput.node).map(_.data)
+
+      val countedNodesData = if (isMainOutput) {
+        nodesData
+      } else {
+        nodesData.filterNot(_.id == part.id)
+      }
+
+      val usedNodes = UsedNodes(
+        countedNodesData,
+        compiledOutput.nextParts.foldLeft(Map.empty[NodeId, NodeName])((acc, p) => acc + (p.id -> p.node.data.name))
+      )
+      // An additional output's stream arrives typed for an unknown value, the way its output tag is declared, so the
+      // retyping is what makes it read the context exactly as the main path does.
+      val transformedOutput = outputStream.map(
+        (value: ValueWithContext[_]) => newContextFun(value),
+        TypeInformationDetection.instance.forContext(part.validationContext)
+      )
+      val afterInterpretation = registerInterpretation(
+        transformedOutput,
+        compiledOutput.node,
+        part.validationContext,
+        outputContexts,
+        compilerDataForUsedNodesAndClassloader(usedNodes, _),
+        CustomNodeInterpretationName,
+        nodeComponentInfo,
+        interpretationId
+      )
+      registerNextPartsExplicit(afterInterpretation, compiledOutput.nextParts, compiledOutput.ends)
     }
 
     def registerInterpretationPart(
@@ -352,12 +455,36 @@ class FlinkProcessRegistrar(
         name: String,
         nodeComponentInfo: NodeComponentInfo
     ): SingleOutputStreamOperator[Unit] = {
-      val node              = part.node
-      val validationContext = part.validationContext
       val outputContexts = part.ends.map(pe => pe.end.nodeId.value -> pe.validationContext).toMap ++ (part match {
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id.value -> np.validationContext).toMap
         case _                       => Map.empty
       })
+      registerInterpretation(
+        stream,
+        part.node,
+        part.validationContext,
+        outputContexts,
+        compilerDataForProcessPart(Some(part)),
+        name,
+        nodeComponentInfo,
+        part.node.id.value
+      )
+    }
+
+    /**
+      * `interpretationId` is the operator's uid prefix. It stays `node.id.value` on the main path so that existing
+      * jobs restore from state; an additional output needs its own, being interpreted with the very same node.
+      */
+    def registerInterpretation(
+        stream: DataStream[Context],
+        node: splittednode.SplittedNode[NodeData],
+        validationContext: ValidationContext,
+        outputContexts: Map[String, ValidationContext],
+        compilerDataFn: ClassLoader => FlinkProcessCompilerData,
+        name: String,
+        nodeComponentInfo: NodeComponentInfo,
+        interpretationId: String
+    ): SingleOutputStreamOperator[Unit] = {
       val metaData                      = compilerData.jobData.metaData
       val asyncExecutionContextPreparer = compilerData.asyncExecutionContextPreparer
       val streamMetaData =
@@ -370,7 +497,7 @@ class FlinkProcessRegistrar(
 
       val resultStream: DataStream[InterpretationResult] = if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(
-          compilerDataForProcessPart(Some(part)),
+          compilerDataFn,
           node,
           validationContext,
           asyncExecutionContextPreparer,
@@ -385,13 +512,13 @@ class FlinkProcessRegistrar(
             TimeUnit.MILLISECONDS,
             asyncExecutionContextPreparer.bufferSize
           )
-          .uid(node.id.value + "-$async")
+          .uid(interpretationId + "-$async")
       } else {
         val ti = InterpretationResultTypeInformation.create(outputContexts)
         stream
           .flatMap(
             new SyncInterpretationFunction(
-              compilerDataForProcessPart(Some(part)),
+              compilerDataFn,
               node,
               validationContext,
               nodeComponentInfo,
@@ -399,11 +526,11 @@ class FlinkProcessRegistrar(
             ),
             ti
           )
-          .uid(node.id.value + "-$sync")
+          .uid(interpretationId + "-$sync")
       }
 
       resultStream.getTransformation.setName(
-        interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation)
+        interpretationOperatorName(metaData.name, interpretationId, name, shouldUseAsyncInterpretation)
       )
 
       resultStream
@@ -467,21 +594,12 @@ object FlinkProcessRegistrar {
   }
 
   private[registrar] def interpretationOperatorName(
-      metaData: MetaData,
-      splittedNode: splittednode.SplittedNode[NodeData],
-      interpretationName: String,
-      shouldUseAsyncInterpretation: Boolean
-  ): String = {
-    interpretationOperatorName(metaData.name, splittedNode.id.value, interpretationName, shouldUseAsyncInterpretation)
-  }
-
-  private[registrar] def interpretationOperatorName(
       scenarioName: ProcessName,
-      nodeId: String,
+      interpretationId: String,
       interpretationName: String,
       shouldUseAsyncInterpretation: Boolean
   ) = {
-    s"$scenarioName-$nodeId-$interpretationName${if (shouldUseAsyncInterpretation) "Async" else "Sync"}"
+    s"$scenarioName-$interpretationId-$interpretationName${if (shouldUseAsyncInterpretation) "Async" else "Sync"}"
   }
 
 }

@@ -21,7 +21,7 @@ import ModeStreaming from '/badges/modeStreaming.mdx';
 
 ## Description
 
-Deduplicates events based on a grouping key, remembering the last passed entry per key. The first event for a given key always passes through, and subsequent events are forwarded only if they satisfy the filter condition. By default, the filter condition is false, which means only the first event for a given key passes through (simple deduplication).
+Deduplicates events based on a grouping key, remembering the last passed entry per key. The first event for a given key always passes through, and subsequent events are forwarded only if they satisfy the filter condition. By default, the filter condition is false, which means only the first event for a given key passes through (simple deduplication). Events that don't pass can optionally be routed to a "rejected" output instead of being discarded.
 ## Parameters and configuration
 
 | Name             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -43,6 +43,20 @@ The filter condition exposes two per-key counters, both scoped to the current TT
 2. If there is no existing entry for this key (first event or state expired), the event passes through.
 3. If an entry exists, the **Filter condition** is evaluated with `#previousEntry` (existing state) and `#incomingEntry` (new value), each containing `timestamp` and `value`, plus `#passedEventsCount` and `#eventsCount`. The event passes through only when the condition returns `true`.
 4. The **TTL** is an inactivity timeout: the timer resets on every incoming event for a given key, regardless of whether the event passes through or is filtered. After the TTL elapses with no events, the state is cleared. Whether the timeout is measured in event time or processing time is controlled by **Time mode**.
+
+## Outputs
+
+Deduplication has two outputs, similar to Filter's "true"/"false" ones:
+
+- The **passed** output (the node's main output) carries events that pass the deduplication logic (the first event for a key, or one satisfying the filter condition).
+- The **rejected** output carries events filtered out by the deduplication logic (a duplicate not satisfying the filter condition). Each rejected event keeps the *unchanged* input context - no extra variables are added.
+
+Connecting the `rejected` output is optional. If it is left unconnected, rejected events are dropped, exactly as before this output existed. Wiring it downstream, for example to a Kafka topic, a logger or a metric, turns deduplication into a per-scenario dead-letter queue for the events it filters out.
+
+It is also legal to connect only the `rejected` output and leave the `passed` one unconnected. In that case accepted events are dropped, and the node acts purely as a duplicate reporter.
+
+The node's count on the scenario diagram is the number of records that reached it, accepted and rejected together, and it does not change when the `rejected` output is left unconnected.
+To see the split, read the counts of the nodes downstream of each output.
 
 ## Examples
 

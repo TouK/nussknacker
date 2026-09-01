@@ -5,7 +5,7 @@ import { determineComponentId } from "../../common/componentUtils";
 import ProcessUtils from "../../common/ProcessUtils";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import { createEdge } from "../../reducers/graph/utils";
-import type { Edge, EdgeType } from "../../types/edge";
+import type { AvailableEdgeType, Edge, EdgeType } from "../../types/edge";
 import { EdgeKind } from "../../types/edge";
 import type { FragmentNodeType, NodeId, NodeType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
@@ -63,7 +63,7 @@ class NodeUtils {
     getEdgesForConnectedNodes = (nodeIds: NodeId[], scenarioGraph: ScenarioGraph): Edge[] =>
         scenarioGraph.edges?.filter((edge) => nodeIds.includes(edge.from) && nodeIds.includes(edge.to));
 
-    getNextEdgeType = (allEdges: Edge[], node: NodeType, processDefinitionData: ProcessDefinitionData): EdgeType => {
+    getNextEdgeType = (allEdges: Edge[], node: NodeType, processDefinitionData: ProcessDefinitionData): AvailableEdgeType => {
         const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData);
 
         if (edgesForNode.canChooseNodes) {
@@ -71,29 +71,34 @@ class NodeUtils {
         } else {
             const currentNodeEdges = allEdges.filter((edge) => edge.from === node.id);
             const currentEdgeTypes = currentNodeEdges.map((e) => e.edgeType);
-            return edgesForNode.edges.find((et) => !currentEdgeTypes.find((currentType) => isEqual(currentType, et)));
+            return edgesForNode.edges.find((et) => !currentEdgeTypes.some((currentType) => isEqual(currentType, et)));
         }
     };
 
-    getEdgesAvailableForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
+    getEdgesAvailableForNode = (
+        node: NodeType,
+        processDefinitionData: ProcessDefinitionData,
+        forInput = false,
+    ): { edges: AvailableEdgeType[]; canChooseNodes: boolean } => {
         const componentId = determineComponentId(node);
         //TODO: when we add more configuration for joins, probably more complex logic will be needed
         const edgesForNode = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)
             .find((e) => e.componentId === componentId);
-        return edgesForNode || { edges: [null], canChooseNodes: false };
+        // A node with no entry connects through untyped edges - the single `undefined` slot stands for them.
+        return edgesForNode || { edges: [undefined], canChooseNodes: false };
     };
 
     edgeLabel = (edge: Edge) => {
         const edgeType = edge?.edgeType;
-        const type = edgeType?.type;
-        switch (type) {
+        switch (edgeType?.type) {
             case EdgeKind.fragmentOutput:
+            case EdgeKind.customNodeOutput:
                 return edgeType?.name;
             case EdgeKind.switchNext:
                 return edgeType?.condition?.expression;
         }
-        return this.edgeTypeLabel(type);
+        return this.edgeTypeLabel(edgeType?.type);
     };
 
     //TODO: i18next
@@ -160,7 +165,7 @@ class NodeUtils {
         return nodeOutputs.filter((e) => e.to).length < maxEdgesForNode;
     };
 
-    getFirstUnconnectedOutputEdge = (currentEdges: Edge[], availableEdges: EdgeType[], edgeType: EdgeType) => {
+    getFirstUnconnectedOutputEdge = (currentEdges: Edge[], availableEdges: AvailableEdgeType[], edgeType?: EdgeType) => {
         const freeOutputEdges = currentEdges
             .filter((e) => !e.to)
             //we do this to skip e.g. edges that became incorrect/unavailable
@@ -168,7 +173,9 @@ class NodeUtils {
                 availableEdges.find((available) => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type),
             );
 
-        return freeOutputEdges.find((e) => e.edgeType === edgeType) || freeOutputEdges[0];
+        // With a concrete edgeType requested (a drag from a named output port) a free edge of a different
+        // output must not be reused - the caller then creates a new, correctly typed edge instead.
+        return freeOutputEdges.find((e) => isEqual(e.edgeType, edgeType)) || (edgeType ? undefined : freeOutputEdges[0]);
     };
 
     getEdgeForConnection = ({

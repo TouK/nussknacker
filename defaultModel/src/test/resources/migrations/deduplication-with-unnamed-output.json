@@ -1,0 +1,35 @@
+{
+  "metaData": {
+    "id": "dedup-with-unnamed-output",
+    "additionalFields": {
+      "properties": {},
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes": [
+    {
+      "type": "Source",
+      "id": "source1",
+      "name": "source1",
+      "ref": { "typ": "kafka", "parameters": [] }
+    },
+    {
+      "type": "CustomNode",
+      "id": "dedup1",
+      "name": "dedup1",
+      "outputVar": null,
+      "nodeType": "deduplication",
+      "parameters": [
+        { "name": "groupBy", "expression": { "language": "spel", "expression": "#input.clientId" } },
+        { "name": "value", "expression": { "language": "spel", "expression": "#input" } }
+      ]
+    },
+    {
+      "type": "Sink",
+      "id": "sink1",
+      "name": "sink1",
+      "ref": { "typ": "kafka", "parameters": [] }
+    }
+  ],
+  "additionalBranches": []
+}

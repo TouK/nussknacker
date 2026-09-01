@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
+import eu.timepit.refined.auto._
 import io.circe.Json
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.component.{ComponentOutput, SupportsMultipleOutputs, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation.DummyStreamTransformerImplementation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
@@ -41,7 +42,50 @@ object validationHelpers {
           Array(new api.AdditionalVariable(name = "additionalVar1", clazz = classOf[String]))
         )
         stringVal: LazyParameter[String]
-    ) = DummyStreamTransformerImplementation
+    ) = DummyMultipleOutputTransformerImplementation
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList(ComponentOutput.MainOutput, List(ComponentOutput.RejectedOutput))
+
+  }
+
+  /** Stands in for a real engine's multi-output transformation type, which is what carries the marker. */
+  object DummyMultipleOutputTransformerImplementation
+      extends DummyStreamTransformerImplementation
+      with SupportsMultipleOutputs
+
+  /** Simulates a component bug: declares an additional output, but returns a single-output implementation. */
+  object SingleOutputImplementationDeclaringOutputs extends CustomStreamTransformer {
+
+    @MethodToInvoke(returnType = classOf[AnyRef])
+    def execute() = DummyStreamTransformerImplementation
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList(ComponentOutput.MainOutput, List(ComponentOutput.RejectedOutput))
+
+  }
+
+  /** Declares its main output under a name other than the default "main", so tests can wire the main output
+    * by its declared name and observe it as the head of the compiled outputs.
+    */
+  object NamedMainStreamTransformer extends CustomStreamTransformer {
+
+    @MethodToInvoke(returnType = classOf[AnyRef])
+    def execute() = DummyMultipleOutputTransformerImplementation
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList.of(ComponentOutput("passed"), ComponentOutput.RejectedOutput)
+
+  }
+
+  /** Declares two additional outputs, so the declaration order of compiled outputs can be observed. */
+  object TwoAdditionalOutputsStreamTransformer extends CustomStreamTransformer {
+
+    @MethodToInvoke(returnType = classOf[AnyRef])
+    def execute() = DummyMultipleOutputTransformerImplementation
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList.of(ComponentOutput.MainOutput, ComponentOutput("outA"), ComponentOutput("outB"))
 
   }
 

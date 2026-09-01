@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{graph, NodeId}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-object CanonicalProcessConverter {
+object CanonicalProcessConverter extends LazyLogging {
 
   private[canonicalgraph] def toScenarioGraph(process: CanonicalProcess): ScenarioGraph = {
     val (nodes, edges) = {
@@ -67,6 +68,18 @@ object CanonicalProcessConverter {
           createNextEdge(data.id, outputEdges, Some(FragmentOutput(name)))
         }.toList
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
+      case canonicalnode.CustomNodeWithOutputs(data, outputs) :: tail =>
+        val (tailNodes, tailEdges) = toGraphInner(tail)
+        val nextInner              = outputs.toList.map(output => toGraphInner(output.nodes)).unzip
+        val nodes                  = nextInner._1.flatten
+        val edges                  = nextInner._2.flatten
+        val connecting = outputs.toList.flatMap { output =>
+          createNextEdge(data.id, output.nodes, Some(EdgeType.CustomNodeOutput(output.name)))
+        }
+        (
+          data :: nodes ::: tailNodes,
+          createNextEdge(data.id, tail) ::: connecting ::: edges ::: tailEdges
+        )
       case Nil =>
         (List(), List())
     }
@@ -87,13 +100,25 @@ object CanonicalProcessConverter {
     (aList.flatten, bList.flatten)
   }
 
-  def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {
-    val rawNodesMap = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
-    val nodeIdAliasesByName = graph.nodes.foldLeft(Map.empty[NodeId, NodeId]) { case (acc, node) =>
+  /**
+    * Legacy `ScenarioGraph` payloads may reference a node by name where an id is expected (e.g. in `Edge.from`).
+    * Exposed so that validations running *before* `fromScenarioGraph` see the same graph the conversion will.
+    */
+  private[nussknacker] def nodeIdNormalizer(nodes: List[NodeData]): NodeId => NodeId = {
+    val nodeIds = nodes.map(_.id).toSet
+    val nodeIdAliasesByName = nodes.foldLeft(Map.empty[NodeId, NodeId]) { case (acc, node) =>
       val alias = NodeId(node.name.value)
-      if (rawNodesMap.contains(alias)) acc else acc + (alias -> node.id)
+      if (nodeIds.contains(alias)) acc else acc + (alias -> node.id)
     }
-    def normalizeNodeId(nodeId: NodeId): NodeId = nodeIdAliasesByName.getOrElse(nodeId, nodeId)
+    nodeId => nodeIdAliasesByName.getOrElse(nodeId, nodeId)
+  }
+
+  private def isNamedOutputEdge(e: Edge): Boolean =
+    e.edgeType.exists(_.isInstanceOf[EdgeType.CustomNodeOutput])
+
+  def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {
+    val rawNodesMap     = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
+    val normalizeNodeId = nodeIdNormalizer(graph.nodes)
 
     def normalizeJoinBranchId(branchId: String): String = {
       val normalizedBranchNodeId = normalizeNodeId(NodeId(branchId))
@@ -115,7 +140,9 @@ object CanonicalProcessConverter {
       graph.edges.map(edge => edge.copy(from = normalizeNodeId(edge.from), to = normalizeNodeId(edge.to)))
     val edgesFromMapStart = normalizedEdges.groupBy(_.from)
     val rootsUnflattened =
-      findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(nodesMap(headNode.id), edgesFromMapStart))
+      findRootNodes(graph).map(headNode =>
+        unFlattenNode(nodesMap, None, name)(nodesMap(headNode.id), edgesFromMapStart)
+      )
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
     CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches, graph.stickyNotes, graph.testCases)
@@ -128,19 +155,30 @@ object CanonicalProcessConverter {
 
   private def unFlattenNode(
       nodesMap: Map[NodeId, NodeData],
-      stopAtJoin: Option[Edge]
+      stopAtJoin: Option[Edge],
+      scenarioName: ProcessName
   )(n: NodeData, edgesFromMap: Map[NodeId, List[Edge]]): List[canonicalnode.CanonicalNode] = {
     def nodeOrThrow(nodeId: NodeId): NodeData =
       nodesMap.getOrElse(nodeId, throw new IllegalArgumentException(s"Cannot find node for id: ${nodeId.value}"))
 
     def unflattenEdgeEnd(id: NodeId, e: Edge): List[canonicalnode.CanonicalNode] = {
-      unFlattenNode(nodesMap, Some(e))(
+      unFlattenNode(nodesMap, Some(e), scenarioName)(
         nodeOrThrow(e.to),
         edgesFromMap.updated(id, edgesFromMap.getOrElse(id, List()).filterNot(_ == e))
       )
     }
 
     def getEdges(id: NodeId): List[Edge] = edgesFromMap.getOrElse(id, List())
+
+    def warnDroppedEdges(data: NodeData, reason: String, dropped: List[Edge]): Unit =
+      if (dropped.nonEmpty) {
+        val descriptions =
+          dropped.map(e => s"${e.edgeType.map(_.toString).getOrElse("unnamed output")} -> ${e.to.value}")
+        logger.warn(
+          s"Node '${data.id.value}' in scenario '${scenarioName.value}' $reason: ${descriptions.mkString(", ")}. " +
+            "Dropping them and their downstream nodes."
+        )
+      }
 
     val handleNestedNodes: PartialFunction[(NodeData, Option[Edge]), List[canonicalnode.CanonicalNode]] = {
       case (data: Filter, _) =>
@@ -180,14 +218,34 @@ object CanonicalProcessConverter {
         val branchId = nodeOrThrow(edgeConnectedToJoin.from).name.value
         canonicalnode.FlatNode(BranchEndData(BranchEndDefinition(branchId, data.id.value))) :: Nil
 
-    }
-    (handleNestedNodes orElse (handleDirectNodes andThen { n =>
-      n :: getEdges(n.id).flatMap(unflattenEdgeEnd(n.id, _))
-    }))((n, stopAtJoin))
-  }
+      case (data: CustomNode, _) if getEdges(data.id).exists(isNamedOutputEdge) =>
+        val (namedOutputEdges, remainingEdges) = getEdges(data.id).partitionMap {
+          case e @ Edge(_, _, Some(EdgeType.CustomNodeOutput(name))) => Left(name -> e)
+          case e                                                     => Right(e)
+        }
+        // One subgraph per output name: the first edge under a name wins, the rest are surplus.
+        val keptOutputEdges      = namedOutputEdges.distinctBy { case (name, _) => name }
+        val duplicateOutputEdges = namedOutputEdges.diff(keptOutputEdges)
+        // Every non-named edge is dropped with its subgraph - the validator rejects such a mix, the warn covers
+        // programmatic input.
+        warnDroppedEdges(
+          data,
+          "has outgoing edges that cannot be represented next to its named outputs",
+          remainingEdges ++ duplicateOutputEdges.map { case (_, e) => e }
+        )
+        val outputs = keptOutputEdges.map { case (name, e) => canonicalnode.Output(name, unflattenEdgeEnd(data.id, e)) }
+        canonicalnode.CustomNodeWithOutputs(data, outputs) :: Nil
 
-  private val handleDirectNodes: PartialFunction[(NodeData, Option[Edge]), canonicalnode.CanonicalNode] = {
-    case (data, _) => FlatNode(data)
+    }
+    // A "direct" (one-output) node: every outgoing edge is the normal continuation, flattened inline.
+    // A CustomNodeOutput edge on a direct node is only reachable through import/API and is dropped here.
+    val handleDirectNode: PartialFunction[(NodeData, Option[Edge]), List[canonicalnode.CanonicalNode]] = {
+      case (data, _) =>
+        val (outputEdges, edges) = getEdges(data.id).partition(isNamedOutputEdge)
+        warnDroppedEdges(data, "cannot have named outputs, but has outgoing edges", outputEdges)
+        canonicalnode.FlatNode(data) :: edges.flatMap(unflattenEdgeEnd(data.id, _))
+    }
+    (handleNestedNodes orElse handleDirectNode)((n, stopAtJoin))
   }
 
 }

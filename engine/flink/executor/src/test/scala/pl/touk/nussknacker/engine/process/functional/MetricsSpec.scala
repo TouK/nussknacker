@@ -108,6 +108,63 @@ class MetricsSpec
     counter("nodeId.out2.nodeName.out2.nodeCount") shouldBe 1L
   }
 
+  // What each node of a multi-output scenario counts is covered by DeduplicationTransformerTest on the real
+  // component. What only a sample component shows here is the metric the additional output must NOT bring with it:
+  // it is interpreted separately but is the same node, so it may not re-register the node's own end metric.
+  // The nodeCount assertion is the anchor - without it a job that processed nothing would satisfy the end one.
+  test("does not report a custom node as a scenario end because of its additional output") { implicit scenarioName =>
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
+      .source("source1", "input")
+      .customNodeWithOutputs(
+        "multi1",
+        None,
+        "multiOutputSplitOddEven",
+        List(
+          "main"     -> GraphBuilder.emptySink("out", "monitor").get,
+          "rejected" -> GraphBuilder.emptySink("rejected-out", "monitor").get
+        )
+      )
+
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0)),
+      SimpleRecord("1", 11, "a", new Date(0)),
+      SimpleRecord("1", 13, "a", new Date(0)),
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    counter("nodeId.multi1.nodeName.multi1.nodeCount") shouldBe 3L
+    counter("end.nodeId.multi1.nodeName.multi1.count") shouldBe 0L
+  }
+
+  test("counts records taking an unwired main output as dead ends") { implicit scenarioName =>
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
+      .source("source1", "input")
+      .customNodeWithOutputs(
+        "multi1",
+        None,
+        "multiOutputSplitOddEven",
+        List(
+          "rejected" -> GraphBuilder.emptySink("rejected-out", "monitor").get
+        )
+      )
+
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0)),
+      SimpleRecord("1", 11, "a", new Date(0)),
+      SimpleRecord("1", 13, "a", new Date(0)),
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    counter("nodeId.multi1.nodeName.multi1.nodeCount") shouldBe 3L
+    counter("nodeId.rejected-out.nodeName.rejected-out.nodeCount") shouldBe 2L
+    counter("dead_end.nodeId.multi1.nodeName.multi1.count") shouldBe 1L
+    counter("end.nodeId.multi1.nodeName.multi1.count") shouldBe 0L
+  }
+
   test("measure ends") { implicit scenarioName =>
     val data = List(
       SimpleRecord("1", 10, "a", new Date(0)),
@@ -230,11 +287,14 @@ class MetricsSpec
   }
 
   private def counter(name: String)(implicit scenarioName: ProcessName): Long = withClue(s"counter $name") {
-    reporter.testMetrics[Counter](name).loneElement.getCount
+    // Anchored with the scope separator - a custom node has both meters, and a bare "end.*" pattern
+    // would also match its "dead_end.*" metric id by substring.
+    reporter.testMetrics[Counter](s".$name").loneElement.getCount
   }
 
   private def gauge(name: String)(implicit scenarioName: ProcessName): Double = withClue(s"gauge $name") {
-    reporter.testMetrics[Gauge[Double]](name).loneElement.getValue
+    // Anchored like in `counter` - "end.*" must not match "dead_end.*" by substring.
+    reporter.testMetrics[Gauge[Double]](s".$name").loneElement.getValue
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {

@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId, NodeName, ValueWithContext}
+import pl.touk.nussknacker.engine.api.component.ComponentOutput
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -60,6 +62,22 @@ case class FlinkCustomNodeContext(
       forType(TypeInformationDetection.instance.forClass[T])
 
   }
+
+  /**
+    * A tag for routing an additional output as a side output: emit under it, then read it back with `getSideOutput`
+    * on the emitting operator. Tags exist only for additional outputs; asking for one for the main output yields a
+    * working but meaningless tag.
+    *
+    * `typeInfo` describes what this output emits and becomes the type of the stream `getSideOutput` returns, so pass
+    * the one the emitting operator uses for its own output, normally from [[valueWithContextInfo]]. Nothing verifies
+    * it: `OutputTag` compares by name alone, so a type that does not describe the records surfaces only once their
+    * serializer is used, if at all.
+    */
+  def createOutputTag(
+      output: ComponentOutput,
+      typeInfo: TypeInformation[ValueWithContext[AnyRef]]
+  ): OutputTag[ValueWithContext[AnyRef]] =
+    new OutputTag[ValueWithContext[AnyRef]](output.name, typeInfo)
 
   def branchValidationContext(branchId: String): ValidationContext = asJoinContext.getOrElse(
     branchId,

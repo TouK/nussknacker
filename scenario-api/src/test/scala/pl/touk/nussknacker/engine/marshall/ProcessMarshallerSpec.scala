@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.marshall
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import io.circe.{Codec, Json}
-import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import io.circe.Json
 import io.circe.syntax._
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -15,12 +14,13 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
-import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
+import pl.touk.nussknacker.engine.canonize.{InvalidTailOfBranch, ProcessCanonizer}
 import pl.touk.nussknacker.engine.canonize.MissingSinkHandler.DoNotAllowMissingSinkHandler
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
 import java.nio.charset.StandardCharsets
@@ -252,6 +252,240 @@ class ProcessMarshallerSpec
     )
   }
 
+  it should "uncanonize a CustomNodeWithOutputs with a main output entry and an additional output" in {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List())
+    val mainSink       = Sink(NodeId("sinkA"), NodeName("sinkA"), SinkRef("dead-end", List()))
+    val rejectedSink   = Sink(NodeId("sinkB"), NodeName("sinkB"), SinkRef("dead-end", List()))
+
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(
+        FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("a", List()))),
+        canonicalnode.CustomNodeWithOutputs(
+          customNodeData,
+          NonEmptyList.of(
+            canonicalnode.Output("main", List(FlatNode(mainSink))),
+            canonicalnode.Output("rejected", List(FlatNode(rejectedSink)))
+          )
+        )
+      ),
+      List.empty
+    )
+
+    val result = ProcessCanonizer.uncanonize(process, DoNotAllowMissingSinkHandler)
+
+    inside(result) { case Valid(espProcess) =>
+      inside(espProcess.roots.head.next) { case Some(node.CustomNodeWithOutputs(data, outputs)) =>
+        data shouldBe customNodeData
+        outputs shouldBe NonEmptyList.of(
+          node.Output("main", node.EndingNode(mainSink)),
+          node.Output("rejected", node.EndingNode(rejectedSink))
+        )
+      }
+    }
+  }
+
+  it should "reject a CustomNodeWithOutputs followed by a non-empty tail as InvalidTailOfBranch" in {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List())
+    val mainSink       = Sink(NodeId("sinkA"), NodeName("sinkA"), SinkRef("dead-end", List()))
+    val rejectedSink   = Sink(NodeId("sinkB"), NodeName("sinkB"), SinkRef("dead-end", List()))
+
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(
+        FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("a", List()))),
+        canonicalnode.CustomNodeWithOutputs(
+          customNodeData,
+          NonEmptyList.of(canonicalnode.Output("rejected", List(FlatNode(rejectedSink))))
+        ),
+        FlatNode(mainSink)
+      ),
+      List.empty
+    )
+
+    val result = ProcessCanonizer.uncanonize(process, DoNotAllowMissingSinkHandler)
+
+    result shouldBe Invalid(NonEmptyList.of(InvalidTailOfBranch(NodeId("dedup"))))
+  }
+
+  it should "uncanonize a CustomNodeWithOutputs with an unwired main output, without InvalidTailOfBranch" in {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List())
+    val rejectedSink   = Sink(NodeId("sinkB"), NodeName("sinkB"), SinkRef("dead-end", List()))
+
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(
+        FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("a", List()))),
+        canonicalnode.CustomNodeWithOutputs(
+          customNodeData,
+          NonEmptyList.of(canonicalnode.Output("rejected", List(FlatNode(rejectedSink))))
+        )
+      ),
+      List.empty
+    )
+
+    val result = ProcessCanonizer.uncanonize(process, DoNotAllowMissingSinkHandler)
+
+    inside(result) { case Valid(espProcess) =>
+      inside(espProcess.roots.head.next) { case Some(node.CustomNodeWithOutputs(data, outputs)) =>
+        data shouldBe customNodeData
+        outputs shouldBe NonEmptyList.of(node.Output("rejected", node.EndingNode(rejectedSink)))
+      }
+    }
+  }
+
+  it should "uncanonize a CustomNodeWithOutputs skipping an output with no nodes" in {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List())
+    val mainSink       = Sink(NodeId("sinkA"), NodeName("sinkA"), SinkRef("dead-end", List()))
+
+    // Only a hand-written import produces an empty output - no encoder here does. It means "not connected" and
+    // must not be reported as dangling.
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(
+        FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("a", List()))),
+        canonicalnode.CustomNodeWithOutputs(
+          customNodeData,
+          NonEmptyList.of(
+            canonicalnode.Output("main", List(FlatNode(mainSink))),
+            canonicalnode.Output("rejected", List.empty)
+          )
+        )
+      ),
+      List.empty
+    )
+
+    val result = ProcessCanonizer.uncanonize(process, DoNotAllowMissingSinkHandler)
+
+    inside(result) { case Valid(espProcess) =>
+      inside(espProcess.roots.head.next) { case Some(node.CustomNodeWithOutputs(data, outputs)) =>
+        data shouldBe customNodeData
+        outputs shouldBe NonEmptyList.of(node.Output("main", node.EndingNode(mainSink)))
+      }
+    }
+  }
+
+  it should "uncanonize a CustomNodeWithOutputs with every output unwired as an ending node" in {
+    val customNodeData = CustomNode(NodeId("dedup"), NodeName("dedup"), Some("outVar"), "dedupRef", List())
+
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(
+        FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("a", List()))),
+        canonicalnode.CustomNodeWithOutputs(
+          customNodeData,
+          NonEmptyList.of(canonicalnode.Output("rejected", List.empty))
+        )
+      ),
+      List.empty
+    )
+
+    val result = ProcessCanonizer.uncanonize(process, DoNotAllowMissingSinkHandler)
+
+    inside(result) { case Valid(espProcess) =>
+      espProcess.roots.head.next shouldBe Some(node.EndingNode(customNodeData))
+    }
+  }
+
+  it should "marshall and unmarshall a CustomNodeWithOutputs with a main and an additional output" in {
+    val customNodeData = CustomNode(NodeId("custom"), NodeName("custom"), Some("outVar"), "someRef", List())
+    val rejectedSink   = Sink(NodeId("rejectedSink"), NodeName("rejectedSink"), SinkRef("dead-end", List()))
+    val mainSink       = Sink(NodeId("mainSink"), NodeName("mainSink"), SinkRef("dead-end", List()))
+
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(
+        FlatNode(Source(NodeId("source"), NodeName("source"), SourceRef("a", List()))),
+        canonicalnode.CustomNodeWithOutputs(
+          customNodeData,
+          NonEmptyList.of(
+            canonicalnode.Output("main", List(FlatNode(mainSink))),
+            canonicalnode.Output("rejected", List(FlatNode(rejectedSink)))
+          )
+        )
+      ),
+      List.empty
+    )
+
+    val result = marshallAndUnmarshall(process)
+
+    result shouldBe process
+  }
+
+  it should "decode a hand-written CustomNode JSON with outputs into CustomNodeWithOutputs" in {
+    val customNodeData = CustomNode(NodeId("custom"), NodeName("custom"), Some("outVar"), "someRef", List())
+    val rejectedSink   = Sink(NodeId("rejectedSink"), NodeName("rejectedSink"), SinkRef("dead-end", List()))
+
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(FlatNode(customNodeData)),
+      List.empty
+    )
+
+    val outputsJson = Json.arr(outputJson("rejected", NodeData.nodeDataEncoder(rejectedSink)))
+    val patchedJson = process.asJson.hcursor
+      .downField("nodes")
+      .downArray
+      .withFocus(_.mapObject(_.add("outputs", outputsJson)))
+      .top
+      .value
+
+    val decoded = ProcessMarshaller.fromJson(patchedJson)
+
+    inside(decoded) { case Valid(decodedProcess) =>
+      decodedProcess.nodes shouldBe List(
+        canonicalnode.CustomNodeWithOutputs(
+          customNodeData,
+          NonEmptyList.of(canonicalnode.Output("rejected", List(FlatNode(rejectedSink))))
+        )
+      )
+    }
+  }
+
+  it should "decode a CustomNode JSON with an empty outputs array into a FlatNode" in {
+    val customNodeData = CustomNode(NodeId("custom"), NodeName("custom"), Some("outVar"), "someRef", List())
+
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(FlatNode(customNodeData)),
+      List.empty
+    )
+
+    val patchedJson = process.asJson.hcursor
+      .downField("nodes")
+      .downArray
+      .withFocus(_.mapObject(_.add("outputs", Json.arr())))
+      .top
+      .value
+
+    val decoded = ProcessMarshaller.fromJson(patchedJson)
+
+    inside(decoded) { case Valid(decodedProcess) =>
+      decodedProcess.nodes shouldBe List(FlatNode(customNodeData))
+    }
+  }
+
+  it should "fail decoding (not silently fall back to FlatNode) when a CustomNode's outputs subtree is corrupt" in {
+    val customNodeData = CustomNode(NodeId("custom"), NodeName("custom"), Some("outVar"), "someRef", List())
+    val process = CanonicalProcess(
+      MetaData("proc1", testStreamMetaData),
+      List(FlatNode(customNodeData)),
+      List.empty
+    )
+
+    val corruptOutputsJson = Json.arr(outputJson("rejected", Json.obj()))
+    val patchedJson = process.asJson.hcursor
+      .downField("nodes")
+      .downArray
+      .withFocus(_.mapObject(_.add("outputs", corruptOutputsJson)))
+      .top
+      .value
+
+    val decoded = ProcessMarshaller.fromJson(patchedJson)
+
+    decoded shouldBe a[Invalid[_]]
+  }
+
   it should "handle legacy endResult" in {
     // Old JSON without "name" field - backward compat fills it from "id"
     val oldFormat = Json.obj(
@@ -271,6 +505,9 @@ class ProcessMarshallerSpec
       .mapObject(_.add("id", Json.fromString(uuidForT1)))
     NodeData.nodeDataEncoder(nodeData).deepDropNullValues shouldBe newFormat
   }
+
+  private def outputJson(name: String, nodes: Json*): Json =
+    Json.obj("name" -> Json.fromString(name), "nodes" -> Json.arr(nodes: _*))
 
   private def marshallAndUnmarshall(process: CanonicalProcess): CanonicalProcess = {
     val unmarshalled = ProcessMarshaller.fromJson(process.asJson).toOption

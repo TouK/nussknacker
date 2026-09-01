@@ -5,11 +5,13 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, NodeId}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.node.Case
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MultiOutputSplitOddEvenInt
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class ResultCollectingListenerSpec
@@ -26,7 +28,11 @@ class ResultCollectingListenerSpec
   override protected def sourcesWithMockedData: Map[String, List[Int]] = Map(
     "start1" -> List(10, 20, 30, 40),
     "start2" -> List(100, 200, 300, 400),
+    "start3" -> List(1, 2, 3, 4),
   )
+
+  override protected def additionalComponents: List[ComponentDefinition] =
+    List(ComponentDefinition("splitOddEven", MultiOutputSplitOddEvenInt))
 
   test("union of two sources with additional variable in only one of the branches") {
     val scenario = ScenarioBuilder
@@ -84,6 +90,47 @@ class ResultCollectingListenerSpec
           Map("input" -> 300, "customVariableInBarBranch" -> 150, "dataIsFrom" -> "bar source"),
           Map("input" -> 400, "customVariableInBarBranch" -> 200, "dataIsFrom" -> "bar source"),
         )
+      }
+    )
+  }
+
+  // The additional output is interpreted separately from the main chain, so its nodes need their own result entries.
+  test("collects results and transitions for nodes on a custom node's additional output") {
+    val scenario = ScenarioBuilder
+      .streaming("multi-output-additional-results")
+      .source("start-foo", "start3")
+      .customNodeWithOutputs(
+        "split1",
+        None,
+        "splitOddEven",
+        List(
+          "main" -> GraphBuilder.emptySink("main-end", "dead-end").get,
+          "rejected" -> GraphBuilder
+            .buildSimpleVariable("rejVar", "rv", "#input".spel)
+            .emptySink("rejected-end", "dead-end")
+            .get
+        )
+      )
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        transitionVariables(testResults, "split1", Some("main-end")) shouldBe Set(
+          Map("input" -> 2),
+          Map("input" -> 4),
+        )
+        transitionVariables(testResults, "split1", Some("rejVar")) shouldBe Set(
+          Map("input" -> 1),
+          Map("input" -> 3),
+        )
+        transitionVariables(testResults, "rejVar", Some("rejected-end")) shouldBe Set(
+          Map("input" -> 1, "rv" -> 1),
+          Map("input" -> 3, "rv" -> 3),
+        )
+        testResults.nodeResults(NodeId("split1")).size shouldBe 4
+        testResults.nodeResults(NodeId("rejVar")).size shouldBe 2
+        testResults.nodeResults(NodeId("rejected-end")).size shouldBe 2
+        testResults.nodeResults(NodeId("main-end")).size shouldBe 2
       }
     )
   }

@@ -328,6 +328,23 @@ trait GraphBuilder[R] {
       )
     )
 
+  // The builder has no main concept: the caller lists every wired output, the main included, as an ordinary named
+  // pair (the builder cannot know the component's declared main). An unwired main is simply an absent pair; with
+  // every output unwired the node becomes an EndingNode.
+  def customNodeWithOutputs(
+      id: String,
+      outputVar: Option[String],
+      customNodeRef: String,
+      outputs: List[(String, SubsequentNode)],
+      params: (String, Expression)*
+  ): R =
+    creator(
+      Some {
+        val data = CustomNode(NodeId(id), NodeName(id), outputVar, customNodeRef, toNodeParameters(params))
+        CustomNodeWithOutputs.orEnding(data, outputs.map { case (name, next) => Output(name, next) })
+      }
+    )
+
   def split(id: String, nexts: Option[SubsequentNode]*): R = creator(
     Some(SplitNode(Split(NodeId(id), NodeName(id)), nexts.toList.flatten))
   )

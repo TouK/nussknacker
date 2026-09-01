@@ -26,13 +26,13 @@ describe("edgeType retrieved", () => {
 
     it("should get empty types for defaultNode", () => {
         expect(NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "Variable" }, processDefinitionData)).toEqual({
-            edges: [null],
+            edges: [undefined],
             canChooseNodes: false,
         });
         expect(
             NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "Processor", service: { id: "sub1" } }, processDefinitionData),
         ).toEqual({
-            edges: [null],
+            edges: [undefined],
             canChooseNodes: false,
         });
     });
