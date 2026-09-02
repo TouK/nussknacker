@@ -5620,6 +5620,14 @@ components:
     CronParameterEditor:
       title: CronParameterEditor
       type: object
+    CustomNodeOutput:
+      title: CustomNodeOutput
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
     DataToRefresh:
       title: DataToRefresh
       type: string
@@ -5749,6 +5757,7 @@ components:
     EdgeType:
       title: EdgeType
       oneOf:
+      - $ref: '#/components/schemas/CustomNodeOutput'
       - $ref: '#/components/schemas/FilterFalse'
       - $ref: '#/components/schemas/FilterTrue'
       - $ref: '#/components/schemas/FragmentOutput'

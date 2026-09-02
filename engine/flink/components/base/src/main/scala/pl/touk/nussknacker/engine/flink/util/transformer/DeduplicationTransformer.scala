@@ -1,13 +1,16 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import cats.data.NonEmptyList
 import com.typesafe.config.Config
+import eu.timepit.refined.auto._
 import org.apache.flink.api.common.functions.OpenContext
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.util.Collector
+import org.apache.flink.util.{Collector, OutputTag}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentOutput
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
@@ -23,8 +26,8 @@ import pl.touk.nussknacker.engine.flink.api.TimeMode
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
-  FlinkCustomStreamTransformation,
   FlinkLazyParameterFunctionHelper,
+  FlinkMultiOutputStreamTransformation,
   LazyParameterInterpreterFunction
 }
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
@@ -39,11 +42,15 @@ object DeduplicationTransformer extends DeduplicationTransformer(DeduplicationCo
 
 class DeduplicationTransformer(config: DeduplicationConfig)
     extends CustomStreamTransformer
-    with SingleInputDynamicComponent[FlinkCustomStreamTransformation]
+    with SingleInputDynamicComponent[FlinkMultiOutputStreamTransformation]
     with WithExplicitTypesToExtract
     with Serializable {
 
   override def typesToExtract: List[TypingResult] = List(Typed.typedClass[DeduplicationEntry])
+
+  private[transformer] val Passed: ComponentOutput = ComponentOutput("passed")
+
+  override def outputs: NonEmptyList[ComponentOutput] = NonEmptyList.of(Passed, ComponentOutput.RejectedOutput)
 
   import pl.touk.nussknacker.engine.flink.util.richflink._
 
@@ -193,16 +200,17 @@ class DeduplicationTransformer(config: DeduplicationConfig)
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
-  ): FlinkCustomStreamTransformation = {
+  ): FlinkMultiOutputStreamTransformation = {
     val key             = groupByParamDeclaration.extractValueUnsafe(params)
     val value           = valueParamDeclaration.extractValueUnsafe(params)
     val filterCondition = filterConditionParamDeclaration.extractValueUnsafe(params)
     val ttl             = ttlParamDeclaration.extractValueUnsafe(params)
     val timeMode        = TimeMode.fromName(timeModeParamDeclaration.extractValueUnsafe(params))
 
-    FlinkCustomStreamTransformation((stream: DataStream[Context], ctx: FlinkCustomNodeContext) => {
-
-      stream
+    FlinkMultiOutputStreamTransformation((stream: DataStream[Context], ctx: FlinkCustomNodeContext) => {
+      val outputTypeInfo = ctx.valueWithContextInfo.forNull[AnyRef]
+      val rejectedTag    = ctx.createOutputTag(ComponentOutput.RejectedOutput, outputTypeInfo)
+      val processed: SingleOutputStreamOperator[ValueWithContext[AnyRef]] = stream
         .groupBy(key, groupByParamName)(ctx)
         .process(
           new DeduplicationTransformerHandler(
@@ -211,11 +219,18 @@ class DeduplicationTransformer(config: DeduplicationConfig)
             value,
             TypeInformationDetection.instance.forType(value.returnType),
             timeMode,
-            ctx.lazyParameterHelper
+            ctx.lazyParameterHelper,
+            rejectedTag
           ),
-          ctx.valueWithContextInfo.forNull[AnyRef]
+          outputTypeInfo
         )
-        .setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+
+      val main = processed.setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+
+      NonEmptyList.of(
+        Passed                         -> main,
+        ComponentOutput.RejectedOutput -> processed.getSideOutput(rejectedTag)
+      )
     })
   }
 
@@ -267,7 +282,8 @@ private[transformer] class DeduplicationTransformerHandler(
     valueExpression: LazyParameter[AnyRef],
     valueTypeInfo: TypeInformation[AnyRef],
     override val timeMode: TimeMode,
-    protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper
+    protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+    rejectedTag: OutputTag[ValueWithContext[AnyRef]]
 ) extends LatelyEvictableStateFunction[
       ValueWithContext[String],
       ValueWithContext[AnyRef],
@@ -323,6 +339,8 @@ private[transformer] class DeduplicationTransformerHandler(
         state.update(incomingEntry)
         passedEventsCountState.update(passedEventsCount + 1)
         out.collect(ValueWithContext(null, vwc.context))
+      } else {
+        ctx.output(rejectedTag, ValueWithContext[AnyRef](null, vwc.context))
       }
     }
   }

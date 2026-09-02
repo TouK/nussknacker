@@ -1,14 +1,17 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
+import cats.data.NonEmptyList
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{
   CanonicalNode,
   Case,
+  CustomNodeWithOutputs,
   FilterNode,
   FlatNode,
   Fragment,
+  Output,
   SplitNode,
   SwitchNode
 }
@@ -28,6 +31,8 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
   val sink1 = FlatNode(Sink("out", SinkRef("sinkType", Nil)))
 
   val disabledFilter1 = FilterNode(data = Filter("filter1", "''", isDisabled = Some(true)), List(sink1))
+
+  val customNode1 = CustomNode("custom1", outputVar = None, nodeType = "dedup", parameters = List.empty)
 
   test("#withoutDisabledNodes when all nodes are enabled") {
     val withNodesEnabled = process(List(source1, fragment(List(sink1), isDisabled = false)))
@@ -169,6 +174,50 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
         )
       )
     )
+  }
+
+  test("#withoutDisabledNodes with custom node with disabled node in output") {
+    process(
+      List(
+        source1,
+        CustomNodeWithOutputs(
+          data = customNode1,
+          outputs = List(Output("rejected", List(disabledFilter1, sink1)))
+        )
+      )
+    ).withoutDisabledNodes shouldBe process(
+      List(
+        source1,
+        CustomNodeWithOutputs(
+          data = customNode1,
+          outputs = List(Output("rejected", List(sink1)))
+        )
+      )
+    )
+  }
+
+  test("#withoutDisabledNodes with custom node whose only output node is disabled collapses to a flat node") {
+    process(
+      List(
+        source1,
+        CustomNodeWithOutputs(
+          data = customNode1,
+          outputs = List(Output("rejected", List(disabledFilter1)))
+        )
+      )
+    ).withoutDisabledNodes shouldBe process(
+      List(
+        source1,
+        FlatNode(customNode1)
+      )
+    )
+  }
+
+  test("CustomNodeWithOutputs built from a list falls back to a flat node when the list is empty") {
+    CustomNodeWithOutputs(customNode1, List.empty) shouldBe FlatNode(customNode1)
+
+    CustomNodeWithOutputs(customNode1, List(Output("rejected", List(sink1)))) shouldBe
+      CustomNodeWithOutputs(customNode1, NonEmptyList.of(Output("rejected", List(sink1))))
   }
 
   private def fragment(output: List[CanonicalNode], isDisabled: Boolean) =

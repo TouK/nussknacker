@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.process.helpers
 
+import cats.data.NonEmptyList
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import eu.timepit.refined.auto._
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -18,7 +20,7 @@ import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, Stream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.component.{ComponentOutput, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -272,6 +274,159 @@ object SampleNodes {
     object SimpleFromValueWithContext {
       def unapply(vwc: ValueWithContext[_]) = Some((vwc.context, vwc.context.apply[SimpleRecord]("input")))
     }
+
+  }
+
+  /**
+    * Routes every element to the additional output `routeBy` picks for it, `None` meaning the main one. Emits into
+    * every declared output regardless of what the scenario connects - an unconnected one is never read back, so its
+    * elements are dropped. `returnOutputsReversed` returns the streams in the reverse of the declared order, which
+    * registration wires just the same, matching them by key.
+    */
+  abstract class MultiOutputSplit(additional: List[ComponentOutput], returnOutputsReversed: Boolean = false)
+      extends CustomStreamTransformer
+      with Serializable {
+
+    def routeBy(element: api.Context): Option[ComponentOutput]
+
+    override def outputs: NonEmptyList[ComponentOutput] = NonEmptyList(ComponentOutput.MainOutput, additional)
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): FlinkMultiOutputStreamTransformation =
+      FlinkMultiOutputStreamTransformation { (start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+        val outputTypeInfo = ctx.valueWithContextInfo.forUnknown
+        val tags           = additional.map(output => output -> ctx.createOutputTag(output, outputTypeInfo)).toMap
+
+        // `Context` has to be qualified inside the function: `ProcessFunction` has an inner type of that name.
+        val split = start.process(
+          new ProcessFunction[api.Context, ValueWithContext[AnyRef]] {
+            override def processElement(
+                element: api.Context,
+                flinkContext: ProcessFunction[api.Context, ValueWithContext[AnyRef]]#Context,
+                out: Collector[ValueWithContext[AnyRef]]
+            ): Unit = {
+              val vwc = ValueWithContext[AnyRef](null, element)
+              routeBy(element) match {
+                case Some(output) => flinkContext.output(tags(output), vwc)
+                case None         => out.collect(vwc)
+              }
+            }
+          },
+          outputTypeInfo
+        )
+
+        val returned = NonEmptyList(
+          ComponentOutput.MainOutput -> split,
+          additional.map(output => output -> split.getSideOutput(tags(output)))
+        )
+        if (returnOutputsReversed) returned.reverse else returned
+      }
+
+  }
+
+  object MultiOutputSplitOddEven extends MultiOutputSplit(List(ComponentOutput.RejectedOutput)) {
+
+    override def routeBy(element: api.Context): Option[ComponentOutput] =
+      Option.when(element.apply[SimpleRecord]("input").value1 % 2 != 0)(ComponentOutput.RejectedOutput)
+
+  }
+
+  /** Odd/even router for scenarios whose input is a plain Int rather than a SimpleRecord. */
+  object MultiOutputSplitOddEvenInt extends MultiOutputSplit(List(ComponentOutput.RejectedOutput)) {
+
+    override def routeBy(element: api.Context): Option[ComponentOutput] =
+      Option.when(element.apply[Int]("input") % 2 != 0)(ComponentOutput.RejectedOutput)
+
+  }
+
+  /** Simulates a component bug: declares the "rejected" output but returns a stream only for the main one. */
+  object MultiOutputMissingOutputStream extends CustomStreamTransformer with Serializable {
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList(ComponentOutput.MainOutput, List(ComponentOutput.RejectedOutput))
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): FlinkMultiOutputStreamTransformation =
+      FlinkMultiOutputStreamTransformation { (start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+        NonEmptyList.of(
+          ComponentOutput.MainOutput -> start
+            .map(ValueWithContext[AnyRef](null, _), ctx.valueWithContextInfo.forUnknown)
+        )
+      }
+
+  }
+
+  /**
+    * Simulates a component bug: declares the "rejected" output but returns a single-output transformation, which has
+    * no way to route it. Compilation rejects scenarios that wire "rejected", so registration sees it only with the
+    * main output alone.
+    */
+  object MultiOutputWithSingleOutputTransformation extends CustomStreamTransformer with Serializable {
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList(ComponentOutput.MainOutput, List(ComponentOutput.RejectedOutput))
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): FlinkCustomStreamTransformation =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) =>
+        start.map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
+      )
+
+  }
+
+  /**
+    * Simulates a component bug: names its main output "accepted" but keys the returned stream with
+    * `ComponentOutput.MainOutput`, a name it never declared.
+    */
+  object MultiOutputWrongMainOutputKey extends CustomStreamTransformer with Serializable {
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList.of(ComponentOutput("accepted"), ComponentOutput.RejectedOutput)
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): FlinkMultiOutputStreamTransformation =
+      FlinkMultiOutputStreamTransformation { (start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+        val split = start.map(ValueWithContext[AnyRef](null, _), ctx.valueWithContextInfo.forUnknown)
+        NonEmptyList.of(
+          ComponentOutput.MainOutput     -> split,
+          ComponentOutput.RejectedOutput -> split
+        )
+      }
+
+  }
+
+  /** Simulates a component bug: two streams under the same additional key. */
+  object MultiOutputDuplicatedKey extends CustomStreamTransformer with Serializable {
+
+    override def outputs: NonEmptyList[ComponentOutput] =
+      NonEmptyList.of(ComponentOutput.MainOutput, ComponentOutput.RejectedOutput)
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): FlinkMultiOutputStreamTransformation =
+      FlinkMultiOutputStreamTransformation { (start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+        val stream = start.map(ValueWithContext[AnyRef](null, _), ctx.valueWithContextInfo.forUnknown)
+        NonEmptyList.of(
+          ComponentOutput.MainOutput     -> stream,
+          ComponentOutput.RejectedOutput -> stream,
+          ComponentOutput.RejectedOutput -> stream
+        )
+      }
+
+  }
+
+  /**
+    * Renames its only output, which a single-output transformation can serve: registration keys the returned stream
+    * with the declared name rather than `ComponentOutput.MainOutput`.
+    */
+  object SingleOutputNamedMainOutput extends CustomStreamTransformer with Serializable {
+
+    override def outputs: NonEmptyList[ComponentOutput] = NonEmptyList.of(ComponentOutput("accepted"))
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): FlinkCustomStreamTransformation =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) =>
+        start.map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
+      )
 
   }
 

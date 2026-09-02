@@ -15,7 +15,10 @@ import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
-import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
+import pl.touk.nussknacker.engine.definition.model.DeclaredOutputs
+import pl.touk.nussknacker.engine.graph.EdgeType
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Disableable, FragmentInputDefinition, NodeData, Source, Split}
+import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -33,6 +36,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 class UIProcessValidator(
     processingType: ProcessingType,
     validator: ProcessValidator,
+    declaredOutputs: String => Option[DeclaredOutputs],
     scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
@@ -51,6 +55,7 @@ class UIProcessValidator(
     new UIProcessValidator(
       processingType,
       validator,
+      declaredOutputs,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
       engineScenarioCompilationDependenciesResource,
@@ -64,6 +69,7 @@ class UIProcessValidator(
     new UIProcessValidator(
       processingType,
       transform(validator),
+      declaredOutputs,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
       engineScenarioCompilationDependenciesResource,
@@ -125,6 +131,9 @@ class UIProcessValidator(
       isFragment: Boolean,
       labels: List[ScenarioLabel]
   ): ValidationResult = {
+    val nodesById   = scenarioGraph.nodes.map(n => n.id -> n).toMap
+    val edgesByFrom = scenarioGraph.edges.groupBy(_.from)
+
     validateScenarioName(processName, isFragment)
       .add(validateScenarioLabels(labels))
       .add(validateNodesId(scenarioGraph))
@@ -132,7 +141,8 @@ class UIProcessValidator(
       .add(validateLooseNodes(scenarioGraph))
       .add(validateStickyNotesLength(scenarioGraph))
       .add(validateStickyNotesLimit(scenarioGraph))
-      .add(validateEdgeUniqueness(scenarioGraph))
+      .add(validateEdgeUniqueness(nodesById, edgesByFrom))
+      .add(validateCustomNodeOutputEdges(nodesById, edgesByFrom))
       .add(validateScenarioProperties(scenarioGraph.properties.additionalFields.properties, isFragment))
       .add(warningValidation(scenarioGraph))
   }
@@ -257,9 +267,10 @@ class UIProcessValidator(
     }
   }
 
-  private def validateEdgeUniqueness(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val edgesByFrom = scenarioGraph.edges.groupBy(_.from)
-
+  private def validateEdgeUniqueness(
+      nodesById: Map[String, NodeData],
+      edgesByFrom: Map[String, List[Edge]]
+  ): ValidationResult = {
     def findNonUniqueEdge(nodeId: String, edgesFromNode: List[Edge]) = {
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect {
         case (Some(eType), list) if eType.mustBeUnique && list.size > 1 =>
@@ -269,12 +280,79 @@ class UIProcessValidator(
         case (to, list) if list.size > 1 =>
           PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, to))
       }
-      (nonUniqueByType ++ nonUniqueByTarget).toList
+      // Split is the only node with room for many unnamed (main) continuations.
+      val allowsManyMainEdges = nodesById.get(nodeId).forall(_.isInstanceOf[Split])
+      val unnamedEdgeCount    = edgesFromNode.count(_.edgeType.isEmpty)
+      val nonUniqueMainEdges =
+        if (!allowsManyMainEdges && unnamedEdgeCount > 1)
+          List(PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType("main output", nodeId)))
+        else
+          List.empty
+      (nonUniqueByType ++ nonUniqueByTarget).toList ++ nonUniqueMainEdges
     }
 
     val edgeUniquenessErrors =
       edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(from, edges) }.filterNot(_._2.isEmpty)
     ValidationResult.errors(edgeUniquenessErrors, List(), List())
+  }
+
+  /**
+    * Pre-conversion guard: CanonicalProcessConverter rebuilds the multi-output wrapper only for CustomNode sources and
+    * silently drops every edge it cannot represent, so each such mix must be rejected here first. A single-output
+    * component keeps the released unnamed-edge form; a multi-output one connects exclusively through named edges, the
+    * main one included.
+    */
+  private def validateCustomNodeOutputEdges(
+      nodesById: Map[String, NodeData],
+      edgesByFrom: Map[String, List[Edge]]
+  ): ValidationResult = {
+    def unknownOutput(from: String, outputName: String) =
+      from -> PrettyValidationErrors.formatErrorMessage(UnknownCustomNodeOutput(outputName, Set(from)))
+
+    def undeclaredOutputEdges(from: String, edges: List[Edge], declares: String => Boolean) =
+      edges.collect {
+        case Edge(_, _, Some(EdgeType.CustomNodeOutput(outputName))) if !declares(outputName) =>
+          unknownOutput(from, outputName)
+      }
+
+    // The canonical model has no room for any other edge next to the named outputs, so this rejection is the loud
+    // alternative to the converter silently dropping the subtree.
+    def unsupportedOrUnnamedEdges(from: String, edges: List[Edge]) =
+      edges.collect {
+        case Edge(_, _, Some(edgeType)) if !edgeType.isInstanceOf[EdgeType.CustomNodeOutput] =>
+          from -> PrettyValidationErrors.formatErrorMessage(
+            UnsupportedEdgeNextToCustomNodeOutputs(edgeType.toString, Set(from))
+          )
+        case Edge(_, _, None) =>
+          from -> PrettyValidationErrors.formatErrorMessage(MissingCustomNodeOutputName(Set(from)))
+      }
+
+    val errors = edgesByFrom.toList.flatMap { case (from, edgesFromNode) =>
+      nodesById.get(from) match {
+        // `Join` carries `CustomNodeData` too, and the conversion keeps named outputs only for a `CustomNode`.
+        case Some(node: CustomNode) =>
+          declaredOutputs(node.nodeType) match {
+            // Without the declaration output names cannot be validated (the component's absence is already
+            // MissingCustomNodeExecutor), but a mix the conversion cannot represent must still be rejected.
+            case None =>
+              if (edgesFromNode.exists(_.edgeType.exists(_.isInstanceOf[EdgeType.CustomNodeOutput])))
+                unsupportedOrUnnamedEdges(from, edgesFromNode)
+              else Nil
+            case Some(declared) if declared.declaresNoAdditional =>
+              undeclaredOutputEdges(from, edgesFromNode, _ => false)
+            case Some(declared) =>
+              undeclaredOutputEdges(from, edgesFromNode, declared.declares) ++
+                unsupportedOrUnnamedEdges(from, edgesFromNode)
+          }
+        case Some(_) =>
+          undeclaredOutputEdges(from, edgesFromNode, _ => false)
+        // A dangling edge is ignored by the conversion; its loose target is reported by the loose-nodes check.
+        case None => Nil
+      }
+    }
+
+    // SaveNotAllowed errors skip `deduplicateErrors`, and these carry no per-edge information to tell copies apart.
+    ValidationResult.errors(errors.distinct.toGroupedMap, List(), List())
   }
 
   private def validateStickyNotesLength(scenarioGraph: ScenarioGraph): ValidationResult = {
@@ -308,10 +386,12 @@ class UIProcessValidator(
   }
 
   private def validateLooseNodes(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val nodeIds = scenarioGraph.nodes.map(_.id).toSet
     val looseNodesIds = scenarioGraph.nodes
       // source & fragment inputs don't have inputs
       .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
-      .filterNot(n => scenarioGraph.edges.exists(_.to == n.id))
+      // An edge from a nonexistent node does not connect its target - the conversion would silently drop it.
+      .filterNot(n => scenarioGraph.edges.exists(e => e.to == n.id && nodeIds.contains(e.from)))
       .map(_.id)
 
     if (looseNodesIds.isEmpty) {

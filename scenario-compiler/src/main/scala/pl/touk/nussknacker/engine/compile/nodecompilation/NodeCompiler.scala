@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.{
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.definition.model.{DeclaredOutputs, ModelDefinition}
 import pl.touk.nussknacker.engine.expression.parse.{
   CompiledExpression,
   MultipleBranchesTypedValue,
@@ -309,6 +309,9 @@ class NodeCompiler(
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
     }
   }
+
+  private[compile] def declaredOutputs(nodeType: String): Option[DeclaredOutputs] =
+    definitions.declaredOutputs(nodeType)
 
   def compileSink(
       sink: Sink,

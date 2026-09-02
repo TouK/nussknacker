@@ -46,7 +46,7 @@ private[component] object ComponentNodeTemplatePreparer {
           Enricher("", serviceRef(id, staticDefinition), "output")
         case (id, ServiceSpecificData) =>
           Processor("", serviceRef(id, staticDefinition))
-        case (id, CustomComponentSpecificData(true, _)) =>
+        case (id, CustomComponentSpecificData(true, _, _)) =>
           Join(
             "",
             if (staticDefinition.hasReturn) Some("outputVar") else None,
@@ -54,7 +54,7 @@ private[component] object ComponentNodeTemplatePreparer {
             parameterTemplates(staticDefinition),
             List.empty
           )
-        case (id, CustomComponentSpecificData(false, _)) =>
+        case (id, CustomComponentSpecificData(false, _, _)) =>
           CustomNode(
             "",
             if (staticDefinition.hasReturn) Some("outputVar") else None,

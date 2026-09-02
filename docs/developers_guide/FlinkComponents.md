@@ -89,6 +89,40 @@ Great examples of custom transformers are [aggregates](../scenarios_authoring/Ag
 how components like [previousValue](../scenarios_authoring/DataSourcesAndSinks.md#previousvalue), [delay](../scenarios_authoring/DataSourcesAndSinks.md#delay)
 and aggregates are implemented.
 
+### Multiple outputs
+
+A custom transformer declares its outputs as one ordered list - the head is the main output, the tail are additional,
+named outputs, via `CustomStreamTransformer.outputs`:
+
+```scala
+import eu.timepit.refined.auto._ // required for the "passed" literal to become a ComponentOutput name
+
+override def outputs: NonEmptyList[ComponentOutput] = NonEmptyList.of(ComponentOutput("passed"), ComponentOutput.RejectedOutput)
+```
+
+The main output's name is shown only when the node has additional outputs; a component keeping the default
+(`ComponentOutput.MainOutput`) looks and behaves as a plain single-output node. Names must be unique across the
+whole declaration, the main output's included.
+
+On Flink, a component with only the main output implements `FlinkCustomStreamTransformation` and returns that one
+stream from `transform`, as a class or through the `FlinkCustomStreamTransformation(fun)` factories.
+Registration wires that stream to the main output whatever the component named it.
+A component with additional outputs implements the unrelated `FlinkMultiOutputStreamTransformation` instead, whose
+`transform` returns a non-empty list of the node's streams, each keyed by the output it belongs to
+(additional outputs are usually side outputs read back via `FlinkCustomNodeContext.createOutputTag`).
+Job registration looks the streams up by key, so their order does not matter.
+The main output always needs exactly one stream, whether or not the scenario wires it; an additional output needs one
+only when the scenario connects it, and the streams of the unconnected ones are never read.
+Omitting a stream that is needed, or returning two under the same key, fails registration.
+A wrong key does not: the keys are the only signal of which stream belongs to which output, so pair them
+deliberately - a mixed-up pairing routes records down the wrong branches with no error at any stage.
+Declaring additional outputs and returning a `FlinkCustomStreamTransformation` fails earlier, at scenario compilation,
+as soon as a scenario connects one of them.
+Flink truncates operator names to 80 characters in metric scopes; an additional output's `$output-<name>` marker leads
+its operator name, so the branches stay distinguishable in operator-scoped metrics unless the scenario name alone
+approaches that limit.
+See `DeduplicationTransformer` for a complete example: it declares `passed`/`rejected` and routes rejected records as a side output.
+
 ## Common details
 
 Access to metadata like node id or scenario name and various helpers is provided by `FlinkCustomNodeContext`.

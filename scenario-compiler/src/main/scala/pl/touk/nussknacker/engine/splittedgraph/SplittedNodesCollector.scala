@@ -35,7 +35,7 @@ object SplittedNodesCollector {
     node :: children
   }
 
-  private def collectNodes(next: Next): List[SplittedNode[_ <: NodeData]] =
+  def collectNodes(next: Next): List[SplittedNode[_ <: NodeData]] =
     next match {
       case NextNode(node) => collectNodes(node)
       case _: PartRef     => List.empty

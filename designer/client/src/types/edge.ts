@@ -7,6 +7,7 @@ export enum EdgeKind {
     switchDefault = "SwitchDefault",
     switchNext = "NextSwitch",
     fragmentOutput = "FragmentOutput",
+    customNodeOutput = "CustomNodeOutput",
 }
 
 export type EdgeType = {
@@ -14,6 +15,9 @@ export type EdgeType = {
     name?: string;
     condition?: ExpressionObj;
 };
+
+/** `undefined` stands for the unnamed main output of a component with no declared edge entries. */
+export type AvailableEdgeType = EdgeType | undefined;
 
 export type Edge = {
     _id?: string;

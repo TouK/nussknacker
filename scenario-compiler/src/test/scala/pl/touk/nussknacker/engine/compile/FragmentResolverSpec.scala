@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import org.scalatest.Inside
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 
-class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
+class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -58,6 +58,114 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     }
     resolved.nodes.find(_.id == "sub").get.data
     resolved.nodes.find(_.id == "sub2-f1") shouldBe Symbol("defined")
+  }
+
+  test("resolve fragment used inside an additional output of a multi-output custom node") {
+
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("source", "source1")
+      .customNodeWithOutputs(
+        "custom",
+        Some("out"),
+        "customTransformer",
+        List(
+          "main" -> GraphBuilder.emptySink("mainSink", "sink1").get,
+          "rejected" -> GraphBuilder
+            .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "ala" -> "'makota'".spel)
+            .emptySink("rejectedSink", "sink1")
+            .get
+        )
+      )
+
+    val suprocessParameters = List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+
+    val fragment = CanonicalProcess(
+      MetaData("fragment1", FragmentSpecificData()),
+      List(
+        FlatNode(FragmentInputDefinition("start", suprocessParameters)),
+        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
+        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
+
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
+
+    resolvedValidated shouldBe Symbol("valid")
+    val resolved = resolvedValidated.toOption.get
+
+    val custom = resolved.nodes.collectFirst { case c: canonicalnode.CustomNodeWithOutputs => c }.get
+    custom.outputs.map(_.name).toList should contain("rejected")
+
+    // the fragment inside the output is inlined, its inner filter prefixed with the fragment node id
+    val rejectedNodes = custom.outputs.find(_.name == "rejected").value.nodes
+    val outputNodeIds = rejectedNodes.flatMap(canonicalnode.collectAllNodes).map(_.id)
+    outputNodeIds should contain("sub-f1")
+    rejectedNodes.exists(_.isInstanceOf[canonicalnode.Fragment]) shouldBe false
+  }
+
+  test("resolve fragment containing a multi-output custom node in its body") {
+
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("source", "source1")
+      .fragment(
+        "sub",
+        "fragment1",
+        List("ala"   -> "'makota'".spel),
+        Map("output" -> "fragmentResult", "rejectedOutput" -> "rejectedResult"),
+        Map(
+          "output"         -> GraphBuilder.emptySink("mainSink", "sink1"),
+          "rejectedOutput" -> GraphBuilder.emptySink("rejectedSink", "sink1")
+        )
+      )
+
+    val fragment = CanonicalProcess(
+      MetaData("fragment1", FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
+        canonicalnode.CustomNodeWithOutputs(
+          CustomNode("multi", Some("multiOut"), "customTransformer", List()),
+          List(
+            canonicalnode.Output(
+              "main",
+              List(FlatNode(FragmentOutputDefinition("out1", "output", List.empty)))
+            ),
+            canonicalnode.Output(
+              "rejected",
+              List(
+                FlatNode(
+                  FragmentOutputDefinition("rejectedOut", "rejectedOutput", List.empty)
+                )
+              )
+            )
+          )
+        )
+      ),
+      List.empty
+    )
+
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
+
+    resolvedValidated shouldBe Symbol("valid")
+    val resolved = resolvedValidated.toOption.get
+
+    resolved.nodes.exists(_.isInstanceOf[Fragment]) shouldBe false
+
+    // the multi-output node is inlined with its id prefixed, keeping the outputs structure
+    val custom = resolved.nodes.collectFirst { case c: canonicalnode.CustomNodeWithOutputs => c }.get
+    custom.data.id shouldBe "sub-multi"
+
+    // the fragment output inside the additional output branch is rewired to the scenario's continuation
+    val rejectedNodeIds =
+      custom.outputs.find(_.name == "rejected").value.nodes.flatMap(canonicalnode.collectAllNodes).map(_.id)
+    rejectedNodeIds should contain("rejectedSink")
+
+    // and the main continuation's fragment output leads to the scenario's main sink
+    resolved.nodes.flatMap(canonicalnode.collectAllNodes).map(_.id) should contain("mainSink")
   }
 
   test("resolve nested fragments") {

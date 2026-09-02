@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.marshall
 
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated}
 import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.node.{Filter, FragmentInput, NodeData, Split, Switch}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, FragmentInput, NodeData, Split, Switch}
 
 object ProcessMarshaller {
 
@@ -95,23 +95,63 @@ object ProcessMarshaller {
       nexts <- Decoder.instance(j => Decoder[Map[String, List[CanonicalNode]]].tryDecode(j downField "outputs"))
     } yield Fragment(data, nexts)
 
+  private lazy val customNodeWithOutputsEncode: Encoder[CustomNodeWithOutputs] =
+    Encoder.instance[CustomNodeWithOutputs](custom =>
+      Encoder[NodeData]
+        .apply(custom.data)
+        .mapObject(
+          addFields(
+            "outputs" -> Encoder[NonEmptyList[Output]].apply(custom.outputs)
+          )
+        )
+    )
+
+  // `List`, not `NonEmptyList`: an empty array is how an externally produced payload spells "no wired outputs",
+  // and must not fail the whole scenario decode.
+  private lazy val customNodeWithOutputsDecode: Decoder[CanonicalNode] =
+    for {
+      data    <- deriveConfiguredDecoder[CustomNode]
+      outputs <- Decoder.instance(j => Decoder[List[Output]].tryDecode(j downField "outputs"))
+    } yield CustomNodeWithOutputs(data, outputs)
+
   private implicit lazy val nodeEncode: Encoder[CanonicalNode] =
     Encoder.instance[CanonicalNode] {
-      case flat: FlatNode     => flatNodeEncode(flat)
-      case filter: FilterNode => filterEncode(filter)
-      case switch: SwitchNode => switchEncode(switch)
-      case split: SplitNode   => splitEncode(split)
-      case fragment: Fragment => fragmentEncode(fragment)
+      case flat: FlatNode                => flatNodeEncode(flat)
+      case filter: FilterNode            => filterEncode(filter)
+      case switch: SwitchNode            => switchEncode(switch)
+      case split: SplitNode              => splitEncode(split)
+      case fragment: Fragment            => fragmentEncode(fragment)
+      case custom: CustomNodeWithOutputs => customNodeWithOutputsEncode(custom)
     }
 
   // order is important here! flatNodeDecode has to be the last
   // TODO: this can lead to difficult to debug errors, when e.g. fragment is incorrect it'll be parsed as flatNode...
-  private implicit lazy val nodeDecode: Decoder[CanonicalNode] =
+  private lazy val fallbackChain: Decoder[CanonicalNode] =
     filterDecode or switchDecode or splitDecode or fragmentDecode or flatNodeDecode
+
+  // A literal, not `classOf[CustomNode].getSimpleName`: the wire format must not follow a class rename. The encoder's
+  // discriminator does come from the class name, so a rename desynchronizes the two sides and every fresh multi-output
+  // node decodes back as a FlatNode - ProcessMarshallerSpec's round-trip test pins that at build time. With
+  // `getSimpleName` a rename would keep tests green and surface only in production, on stored scenarios whose
+  // `"CustomNode"` discriminator no NodeData decoder recognizes anymore.
+  private val CustomNodeDiscriminator: String = "CustomNode"
+
+  // Dispatched directly rather than through the `or` chain, so that a corrupt `outputs` subtree fails the decode
+  // instead of degrading to a flat CustomNode and dropping the subtree silently. Fragments also carry `outputs`,
+  // but their discriminator differs, so they stay on the fallbackChain.
+  private implicit lazy val nodeDecode: Decoder[CanonicalNode] = Decoder.instance { c =>
+    val hasOutputs   = c.downField("outputs").succeeded
+    val isCustomNode = c.downField("type").as[String].contains(CustomNodeDiscriminator)
+    if (hasOutputs && isCustomNode) customNodeWithOutputsDecode(c) else fallbackChain(c)
+  }
 
   private implicit lazy val caseDecode: Decoder[Case] = deriveConfiguredDecoder
 
   private implicit lazy val caseEncode: Encoder[Case] = deriveConfiguredEncoder
+
+  private implicit lazy val outputDecode: Decoder[Output] = deriveConfiguredDecoder
+
+  private implicit lazy val outputEncode: Encoder[Output] = deriveConfiguredEncoder
 
   implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = deriveConfiguredEncoder
 

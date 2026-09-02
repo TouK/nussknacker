@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.compiledgraph.part
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
@@ -26,6 +27,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.splittedgraph.end.DeadEnd
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
@@ -35,6 +37,9 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   private val components = List(
     ComponentDefinition("myCustomStreamTransformer", SimpleStreamTransformer),
+    ComponentDefinition("singleOutputImplDeclaringOutputs", SingleOutputImplementationDeclaringOutputs),
+    ComponentDefinition("namedMainStreamTransformer", NamedMainStreamTransformer),
+    ComponentDefinition("twoAdditionalOutputsTransformer", TwoAdditionalOutputsStreamTransformer),
     ComponentDefinition("addingVariableStreamTransformer", AddingVariableStreamTransformer),
     ComponentDefinition("clearingContextStreamTransformer", ClearingContextStreamTransformer),
     ComponentDefinition("producingTupleTransformer", ProducingTupleTransformer),
@@ -158,6 +163,190 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       "outPutVar" -> Unknown,
       "meta"      -> MetaVariables.typingResult(validProcess.metaData)
     )
+  }
+
+  test("valid scenario - a named-wired node keeps its own input context in the typing info") {
+    val validProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "myCustomStreamTransformer",
+        List(
+          "main"     -> GraphBuilder.emptySink("mainOut", "dummySink").value,
+          "rejected" -> GraphBuilder.emptySink("rejectedOut", "dummySink").value
+        ),
+        "stringVal" -> "#additionalVar1".spel
+      )
+
+    val validationResult = validate(validProcess)
+    validationResult.result.isValid shouldBe true
+    validationResult.variablesInNodes.get("custom1").value shouldBe Map(
+      "input" -> Typed[String],
+      "meta"  -> MetaVariables.typingResult(validProcess.metaData)
+    )
+    validationResult.variablesInNodes.get("mainOut").value shouldBe Map(
+      "input"     -> Typed[String],
+      "outPutVar" -> Unknown,
+      "meta"      -> MetaVariables.typingResult(validProcess.metaData)
+    )
+  }
+
+  test("invalid scenario - connects an additional output of a component whose implementation cannot route one") {
+    val withOutputConnected = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "singleOutputImplDeclaringOutputs",
+        List("rejected" -> GraphBuilder.emptySink("rejectedOut", "dummySink").value)
+      )
+
+    validate(withOutputConnected).result should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError("custom1", message, None), Nil))
+          if message.startsWith("Additional outputs of this component are not supported") =>
+    }
+  }
+
+  test("valid scenario - the same component with none of its additional outputs connected") {
+    val withoutOutputConnected = processBase
+      .customNode("custom1", "outPutVar", "singleOutputImplDeclaringOutputs")
+      .emptySink("out", "dummySink")
+
+    validate(withoutOutputConnected).result.isValid shouldBe true
+  }
+
+  test("invalid scenario - additional output with a name not declared by the component") {
+    val invalidProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "myCustomStreamTransformer",
+        List("typo" -> GraphBuilder.emptySink("typoOut", "dummySink").value),
+        "stringVal" -> "#additionalVar1".spel
+      )
+
+    validate(invalidProcess).result should matchPattern {
+      case Invalid(NonEmptyList(UnknownCustomNodeOutput("typo", nodeIds), Nil)) if nodeIds == Set("custom1") =>
+    }
+  }
+
+  test("invalid scenario - the same output name wired twice") {
+    val invalidProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "myCustomStreamTransformer",
+        List(
+          "rejected" -> GraphBuilder.emptySink("rejectedOut1", "dummySink").value,
+          "rejected" -> GraphBuilder.emptySink("rejectedOut2", "dummySink").value
+        ),
+        "stringVal" -> "#additionalVar1".spel
+      )
+
+    validate(invalidProcess).result should matchPattern {
+      case Invalid(NonEmptyList(DuplicateCustomNodeOutputNames(List("rejected"), nodeIds), Nil))
+          if nodeIds == Set("custom1") =>
+    }
+  }
+
+  test("valid scenario - single-output implementation with only the main output wired by name") {
+    val validProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "singleOutputImplDeclaringOutputs",
+        List("main" -> GraphBuilder.emptySink("out", "dummySink").value)
+      )
+
+    validate(validProcess).result shouldBe Symbol("valid")
+  }
+
+  test(
+    "invalid scenario - a misspelled output name on a single-output implementation reports only the unknown output"
+  ) {
+    val invalidProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "singleOutputImplDeclaringOutputs",
+        List("typo" -> GraphBuilder.emptySink("typoOut", "dummySink").value)
+      )
+
+    validate(invalidProcess).result should matchPattern {
+      case Invalid(NonEmptyList(UnknownCustomNodeOutput("typo", nodeIds), Nil)) if nodeIds == Set("custom1") =>
+    }
+  }
+
+  test("invalid scenario - additional output connected on a custom node of an unknown type") {
+    val invalidProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "notExisting",
+        List("rejected" -> GraphBuilder.emptySink("rejectedOut", "dummySink").value)
+      )
+
+    validate(invalidProcess).result should matchPattern {
+      case Invalid(NonEmptyList(MissingCustomNodeExecutor("notExisting", "custom1"), Nil)) =>
+    }
+  }
+
+  test(
+    "invalid scenario - returning custom node with no outputVar, main disconnected, only an additional output connected"
+  ) {
+    val invalidProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        None,
+        "myCustomStreamTransformer",
+        List("rejected" -> GraphBuilder.emptySink("rejectedOut", "dummySink").value),
+        "stringVal" -> "#additionalVar1".spel
+      )
+
+    validate(invalidProcess).result should matchPattern {
+      case Invalid(NonEmptyList(MissingParameters(params, nodeId), Nil))
+          if params == Set(ParameterName("OutputVariable")) && nodeId == "custom1" =>
+    }
+  }
+
+  test("invalid scenario - error inside an additional output is attributed to the node inside it") {
+    val invalidProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "myCustomStreamTransformer",
+        List(
+          "rejected" -> GraphBuilder
+            .buildSimpleVariable("branchVar", "bvar", "#nonExistingVar".spel)
+            .emptySink("rejectedOut", "dummySink")
+            .value
+        ),
+        "stringVal" -> "#additionalVar1".spel
+      )
+
+    val errors = validate(invalidProcess).result.swap.toOption.value.toList
+    errors.collect { case e: ExpressionParserCompilationError => e.nodeId } should contain("branchVar")
+  }
+
+  test("valid scenario - outputVar is visible in an additional output as well as in the main continuation") {
+    val validProcess = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "myCustomStreamTransformer",
+        List(
+          "main" -> GraphBuilder
+            .buildSimpleVariable("mainVar", "mvar", "#outPutVar".spel)
+            .emptySink("mainOut", "dummySink")
+            .value,
+          "rejected" -> GraphBuilder
+            .buildSimpleVariable("branchVar", "bvar", "#outPutVar".spel)
+            .emptySink("rejectedOut", "dummySink")
+            .value
+        ),
+        "stringVal" -> "#additionalVar1".spel
+      )
+
+    validate(validProcess).result shouldBe Symbol("valid")
   }
 
   test("invalid scenario - non ending custom node ends scenario - transformation api case") {
@@ -705,6 +894,80 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     validationResult.result shouldBe Validated
       .invalid(CustomNodeError("join1", "Validation contexts do not match", Option.empty))
       .toValidatedNel
+  }
+
+  private val compiler: ProcessCompiler = validator match {
+    case c: ProcessCompiler => c
+    case other              => fail(s"Expected a ProcessCompiler, got: $other")
+  }
+
+  private def compileCustomNodePart(process: CanonicalProcess): part.CustomNodePart = {
+    val jobData: JobData =
+      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    val parts = compiler.compile(process).result.toOption.value
+    parts.sources.head.nextParts.collectFirst { case c: part.CustomNodePart => c }.value
+  }
+
+  test("compiled part - the main output wired by name is the head of the outputs") {
+    val process = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "namedMainStreamTransformer",
+        List(
+          "passed"   -> GraphBuilder.emptySink("passedOut", "dummySink").value,
+          "rejected" -> GraphBuilder.emptySink("rejectedOut", "dummySink").value
+        )
+      )
+
+    val customPart = compileCustomNodePart(process)
+    customPart.outputs.map(_.output.name).toList shouldBe List("passed", "rejected")
+    customPart.outputs.head.nextParts.map(_.id) shouldBe List("passedOut")
+  }
+
+  test("compiled part - an unwired main output is present as the head, with a DeadEnd") {
+    val process = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "myCustomStreamTransformer",
+        List("rejected" -> GraphBuilder.emptySink("rejectedOut", "dummySink").value),
+        "stringVal" -> "#additionalVar1".spel
+      )
+
+    val customPart = compileCustomNodePart(process)
+    customPart.outputs.map(_.output.name).toList shouldBe List("main", "rejected")
+    customPart.outputs.head.nextParts shouldBe empty
+    customPart.outputs.head.ends.map(_.end) shouldBe List(DeadEnd("custom1"))
+  }
+
+  test("compiled part - wired additional outputs follow in declaration order, not edge order") {
+    val process = processBase
+      .customNodeWithOutputs(
+        "custom1",
+        Some("outPutVar"),
+        "twoAdditionalOutputsTransformer",
+        List(
+          "main" -> GraphBuilder.emptySink("mainSink", "dummySink").value,
+          "outB" -> GraphBuilder.emptySink("outBSink", "dummySink").value,
+          "outA" -> GraphBuilder.emptySink("outASink", "dummySink").value
+        )
+      )
+
+    val customPart = compileCustomNodePart(process)
+    customPart.outputs.map(_.output.name).toList shouldBe List("main", "outA", "outB")
+  }
+
+  test("compiled part - a multi-output component wired through the plain chain compiles as the main output only") {
+    val process = processBase
+      .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "#additionalVar1".spel)
+      .emptySink("out", "dummySink")
+
+    val customPart = compileCustomNodePart(process)
+    customPart.outputs.map(_.output.name).toList shouldBe List("main")
+    customPart.outputs.head.nextParts.map(_.id) shouldBe List("out")
   }
 
 }

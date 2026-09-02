@@ -30,8 +30,20 @@ object EdgeTypesPreparer {
             canChooseNodes = false,
             isForInputDefinition = false
           )
-        case (id, CustomComponentSpecificData(true, _)) =>
+        case (id, CustomComponentSpecificData(true, _, _)) =>
           UINodeEdges(id, List.empty, canChooseNodes = true, isForInputDefinition = true)
+        // Single-output components deliberately get no entry: without one the frontend keeps drawing and persisting
+        // the released unnamed main edge, so their scenarios stay untouched.
+        // TODO: unify single-output components with this model - emit the entries (and so persist the named main
+        // edge) for every custom component. Requires relaxing the named-edge validation for single-output components
+        // and deciding migration vs permanent tolerance for the unnamed main edges of released scenarios.
+        case (id, CustomComponentSpecificData(false, _, outputs)) if outputs.tail.nonEmpty =>
+          UINodeEdges(
+            id,
+            outputs.toList.map(o => EdgeType.CustomNodeOutput(o.name)),
+            canChooseNodes = false,
+            isForInputDefinition = false
+          )
       }
 
     List(

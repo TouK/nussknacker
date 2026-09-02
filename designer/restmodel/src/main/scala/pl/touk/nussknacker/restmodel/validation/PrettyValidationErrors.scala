@@ -176,7 +176,38 @@ object PrettyValidationErrors {
         node(s"Could not create $nodeId: $message", s"Could not create $nodeId: $message")
       case UnresolvedFragment(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
       case FragmentOutputNotDefined(id, _) => node(s"Output $id not defined", "Please check fragment definition")
-      case UnknownFragmentOutput(id, _)    => node(s"Unknown fragment output $id", "Please check fragment definition")
+      case UnknownCustomNodeOutput(name, _) =>
+        node(
+          s"Unknown output $name",
+          "Please check the component's declared outputs",
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
+      case UnsupportedEdgeNextToCustomNodeOutputs(edgeType, _) =>
+        node(
+          s"Edge of type $edgeType is not allowed here",
+          "This edge type cannot be combined with the node's named outputs",
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
+      case MissingCustomNodeOutputName(_) =>
+        node(
+          "Output edges of this node must have an output name",
+          "Every output of this component is named - connect the node through its named output edges",
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
+      case DuplicateCustomNodeOutputNames(names, _) =>
+        node(
+          s"Duplicate output names: ${names.mkString(", ")}",
+          "Each declared output of this node may be connected through at most one edge",
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
+      case MultipleOutputsToSameJoin(_) =>
+        node(
+          "Several outputs lead to the same join",
+          "A join tells its incoming branches apart by the node they come from, so it accepts only one output of " +
+            "a given node. Route the others through another node first, or through a different join.",
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
+      case UnknownFragmentOutput(id, _) => node(s"Unknown fragment output $id", "Please check fragment definition")
       case DisablingManyOutputsFragment(_) =>
         node(s"Cannot disable fragment with multiple outputs", "Please check fragment definition")
       case DisablingNoOutputsFragment(_) =>

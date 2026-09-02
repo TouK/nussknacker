@@ -57,6 +57,8 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
             node.id,
             computeCounts(prefixes :+ node.id)(fragment.allStartNodes)
           ))
+        case CustomNodeWithOutputs(node, outputs) =>
+          computeCountsSamePrefixes(outputs.toList.flatMap(_.nodes)) + (node.id -> nodeCount(node.id))
       }.toMap
 
     }

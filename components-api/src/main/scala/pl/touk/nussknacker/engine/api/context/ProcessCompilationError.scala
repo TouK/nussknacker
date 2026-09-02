@@ -349,6 +349,22 @@ object ProcessCompilationError {
 
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
+  final case class UnknownCustomNodeOutput(name: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  final case class UnsupportedEdgeNextToCustomNodeOutputs(edgeType: String, nodeIds: Set[String])
+      extends ProcessCompilationError
+
+  final case class MissingCustomNodeOutputName(nodeIds: Set[String]) extends ProcessCompilationError
+
+  final case class DuplicateCustomNodeOutputNames(names: List[String], nodeIds: Set[String])
+      extends ProcessCompilationError
+
+  /**
+    * A join identifies its incoming branches by the source node alone (BranchEndDefinition.id), so it cannot tell two
+    * outputs of one node apart. Not specific to additional outputs: a filter wired both ways has always hit this too.
+    */
+  final case class MultipleOutputsToSameJoin(nodeIds: Set[String]) extends ProcessCompilationError
+
   final case class DisablingManyOutputsFragment(fragmentNodeId: String)
       extends ProcessCompilationError
       with ScenarioGraphLevelError {

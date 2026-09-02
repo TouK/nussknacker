@@ -287,6 +287,7 @@ val jwtCirceV               = "10.0.1"
 val jacksonV                = "2.17.2"
 val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
+val refinedV                = "0.10.3"
 val everitSchemaV           = "1.14.5"
 val fastParseV              = "3.1.1"
 val slf4jV                  = "1.7.36"
@@ -1582,6 +1583,7 @@ lazy val componentsApi = (project in file("components-api"))
       Seq(
         "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
         "org.typelevel"                 %% "cats-core"                     % catsV,
+        "eu.timepit"                    %% "refined"                       % refinedV exclude ("org.scala-lang", "scala-compiler"),
         "com.beachape"                  %% "enumeratum"                    % enumeratumV,
         "com.typesafe.scala-logging"    %% "scala-logging"                 % scalaLoggingV,
         "com.typesafe"                   % "config"                        % configV,
@@ -1642,7 +1644,8 @@ lazy val scenarioApi = (project in file("scenario-api"))
   .settings(
     name := "nussknacker-scenario-api",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
+      "org.apache.commons"          % "commons-lang3" % flinkCommonsLang3V,
+      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
     )
   )
   .dependsOn(commonApi, testUtils % Test)

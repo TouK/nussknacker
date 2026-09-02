@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProces
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.definition.model.{DeclaredOutputs, ModelDefinition}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.spelTemplate
@@ -158,6 +158,8 @@ object ProcessTestData {
     val stickyNotesSettings: StickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     val processValidator: ProcessValidator =
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition()))
+    val declaredOutputs: String => Option[DeclaredOutputs] =
+      modelDefinition().declaredOutputs
     val scenarioProperties: Map[String, ScenarioPropertyConfig] = Map.empty
     val scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType)
@@ -169,6 +171,7 @@ object ProcessTestData {
   def testProcessValidator(
       processingType: ProcessingType = ProcessValidatorDefaults.processingType,
       validator: ProcessValidator = ProcessValidatorDefaults.processValidator,
+      declaredOutputs: String => Option[DeclaredOutputs] = ProcessValidatorDefaults.declaredOutputs,
       scenarioProperties: Map[String, ScenarioPropertyConfig] = ProcessValidatorDefaults.scenarioProperties,
       scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer =
         ProcessValidatorDefaults.scenarioPropertiesConfigFinalizer,
@@ -179,6 +182,7 @@ object ProcessTestData {
   ): UIProcessValidator = new UIProcessValidator(
     processingType = processingType,
     validator = validator,
+    declaredOutputs = declaredOutputs,
     scenarioProperties = scenarioProperties,
     scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
     engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
@@ -190,10 +194,13 @@ object ProcessTestData {
 
   def processValidator: UIProcessValidator = testProcessValidator()
 
-  def processValidatorWithDicts(dictionaries: Map[String, DictDefinition]): UIProcessValidator =
+  def processValidatorWithDicts(dictionaries: Map[String, DictDefinition]): UIProcessValidator = {
+    val definition = modelDefinitionWithDicts(dictionaries)
     testProcessValidator(
-      validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries)))
+      validator = ProcessValidator.default(new StubModelDataWithModelDefinition(definition)),
+      declaredOutputs = definition.declaredOutputs
     )
+  }
 
   val sampleScenarioParameters: ScenarioParameters =
     ScenarioParameters(ProcessingMode.UnboundedStream, "Category1", EngineSetupName("Stub Engine"))

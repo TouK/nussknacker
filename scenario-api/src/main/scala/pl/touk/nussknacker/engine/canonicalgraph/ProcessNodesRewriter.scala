@@ -51,6 +51,8 @@ trait ProcessNodesRewriter {
         SplitNode(rewriteIfMatching(data), nodes.map(rewriteNodes))
       case Fragment(data, outputs) =>
         Fragment(rewriteIfMatching(data), outputs.map { case (k, v) => (k, rewriteNodes(v)) })
+      case CustomNodeWithOutputs(data, outputs) =>
+        CustomNodeWithOutputs(rewriteIfMatching(data), outputs.map(o => o.copy(nodes = rewriteNodes(o.nodes))))
     }
   }
 

@@ -268,6 +268,17 @@ object ScenarioInterpreterFactory {
     private def customComponentContext(nodeId: String) =
       CustomComponentContext[F](nodeId, capabilityTransformer)
 
+    // The compiler already rejects a connected additional output here via the `SupportsMultipleOutputs`
+    // marker, but the marker is a public trait any component can carry, so don't trust it transitively:
+    // wiring only the main output would silently starve every additional output's branch.
+    private def validateTransformer[T](nodeId: String, outputs: NonEmptyList[CompiledOutput])(
+        accept: PartialFunction[Any, T]
+    )(transformerObj: Any): ValidatedNel[ProcessCompilationError, T] = {
+      def unsupported = Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
+      if (outputs.tail.nonEmpty) unsupported
+      else accept.lift(transformerObj).map(Valid(_)).getOrElse(unsupported)
+    }
+
     private def compiledPartInvoker(
         processPart: ProcessPart,
     ): CompilationResult[PartInterpreterType] =
@@ -278,14 +289,16 @@ object ScenarioInterpreterFactory {
           compileWithCompilationErrors(endNode, validationContext).andThen { compiled =>
             partInvoker(compiled, List()).map(prepareResponse(compiled, sink))
           }
-        case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
-          val validatedTransformer = transformerObj match {
-            case t: LiteCustomComponent => Valid(t)
-            case _                      => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
-          }
+        case CustomNodePart(transformerObj, _, validationContext, outputs) =>
+          val mainOutput = outputs.head
+          val node       = mainOutput.node
+          val nodeId     = node.id
+          val validatedTransformer =
+            validateTransformer(nodeId, outputs) { case t: LiteCustomComponent => t }(transformerObj)
           validatedTransformer.andThen { transformer =>
-            val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-            result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(node.id))))
+            val result =
+              compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, mainOutput.nextParts))
+            result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(nodeId))))
           }
       }
 
@@ -457,15 +470,17 @@ object ScenarioInterpreterFactory {
     private def compileJoinTransformer(
         customNodePart: CustomNodePart
     ): JoinCompilationResult[JoinDataBatch => InterpreterOutputType] = {
-      val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart
-      val validatedTransformer = transformerObj match {
-        case t: LiteJoinCustomComponent                               => Valid(t)
-        case JoinContextTransformation(_, t: LiteJoinCustomComponent) => Valid(t)
-        case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
-      }
+      val CustomNodePart(transformerObj, _, validationContext, outputs) = customNodePart
+      val mainOutput                                                    = outputs.head
+      val node                                                          = mainOutput.node
+      val nodeId                                                        = node.id
+      val validatedTransformer = validateTransformer(nodeId, outputs) {
+        case t: LiteJoinCustomComponent                               => t
+        case JoinContextTransformation(_, t: LiteJoinCustomComponent) => t
+      }(transformerObj)
       val transformationResult = validatedTransformer.andThen { transformer =>
-        val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(node.id))))
+        val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, mainOutput.nextParts))
+        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(nodeId))))
       }
       JoinCompilationResult(node.id, transformationResult)
     }

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.action
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompiler, ProcessCompiler}
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefiniti
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class CommonModelDataInfoProvider(modelData: ModelData) {
@@ -87,6 +88,9 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
         case custom: CustomNodePart =>
           acc + (nodeComponentInfo -> custom.transformer) ++
             compilePartsAllCustomNodes(custom) ++
+            custom.outputs.tail.flatMap(compiledOutput =>
+              compileNodeAllCustomNodes(compiledOutput.node, custom.validationContext)
+            ) ++
             extractCustomComponents(custom.nextParts)
         case sink: SinkPart =>
           acc + (nodeComponentInfo -> sink.obj)
@@ -96,8 +100,14 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
   private def compilePartsAllCustomNodes(
       part: ProcessPart
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): Map[NodeComponentInfo, Any] =
+    compileNodeAllCustomNodes(part.node, part.validationContext)
+
+  private def compileNodeAllCustomNodes(
+      node: SplittedNode[_],
+      validationContext: ValidationContext
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): Map[NodeComponentInfo, Any] =
     subGraphCompiler
-      .compile(part.node, SingleInputNodeInputValidationContext(part.validationContext))
+      .compile(node, SingleInputNodeInputValidationContext(validationContext))
       .result
       .toList
       .flatMap(n => CompiledNodesCollector.collectAllNodes(n))
