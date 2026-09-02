@@ -359,9 +359,9 @@ class FlinkProcessRegistrar(
       streamsByOutput.foreach { case (output, streams) =>
         if (streams.sizeIs > 1)
           throw new IllegalArgumentException(
-            s"Custom node '${part.id}' transformation returned ${streams.size} streams for output " +
-              s"'$output' - each output needs exactly one. This is a bug in the component's " +
-              s"implementation, not in the scenario."
+            s"Custom node '${nodeComponentInfo.nodeName}' (id ${part.id}) transformation returned " +
+              s"${streams.size} streams for output '$output' - each output needs exactly one. This is a bug in " +
+              s"the component's implementation, not in the scenario."
           )
       }
 
@@ -376,10 +376,10 @@ class FlinkProcessRegistrar(
             val outputKind          = if (isMainOutput) "main output" else "connected additional output"
 
             throw new IllegalArgumentException(
-              s"Custom node '${part.id}' transformation returned no stream for $outputKind '${compiled.output}'. " +
-                s"It returned $returnedOutputNames. The main output always needs a stream, whether or not the " +
-                s"scenario wires it; an additional output needs one when the scenario connects it. This is a bug in " +
-                s"the component's implementation, not in the scenario."
+              s"Custom node '${nodeComponentInfo.nodeName}' (id ${part.id}) transformation returned no stream " +
+                s"for $outputKind '${compiled.output}'. It returned $returnedOutputNames. The main output always " +
+                s"needs a stream, whether or not the scenario wires it; an additional output needs one when the " +
+                s"scenario connects it. This is a bug in the component's implementation, not in the scenario."
             )
         }
 

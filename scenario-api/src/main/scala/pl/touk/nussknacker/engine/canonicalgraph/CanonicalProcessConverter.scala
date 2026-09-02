@@ -175,8 +175,8 @@ object CanonicalProcessConverter extends LazyLogging {
         val descriptions =
           dropped.map(e => s"${e.edgeType.map(_.toString).getOrElse("unnamed output")} -> ${e.to.value}")
         logger.warn(
-          s"Node '${data.id.value}' in scenario '${scenarioName.value}' $reason: ${descriptions.mkString(", ")}. " +
-            "Dropping them and their downstream nodes."
+          s"Node '${data.name.value}' (id ${data.id.value}) in scenario '${scenarioName.value}' $reason: " +
+            s"${descriptions.mkString(", ")}. Dropping them and their downstream nodes."
         )
       }
 

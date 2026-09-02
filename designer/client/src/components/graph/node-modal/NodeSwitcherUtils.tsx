@@ -57,15 +57,12 @@ export function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefi
     // dropped rather than remapped; only the main continuation carries over.
     const isAdditionalCustomOutput = (edge: Edge) => edge.edgeType?.type === EdgeKind.customNodeOutput && !isMainEdge(edge);
 
-    // Assigns `freeTypes` to the unclaimed edges, the edited node's main edge picking first, and drops what does
-    // not fit - no edge may end up with an undefined kind or name.
-    const remapMainFirst = (claimed: Set<Edge>, freeTypes: EdgeType[]): Edge[] => {
+    // Assigns `freeTypes` to `toRemap`, the edited node's main edge picking first, and drops what does not fit -
+    // an entry may be undefined, which strips the type, but no edge may keep a kind or name that is not on offer.
+    const remapMainFirst = (claimed: Set<Edge>, freeTypes: AvailableEdgeType[], toRemap: Edge[]): Edge[] => {
         const remaining = [...freeTypes];
-        const remapped = new Map<Edge, EdgeType>();
-        const [mainEdges, restEdges] = partition(
-            outputEdges.filter((edge) => !claimed.has(edge) && !isAdditionalCustomOutput(edge)),
-            isMainEdge,
-        );
+        const remapped = new Map<Edge, AvailableEdgeType>();
+        const [mainEdges, restEdges] = partition(toRemap, isMainEdge);
         for (const edge of [...mainEdges, ...restEdges]) {
             if (remaining.length === 0) {
                 break;
@@ -76,10 +73,19 @@ export function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefi
             if (claimed.has(edge)) {
                 return [edge];
             }
+            if (!remapped.has(edge)) {
+                return [];
+            }
             const entry = remapped.get(edge);
-            return entry ? [{ ...edge, edgeType: entry }] : [];
+            const { edgeType: _edgeType, ...rest } = edge;
+            return [entry ? { ...rest, edgeType: entry } : rest];
         });
     };
+
+    // A named additional output cannot become a Filter branch, a switch case or a fragment output, so those
+    // node types remap everything else and drop it.
+    const remappableExceptAdditionalOutputs = (claimed: Set<Edge>) =>
+        outputEdges.filter((edge) => !claimed.has(edge) && !isAdditionalCustomOutput(edge));
 
     switch (nextNode.type) {
         case "Filter": {
@@ -95,6 +101,7 @@ export function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefi
             return remapMainFirst(
                 claimed,
                 kinds.map((kind) => ({ type: kind })),
+                remappableExceptAdditionalOutputs(claimed),
             );
         }
         case "Switch": {
@@ -132,6 +139,7 @@ export function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefi
             return remapMainFirst(
                 claimed,
                 names.map((name) => ({ type: EdgeKind.fragmentOutput, name })),
+                remappableExceptAdditionalOutputs(claimed),
             );
         }
     }
@@ -158,26 +166,13 @@ export function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefi
                 claimed.add(edge);
             }
         }
-        const toRemap = outputEdges.filter((edge) => !claimed.has(edge));
-        const remapped = new Map<Edge, AvailableEdgeType>();
-        const [mainEdges, restEdges] = partition(toRemap, isMainEdge);
-        for (const edge of [...mainEdges, ...restEdges]) {
-            if (remaining.length === 0) {
-                break;
-            }
-            remapped.set(edge, remaining.shift());
-        }
-        return outputEdges.flatMap((edge) => {
-            if (claimed.has(edge)) {
-                return [edge];
-            }
-            if (!remapped.has(edge)) {
-                return [];
-            }
-            const entry = remapped.get(edge);
-            const { edgeType: _edgeType, ...rest } = edge;
-            return [entry ? { ...rest, edgeType: entry } : rest];
-        });
+        // Unlike the node types above, a component declaring named outputs can take over another one's, so an
+        // additional output is remapped here rather than dropped.
+        return remapMainFirst(
+            claimed,
+            remaining,
+            outputEdges.filter((edge) => !claimed.has(edge)),
+        );
     }
     return [];
 }
