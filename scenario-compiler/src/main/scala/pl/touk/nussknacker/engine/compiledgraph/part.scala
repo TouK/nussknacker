@@ -63,7 +63,6 @@ object part {
       outputs.toList.flatMap(_.ends)
   }
 
-  /** One output of a custom node: the declared identity plus this output's own continuation. */
   case class CompiledOutput(
       output: ComponentOutput,
       node: splittednode.SplittedNode[CustomNodeData],

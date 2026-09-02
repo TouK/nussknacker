@@ -1,9 +1,9 @@
-import { ExpressionLang } from "./editors/expression/types";
-import { adjustEdges } from "./NodeSwitcherUtils";
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
 import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
+import { ExpressionLang } from "./editors/expression/types";
+import { adjustEdges } from "./NodeSwitcherUtils";
 
 const dedupNode: NodeType = { id: "dedup1", name: "dedup", type: "CustomNode", nodeType: "deduplication" };
 const plainNode: NodeType = { id: "proc1", name: "proc", type: "Processor", service: { id: "someService" } };
@@ -32,6 +32,20 @@ const processDefinitionDataWithDedup: ProcessDefinitionData = {
 
 const processDefinitionDataWithSplit: ProcessDefinitionData = {
     edgesForNodes: [{ componentId: "builtin-split", edges: [], canChooseNodes: true, isForInputDefinition: false }],
+};
+
+const processDefinitionDataWithChoice: ProcessDefinitionData = {
+    edgesForNodes: [
+        {
+            componentId: "builtin-choice",
+            edges: [
+                { type: EdgeKind.switchNext, condition: { language: ExpressionLang.SpEL, expression: "true" } },
+                { type: EdgeKind.switchDefault },
+            ],
+            canChooseNodes: true,
+            isForInputDefinition: false,
+        },
+    ],
 };
 
 describe("adjustEdges", () => {
@@ -181,6 +195,27 @@ describe("adjustEdges", () => {
             { from: "dedup1", to: "s2", edgeType: { type: EdgeKind.fragmentOutput, name: "output2" } },
             { from: "dedup1", to: "s3", edgeType: { type: EdgeKind.fragmentOutput, name: "output1" } },
         ]);
+    });
+
+    it("collapsing a Choice keeps the first branch in list order, not the one left on the default condition", () => {
+        // A Choice's first available entry is the template for new branches, not its main output, so the branch
+        // whose condition happens to be `true` must not outrank the one that comes first.
+        const outputEdges: Edge[] = [
+            {
+                from: "switch1",
+                to: "sinkA",
+                edgeType: { type: EdgeKind.switchNext, condition: { language: ExpressionLang.SpEL, expression: "#input > 0" } },
+            },
+            {
+                from: "switch1",
+                to: "sinkB",
+                edgeType: { type: EdgeKind.switchNext, condition: { language: ExpressionLang.SpEL, expression: "true" } },
+            },
+        ];
+
+        const result = adjustEdges(outputEdges, plainNode, processDefinitionDataWithChoice, switchNode);
+
+        expect(result).toEqual([{ from: "switch1", to: "sinkA" }]);
     });
 
     it("keeps every unnamed edge of a split-like node", () => {

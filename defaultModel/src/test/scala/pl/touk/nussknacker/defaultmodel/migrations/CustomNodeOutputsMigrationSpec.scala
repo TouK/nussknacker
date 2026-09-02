@@ -208,8 +208,8 @@ class CustomNodeOutputsMigrationSpec extends AnyFreeSpecLike with Matchers {
       migrate(once) shouldBe once
     }
 
-    "is registered in DefaultModelMigrations under 502" in {
-      new DefaultModelMigrations().processMigrations(502) shouldBe migration
+    "is registered in DefaultModelMigrations under 400" in {
+      new DefaultModelMigrations().processMigrations(400) shouldBe migration
     }
 
     "scenario with an unnamed output loaded from JSON" - {

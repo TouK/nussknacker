@@ -39,3 +39,5 @@ target.tgz
 .eslintcache
 .java-version
 docs/superpowers
+
+worktrees

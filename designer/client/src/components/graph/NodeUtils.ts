@@ -173,8 +173,6 @@ class NodeUtils {
                 availableEdges.find((available) => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type),
             );
 
-        // With a concrete edgeType requested (a drag from a named output port) a free edge of a different
-        // output must not be reused - the caller then creates a new, correctly typed edge instead.
         return freeOutputEdges.find((e) => isEqual(e.edgeType, edgeType)) || (edgeType ? undefined : freeOutputEdges[0]);
     };
 

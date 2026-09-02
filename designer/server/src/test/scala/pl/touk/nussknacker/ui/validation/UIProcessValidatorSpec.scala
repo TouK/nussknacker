@@ -308,6 +308,27 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     filterErrors.map(_.typ) should not contain "UnsupportedEdgeNextToCustomNodeOutputs"
   }
 
+  test("reject a CustomNodeOutput edge leaving a join, whose named outputs the conversion cannot keep") {
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Join(NodeId("join"), NodeName("join"), None, "someJoin", List.empty, List.empty),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(
+        Edge(NodeId("in"), NodeId("join"), None),
+        Edge(NodeId("join"), NodeId("out"), Some(EdgeType.CustomNodeOutput("rejected")))
+      )
+    )
+
+    val result = validateWithOutputAwareValidator(process)
+
+    // Join carries CustomNodeData, but CanonicalProcessConverter rebuilds the multi-output wrapper only for a
+    // CustomNode, so without this rejection the edge and everything behind it would be dropped on save.
+    val joinErrors = result.errors.invalidNodes.get(NodeId("join")).value
+    joinErrors.map(e => (e.typ, e.errorType)) should contain(("UnknownCustomNodeOutput", SaveNotAllowed))
+  }
+
   test("accept a CustomNodeOutput edge for an output the source component declares") {
     val process = createGraph(
       List(

@@ -14,5 +14,3 @@ export function isEdgeEditable(edge?: Edge): boolean {
     const edgeType = edge?.edgeType?.type;
     return edgeType && EDITABLE_EDGES.includes(edgeType);
 }
-
-export const ERROR_OUTPUT_NODE_TYPES: readonly string[] = ["Enricher", "Processor", "Variable", "VariableBuilder"];

@@ -202,7 +202,9 @@ protected trait ProcessCompilerBase {
   /**
     * The canonical branchId (`BranchEndDefinition.id`) is the source node's *name* (see the Join case in
     * CanonicalProcessConverter), while the designer attaches errors by node *id*, so the name has to be resolved back.
-    * The fallback covers graphs built directly through the scenario API, where the branchId is arbitrary.
+    * The fallback is `joinId`, the only id left that the graph is guaranteed to contain: FragmentResolver prefixes
+    * node names but leaves the branchId raw, so inside a resolved fragment no name ever matches, and an error
+    * attached to an id the designer cannot find renders as a blank entry instead of a message.
     */
   private def branchSourceNodeIds(
       definition: BranchEndDefinition,
@@ -220,7 +222,7 @@ protected trait ProcessCompilerBase {
     if (matchingIds.nonEmpty) {
       matchingIds
     } else {
-      Set(NodeId(definition.id))
+      Set(NodeId(definition.joinId))
     }
   }
 
