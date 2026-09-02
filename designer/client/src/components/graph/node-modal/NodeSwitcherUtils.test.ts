@@ -198,8 +198,6 @@ describe("adjustEdges", () => {
     });
 
     it("collapsing a Choice keeps the first branch in list order, not the one left on the default condition", () => {
-        // A Choice's first available entry is the template for new branches, not its main output, so the branch
-        // whose condition happens to be `true` must not outrank the one that comes first.
         const outputEdges: Edge[] = [
             {
                 from: "switch1",

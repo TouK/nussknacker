@@ -553,7 +553,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .withCustom("someJoin", Some(Unknown), CustomComponentSpecificData(canHaveManyInputs = true, canBeEnding = false))
       .build
 
-    // A resolved fragment always lands here: FragmentResolver prefixes node names but leaves the branch id raw.
     val branchIdMatchingNoNode = "noSuchName"
     val process = ScenarioBuilder
       .streaming("process1")

@@ -48,8 +48,7 @@ function mergeWithCustomizer<T>(object: T, source: T, path: string[] = []) {
 }
 
 export function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionData: ProcessDefinitionData, editedNode?: NodeType) {
-    // A `canChooseNodes` node has no main output: its entries are a template for new branches, and Choice's
-    // `NextSwitch("true")` template would match every branch the user left on the default condition.
+    // A `canChooseNodes` node publishes a template for new branches, not its outputs, so it has no main edge.
     const editedNodeEdges = editedNode && NodeUtils.getEdgesAvailableForNode(editedNode, processDefinitionData);
     const mainEntry = editedNodeEdges && !editedNodeEdges.canChooseNodes ? editedNodeEdges.edges[0] : undefined;
     const isMainEdge = (edge: Edge) => Boolean(mainEntry) && isEqual(edge.edgeType, mainEntry);

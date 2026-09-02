@@ -401,9 +401,7 @@ class UIProcessValidator(
 
     val errors = edgesByFrom.toList.flatMap { case (from, edgesFromNode) =>
       nodesById.get(from) match {
-        // `CustomNode`, not `CustomNodeData`: `Join` carries that trait too, but the conversion only rebuilds the
-        // multi-output wrapper for a `CustomNode`, so a join's named-output edges must fall through to the
-        // rejection below rather than be validated as if the conversion could keep them.
+        // `Join` carries `CustomNodeData` too, and the conversion keeps named outputs only for a `CustomNode`.
         case Some(node: CustomNode) =>
           declaredOutputs(node.nodeType) match {
             // Without the declaration output names cannot be validated (the component's absence is already

@@ -323,8 +323,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val result = validateWithOutputAwareValidator(process)
 
-    // Join carries CustomNodeData, but CanonicalProcessConverter rebuilds the multi-output wrapper only for a
-    // CustomNode, so without this rejection the edge and everything behind it would be dropped on save.
     val joinErrors = result.errors.invalidNodes.get(NodeId("join")).value
     joinErrors.map(e => (e.typ, e.errorType)) should contain(("UnknownCustomNodeOutput", SaveNotAllowed))
   }
