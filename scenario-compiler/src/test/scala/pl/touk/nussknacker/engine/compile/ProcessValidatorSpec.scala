@@ -548,6 +548,25 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
+  test("report several outputs to the same join on the join, when the branch id is not a node name") {
+    val definitionWithJoin = baseDefinitionBuilder
+      .withCustom("someJoin", Some(Unknown), CustomComponentSpecificData(canHaveManyInputs = true, canBeEnding = false))
+      .build
+
+    val branchIdMatchingNoNode = "noSuchName"
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .sources(
+        GraphBuilder.source("source1", "source").branchEnd(branchIdMatchingNoNode, "join1"),
+        GraphBuilder.source("source2", "source").branchEnd(branchIdMatchingNoNode, "join1"),
+        GraphBuilder.join("join1", "someJoin", None, List.empty).emptySink("sink", "sink")
+      )
+
+    validate(process, definitionWithJoin).result.swap.toOption.value.toList should contain(
+      MultipleOutputsToSameJoin(Set(NodeId("join1")))
+    )
+  }
+
   test("find duplicated node names") {
     val sameName = NodeName("same")
     val process = CanonicalProcess(

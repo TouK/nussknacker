@@ -1,9 +1,46 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
+import cats.data.NonEmptyList
 import org.apache.flink.streaming.api.datastream.DataStream
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.component.{ComponentOutput, SupportsMultipleOutputs}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+
+object FlinkMultiOutputStreamTransformation {
+
+  def apply(
+      fun: (DataStream[Context], FlinkCustomNodeContext) => NonEmptyList[
+        (ComponentOutput, DataStream[ValueWithContext[AnyRef]])
+      ]
+  ): FlinkMultiOutputStreamTransformation =
+    (start: DataStream[Context], context: FlinkCustomNodeContext) => fun(start, context)
+
+}
+
+/**
+  * Every output has the same shape: each element carries a [[Context]] plus the value that becomes the node's output
+  * variable there. An output with nothing to say emits `ValueWithContext(null, ctx)`, so the variable is in scope
+  * downstream holding null rather than being absent. The compiler types every output with the node's declared output
+  * context, so a carried context inconsistent with it (e.g. with a variable dropped) goes undiagnosed until runtime.
+  *
+  * `transform` returns all the node's streams as one list keyed by output; job registration looks them up by key, so
+  * their order does not matter. The main output always needs exactly one stream, wired or not; an additional output
+  * needs one only when the scenario connects it, so the unconnected ones may be returned or omitted. A missing or
+  * duplicated key fails registration loudly. A wrong one does not: the keys are the only signal of which stream
+  * belongs to which output, so pair them deliberately - a mixed-up pairing routes records down the wrong branches
+  * with no error at any stage.
+  *
+  * A node with only the main output implements [[FlinkCustomStreamTransformation]] instead, which needs no keys.
+  */
+trait FlinkMultiOutputStreamTransformation extends SupportsMultipleOutputs {
+
+  def transform(
+      start: DataStream[Context],
+      context: FlinkCustomNodeContext
+  ): NonEmptyList[(ComponentOutput, DataStream[ValueWithContext[AnyRef]])]
+
+}
 
 object FlinkCustomStreamTransformation {
 

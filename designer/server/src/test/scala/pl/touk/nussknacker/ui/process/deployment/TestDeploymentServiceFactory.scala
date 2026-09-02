@@ -137,6 +137,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         deploymentManagers.map { case (processingType, _) =>
           processingType -> ProcessTestData.testProcessValidator(
             validator = ProcessValidator.default(modelData),
+            declaredOutputs = modelData.modelDefinition.declaredOutputs,
             fragmentResolver = fragmentResolver,
             processingType = processingType
           )

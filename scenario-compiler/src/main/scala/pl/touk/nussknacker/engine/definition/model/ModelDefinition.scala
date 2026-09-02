@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.model
 
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
@@ -35,6 +35,10 @@ case class ModelDefinition private (
   def getComponent(id: ComponentId): Option[ComponentDefinitionWithImplementation] = {
     components.components.find(_.id == id)
   }
+
+  val declaredOutputs: String => Option[DeclaredOutputs] = (nodeType: String) =>
+    getComponent(ComponentType.CustomComponent, nodeType)
+      .map(c => DeclaredOutputs(c.componentTypeSpecificData.asCustomComponentData.outputs))
 
   def filterComponents(predicate: ComponentDefinitionWithImplementation => Boolean): ModelDefinition =
     copy(components = components.filter(predicate))

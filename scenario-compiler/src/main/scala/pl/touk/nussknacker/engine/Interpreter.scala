@@ -258,8 +258,10 @@ private class InterpreterInternal[F[_]: Monad](
         interpretNext(node, next, ctx)
       case None =>
         // todo: perhaps we should refactor the way DeadEndingData is used, all nodes can be dead ends now
+        // A CustomNode with no next is the unwired main output of a multi-output node (a legitimate scenario end
+        // compiles to EndingCustomNode instead), so its records are counted as dead ends, like a Filter's.
         node match {
-          case Filter(_, _, _, _, _, _) | Switch(_, _, _, _, _) =>
+          case Filter(_, _, _, _, _, _) | Switch(_, _, _, _, _) | CustomNode(_, _, _, _) =>
             listeners.foreach(_.deadEndEncountered(NodeId(node.id), ctx, jobData.metaData))
           case _ =>
             ()

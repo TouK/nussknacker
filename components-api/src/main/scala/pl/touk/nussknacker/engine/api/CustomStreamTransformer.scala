@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Component}
+import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Component, ComponentOutput}
 
 /**
   * Hook for using Apache Flink API directly.
@@ -19,5 +20,13 @@ abstract class CustomStreamTransformer extends Component with AllProcessingModes
 
   // For now it is only supported by Flink streaming runtime
   def canBeEnding: Boolean = false
+
+  /**
+    * The node's outputs, in order: the head is the main output and the tail are the additional ones - every output
+    * is named, the main one included. For now the tail is only supported by the Flink streaming runtime. Once any
+    * additional output is connected, an unwired main output is a dead end rather than a scenario end, so
+    * `canBeEnding` no longer applies to that node.
+    */
+  def outputs: NonEmptyList[ComponentOutput] = NonEmptyList.of(ComponentOutput.MainOutput)
 
 }

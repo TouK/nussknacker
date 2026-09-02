@@ -239,6 +239,10 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
             .toList
             .sequence[ValidatedWithBranches, (String, List[CanonicalNode])]
             .map(replaced => List(canonicalnode.Fragment(dataAction(data), replaced.toMap)))
+        case canonicalnode.CustomNodeWithOutputs(data, outputs) =>
+          outputs
+            .traverse(output => listFun(output.nodes).map(canonicalnode.Output(output.name, _)))
+            .map(replaced => List(canonicalnode.CustomNodeWithOutputs(dataAction(data), replaced)))
       }
     )
   }

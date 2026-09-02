@@ -308,6 +308,7 @@ class DefinitionResourcesSpec
           "builtin-choice",
           "builtin-filter",
           "builtin-split",
+          "custom-deduplication",
           "custom-enrichWithAdditionalData",
           "custom-full-outer-join",
           "custom-single-side-join",

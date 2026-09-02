@@ -2,7 +2,7 @@ package pl.touk.nussknacker.defaultmodel.migrations
 
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
@@ -118,6 +118,29 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
 
       "should be idempotent" in {
         assertIdempotent("migrations/scenario-with-join.json")
+      }
+    }
+
+    "scenario with a custom node with additional outputs" - {
+      lazy val migrated = loadAndMigrate("migrations/scenario-with-custom-node-outputs.json")
+
+      "should assign a deterministic UUID to every node id, including nodes inside the outputs" in {
+        migrated.collectAllNodes.foreach { node =>
+          node.id.value shouldBe uuidOf(node.name.value)
+        }
+      }
+
+      "should rewrite ids inside every output keeping the structure" in {
+        val custom = migrated.nodes.collectFirst { case c: canonicalnode.CustomNodeWithOutputs => c }.get
+
+        custom.data.id.value shouldBe uuidOf("custom1")
+        custom.outputs.map(_.name).toList shouldBe List("main", "rejected")
+        custom.outputs.head.nodes.map(_.id.value) shouldBe List(uuidOf("sink1"))
+        custom.outputs.last.nodes.map(_.id.value) shouldBe List(uuidOf("rejectedFilter"), uuidOf("rejectedSink"))
+      }
+
+      "should be idempotent" in {
+        assertIdempotent("migrations/scenario-with-custom-node-outputs.json")
       }
     }
 

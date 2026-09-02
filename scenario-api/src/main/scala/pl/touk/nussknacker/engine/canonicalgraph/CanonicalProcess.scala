@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.test.testcase.{TestCase, TestCases}
+import pl.touk.nussknacker.engine.test.testcase.TestCases
 
 import scala.language.implicitConversions
 
@@ -67,6 +67,11 @@ object CanonicalProcess {
             .filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
         )
       )
+    case custom: canonicalnode.CustomNodeWithOutputs =>
+      val outputsWithoutDisabled = custom.outputs.toList
+        .map(output => output.copy(nodes = withoutDisabled(output.nodes)))
+        .filterNot(_.nodes.isEmpty)
+      List(canonicalnode.CustomNodeWithOutputs(custom.data, outputsWithoutDisabled))
     case node =>
       List(node)
   }
@@ -139,6 +144,22 @@ object canonicalnode {
 
   case class Fragment(data: FragmentInput, outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
 
+  case class Output(name: String, nodes: List[CanonicalNode]) extends CanonicalTreeNode
+
+  /**
+    * A custom node whose outputs, the main one included, are named subgraphs; nothing follows in the enclosing list
+    * tail (accepted only as the last element of its branch, like `SwitchNode`). A custom node with no connected
+    * outputs stays a `FlatNode`, the shape it has always had (no migration).
+    */
+  case class CustomNodeWithOutputs(data: CustomNode, outputs: NonEmptyList[Output]) extends CanonicalNode
+
+  object CustomNodeWithOutputs {
+
+    def apply(data: CustomNode, outputs: List[Output]): CanonicalNode =
+      NonEmptyList.fromList(outputs).map(CustomNodeWithOutputs(data, _)).getOrElse(FlatNode(data))
+
+  }
+
   def collectAllNodes(node: CanonicalNode): List[NodeData] = node match {
     case canonicalnode.FlatNode(data)              => List(data)
     case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(collectAllNodes)
@@ -146,6 +167,25 @@ object canonicalnode {
       data :: nexts.flatMap(_.nodes).flatMap(collectAllNodes) ::: defaultNext.flatMap(collectAllNodes)
     case canonicalnode.SplitNode(data, nexts)  => data :: nexts.flatten.flatMap(collectAllNodes)
     case canonicalnode.Fragment(data, outputs) => data :: outputs.values.flatten.toList.flatMap(collectAllNodes)
+    case canonicalnode.CustomNodeWithOutputs(data, outputs) =>
+      data :: outputs.toList.flatMap(_.nodes).flatMap(collectAllNodes)
+  }
+
+  /**
+    * Rebuilds the node with `f` applied to every child branch list, leaving the node's own data untouched. Keeps the
+    * exhaustive `CanonicalNode` match in one place, so a transformation recursing into branches (e.g. a scenario
+    * migration) spells out only the cases it actually rewrites.
+    */
+  def mapBranches(node: CanonicalNode)(f: List[CanonicalNode] => List[CanonicalNode]): CanonicalNode = node match {
+    case flat: canonicalnode.FlatNode              => flat
+    case canonicalnode.FilterNode(data, nextFalse) => canonicalnode.FilterNode(data, f(nextFalse))
+    case canonicalnode.SwitchNode(data, nexts, defaultNext) =>
+      canonicalnode.SwitchNode(data, nexts.map(c => c.copy(nodes = f(c.nodes))), f(defaultNext))
+    case canonicalnode.SplitNode(data, nexts) => canonicalnode.SplitNode(data, nexts.map(f))
+    case canonicalnode.Fragment(data, outputs) =>
+      canonicalnode.Fragment(data, outputs.map { case (name, out) => name -> f(out) })
+    case canonicalnode.CustomNodeWithOutputs(data, outputs) =>
+      canonicalnode.CustomNodeWithOutputs(data, outputs.map(o => o.copy(nodes = f(o.nodes))))
   }
 
 }

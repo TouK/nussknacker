@@ -321,6 +321,34 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     ProcessTestHelpers.optionalEndingCustomResultsHolder.results shouldBe List("1")
   }
 
+  test("route records from an additional output of a custom node into a join") {
+    val process = ScenarioBuilder
+      .streaming("proc1")
+      .sources(
+        GraphBuilder
+          .source("id", "input")
+          .customNodeWithOutputs(
+            "multi1",
+            None,
+            "multiOutputSplitOddEven",
+            List(
+              "main"     -> GraphBuilder.branchEnd("end1", "join1").get,
+              "rejected" -> GraphBuilder.branchEnd("end2", "join1").get
+            )
+          ),
+        GraphBuilder
+          .join("join1", "sampleJoin", Some("joined"), List.empty)
+          .processorEnd("proc2", "logService", "all" -> "#joined".spel)
+      )
+
+    val even = SimpleRecord("1", 4, "a", new Date(0))
+    val odd  = SimpleRecord("2", 3, "b", new Date(1000))
+
+    processInvoker.invokeWithSampleData(process, List(even, odd))
+
+    ProcessTestHelpers.logServiceResultsHolder.results.toSet shouldBe Set(even, odd)
+  }
+
   test("listeners should count only incoming events to nodes") {
     val process = ScenarioBuilder
       .streaming("proc1")

@@ -294,6 +294,8 @@ val jwtCirceV               = "11.0.2"
 val jacksonV                = "2.18.2" // 2.18.3+ breaks ContentTypesSchemas.schemaForPlain
 val catsV                   = "2.13.0"
 val catsEffectV             = "3.5.7"
+// matches what sttp-oauth2 (http-utils) already pulls in transitively, so adding it explicitly evicts nothing
+val refinedV                = "0.10.3"
 val everitSchemaV           = "1.14.5"
 // produces more descriptive errors during validation than everit
 val jsonSchemaValidatorV    = "1.5.8"
@@ -1560,6 +1562,7 @@ lazy val componentsApi = (project in file("components-api"))
         "commons-logging"                % "commons-logging"               % commonsLoggingV,
         "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
         "org.typelevel"                 %% "cats-core"                     % catsV,
+        "eu.timepit"                    %% "refined"                       % refinedV exclude ("org.scala-lang", "scala-compiler"),
         "com.beachape"                  %% "enumeratum"                    % enumeratumV,
         "com.typesafe.scala-logging"    %% "scala-logging"                 % scalaLoggingV,
         "com.typesafe"                   % "config"                        % configV,
@@ -1622,9 +1625,10 @@ lazy val scenarioApi = (project in file("scenario-api"))
   .settings(
     name := "nussknacker-scenario-api",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
-      "com.beachape"      %% "enumeratum"       % enumeratumV,
-      "com.beachape"      %% "enumeratum-circe" % enumeratumV,
+      "org.apache.commons"          % "commons-lang3"    % flinkCommonsLang3V,
+      "com.beachape"               %% "enumeratum"       % enumeratumV,
+      "com.beachape"               %% "enumeratum-circe" % enumeratumV,
+      "com.typesafe.scala-logging" %% "scala-logging"    % scalaLoggingV,
     )
   )
   .dependsOn(commonApi, testUtils % Test)

@@ -172,7 +172,7 @@ final case class ModelDefinitionBuilder(
       DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
         componentTypeSpecificData.componentType,
         staticDefinition.returnType.isDefined,
-        Option(componentTypeSpecificData).collect { case CustomComponentSpecificData(_, canBeEnding) =>
+        Option(componentTypeSpecificData).collect { case CustomComponentSpecificData(_, canBeEnding, _) =>
           canBeEnding
         }
       )

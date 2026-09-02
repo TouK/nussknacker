@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.graph
 
+import cats.data.NonEmptyList
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import enumeratum.EnumEntry.UpperSnakecase
 import io.circe._
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
@@ -25,7 +25,6 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect.ClassTag
-import scala.util.Try
 
 object node {
 
@@ -53,6 +52,21 @@ object node {
 
   case class FilterNode(data: Filter, nextTrue: Option[SubsequentNode], nextFalse: Option[SubsequentNode] = None)
       extends SubsequentNode
+
+  case class CustomNodeWithOutputs(
+      data: CustomNode,
+      outputs: NonEmptyList[Output]
+  ) extends SubsequentNode
+
+  object CustomNodeWithOutputs {
+
+    /** Empty `outputs` means nothing is wired - the node ends the scenario. */
+    def orEnding(data: CustomNode, outputs: List[Output]): SubsequentNode =
+      NonEmptyList.fromList(outputs).map(CustomNodeWithOutputs(data, _)).getOrElse(EndingNode(data))
+
+  }
+
+  case class Output(name: String, next: SubsequentNode)
 
   // this should never occur in process to be run (unresolved)
   case class FragmentNode(data: FragmentInput, nexts: Map[String, Option[SubsequentNode]]) extends SubsequentNode
@@ -293,7 +307,8 @@ object node {
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
       with CustomNodeData
-      with EndingNodeData {
+      with EndingNodeData
+      with DeadEndingData {
     override val componentId: String = nodeType
   }
 

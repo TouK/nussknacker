@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.processreport
 
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 //numbers & processes in this test can be totally incorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
-class ProcessCounterTest extends AnyFunSuite with Matchers {
+class ProcessCounterTest extends AnyFunSuite with Matchers with OptionValues {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -84,6 +85,45 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       NodeId("source2") -> NodeCount(2, 0),
       NodeId("join1")   -> NodeCount(3, 0),
       NodeId("end")     -> NodeCount(4, 0)
+    )
+  }
+
+  test("compute counts for nodes inside a custom node additional output") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .parallelism(1)
+      .source("source1", "")
+      .customNodeWithOutputs(
+        "custom1",
+        Some("out"),
+        "customType",
+        List(
+          "main" -> GraphBuilder.emptySink("sink1", "").value,
+          "rejected" -> GraphBuilder
+            .filter("rejectedFilter", "".spel)
+            .emptySink("rejectedSink", "")
+            .value
+        )
+      )
+
+    val computed = defaultCounter.computeCounts(
+      process,
+      isFragment = false,
+      Map(
+        NodeId("source1")        -> RawCount(50L, 0L),
+        NodeId("custom1")        -> RawCount(50, 5),
+        NodeId("rejectedFilter") -> RawCount(20, 1),
+        NodeId("rejectedSink")   -> RawCount(10, 0),
+        NodeId("sink1")          -> RawCount(30, 4)
+      ).get
+    )
+
+    computed shouldBe Map(
+      NodeId("source1")        -> NodeCount(50, 0),
+      NodeId("custom1")        -> NodeCount(50, 5),
+      NodeId("rejectedFilter") -> NodeCount(20, 1),
+      NodeId("rejectedSink")   -> NodeCount(10, 0),
+      NodeId("sink1")          -> NodeCount(30, 4)
     )
   }
 

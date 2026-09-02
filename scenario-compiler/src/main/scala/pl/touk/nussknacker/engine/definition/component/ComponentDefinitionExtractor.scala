@@ -123,7 +123,7 @@ object ComponentDefinitionExtractor {
           withUiDefinitionForNotDisabledComponent(
             DynamicComponentStaticDefinitionDeterminer.staticReturnType(dynamicComponent)
           ) { (uiDefinition, parametersConfig) =>
-            val componentSpecificData = extractComponentSpecificData(component) {
+            val componentSpecificData = extractComponentSpecificData(component, componentName) {
               dynamicComponent match {
                 case _: JoinDynamicComponent        => true
                 case _: SingleInputDynamicComponent => false
@@ -159,7 +159,7 @@ object ComponentDefinitionExtractor {
             withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
               val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
               val invoker          = extractComponentImplementationInvoker(component, methodDef)
-              val componentSpecificData = extractComponentSpecificData(component) {
+              val componentSpecificData = extractComponentSpecificData(component, componentName) {
                 methodDef.runtimeClass == classOf[JoinContextTransformation]
               }
               MethodBasedComponentDefinitionWithImplementation(
@@ -176,13 +176,32 @@ object ComponentDefinitionExtractor {
 
   }
 
-  private def extractComponentSpecificData(component: Component)(determineCanHaveManyInputsForCustom: => Boolean) =
+  private def extractComponentSpecificData(component: Component, componentName: String)(
+      determineCanHaveManyInputsForCustom: => Boolean
+  ): ComponentTypeSpecificData =
     component match {
       case _: SourceFactory => SourceSpecificData
       case _: SinkFactory   => SinkSpecificData
       case _: Service       => ServiceSpecificData
       case custom: CustomStreamTransformer =>
-        CustomComponentSpecificData(determineCanHaveManyInputsForCustom, custom.canBeEnding)
+        val canHaveManyInputs = determineCanHaveManyInputsForCustom
+        // TODO: Add support for the components with many inputs and many outputs
+        if (canHaveManyInputs && custom.outputs.tail.nonEmpty) {
+          throw new IllegalArgumentException(
+            s"Component $componentName cannot have additional outputs since it can have many inputs (join)"
+          )
+        }
+
+        val duplicateOutputs = custom.outputs.toList.groupBy(identity).collect {
+          case (output, occurrences) if occurrences.size > 1 => output
+        }
+        if (duplicateOutputs.nonEmpty) {
+          throw new IllegalArgumentException(
+            s"Component $componentName has duplicate output names: ${duplicateOutputs.map(_.name).mkString(", ")}"
+          )
+        }
+
+        CustomComponentSpecificData(canHaveManyInputs, custom.canBeEnding, custom.outputs)
       case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
     }
 

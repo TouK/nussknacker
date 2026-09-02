@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.ComponentOutput
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph.end.{End, NormalEnd}
@@ -36,18 +38,37 @@ object part {
     def contextBefore: ValidationContext
   }
 
+  /**
+    * `outputs` is built from the component declaration, so the head is always the main output (in the named-wiring
+    * shape a `DeadEnd` stands in when it is unwired; an ending node ends with a `NormalEnd` instead) and the wired
+    * additional outputs follow in declaration order.
+    */
   case class CustomNodePart(
       transformer: AnyRef,
-      node: splittednode.SplittedNode[CustomNodeData],
       contextBefore: ValidationContext,
       validationContext: ValidationContext,
-      nextParts: List[SubsequentPart],
-      ends: List[TypedEnd]
+      outputs: NonEmptyList[CompiledOutput]
   ) extends PotentiallyStartPart
       with SubsequentPart {
+
     override type T = CustomNodeData
 
+    override def node: splittednode.SplittedNode[CustomNodeData] =
+      outputs.head.node
+
+    override def nextParts: List[SubsequentPart] =
+      outputs.toList.flatMap(_.nextParts)
+
+    override def ends: List[TypedEnd] =
+      outputs.toList.flatMap(_.ends)
   }
+
+  case class CompiledOutput(
+      output: ComponentOutput,
+      node: splittednode.SplittedNode[CustomNodeData],
+      nextParts: List[SubsequentPart],
+      ends: List[TypedEnd]
+  )
 
   case class SinkPart(
       obj: api.process.Sink,
