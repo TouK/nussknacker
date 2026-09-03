@@ -160,7 +160,7 @@
         "autoprefixer": "10.4.2",
         "axios-mock-adapter": "1.22.0",
         "babel-loader": "8.2.3",
-        "babel-plugin-istanbul": "6.1.1",
+        "babel-plugin-istanbul": "8.0.0",
         "chalk": "4.1.2",
         "copy-webpack-plugin": "11.0.0",
         "crypto-browserify": "3.12.0",
