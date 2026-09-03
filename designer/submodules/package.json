@@ -11,7 +11,7 @@
         "@babel/preset-typescript": "7.28.5",
         "@npmcli/map-workspaces": "1.0.4",
         "@pmmmwh/react-refresh-webpack-plugin": "0.5.4",
-        "@svgr/webpack": "8.0.1",
+        "@svgr/webpack": "8.1.0",
         "@touk/federated-types": "1.2.2-beta.1",
         "@types/concurrently": "6.4.0",
         "@types/html-webpack-plugin": "3.2.6",
