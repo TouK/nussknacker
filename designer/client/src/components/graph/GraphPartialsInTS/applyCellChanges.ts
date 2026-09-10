@@ -31,7 +31,7 @@ export function applyCellChanges(
     const stickyNotesModels = stickyNotesModelsWithTools.map((a) => a.model);
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
-    const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: i + 1 })));
+    const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));
     const edgeElements = indexed.filter(isEdgeConnected).map((value) => makeLink(value, paper, theme));
 
     const cells = [...nodeElements, ...edgeElements, ...stickyNotesModels];

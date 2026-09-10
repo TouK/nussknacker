@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.component.{ComponentOutput, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
 sealed trait ComponentTypeSpecificData {
@@ -20,22 +19,8 @@ case object ServiceSpecificData extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.Service
 }
 
-object CustomComponentSpecificData {
-
-  def apply(canHaveManyInputs: Boolean, canBeEnding: Boolean): CustomComponentSpecificData =
-    CustomComponentSpecificData(
-      canHaveManyInputs,
-      canBeEnding,
-      outputs = NonEmptyList.of(ComponentOutput.MainOutput)
-    )
-
-}
-
-final case class CustomComponentSpecificData(
-    canHaveManyInputs: Boolean,
-    canBeEnding: Boolean,
-    outputs: NonEmptyList[ComponentOutput]
-) extends ComponentTypeSpecificData {
+final case class CustomComponentSpecificData(canHaveManyInputs: Boolean, canBeEnding: Boolean)
+    extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.CustomComponent
 }
 

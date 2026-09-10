@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.processreport
 
-import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 //numbers & processes in this test can be totally incorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
-class ProcessCounterTest extends AnyFunSuite with Matchers with OptionValues {
+class ProcessCounterTest extends AnyFunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -82,45 +81,6 @@ class ProcessCounterTest extends AnyFunSuite with Matchers with OptionValues {
       "source2" -> NodeCount(2, 0),
       "join1"   -> NodeCount(3, 0),
       "end"     -> NodeCount(4, 0)
-    )
-  }
-
-  test("compute counts for nodes inside a custom node additional output") {
-    val process = ScenarioBuilder
-      .streaming("test")
-      .parallelism(1)
-      .source("source1", "")
-      .customNodeWithOutputs(
-        "custom1",
-        Some("out"),
-        "customType",
-        List(
-          "main" -> GraphBuilder.emptySink("sink1", "").value,
-          "rejected" -> GraphBuilder
-            .filter("rejectedFilter", "".spel)
-            .emptySink("rejectedSink", "")
-            .value
-        )
-      )
-
-    val computed = defaultCounter.computeCounts(
-      process,
-      isFragment = false,
-      Map(
-        "source1"        -> RawCount(50L, 0L),
-        "custom1"        -> RawCount(50, 5),
-        "rejectedFilter" -> RawCount(20, 1),
-        "rejectedSink"   -> RawCount(10, 0),
-        "sink1"          -> RawCount(30, 4)
-      ).get
-    )
-
-    computed shouldBe Map(
-      "source1"        -> NodeCount(50, 0),
-      "custom1"        -> NodeCount(50, 5),
-      "rejectedFilter" -> NodeCount(20, 1),
-      "rejectedSink"   -> NodeCount(10, 0),
-      "sink1"          -> NodeCount(30, 4)
     )
   }
 

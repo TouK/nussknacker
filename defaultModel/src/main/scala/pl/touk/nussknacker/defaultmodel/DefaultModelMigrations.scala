@@ -17,7 +17,6 @@ class DefaultModelMigrations extends ProcessMigrations {
     // many ProcessMigrations can be loaded using SPI, and we want to avoid overlapping numbers when merging.
     100 -> SampleGeneratorToEventGeneratorAndPeriodToScheduleParameter,
     200 -> PreviousValueParameterNamesMigration,
-    400 -> CustomNodeOutputsMigration(nodeType = "deduplication", mainOutputName = "passed"),
   )
 
 }

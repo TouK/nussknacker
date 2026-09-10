@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
-import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.graph
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-object CanonicalProcessConverter extends LazyLogging {
+object CanonicalProcessConverter {
 
   private[canonicalgraph] def toScenarioGraph(process: CanonicalProcess): ScenarioGraph = {
     val (nodes, edges) = {
@@ -68,18 +67,6 @@ object CanonicalProcessConverter extends LazyLogging {
           createNextEdge(data.id, outputEdges, Some(FragmentOutput(name)))
         }.toList
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
-      case canonicalnode.CustomNodeWithOutputs(data, outputs) :: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        val nextInner              = outputs.toList.map(output => toGraphInner(output.nodes)).unzip
-        val nodes                  = nextInner._1.flatten
-        val edges                  = nextInner._2.flatten
-        val connecting = outputs.toList.flatMap { output =>
-          createNextEdge(data.id, output.nodes, Some(EdgeType.CustomNodeOutput(output.name)))
-        }
-        (
-          data :: nodes ::: tailNodes,
-          createNextEdge(data.id, tail) ::: connecting ::: edges ::: tailEdges
-        )
       case Nil =>
         (List(), List())
     }
@@ -100,14 +87,11 @@ object CanonicalProcessConverter extends LazyLogging {
     (aList.flatten, bList.flatten)
   }
 
-  private def isNamedOutputEdge(e: Edge): Boolean =
-    e.edgeType.exists(_.isInstanceOf[EdgeType.CustomNodeOutput])
-
   def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {
     val nodesMap          = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
     val edgesFromMapStart = graph.edges.groupBy(_.from)
     val rootsUnflattened =
-      findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None, name)(headNode, edgesFromMapStart))
+      findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
     CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches, graph.stickyNotes)
@@ -120,27 +104,13 @@ object CanonicalProcessConverter extends LazyLogging {
 
   private def unFlattenNode(
       nodesMap: Map[String, NodeData],
-      stopAtJoin: Option[Edge],
-      scenarioName: ProcessName
+      stopAtJoin: Option[Edge]
   )(n: NodeData, edgesFromMap: Map[String, List[Edge]]): List[canonicalnode.CanonicalNode] = {
     def unflattenEdgeEnd(id: String, e: Edge): List[canonicalnode.CanonicalNode] = {
-      unFlattenNode(nodesMap, Some(e), scenarioName)(
-        nodesMap(e.to),
-        edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e))
-      )
+      unFlattenNode(nodesMap, Some(e))(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
     }
 
     def getEdges(id: String): List[Edge] = edgesFromMap.getOrElse(id, List())
-
-    def warnDroppedEdges(data: NodeData, reason: String, dropped: List[Edge]): Unit =
-      if (dropped.nonEmpty) {
-        val descriptions =
-          dropped.map(e => s"${e.edgeType.map(_.toString).getOrElse("unnamed output")} -> ${e.to}")
-        logger.warn(
-          s"Node '${data.id}' in scenario '${scenarioName.value}' $reason: " +
-            s"${descriptions.mkString(", ")}. Dropping them and their downstream nodes."
-        )
-      }
 
     val handleNestedNodes: PartialFunction[(NodeData, Option[Edge]), List[canonicalnode.CanonicalNode]] = {
       case (data: Filter, _) =>
@@ -182,34 +152,14 @@ object CanonicalProcessConverter extends LazyLogging {
         val joinId = edgeConnectedToJoin.from
         canonicalnode.FlatNode(BranchEndData(BranchEndDefinition(joinId, data.id))) :: Nil
 
-      case (data: CustomNode, _) if getEdges(data.id).exists(isNamedOutputEdge) =>
-        val (namedOutputEdges, remainingEdges) = getEdges(data.id).partitionMap {
-          case e @ Edge(_, _, Some(EdgeType.CustomNodeOutput(name))) => Left(name -> e)
-          case e                                                     => Right(e)
-        }
-        // One subgraph per output name: the first edge under a name wins, the rest are surplus.
-        val keptOutputEdges      = namedOutputEdges.distinctBy { case (name, _) => name }
-        val duplicateOutputEdges = namedOutputEdges.diff(keptOutputEdges)
-        // Every non-named edge is dropped with its subgraph - the validator rejects such a mix, the warn covers
-        // programmatic input.
-        warnDroppedEdges(
-          data,
-          "has outgoing edges that cannot be represented next to its named outputs",
-          remainingEdges ++ duplicateOutputEdges.map { case (_, e) => e }
-        )
-        val outputs = keptOutputEdges.map { case (name, e) => canonicalnode.Output(name, unflattenEdgeEnd(data.id, e)) }
-        canonicalnode.CustomNodeWithOutputs(data, outputs) :: Nil
+    }
+    (handleNestedNodes orElse (handleDirectNodes andThen { n =>
+      n :: getEdges(n.id).flatMap(unflattenEdgeEnd(n.id, _))
+    }))((n, stopAtJoin))
+  }
 
-    }
-    // A "direct" (one-output) node: every outgoing edge is the normal continuation, flattened inline.
-    // A CustomNodeOutput edge on a direct node is only reachable through import/API and is dropped here.
-    val handleDirectNode: PartialFunction[(NodeData, Option[Edge]), List[canonicalnode.CanonicalNode]] = {
-      case (data, _) =>
-        val (outputEdges, edges) = getEdges(data.id).partition(isNamedOutputEdge)
-        warnDroppedEdges(data, "cannot have named outputs, but has outgoing edges", outputEdges)
-        canonicalnode.FlatNode(data) :: edges.flatMap(unflattenEdgeEnd(data.id, _))
-    }
-    (handleNestedNodes orElse handleDirectNode)((n, stopAtJoin))
+  private val handleDirectNodes: PartialFunction[(NodeData, Option[Edge]), canonicalnode.CanonicalNode] = {
+    case (data, _) => FlatNode(data)
   }
 
 }

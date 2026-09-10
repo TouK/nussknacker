@@ -88,7 +88,6 @@ object ProcessingTypeServices {
     val scenarioValidator = new UIProcessValidator(
       processingType = processingTypeData.processingType,
       validator = ProcessValidator.default(processingTypeData.designerModelData.modelData),
-      declaredOutputs = processingTypeData.designerModelData.modelData.modelDefinition.declaredOutputs,
       scenarioProperties = processingTypeData.designerModelData.scenarioPropertiesConfig,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),

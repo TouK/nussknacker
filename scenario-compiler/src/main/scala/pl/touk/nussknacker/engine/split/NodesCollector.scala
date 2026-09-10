@@ -17,15 +17,8 @@ object NodesCollector {
         collectNodes(source.node) ::: source.nextParts.flatMap(collectNodesInAllParts)
       case sink: SinkPart =>
         collectNodes(sink.node)
-      case custom: SingleOutputCustomNodePart =>
+      case custom: CustomNodePart =>
         collectNodes(custom.node) ::: custom.nextParts.flatMap(collectNodesInAllParts)
-      case custom: MultiOutputCustomNodePart =>
-        // `custom.nextParts` already covers every output's downstream parts, but not their inline nodes.
-        collectNodes(custom.node) :::
-          custom.outputs.toList
-            .flatMap(_.next.toList)
-            .flatMap(collectNodes) :::
-          custom.nextParts.flatMap(collectNodesInAllParts)
     }
 
 }

@@ -15,7 +15,6 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
-* [#9450](https://github.com/TouK/nussknacker/pull/9450) Named outputs for custom components, rendered as named edges in the designer; the `deduplication` component gained a `rejected` output carrying the events it filters out. See the [Migration Guide](MigrationGuide.md) for details.
 * [#9399](https://github.com/TouK/nussknacker/pull/9399) Reworked the "Compare versions" dialog's version picker.
     * The picker now only lists versions with a meaningful (non-layout-only) difference from the current version, and shows a tooltip with the list of changed nodes/edges/properties.
     * Differences are computed for the 50 most recent versions by default; older ones are still listed, without their differences. The number compared can be changed in the dialog.
@@ -61,6 +60,7 @@ ha {
   # Timeout for individual lock DB queries (must be < leader.heartbeatInterval).
   lockQueryTimeout: 5s   # default
 }
+
 ```
 * [#9421](https://github.com/TouK/nussknacker/pull/9421) New built-in `java.time.Duration` parameter validators: the `@PositiveDuration` and `@NonNegativeDuration` annotations (with `ValidatorMode`: `AUTO`, `COMPILE_TIME`, `COMPILE_TIME_AND_RUNTIME`) and the corresponding `ParameterValidator`s (`PositiveDurationValidator`, `CompileTimePositiveDurationValidator`, `NonNegativeDurationValidator`, `CompileTimeNonNegativeDurationValidator`), reported as the new `InvalidDurationParameter` error. Duration parameters of the base components are now guarded by them, so a scenario using a constant non-positive (or negative) duration in one of these parameters no longer compiles - see the [Migration Guide](MigrationGuide.md) for the full list.
 * [#9419](https://github.com/TouK/nussknacker/pull/9419) Compile-time parameter validators now inspect the resolved value of parameters whose value the typer cannot determine statically (e.g. a computed expression like `T(java.time.Duration).parse('PT3S').getSeconds()`), not only literal values. Such a parameter is evaluated at compile time - only when it has validators - so its value-based validators (e.g. min/max, validation expression) run against the computed value; previously these were skipped for non-literal expressions. This also covers lazy parameters, as long as their expression does not read context variables (e.g. `#input`) - the value of such a context-free expression is resolved at compile time solely for validation; lazy parameters whose expressions read context variables are still validated only at runtime. This can turn a scenario that previously compiled into an invalid one.

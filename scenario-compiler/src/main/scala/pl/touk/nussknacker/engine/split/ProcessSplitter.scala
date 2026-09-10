@@ -19,15 +19,15 @@ object ProcessSplitter {
     SourcePart(splittednode.SourceNode(node.data, nextWithParts.next), nextWithParts.nextParts, nextWithParts.ends)
   }
 
-  private def split(custom: CustomNode, next: SubsequentNode): SingleOutputCustomNodePart = {
+  private def split(custom: CustomNode, next: SubsequentNode): CustomNodePart = {
     val nextWithParts = traverse(next)
     val node          = splittednode.OneOutputSubsequentNode(custom, nextWithParts.next)
-    SingleOutputCustomNodePart(node, nextWithParts.nextParts, nextWithParts.ends)
+    CustomNodePart(node, nextWithParts.nextParts, nextWithParts.ends)
   }
 
-  private def split(custom: CustomNode): SingleOutputCustomNodePart = {
+  private def split(custom: CustomNode): CustomNodePart = {
     val node = splittednode.EndingNode(custom)
-    SingleOutputCustomNodePart(node, List.empty, List.empty)
+    CustomNodePart(node, List.empty, List.empty)
   }
 
   private def split(sink: Sink): SinkPart = {
@@ -124,13 +124,7 @@ object ProcessSplitter {
         )
       case FragmentNode(id, _) =>
         throw new RuntimeException("Should not happen")
-      case CustomNodeWithOutputs(custom, nodeOutputs) =>
-        val outputs = nodeOutputs.map { output =>
-          val t = traverse(output.next)
-          SplittedOutput(output.name, t.next, t.nextParts, t.ends)
-        }
-        val part = MultiOutputCustomNodePart(splittednode.EndingNode(custom), outputs)
-        NextWithParts(PartRef(part.id), List(part), List.empty)
+
     }
 
   case class NextWithParts(next: Option[splittednode.Next], nextParts: List[SubsequentPart], ends: List[End]) {
