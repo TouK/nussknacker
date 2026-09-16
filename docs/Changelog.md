@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* Fix: a string template in a node that takes its output type from the expression, such as `variable`, no longer fails at runtime with `Expression parsed with unexpected type: Unknown`. This affected deployments that restrict assignments from the `Unknown` type through a custom `TypingConfigurationProvider`.
 * [#9399](https://github.com/TouK/nussknacker/pull/9399) Reworked the "Compare versions" dialog's version picker.
     * The picker now only lists versions with a meaningful (non-layout-only) difference from the current version, and shows a tooltip with the list of changed nodes/edges/properties.
     * Differences are computed for the 50 most recent versions by default; older ones are still listed, without their differences. The number compared can be changed in the dialog.
