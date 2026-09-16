@@ -34,7 +34,7 @@
         "eslint-config-prettier": "8.8.0",
         "eslint-plugin-i18next": "6.0.3",
         "eslint-plugin-import": "2.26.0",
-        "eslint-plugin-prettier": "4.2.1",
+        "eslint-plugin-prettier": "5.5.6",
         "eslint-plugin-react": "7.31.10",
         "eslint-plugin-react-hooks": "4.6.0",
         "file-loader": "6.2.0",
