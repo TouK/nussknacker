@@ -66,7 +66,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.spel.{MutableTypingConfigurationProvider, SpelExpressionRepr}
 import pl.touk.nussknacker.engine.testcomponents.SpelTemplatePartsService
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContextAndIORuntime}
@@ -258,6 +258,22 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .emptySink("end-end", "dummySink")
 
     interpretProcess(process, Transaction(msisdn = "125")) should equal("125")
+  }
+
+  test("set variable to the rendered text of a string template") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .buildSimpleVariable(
+        "result-end",
+        resultVariable,
+        "msisdn: #{#input.msisdn.substring(1)}, vip: #{#input.accountId == '123'}, sum: #{1 + 2}#{'!'}".spelTemplate
+      )
+      .emptySink("end-end", "dummySink")
+
+    MutableTypingConfigurationProvider.withStrictUnknownAssignment {
+      interpretProcess(process, Transaction(msisdn = "125")) should equal("msisdn: 25, vip: true, sum: 3!")
+    }
   }
 
   test("filter out based on expression") {

@@ -141,12 +141,12 @@ class CompiledSpelExpression(
       case SpelFlavour.Template =>
         val parts            = renderTemplateExpressionParts(context)
         val evaluationResult = TemplateEvaluationResult(parts)
+        // A template always renders to a String, so the only question here is whether the caller wants the parts
+        // instead. Whether a String satisfies the expected type was already decided when the expression was parsed.
         if (expectedReturnType == Typed[TemplateEvaluationResult]) {
           evaluationResult.asInstanceOf[T]
-        } else if (expectedReturnType.canBeStrictlyAssignedTo(Typed[CharSequence])) {
-          evaluationResult.renderedTemplate.asInstanceOf[T]
         } else {
-          throw new IllegalStateException(s"Expression parsed with unexpected type: $expectedReturnType")
+          evaluationResult.renderedTemplate.asInstanceOf[T]
         }
     }
   }

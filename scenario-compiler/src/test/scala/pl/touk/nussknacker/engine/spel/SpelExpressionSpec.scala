@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.api.generics.{
 }
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
-import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypingConfiguration, TypingConfigurationProvider}
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypingConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
@@ -81,7 +81,6 @@ import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.varargs
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
@@ -1588,6 +1587,12 @@ trait SpelExpressionSpec
       .renderedTemplate shouldBe "alamakota 446 bar"
   }
 
+  // Unknown is what nodes inferring their output type from the expression pass as the expected type, e.g. variable
+  test("evaluates template as rendered string when expected type is Unknown") {
+    parse[Any]("alamakota #{444}", ctx, flavour = SpelFlavour.Template).validExpression
+      .evaluateSync[String]() shouldBe "alamakota 444"
+  }
+
   test("allow to use parsed expression with values with different types") {
     val expression = parseV[String](
       "some value: #{ #variable }",
@@ -2968,27 +2973,4 @@ class SampleObjectWithGetMethod(map: Map[String, Any]) {
 
   def definedProperty: String = "123"
 
-}
-
-private object MutableTypingConfigurationProvider extends TypingConfigurationProvider {
-
-  private val currentConfig: AtomicReference[TypingConfiguration] =
-    new AtomicReference[TypingConfiguration](TypingConfiguration.default)
-
-  override def config: TypingConfiguration = {
-    currentConfig.get()
-  }
-
-  def set(typingConfiguration: TypingConfiguration): Unit = {
-    currentConfig.set(typingConfiguration)
-  }
-
-  def reset(): Unit = {
-    currentConfig.set(TypingConfiguration.default)
-  }
-
-}
-
-final class MutableTypingConfigurationProviderWrapper extends TypingConfigurationProvider {
-  override def config: TypingConfiguration = MutableTypingConfigurationProvider.config
 }
