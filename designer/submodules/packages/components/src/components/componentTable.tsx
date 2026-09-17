@@ -76,7 +76,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                             key={link.id}
                             icon={<NuIcon src={link.icon} title={link.title} sx={{ fontSize: "1.5rem", verticalAlign: "middle" }} />}
                             label={link.title}
-                            showInMenu={i > 0}
+                            showInMenu={row.links.length > 2 && i > 0}
                             onKeyDown={(e) => {
                                 const keycode = e.keyCode ? e.keyCode : e.which;
                                 const ENTER = "13";
