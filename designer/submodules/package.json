@@ -40,7 +40,7 @@
         "file-loader": "6.2.0",
         "fork-ts-checker-webpack-plugin": "7.2.3",
         "hook-shell-script-webpack-plugin": "0.1.4",
-        "html-webpack-plugin": "5.5.0",
+        "html-webpack-plugin": "5.6.8",
         "husky": "8.0.3",
         "i18next": "23.2.7",
         "i18next-browser-languagedetector": "7.1.0",
