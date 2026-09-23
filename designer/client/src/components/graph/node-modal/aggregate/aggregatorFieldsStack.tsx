@@ -37,8 +37,9 @@ type Preset = {
 const PRESETS: Preset[] = [
     {
         label: "Count",
-        agg: "#AGG.sum",
-        expression: "1",
+        // countWhen over a constant, rather than sum over one: a count of nothing is 0, and sum answers null there.
+        agg: "#AGG.countWhen",
+        expression: "true",
     },
 ];
 

@@ -414,7 +414,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(1, 3, 7, 5, 0)
+      aggregateVariables shouldBe List(1, 3, 7, 5, null)
     }
   }
 
@@ -694,7 +694,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(3, 5, 0)
+      aggregateVariables shouldBe List(3, 5, null)
     }
   }
 
@@ -707,9 +707,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables.length shouldEqual (2)
-      aggregateVariables(0) shouldEqual 1.0
-      aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+      aggregateVariables shouldEqual List(1.0, null)
     }
   }
 
@@ -722,9 +720,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables.length shouldEqual (2)
-      aggregateVariables(0) shouldEqual 1.0
-      aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+      aggregateVariables shouldEqual List(1.0, null)
     }
   }
 
@@ -748,9 +744,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
         runScenario(model, testScenario)
         val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-        aggregateVariables.length shouldEqual (2)
-        aggregateVariables(0) shouldEqual 0.0
-        aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+        aggregateVariables shouldEqual List(0.0, null)
       }
     }
   }
@@ -839,7 +833,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
-      aggregateVariables shouldBe List(4, 5, 0)
+      aggregateVariables shouldBe List(4, 5, null)
     }
   }
 
@@ -998,6 +992,129 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       aggregates.foreach { case (name, expected) =>
         lastResult.variableTyped[AnyRef](s"fragmentResult$name").get shouldBe expected
       }
+    }
+  }
+
+  test("a null aggregateBy does not fail the job") {
+    val by                      = "#input.eId == 2 ? null : #input.eId"
+    val five: java.lang.Integer = 5
+    val fiveAsSum               = 5L: java.lang.Long
+    val fiveAsAverage           = 5.0: java.lang.Double
+    // the list aggregator prepends, so the order within a window depends on how its elements got bucketed
+    val listsHoldingFive = Set[AnyRef](asList(five), asList(null, five), asList(five, null))
+
+    val variants = Table(
+      ("case", "buildScenario", "allowed", "provingTheFiveGotIn"),
+      (
+        "sliding",
+        () => sliding("#AGG.sum", by, emitWhenEventLeft = false),
+        Set[AnyRef](null, fiveAsSum),
+        Set[AnyRef](fiveAsSum)
+      ),
+      (
+        "sliding emitting on leave",
+        () => sliding("#AGG.min", by, emitWhenEventLeft = true),
+        Set[AnyRef](null, five),
+        Set[AnyRef](five)
+      ),
+      (
+        "tumbling on end",
+        () => tumbling("#AGG.max", by, TumblingWindowTrigger.OnEnd),
+        Set[AnyRef](null, five),
+        Set[AnyRef](five)
+      ),
+      (
+        "tumbling on event",
+        () => tumbling("#AGG.average", by, TumblingWindowTrigger.OnEvent),
+        Set[AnyRef](null, fiveAsAverage),
+        Set[AnyRef](fiveAsAverage)
+      ),
+      (
+        "tumbling with extra window",
+        () => tumbling("#AGG.list", by, TumblingWindowTrigger.OnEndWithExtraWindow),
+        Set[AnyRef](util.Collections.emptyList(), asList(null)) ++ listsHoldingFive,
+        listsHoldingFive
+      ),
+      (
+        "session closing on every event",
+        () => session("#AGG.sum", by, SessionWindowTrigger.OnEvent, endSessionCondition = "true"),
+        Set[AnyRef](null, fiveAsSum),
+        Set[AnyRef](fiveAsSum)
+      ),
+      (
+        "session on event",
+        () => session("#AGG.min", by, SessionWindowTrigger.OnEvent, endSessionCondition = "false"),
+        Set[AnyRef](null, five),
+        Set[AnyRef](five)
+      ),
+      (
+        "session on end",
+        () => session("#AGG.list", by, SessionWindowTrigger.OnEnd, endSessionCondition = "false"),
+        Set[AnyRef](util.Collections.emptyList(), asList(null)) ++ listsHoldingFive,
+        listsHoldingFive
+      ),
+    )
+
+    // The null-producing record has to go first: a window's accumulator is only still null before its first non-null
+    // element, so with the null second nothing reaches the accumulator serializer.
+    val records = List(TestRecordHours("1", 0, 2, "a"), TestRecordHours("1", 1, 5, "b"))
+
+    forAll(variants) {
+      (
+          _: String,
+          buildScenario: () => CanonicalProcess,
+          allowed: Set[AnyRef],
+          provingTheFiveGotIn: Set[AnyRef]
+      ) =>
+        ResultsCollectingListenerHolder.withListener { collectingListener =>
+          runScenario(modelData(collectingListener, records), buildScenario())
+
+          val aggregateVariables = collectingListener.fragmentResultEndVariable[AnyRef]("1")
+          aggregateVariables should not be empty
+          aggregateVariables.foreach { aggregate =>
+            allowed should contain(aggregate)
+          }
+          withClue("no aggregate holds the one non-null input, so nothing was aggregated at all: ") {
+            aggregateVariables.exists(provingTheFiveGotIn.contains) shouldBe true
+          }
+        }
+    }
+  }
+
+  test("a null aggregateBy in one map field does not stop the other fields from aggregating") {
+    val id = "1"
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(TestRecordHours(id, 0, 5, "a"), TestRecordHours(id, 1, 2, "b"))
+      )
+      val testScenario = sliding(
+        "#AGG.map({sum: #AGG.sum, list: #AGG.list})",
+        "{sum: #input.eId == 2 ? null : #input.eId, list: #input.str}",
+        emitWhenEventLeft = false
+      )
+
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[util.Map[String, Any]](id).map(_.asScala)
+
+      aggregateVariables shouldBe List(
+        Map("sum" -> 5, "list" -> asList("a")),
+        Map("sum" -> 5, "list" -> asList("a", "b"))
+      )
+    }
+  }
+
+  test("countWhen answers 0 for a window that aggregated nothing") {
+    val id = "1"
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model        = modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a")))
+      val testScenario = tumbling("#AGG.countWhen", "true", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(1L, 0L)
     }
   }
 

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 /**
- * It behaves similar to Flink's TumblingWindow with one difference that we produce extra zero aggregate for each key when no data arrived.
+ * It behaves similar to Flink's TumblingWindow with one difference that we produce an extra aggregate over nothing for each key when no data arrived.
  * For this purpose we've used `AggregatorFunctionMixin` with `minimalResolutionMs = timeWindowLengthMillis`. We use it because
  * it handles out of order elements. The other difference from AggregatorFunction is that we emit event only in timer and handle
  * state eviction on ours own.
