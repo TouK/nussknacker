@@ -60,8 +60,10 @@ sealed trait ToJsonEncoder {
   protected def handleUnknownValue(any: Any): Option[Json]
 
   def encodeUnsafe(obj: Any): Json =
-    doEncode(obj).getOrElse {
-      throw new IllegalArgumentException(s"Invalid type: ${obj.getClass}")
+    doEncode(obj).valueOr { errors =>
+      throw new IllegalArgumentException(
+        s"Failed to encode as JSON: ${obj.getClass}. Errors: ${errors.toList.mkString(", ")}"
+      )
     }
 
   // This method is protected because it has no sense for LooseToJsonEncoder

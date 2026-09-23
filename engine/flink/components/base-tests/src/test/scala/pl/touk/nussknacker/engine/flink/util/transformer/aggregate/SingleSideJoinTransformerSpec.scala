@@ -52,8 +52,8 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 
   private val OutVariableName = "outVar"
 
-  test("join aggregate into main stream") {
-    val process = ScenarioBuilder
+  private def singleSideJoinScenario(aggregator: String, aggregateBy: String): CanonicalProcess =
+    ScenarioBuilder
       .streaming("sample-join-last")
       .sources(
         GraphBuilder
@@ -78,12 +78,19 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
                 "key"        -> "#input.key".spel
               )
             ),
-            "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})".spel,
+            "aggregator"   -> aggregator.spel,
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel,
-            "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } ".spel
+            "aggregateBy"  -> aggregateBy.spel
           )
           .emptySink(EndNodeId.value, "dead-end")
       )
+
+  test("join aggregate into main stream") {
+    val process = singleSideJoinScenario(
+      aggregator =
+        "#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
+      aggregateBy = "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
+    )
 
     val key    = "fooKey"
     val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -109,9 +116,45 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
           .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
 
         outValues shouldEqual List(
-          Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),
+          Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> null),
           Map("approxCardinality" -> 1, "last" -> 123, "list"  -> singletonList(123), "sum" -> 123)
         )
+      }
+    }
+  }
+
+  test("a null aggregateBy on the joined branch does not fail the job") {
+    // The joined value crosses a keyBy before it reaches the aggregator, so a null has to survive the
+    // KeyedValue serializer as well as the aggregator itself
+    val process = singleSideJoinScenario(
+      aggregator = "#AGG.sum",
+      aggregateBy = "#input.value == 2 ? null : #input.value"
+    )
+
+    val key    = "fooKey"
+    val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val input2 = List(
+      OneRecord(key, 1, 2),  // aggregateBy evaluates to null - skipped by sum
+      OneRecord(key, 1, 123) // the only value that reaches the aggregate
+    )
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      withRunningScenario(process, input1, input2, collectingListener) { jobID =>
+        input1.add(OneRecord(key, 0, -1))
+        eventually {
+          SingleSideJoinTransformerSpec.elementsAddedToState should have size input2.size
+        }
+        input1.add(OneRecord(key, 2, -1))
+        input1.finish()
+
+        flinkMiniCluster.waitForJobIsFinished(jobID)
+
+        val outValues = collectingListener.results
+          .nodeResults(EndNodeId)
+          .filter(_.variableTyped(KeyVariableName).contains(key))
+          .map(_.variableTyped[AnyRef](OutVariableName).get)
+
+        outValues shouldEqual List(null, 123L)
       }
     }
   }
@@ -122,6 +165,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       input2: List[OneRecord],
       collectingListener: ResultsCollectingListener[Any]
   )(action: JobID => Unit): Unit = {
+    SingleSideJoinTransformerSpec.elementsAddedToState.clear()
     val model = modelData(input1, input2, collectingListener)
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val result = new FlinkScenarioUnitTestJob(model).run(testProcess, env)

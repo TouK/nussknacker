@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregatesSpec.{EPS_BIG_DECIMAL, EPS_DOUBLE}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
@@ -133,27 +135,6 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
       List(new java.math.BigDecimal("7"), new java.math.BigDecimal("8")),
       agg
     ) shouldEqual new java.math.BigDecimal("7.5")
-  }
-
-  test("some aggregators should produce null on single null input") {
-    forAll(
-      Table(
-        "aggregator",
-        AverageAggregator,
-        SampleStandardDeviationAggregator,
-        PopulationStandardDeviationAggregator,
-        SampleVarianceAggregator,
-        PopulationVarianceAggregator,
-        MaxAggregator,
-        MinAggregator,
-        FirstAggregator,
-        LastAggregator,
-        SumAggregator,
-        MedianAggregator
-      )
-    ) { agg =>
-      addElementsAndComputeResult(List(null), agg) shouldEqual null
-    }
   }
 
   test("should calculate correct results for standard deviation and variance on doubles") {
@@ -322,25 +303,54 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     }
   }
 
-  test("some aggregators should produce null on empty set") {
-    forAll(
-      Table(
-        "aggregator",
-        AverageAggregator,
-        SampleStandardDeviationAggregator,
-        PopulationStandardDeviationAggregator,
-        SampleVarianceAggregator,
-        PopulationVarianceAggregator,
-        MaxAggregator,
-        MinAggregator,
-        FirstAggregator,
-        LastAggregator,
-        SumAggregator
-      )
-    ) { agg =>
-      val result = addElementsAndComputeResult(List(), agg)
-      result shouldBe null
+  test("some aggregators should produce null when nothing was aggregated, whatever the number type") {
+    val aggregators = Table(
+      "aggregator",
+      AverageAggregator,
+      SampleStandardDeviationAggregator,
+      PopulationStandardDeviationAggregator,
+      SampleVarianceAggregator,
+      PopulationVarianceAggregator,
+      MaxAggregator,
+      MinAggregator,
+      FirstAggregator,
+      LastAggregator,
+      MedianAggregator,
+      SumAggregator
+    )
+    val elementLists = Table("elements", List[AnyRef](), List[AnyRef](null))
+    val inputTypes   = Table("input", Typed[Int], Typed[Double], Typed[java.math.BigDecimal])
+
+    forAll(aggregators) { agg: Aggregator =>
+      forAll(elementLists) { elements: List[AnyRef] =>
+        val result = addElementsAndComputeResult(elements, agg)
+        result shouldBe null
+
+        forAll(inputTypes) { input: TypingResult =>
+          agg.alignToExpectedType(result, agg.computeOutputTypeUnsafe(input)) shouldBe null
+        }
+      }
     }
+  }
+
+  test("map aggregate over null fields encodes to json") {
+    val aggregator = new MapAggregator(
+      Map[String, Aggregator]("max" -> MaxAggregator, "sum" -> SumAggregator, "avg" -> AverageAggregator).asJava
+    )
+    val input = Typed.record(
+      Map("max" -> Typed[Int], "sum" -> Typed[Int], "avg" -> Typed[Int]),
+      objType = Typed.typedClass[JMap[_, _]]
+    )
+    val element   = Map[String, AnyRef]("max" -> null, "sum" -> null, "avg" -> null).asJava
+    val aggregate = aggregator.addElement(element, aggregator.zero)
+
+    val result = aggregator.alignToExpectedType(aggregator.result(aggregate), aggregator.computeOutputTypeUnsafe(input))
+
+    ToJsonEncoder.looseEncoder.encodeUnsafe(result) shouldBe Json.obj(
+      "max" -> Json.Null,
+      "sum" -> Json.Null,
+      "avg" -> Json.Null
+    )
   }
 
   test("should calculate correct results for population standard deviation and variance on single element double set") {
@@ -445,6 +455,9 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
     aggregator.isNeutralForAccumulator(0, oldState) shouldBe true
     aggregator.isNeutralForAccumulator(1, oldState) shouldBe false
+    aggregator.isNeutralForAccumulator(null, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(null, null) shouldBe true
+    aggregator.isNeutralForAccumulator(0, null) shouldBe false
   }
 
   test("Neutral elements for accumulator should be detected for set") {
@@ -462,6 +475,9 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     aggregator.isNeutralForAccumulator(0, oldState) shouldBe true
     aggregator.isNeutralForAccumulator(123, oldState) shouldBe true
     aggregator.isNeutralForAccumulator(234, oldState) shouldBe false
+    aggregator.isNeutralForAccumulator(null, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(null, null) shouldBe true
+    aggregator.isNeutralForAccumulator(0, null) shouldBe false
   }
 
   test("Neutral elements for accumulator should be detected for min") {
@@ -471,6 +487,9 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     aggregator.isNeutralForAccumulator(0, oldState) shouldBe false
     aggregator.isNeutralForAccumulator(123, oldState) shouldBe true
     aggregator.isNeutralForAccumulator(234, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(null, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(null, null) shouldBe true
+    aggregator.isNeutralForAccumulator(0, null) shouldBe false
   }
 
   test("Neutral elements for accumulator should be detected for first") {
@@ -582,6 +601,22 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
         aggregator.addElement(element.asInstanceOf[aggregator.Element], state)
       )
     )
+  }
+
+  test("option aggregator should treat a null element as None") {
+    val aggregator = new OptionAggregator(ListAggregator)
+
+    aggregator.addElement(null, aggregator.zero) shouldBe aggregator.addElement(None, aggregator.zero)
+    aggregator.isNeutralForAccumulator(null, aggregator.zero) shouldBe true
+  }
+
+  test("map aggregator should ignore an element that is entirely null") {
+    val aggregator =
+      new MapAggregator(Map[String, Aggregator]("field1" -> SumAggregator, "field2" -> MaxAggregator).asJava)
+    val state = Map[String, AnyRef]("field1" -> (5: java.lang.Integer), "field2" -> (7: java.lang.Integer))
+
+    aggregator.addElement(null, state) shouldBe state
+    aggregator.isNeutralForAccumulator(null, state) shouldBe true
   }
 
   class JustAnyClass

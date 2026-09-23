@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9472](https://github.com/TouK/nussknacker/pull/9472) Fix scenarios failing on a null `aggregateBy`, and return `null` from a numeric aggregate that aggregated nothing, in place of `0` or `Double.NaN`
 * [#9467](https://github.com/TouK/nussknacker/pull/9467) Components list: a component with two links shows both as icons, instead of one icon and a menu with the second link
 * [#9465](https://github.com/TouK/nussknacker/pull/9465) Fix: a Variable with a SpEL template expression failed at runtime with `IllegalStateException` when assignments from Unknown type were restricted (`TypingConfiguration.allowUnknownToAnyAssignment = false`). The variable now holds the rendered template text.
 * [#9461](https://github.com/TouK/nussknacker/pull/9461) Fix: restored the PostgreSQL window-function optimization in the periodic processes repository, so limiting deployments per schedule is again done in a single query instead of being trimmed in memory. The repository now uses the Slick profile configured for the designer database instead of a hardcoded PostgreSQL one, which also makes the HSQLDB code path behave correctly.
