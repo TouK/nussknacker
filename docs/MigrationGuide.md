@@ -242,6 +242,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 
+* [#9472](https://github.com/TouK/nussknacker/pull/9472) Fix scenarios failing on a null `aggregateBy`, and return `null` from a numeric aggregate that aggregated nothing, in place of `0` or `Double.NaN`:
+    * **State incompatibility:** `aggregate-tumbling` and `aggregate-session` nodes have to be redeployed with their state reset. `aggregate-sliding`, the `aggregate-tumbling` "After window closes, also when no event for key" emit mode, `single-side-join` and `full-outer-join` are unaffected.
+    * `#AGG.average`, `#AGG.median`, `#AGG.stddevPop`, `#AGG.stddevSamp`, `#AGG.varPop` and `#AGG.varSamp` return `null` instead of `Double.NaN`; `#AGG.sum` returns `null` instead of a typed `0`. Replace `isNaN()` checks with null checks, and use `#aggregate == null ? 0 : #aggregate` where a number is required.
+    * Arithmetic on a `null` aggregate fails at runtime, but a comparison does not: `#aggregate > 100` is `false` and `#aggregate < 100` is `true`. Guard both, for example `#aggregate != null && #aggregate > 100`.
+    * Counting with `#AGG.sum` over `1` now answers `null` for a window that counted nothing. Switch it to `#AGG.countWhen` over `true`.
+    * `aggregate-sliding` stores the first `0` of a slice, which it skipped before. A scenario whose `aggregateBy` is mostly `0` grows its state, and with "emit when event leaves the window" it now also emits for a key that only ever saw zeros.
+    * `pl.touk.nussknacker.engine.api.typed.NumberTypeUtils` is removed.
 * [#9419](https://github.com/TouK/nussknacker/pull/9419) **Behavior change:** compile-time parameter validators now run value-based validators (e.g. `@Min` / `@Max`, validation expressions) against the *computed* value of parameters whose value the typer cannot determine statically (e.g. `T(java.time.Duration).parse('PT3S').getSeconds()`), not only literal values.
     * A parameter is evaluated at compile time only when it has validators. This also covers lazy parameters, as long as their expression does not read context variables (e.g. `#input`); lazy parameters whose expressions read context variables are still validated only at runtime.
     * As a result, a scenario that previously compiled can now become invalid at compile time when such a computed value violates a validator. Review scenarios that use non-literal expressions in validated parameters.

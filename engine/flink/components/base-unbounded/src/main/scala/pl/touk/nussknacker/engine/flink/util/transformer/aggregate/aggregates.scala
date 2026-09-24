@@ -4,9 +4,9 @@ import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import cats.instances.list._
 import org.apache.flink.api.common.typeinfo.TypeInfo
-import pl.touk.nussknacker.engine.api.typed.{typing, NumberTypeUtils}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.median.MedianHelper
@@ -28,21 +28,18 @@ object aggregates {
 
     override def zero: Number = null
 
+    /**
+      * A zero is neutral only once the aggregate holds something. The `MapState` based operators store nothing for a
+      * neutral element, so skipping the first zero would leave a window that saw only zeros indistinguishable from
+      * one that saw nothing at all, and those two emit different results - `0` and `null`.
+      */
     override def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean =
-      element.doubleValue() == 0.0
+      element == null || (currentAggregate != null && element.doubleValue() == 0.0)
 
     override def addElement(n1: Number, n2: Number): Number = MathUtils.largeSum(n1, n2)
 
     override protected val promotionStrategy: NumberTypesPromotionStrategy =
       NumberTypesPromotionStrategy.ForLargeNumbersOperation
-
-    override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
-      if (value == null) {
-        NumberTypeUtils.zeroForType(outputType)
-      } else {
-        value
-      }
-    }
 
   }
 
@@ -78,11 +75,13 @@ object aggregates {
 
     override def zero: Aggregate = new java.util.ArrayList[Number]()
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg
-    else {
-      agg.add(el)
-      agg
-    }
+    override def addElement(el: Element, agg: Aggregate): Aggregate =
+      if (el == null) {
+        agg
+      } else {
+        agg.add(el)
+        agg
+      }
 
     override def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean = element == null
 
@@ -277,9 +276,11 @@ object aggregates {
     override def zero: AverageAggregatorState = AverageAggregatorState(LargeFloatSumState.emptyState, 0)
 
     override def addElement(element: Element, aggregate: Aggregate): Aggregate = {
-      if (element == null) aggregate
-      else
+      if (element == null) {
+        aggregate
+      } else {
         AverageAggregatorState(aggregate.sum.withAddedElement(element), aggregate.count + 1)
+      }
     }
 
     override def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate =
@@ -341,13 +342,15 @@ object aggregates {
       StandardDeviationState(LargeFloatSumState.emptyState, LargeFloatSumState.emptyState, 0)
 
     override def addElement(element: Element, aggregate: Aggregate): Aggregate = {
-      if (element == null) aggregate
-      else
+      if (element == null) {
+        aggregate
+      } else {
         StandardDeviationState(
           sum = aggregate.sum.withAddedElement(element),
           squaresSum = aggregate.squaresSum.withAddedElement(MathUtils.largeFloatSquare(element)),
           count = aggregate.count + 1
         )
+      }
     }
 
     override def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate =
@@ -359,7 +362,6 @@ object aggregates {
 
     override def result(finalAggregate: Aggregate): AnyRef = {
       if (finalAggregate.count == 0 || finalAggregate.sum.asNumber == null || finalAggregate.squaresSum == null) {
-        // will be replaced to Double.Nan in alignToExpectedType iff return type is known to be Double
         null
       } else if (finalAggregate.count == 1) {
         // zero of the same type as aggregated number
@@ -415,7 +417,6 @@ object aggregates {
     {sumField: 11, setField: ['a', 'b']}
     - typed map with aggregations
     See TransformersTest for usage sample
-    TODO: handling nulls more gracefully
    */
   class MapAggregator(fields: java.util.Map[String, Aggregator]) extends Aggregator {
 
@@ -428,16 +429,21 @@ object aggregates {
     override val zero: Aggregate = scalaFields.mapValuesNow(_.zero)
 
     override def isNeutralForAccumulator(el: util.Map[String, AnyRef], agg: Map[String, AnyRef]): Boolean =
-      scalaFields.forall { case (field, aggregator) =>
+      el == null || scalaFields.forall { case (field, aggregator) =>
         aggregator.isNeutralForAccumulator(
           el.get(field).asInstanceOf[aggregator.Element],
           agg.getOrElse(field, aggregator.zero).asInstanceOf[aggregator.Aggregate]
         )
       }
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = scalaFields.map { case (field, aggregator) =>
-      field -> aggregator.add(el.get(field), agg.getOrElse(field, aggregator.zero))
-    }
+    override def addElement(el: Element, agg: Aggregate): Aggregate =
+      if (el == null) {
+        agg
+      } else {
+        scalaFields.map { case (field, aggregator) =>
+          field -> aggregator.add(el.get(field), agg.getOrElse(field, aggregator.zero))
+        }
+      }
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = scalaFields.map {
       case (field, aggregator) =>
@@ -519,10 +525,14 @@ object aggregates {
     override def zero: Aggregate = None
 
     override def isNeutralForAccumulator(element: Element, aggregate: Aggregate): Boolean =
-      element.forall(agg.isNeutralForAccumulator(_, aggregate.getOrElse(agg.zero)))
+      element == null || element.forall(agg.isNeutralForAccumulator(_, aggregate.getOrElse(agg.zero)))
 
     override def addElement(element: Element, aggregate: Aggregate): Aggregate =
-      element.map(agg.addElement(_, aggregate.getOrElse(agg.zero))).orElse(aggregate)
+      if (element == null) {
+        aggregate
+      } else {
+        element.map(agg.addElement(_, aggregate.getOrElse(agg.zero))).orElse(aggregate)
+      }
 
     override def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate =
       (aggregate1, aggregate2) match {
@@ -586,14 +596,6 @@ object aggregates {
 
   trait LargeFloatingNumberAggregate { self: Aggregator =>
     override type Element = java.lang.Number
-
-    override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
-      if (value == null && outputType == Typed(classOf[Double])) {
-        Double.NaN.asInstanceOf[AnyRef]
-      } else {
-        value
-      }
-    }
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
 

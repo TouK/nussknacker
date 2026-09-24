@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#9472](https://github.com/TouK/nussknacker/pull/9472) Fix scenarios failing on a null `aggregateBy`, and return `null` from a numeric aggregate that aggregated nothing, in place of `0` or `Double.NaN`
 * Fix: a string template in a node that takes its output type from the expression, such as `variable`, no longer fails at runtime with `Expression parsed with unexpected type: Unknown`. This affected deployments that restrict assignments from the `Unknown` type through a custom `TypingConfigurationProvider`.
 * [#9450](https://github.com/TouK/nussknacker/pull/9450) Named outputs for custom components, rendered as named edges in the designer; the `deduplication` component gained a `rejected` output carrying the events it filters out. See the [Migration Guide](MigrationGuide.md) for details.
 * [#9399](https://github.com/TouK/nussknacker/pull/9399) Reworked the "Compare versions" dialog's version picker.

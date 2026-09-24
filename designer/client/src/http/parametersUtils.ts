@@ -25,7 +25,7 @@ export function fixAggregateParameters(component: Component): Component {
                     ...parameter,
                     expression: {
                         ...parameter.expression,
-                        expression: "#AGG.map({count: #AGG.sum})",
+                        expression: "#AGG.map({count: #AGG.countWhen})",
                     },
                 };
             case "aggregateBy":
@@ -33,7 +33,7 @@ export function fixAggregateParameters(component: Component): Component {
                     ...parameter,
                     expression: {
                         ...parameter.expression,
-                        expression: "{count: 1}",
+                        expression: "{count: true}",
                     },
                 };
         }

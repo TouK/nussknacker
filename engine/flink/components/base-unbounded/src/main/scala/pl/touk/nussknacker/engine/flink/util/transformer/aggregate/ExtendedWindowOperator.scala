@@ -94,7 +94,7 @@ private[aggregate] class ExtendedWindowOperator[A](
       new AggregatingStateDescriptor(
         stateDescriptorName,
         aggregateFunction,
-        types.storedTypeInfo.createSerializer(stream.getExecutionConfig)
+        types.aggregatingStateStoredTypeInfo.createSerializer(stream.getExecutionConfig)
       ),
       new InternalSingleValueProcessWindowFunction(
         new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId, contextHolderRef)

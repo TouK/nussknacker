@@ -93,6 +93,33 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 
 If you need to count events in a window, use the CountWhen aggregate function and aggregate by fixed `true` expression - see the table with examples below. Subsequent sections use the Count function on the diagrams as an example for the **aggregator** - it is the easiest function to use in the examples. Please note, however, that technically, we provide an indirect implementation of this aggregator.
 
+### How aggregators handle `null`
+
+An `aggregateBy` expression can evaluate to `null`, for example when the event has no value in that field. This never fails the scenario. What happens to that `null`, and what the aggregator returns for a window that aggregated nothing at all, depends on the aggregator:
+
+| Aggregator                | A `null` `aggregateBy`         | Nothing aggregated       |
+|---------------------------|--------------------------------|--------------------------|
+| ApproximateSetCardinality | counted as a distinct value    | `0`                      |
+| Average                   | skipped                        | `null`                   |
+| CountWhen                 | not counted                    | `0`                      |
+| First                     | kept, so the result is `null`  | `null`                   |
+| Last                      | kept, so the result is `null`  | `null`                   |
+| List                      | kept as an element of the list | empty list               |
+| Map                       | skipped - no field sees it     | every field's own answer |
+| Max                       | skipped                        | `null`                   |
+| Median                    | skipped                        | `null`                   |
+| Min                       | skipped                        | `null`                   |
+| Set                       | kept as an element of the set  | empty set                |
+| StddevPop                 | skipped                        | `null`                   |
+| StddevSamp                | skipped                        | `null`                   |
+| Sum                       | skipped                        | `null`                   |
+| VarPop                    | skipped                        | `null`                   |
+| VarSamp                   | skipped                        | `null`                   |
+
+"Nothing aggregated" means no event arrived in the window, or every `aggregateBy` evaluated to `null` and the aggregator skips those. A window that aggregated real zeros is not the same thing: Sum returns `0` for it.
+
+Where an aggregator returns `null`, arithmetic on the result fails at runtime. A comparison is worse: it does not fail at all, and treats the `null` as smaller than anything, so `#aggregate > 100` is `false` and `#aggregate < 100` is `true`. Guard both, for example with `#aggregate != null && #aggregate > 100`.
+
 **output** - name of the variable which will hold the result of the aggregator.
 
 **groupBy** - equivalent of the GROUP BY in SQL; a result of the aggregator will be computed for each distinct groupBy value found by Nussknacker in the time window. Whenever an event with aggregate is emitted, the `#key` variable will be available containing value of this field.
