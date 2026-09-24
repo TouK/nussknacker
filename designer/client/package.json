@@ -4,7 +4,7 @@
     "version": "0.0.0",
     "dependencies": {
         "@assistant-ui/react": "0.11.41",
-        "@assistant-ui/react-markdown": "0.11.2",
+        "@assistant-ui/react-markdown": "0.14.16",
         "@assistant-ui/react-ui": "0.2.1",
         "@elastic/apm-rum": "5.16.0",
         "@emotion/css": "11.13.5",
