@@ -71,14 +71,14 @@
                                 "name": "aggregator",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "#AGG.map({\n  count: #AGG.sum\n})"
+                                    "expression": "#AGG.map({\n  count: #AGG.countWhen\n})"
                                 }
                             },
                             {
                                 "name": "aggregateBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{\n  count: 1\n}"
+                                    "expression": "{\n  count: true\n}"
                                 }
                             },
                             {
@@ -149,14 +149,14 @@
                                 "name": "aggregator",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "#AGG.map({\n  count: #AGG.sum\n})"
+                                    "expression": "#AGG.map({\n  count: #AGG.countWhen\n})"
                                 }
                             },
                             {
                                 "name": "aggregateBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{\n  count: 1\n}"
+                                    "expression": "{\n  count: true\n}"
                                 }
                             },
                             {
@@ -220,14 +220,14 @@
                                 "name": "aggregator",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "#AGG.map({\n  count: #AGG.sum\n})"
+                                    "expression": "#AGG.map({\n  count: #AGG.countWhen\n})"
                                 }
                             },
                             {
                                 "name": "aggregateBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{\n  count: 1\n}"
+                                    "expression": "{\n  count: true\n}"
                                 }
                             },
                             {

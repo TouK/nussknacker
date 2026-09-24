@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{NullableTypeInfo, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.OnEventOperatorKeyedStream
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
@@ -47,7 +47,7 @@ object transformers {
                 nodeId,
                 nodeName,
                 aggregateBy.returnType,
-                typeInfos.storedTypeInfo,
+                typeInfos.mapStateStoredTypeInfo,
                 fctx.convertToEngineRuntimeContext
               )
             else
@@ -57,7 +57,7 @@ object transformers {
                 nodeId,
                 nodeName,
                 aggregateBy.returnType,
-                typeInfos.storedTypeInfo,
+                typeInfos.mapStateStoredTypeInfo,
                 fctx.convertToEngineRuntimeContext
               )
           start
@@ -126,7 +126,7 @@ object transformers {
                 .aggregate(
                   aggregatingFunction,
                   EnrichingWithKeyFunction(fctx),
-                  typeInfos.storedTypeInfo,
+                  typeInfos.aggregatingStateStoredTypeInfo,
                   typeInfos.returnTypeInfo,
                   typeInfos.returnedValueTypeInfo
                 )
@@ -141,7 +141,7 @@ object transformers {
                     nodeId,
                     nodeName,
                     aggregateBy.returnType,
-                    typeInfos.storedTypeInfo,
+                    typeInfos.mapStateStoredTypeInfo,
                     fctx.convertToEngineRuntimeContext
                   )
                 )
@@ -206,11 +206,27 @@ object transformers {
       .computeStoredType(aggregateBy.returnType)
       .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))
 
-    lazy val storedTypeInfo: TypeInformation[AnyRef] = TypeInformationDetection.instance.forType(storedType)
-    lazy val returnTypeInfo: TypeInformation[AnyRef] = TypeInformationDetection.instance.forType(returnType)
+    /**
+      * For the `MapState` based operators, which write only non-neutral aggregates, and a non-neutral element never
+      * produces a null one.
+      */
+    lazy val mapStateStoredTypeInfo: TypeInformation[AnyRef] = TypeInformationDetection.instance.forType(storedType)
+
+    /**
+      * For Flink's AggregatingState, which writes the accumulator after every element, so an aggregate that is still
+      * null has to be storable.
+      */
+    lazy val aggregatingStateStoredTypeInfo: TypeInformation[AnyRef] = new NullableTypeInfo(mapStateStoredTypeInfo)
+
+    /**
+      * An aggregate can be null - a numeric one that aggregated nothing, `First`/`Last` when the value they kept was
+      * null - and Flink's serializer for the type a return type resolves to cannot write one.
+      */
+    lazy val returnTypeInfo: TypeInformation[AnyRef] =
+      new NullableTypeInfo(TypeInformationDetection.instance.forType(returnType))
 
     lazy val returnedValueTypeInfo: TypeInformation[ValueWithContext[AnyRef]] =
-      ctx.valueWithContextInfo.forType(returnType)
+      ctx.valueWithContextInfo.forType(returnTypeInfo)
 
   }
 
