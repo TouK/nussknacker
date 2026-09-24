@@ -48,7 +48,7 @@
         "kefir": "3.8.8",
         "lodash": "4.17.21",
         "marked": "9.1.5",
-        "millify": "4.0.0",
+        "millify": "6.1.0",
         "moment": "2.29.4",
         "moment-duration-format": "2.3.2",
         "nanoid": "3.2.0",
